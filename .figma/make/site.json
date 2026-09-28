@@ -1,0 +1,10 @@
+{
+  "description": "Connects workers and providers in Nepal, enabling job postings, applications, and account management while ensuring seamless role-based access and notifications.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

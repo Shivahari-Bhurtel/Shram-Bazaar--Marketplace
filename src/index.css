@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+
+  --color-primary: #C41E3A;
+  --color-primary-light: #E8354E;
+  --color-primary-dark: #9E1830;
+  --color-primary-50: #FEF2F4;
+  --color-primary-100: #FCE4E8;
+
+  --color-teal: #0D7377;
+  --color-teal-light: #14A085;
+  --color-teal-dark: #095F62;
+  --color-teal-50: #F0FAFA;
+  --color-teal-100: #CCEEEE;
+
+  --color-amber: #D97706;
+  --color-amber-light: #F59E0B;
+  --color-amber-50: #FFFBEB;
+  --color-amber-100: #FEF3C7;
+
+  --color-green: #16A34A;
+  --color-green-50: #F0FDF4;
+  --color-green-100: #DCFCE7;
+
+  --color-cream: #FBF9F6;
+  --color-card: #FFFFFF;
+
+  --color-stone-50: #FAFAF9;
+  --color-stone-100: #F5F5F4;
+  --color-stone-200: #E7E5E4;
+  --color-stone-300: #D6D3D1;
+  --color-stone-400: #A8A29E;
+  --color-stone-500: #78716C;
+  --color-stone-600: #57534E;
+  --color-stone-700: #44403C;
+  --color-stone-800: #292524;
+  --color-stone-900: #1C1917;
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: #FBF9F6;
+  color: #1C1917;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D6D3D1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #A8A29E; }
+
+.font-display { font-family: var(--font-display); }
+.font-mono-data { font-family: var(--font-mono); }
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.25s ease-out;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.input-style {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid #E7E5E4;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  background: white;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  color: #1C1917;
+}
+
+.input-style:focus {
+  outline: none;
+  border-color: #C41E3A;
+  box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+}
+
+.input-style::placeholder {
+  color: #A8A29E;
+}
