@@ -8,11 +8,11 @@
   --font-sans: 'Outfit', system-ui, sans-serif;
   --font-mono: 'DM Mono', 'Courier New', monospace;
 
-  --color-primary: #C41E3A;
-  --color-primary-light: #E8354E;
-  --color-primary-dark: #9E1830;
-  --color-primary-50: #FEF2F4;
-  --color-primary-100: #FCE4E8;
+  --color-primary: #8B5E3C;
+  --color-primary-light: #A8754F;
+  --color-primary-dark: #68432C;
+  --color-primary-50: #F7F1EB;
+  --color-primary-100: #EDE0D2;
 
   --color-teal: #0D7377;
   --color-teal-light: #14A085;
@@ -113,8 +113,8 @@ body {
 
 .input-style:focus {
   outline: none;
-  border-color: #C41E3A;
-  box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+  border-color: #8B5E3C;
+  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.14);
 }
 
 .input-style::placeholder {

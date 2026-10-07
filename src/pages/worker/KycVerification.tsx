@@ -174,7 +174,7 @@ export default function KycVerification() {
             </div>
           </form>
         )}
-        {formMessage && <p role="status" className={`mt-4 text-sm font-medium ${formMessage.includes('submitted') ? 'text-teal' : 'text-red-700'}`}>{formMessage}</p>}
+        {formMessage && <p role="status" className={`mt-4 text-sm font-medium ${formMessage.includes('submitted') ? 'text-teal' : 'text-primary-dark'}`}>{formMessage}</p>}
       </section>
 
       <p className="mt-5 text-xs leading-relaxed text-stone-500">This prototype stores verification details in the browser. A secure server-side review and SMS service are required before using this flow for real identity or phone verification.</p>

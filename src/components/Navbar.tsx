@@ -138,7 +138,7 @@ export default function Navbar() {
                           <button
                             role="menuitem"
                             onClick={() => { setProfileOpen(false); logout(); }}
-                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-600 transition-colors hover:bg-red-50 hover:text-red-700"
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-600 transition-colors hover:bg-primary-50 hover:text-primary-dark"
                           >
                             Sign out
                           </button>

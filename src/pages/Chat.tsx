@@ -144,7 +144,7 @@ export default function Chat() {
                   onClick={() => deleteThread(thread.id)}
                   aria-label={`Delete chat: ${thread.title}`}
                   title="Delete chat"
-                  className="mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone-400 opacity-0 transition-all hover:bg-white hover:text-red-600 focus-visible:opacity-100 group-hover:opacity-100"
+                  className="mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone-400 opacity-0 transition-all hover:bg-primary-50 hover:text-primary-dark focus-visible:opacity-100 group-hover:opacity-100"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16m-10 4v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" />

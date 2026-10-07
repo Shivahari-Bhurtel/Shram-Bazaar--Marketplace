@@ -116,7 +116,7 @@ export default function MyJobs() {
                     )}
                     <button
                       onClick={() => setConfirmDelete(job.id)}
-                      className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-stone-400 hover:text-primary-dark hover:bg-primary-50 rounded-lg transition-colors"
                       title="Delete job"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">

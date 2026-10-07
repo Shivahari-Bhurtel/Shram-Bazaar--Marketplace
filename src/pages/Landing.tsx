@@ -1,24 +1,45 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useApp } from '../store/AppContext';
-import heroMusic from '../assets/hero/shrama-music.mp3';
 import heroVideo from '../assets/hero/gemini_generated_video_f3c61e6d.mp4';
 
 const workerSteps = [
-  ['01', 'Build your profile', 'Add your location, skills, experience and availability.'],
-  ['02', 'Find the right work', 'Search by district, skill, type of work, and pay.'],
-  ['03', 'Apply and follow along', 'Apply for a job and check for updates in your account.'],
+  ['1', 'Build your profile', 'Add your location, skills, experience, and availability.'],
+  ['2', 'Find the right work', 'Search by district, skill, type of work, and pay.'],
+  ['3', 'Apply and follow along', 'Apply to jobs and follow each application from your account.'],
 ];
 
 const providerSteps = [
-  ['01', 'Create a business profile', 'Add your business and contact details.'],
-  ['02', 'Post a job', 'Describe the work, location, dates, and pay.'],
-  ['03', 'Choose a worker', 'Review applicants and choose the right person for the job.'],
+  ['1', 'Create a business profile', 'Add your business and contact details.'],
+  ['2', 'Post a job', 'Share the role, location, schedule, and pay.'],
+  ['3', 'Choose a worker', 'Review applicants and select the right person for your opening.'],
 ];
 
 export default function Landing() {
   const { navigate, state, browseSkill } = useApp();
   const [openMenu, setOpenMenu] = useState<'worker' | 'provider' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [heroSlide, setHeroSlide] = useState<'image' | 'video'>('image');
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const heroTrackRef = useRef<HTMLDivElement>(null);
+  const dragStart = useRef<{ pointerId: number; x: number; scrollLeft: number } | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const changeHeroSlide = (slide: 'image' | 'video') => {
+    const video = heroVideoRef.current;
+    if (slide === 'video') {
+      if (video) {
+        video.volume = 1;
+        video.muted = false;
+        void video.play().catch(() => undefined);
+      }
+    } else if (video) {
+      video.muted = true;
+      video.pause();
+    }
+    setHeroSlide(slide);
+    const track = heroTrackRef.current;
+    if (track) track.scrollTo({ left: slide === 'video' ? track.clientWidth : 0, behavior: 'smooth' });
+  };
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -30,7 +51,7 @@ export default function Landing() {
   return (
     <div className="landing-page min-h-screen bg-cream">
       <nav
-        aria-label="Shrama landing navigation"
+        aria-label="Shram Bazzar landing navigation"
         className="bg-white"
       >
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-7 gap-y-3 px-4 py-4 font-sans text-[15px] font-semibold tracking-tight text-stone-700 sm:px-6">
@@ -110,26 +131,83 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="relative mx-3 my-4 overflow-hidden rounded-[2rem] sm:mx-6 lg:mx-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-stone-900 to-stone-800" />
+      <section
+        className="relative mx-3 my-4 overflow-hidden rounded-[2rem] bg-stone-900 sm:mx-6 lg:mx-10"
+        onTouchStart={event => {
+          const touch = event.touches[0];
+          touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+        }}
+        onTouchEnd={event => {
+          const start = touchStart.current;
+          const touch = event.changedTouches[0];
+          touchStart.current = null;
+          if (!start || !touch) return;
+          const deltaX = touch.clientX - start.x;
+          const deltaY = touch.clientY - start.y;
+          if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+          changeHeroSlide(deltaX < 0 ? 'video' : 'image');
+        }}
+        onWheel={event => {
+          if (Math.abs(event.deltaX) < 20 || Math.abs(event.deltaX) < Math.abs(event.deltaY)) return;
+          changeHeroSlide(event.deltaX > 0 ? 'video' : 'image');
+        }}
+        onPointerDown={event => {
+          if (event.pointerType !== 'mouse' || event.button !== 0) return;
+          if (event.target instanceof HTMLElement && event.target.closest('button, a, input')) return;
+          const track = heroTrackRef.current;
+          if (!track) return;
+          dragStart.current = { pointerId: event.pointerId, x: event.clientX, scrollLeft: track.scrollLeft };
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={event => {
+          const start = dragStart.current;
+          const track = heroTrackRef.current;
+          if (!start || start.pointerId !== event.pointerId || !track) return;
+          track.scrollLeft = start.scrollLeft - (event.clientX - start.x);
+        }}
+        onPointerUp={event => {
+          if (!dragStart.current || dragStart.current.pointerId !== event.pointerId) return;
+          dragStart.current = null;
+          const track = heroTrackRef.current;
+          if (track) changeHeroSlide(track.scrollLeft >= track.clientWidth / 2 ? 'video' : 'image');
+        }}
+        onPointerCancel={() => { dragStart.current = null; }}
+      >
         <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&h=800&fit=crop&auto=format')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-stone-900/90 via-stone-900/70 to-transparent" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 lg:py-40">
+          ref={heroTrackRef}
+          className="absolute inset-0 z-0 flex cursor-grab snap-x snap-mandatory touch-pan-x overflow-x-auto overflow-y-hidden scroll-smooth active:cursor-grabbing [scrollbar-color:rgba(255,255,255,0.45)_rgba(255,255,255,0.12)] [scrollbar-width:thin] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/50 [&::-webkit-scrollbar-track]:bg-white/10"
+        >
+          <div className="relative h-full w-full shrink-0 snap-always snap-start">
+            <img
+              src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&h=800&fit=crop&auto=format"
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              className="h-full w-full select-none object-cover"
+            />
+          </div>
+          <div className="relative h-full w-full shrink-0 snap-always snap-start">
+            <video
+              ref={heroVideoRef}
+              src={heroVideo}
+              muted
+              playsInline
+              loop
+              preload="auto"
+              aria-label="Shram Bazzar hero video"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </div>
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-stone-950/90 via-stone-950/70 to-stone-950/45" />
+        <div className="relative z-[2] max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 lg:py-40">
           <div className="max-w-2xl">
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              <span className="font-brand text-6xl sm:text-7xl lg:text-8xl font-semibold">Shrama</span><br />
+              <span className="font-brand text-6xl sm:text-7xl lg:text-8xl font-semibold">Shram Bazzar</span><br />
               <span className="text-primary-light">for Flexible Work</span>
             </h1>
             <p className="text-lg text-white/80 leading-relaxed mb-10 max-w-xl">
-              Shrama connects skilled workers with businesses across Nepal.
+              Shram Bazzar connects skilled workers with businesses across Nepal.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
@@ -146,6 +224,22 @@ export default function Landing() {
               </button>
             </p>
           </div>
+        </div>
+        <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3" role="group" aria-label="Choose hero background">
+          <button
+            type="button"
+            onClick={() => changeHeroSlide('image')}
+            aria-label="Show image background"
+            aria-pressed={heroSlide === 'image'}
+            className={`h-3 w-3 rounded-full shadow-sm ring-offset-2 ring-offset-stone-900/40 transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white ${heroSlide === 'image' ? 'bg-white ring-2 ring-white/70' : 'bg-white/50 hover:bg-white/80'}`}
+          />
+          <button
+            type="button"
+            onClick={() => changeHeroSlide('video')}
+            aria-label="Show video background"
+            aria-pressed={heroSlide === 'video'}
+            className={`h-3 w-3 rounded-full shadow-sm ring-offset-2 ring-offset-stone-900/40 transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white ${heroSlide === 'video' ? 'bg-white ring-2 ring-white/70' : 'bg-white/50 hover:bg-white/80'}`}
+          />
         </div>
       </section>
 
@@ -212,10 +306,10 @@ export default function Landing() {
 
       <section id="how-it-works" className="bg-white px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-7xl">
-        <SectionHeading eyebrow="" title="How Shrama works" description="Get started in three simple steps." />
+        <SectionHeading eyebrow="" title="How Shram Bazzar works" description="Get started in three simple steps." />
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           <Journey title="For workers" steps={workerSteps} action="Create a worker profile" onAction={() => navigate('worker-signup')} />
-          <Journey title="For businesses" steps={providerSteps} action="Post a job" onAction={() => navigate('provider-signup')} provider />
+          <Journey title="For businesses" steps={providerSteps} action="Post a job opening" onAction={() => navigate('provider-signup')} provider />
         </div>
         </div>
       </section>
@@ -246,21 +340,21 @@ export default function Landing() {
       </section>
 
       <section className="bg-stone-50 px-4 py-16 sm:px-6 sm:py-20">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-3xl border border-amber-200 bg-white p-6 shadow-sm sm:p-10 lg:grid-cols-[1fr_auto] lg:gap-12">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-3xl border border-red-900 bg-red-950 p-6 text-white shadow-sm sm:p-10 lg:grid-cols-[1fr_auto] lg:gap-12">
           <div className="flex items-center gap-7 sm:gap-10">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] bg-amber-100 text-amber-500 ring-8 ring-amber-50 sm:h-28 sm:w-28" aria-hidden="true">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] bg-white/10 text-red-100 ring-8 ring-white/5 sm:h-28 sm:w-28" aria-hidden="true">
               <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" className="h-14 w-14 sm:h-16 sm:w-16">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 3 27 7v7c0 7-4.7 12.1-11 15-6.3-2.9-11-8-11-15V7l11-4Z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 10v8m0 4h.02" />
               </svg>
             </div>
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-amber-600">Safety and support</p>
-              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">See something concerning?</h2>
-              <p className="mt-3 max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg">If a job seems unsafe or misleading, or asks you to pay upfront, report it. Our team can review the listing.</p>
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-red-200">Safety and support</p>
+              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">See something concerning?</h2>
+              <p className="mt-3 max-w-2xl text-base leading-relaxed text-white/75 sm:text-lg">If a job seems unsafe or misleading, or asks you to pay upfront, report it. Our team can review the listing.</p>
             </div>
           </div>
-          <button onClick={() => navigate('login')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-400 px-6 py-4 text-base font-bold text-stone-950 transition-colors hover:bg-amber-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-500">
+          <button onClick={() => navigate('login')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-6 py-4 text-base font-bold text-white transition-colors hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
             Report a concern <span aria-hidden="true">→</span>
           </button>
         </div>
@@ -268,13 +362,13 @@ export default function Landing() {
 
       <footer className="bg-stone-950 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          <div><h2 className="font-brand text-3xl font-semibold">Shrama</h2><p className="text-sm text-white/50 mt-3 leading-relaxed">Connecting workers and businesses across Nepal.</p></div>
+          <div><h2 className="font-brand text-3xl font-semibold">Shram Bazzar</h2><p className="text-sm text-white/50 mt-3 leading-relaxed">Connecting workers and businesses across Nepal.</p></div>
           <FooterGroup title="Get started" items={[['Find work', () => navigate('worker-signup')], ['Hire workers', () => navigate('provider-signup')], ['Sign in', () => navigate('login')]]} />
           <FooterGroup title="Help" items={[['Contact us', () => { window.location.href = 'mailto:support@shrama.com'; }], ['Report a concern', () => navigate('login')], ['Account help', () => navigate('login')]]} />
-          <FooterGroup title="Learn more" items={[['Terms of use', () => window.alert('Terms of use are available from Shrama support.')], ['Privacy', () => window.alert('Your information is saved in this browser.')], ['Kathmandu, Nepal', () => window.scrollTo({ top: 0, behavior: 'smooth' })]]} />
+          <FooterGroup title="Learn more" items={[['Terms of use', () => window.alert('Terms of use are available from Shram Bazzar support.')], ['Privacy', () => window.alert('Your information is saved in this browser.')], ['Kathmandu, Nepal', () => window.scrollTo({ top: 0, behavior: 'smooth' })]]} />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-xs text-stone-400 flex flex-col sm:flex-row justify-between gap-2">
-          <span>© 2026 Shrama</span><span>Work and hiring across Nepal</span>
+          <span>© 2026 Shram Bazzar</span><span>Work and hiring across Nepal</span>
         </div>
       </footer>
     </div>
@@ -282,89 +376,10 @@ export default function Landing() {
 }
 
 function WhyShramaSection() {
-  const [soundOn, setSoundOn] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    const audio = audioRef.current;
-    if (!video || !audio) return;
-
-    const syncAudio = () => {
-      if (Math.abs(audio.currentTime - video.currentTime) > 0.15) {
-        audio.currentTime = video.currentTime;
-      }
-    };
-    const playAudio = () => {
-      syncAudio();
-      if (soundOn) void audio.play().catch(() => undefined);
-    };
-    const pauseAudio = () => audio.pause();
-
-    video.addEventListener('play', playAudio);
-    video.addEventListener('pause', pauseAudio);
-    video.addEventListener('seeking', syncAudio);
-    video.addEventListener('timeupdate', syncAudio);
-
-    return () => {
-      video.removeEventListener('play', playAudio);
-      video.removeEventListener('pause', pauseAudio);
-      video.removeEventListener('seeking', syncAudio);
-      video.removeEventListener('timeupdate', syncAudio);
-    };
-  }, [soundOn]);
-
-  const toggleSound = () => {
-    const video = videoRef.current;
-    const audio = audioRef.current;
-    if (!video || !audio) return;
-
-    const nextSoundOn = !soundOn;
-    setSoundOn(nextSoundOn);
-    audio.currentTime = video.currentTime;
-    if (nextSoundOn) void audio.play().catch(() => undefined);
-    else audio.pause();
-  };
-
   return (
-    <section className="bg-white px-4 py-20 sm:px-6">
+    <section className="bg-white px-4 py-10 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-7xl">
-        <h2 className="mb-8 font-display text-3xl font-bold tracking-tight text-stone-900 md:text-4xl">Why Shrama?</h2>
-        <div className="relative aspect-video w-full overflow-hidden rounded-3xl bg-stone-950 shadow-sm">
-          <video
-            ref={videoRef}
-            className="absolute inset-0 h-full w-full object-cover"
-            src={heroVideo}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            aria-hidden="true"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-950/45 via-transparent to-transparent" />
-          <audio ref={audioRef} src={heroMusic} loop preload="auto" aria-hidden="true" />
-          <button
-            type="button"
-            onClick={toggleSound}
-            aria-label={soundOn ? 'Turn sound off' : 'Turn sound on'}
-            aria-pressed={soundOn}
-            className="absolute bottom-5 right-5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/30 bg-stone-950/35 text-white backdrop-blur-sm transition-colors hover:bg-stone-950/60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-          >
-            {soundOn ? (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true">
-                <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-                <path d="M15.5 8.5a5 5 0 0 1 0 7M18 5.5a9 9 0 0 1 0 13" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true">
-                <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-                <path d="m17 9 4 6m0-6-4 6" />
-              </svg>
-            )}
-          </button>
-        </div>
+        <h2 className="font-display text-3xl font-bold tracking-tight text-stone-900 md:text-4xl">Why Shram Bazzar?</h2>
       </div>
     </section>
   );
@@ -375,7 +390,30 @@ function SectionHeading({ eyebrow, title, description, dark = false }: { eyebrow
 }
 
 function Journey({ title, steps, action, onAction, provider = false }: { title: string; steps: string[][]; action: string; onAction: () => void; provider?: boolean }) {
-  return <div className={`rounded-2xl p-7 shadow-sm sm:p-9 ${provider ? 'bg-stone-900 text-white' : 'bg-white text-stone-900'}`}><h3 className="font-sans text-3xl font-bold tracking-normal sm:text-4xl">{title}</h3><div className="mt-8 space-y-7">{steps.map(([number, step, detail]) => <div key={number} className="grid grid-cols-[2.5rem_1fr] gap-4"><span className={`flex h-9 w-9 items-center justify-center rounded-full font-sans text-sm font-bold tabular-nums ${provider ? 'bg-white/10 text-white/80' : 'bg-primary-50 text-primary'}`}>{number}</span><div><h4 className="font-display text-lg font-semibold leading-snug">{step}</h4><p className={`mt-1.5 font-sans text-sm leading-relaxed ${provider ? 'text-white/60' : 'text-stone-500'}`}>{detail}</p></div></div>)}</div><button onClick={onAction} className={`mt-9 px-5 py-3 text-sm font-semibold transition-colors ${provider ? 'bg-white text-stone-900 hover:bg-stone-100' : 'bg-primary text-white hover:bg-primary-dark'}`}>{action}</button></div>;
+  return (
+    <div className={`rounded-2xl p-7 shadow-sm sm:p-9 ${provider ? 'bg-stone-900 text-white' : 'bg-white text-stone-900'}`}>
+      <h3 className="font-sans text-3xl font-bold tracking-tight sm:text-4xl">{title}</h3>
+      <div className="mt-8 space-y-7">
+        {steps.map(([number, step, detail]) => (
+          <div key={number} className="grid grid-cols-[2.75rem_1fr] gap-4">
+            <span className={`flex h-11 w-11 items-center justify-center rounded-full font-sans text-xl font-extrabold leading-none tracking-tight ring-1 sm:text-2xl ${provider ? 'bg-white/10 text-white ring-white/15' : 'bg-primary-50 text-primary ring-primary-100'}`}>
+              {number}
+            </span>
+            <div>
+              <h4 className="font-sans text-lg font-bold leading-snug tracking-tight sm:text-xl">{step}</h4>
+              <p className={`mt-1.5 font-sans text-sm leading-relaxed sm:text-base ${provider ? 'text-white/65' : 'text-stone-500'}`}>{detail}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={onAction}
+        className={`mt-9 rounded-xl px-5 py-3.5 text-sm font-bold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:text-base ${provider ? 'bg-white text-stone-900 hover:bg-stone-100' : 'bg-primary text-white hover:bg-primary-dark'}`}
+      >
+        {action}
+      </button>
+    </div>
+  );
 }
 
 function FooterGroup({ title, items }: { title: string; items: [string, () => void][] }) {
