@@ -8,7 +8,7 @@ export type Page =
   | "landing" | "login" | "worker-signup" | "provider-signup"
   | "worker-dashboard" | "worker-profile" | "job-discovery" | "job-detail"
   | "my-applications" | "saved-jobs" | "provider-dashboard" | "provider-profile"
-  | "create-job" | "edit-job" | "my-jobs" | "applicant-management";
+  | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "chat";
 
 type Credentials = { userId: string; password: string };
 type SavedJob = { workerId: string; jobId: string };
@@ -18,6 +18,7 @@ type PersistedData = {
   workerProfiles: WorkerProfile[];
   providerProfiles: ProviderProfile[];
   jobs: Job[];
+  externalJobs: Job[];
   applications: Application[];
   savedJobs: SavedJob[];
   notifications: Notification[];
@@ -121,6 +122,7 @@ const publicOnly: Page[] = ["landing", "login", "worker-signup", "provider-signu
 
 interface AppContextValue {
   state: AppState;
+  setExternalJobs: (jobs: Job[]) => void;
   navigate: (page: Page, jobId?: string) => void;
   login: (email: string, password: string) => string | null;
   signupWorker: (data: WorkerSignup) => string | null;
@@ -170,6 +172,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [sessionId, setSessionId] = useState(() => localStorage.getItem(SESSION_KEY) || "");
   const [currentPage, setCurrentPage] = useState<Page>(() => sessionId ? "worker-dashboard" : "landing");
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [externalJobs, setExternalJobsState] = useState<Job[]>([]);
   const [discoverySkill, setDiscoverySkill] = useState("");
 
   const currentUser = data.users.find(user => user.id === sessionId) || null;
@@ -201,7 +204,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!currentUser && !publicOnly.includes(page)) return setCurrentPage("login");
     if (currentUser?.role === "worker" && providerOnly.includes(page)) return setCurrentPage("worker-dashboard");
     if (currentUser?.role === "provider" && workerOnly.includes(page)) return setCurrentPage("provider-dashboard");
-    if (page === "job-detail" && jobId && !data.jobs.some(job => job.id === jobId)) return;
+    if (page === "job-detail" && jobId && !data.jobs.some(job => job.id === jobId) && !externalJobs.some(job => job.id === jobId)) return;
     if ((page === "edit-job" || page === "applicant-management") && jobId &&
       !data.jobs.some(job => job.id === jobId && job.providerId === providerProfile?.id)) return;
     setCurrentPage(page);
@@ -255,7 +258,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activate(user); return null;
   };
 
-  const logout = () => { setSessionId(""); setCurrentPage("landing"); setCurrentJobId(null); };
+  const logout = () => { setSessionId(""); setCurrentPage("landing"); setCurrentJobId(null); setExternalJobsState([]); };
   const unsupportedDemo = () => setCurrentPage("login");
 
   const applyToJob = (jobId: string, coverNote: string) => {
@@ -387,13 +390,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const submitKyc = (submission: KycSubmission) => {
     if (!workerProfile) return "Only worker accounts can submit identity verification.";
-    if (!submission.documentNumber.trim()) return "Enter the document number.";
+    if (!("national-id" === submission.documentType || "citizenship" === submission.documentType || "passport" === submission.documentType || "driving-licence" === submission.documentType)) {
+      return "Choose a valid identity document type.";
+    }
+    const documentNumber = submission.documentNumber.trim();
+    if (!documentNumber) return "Enter the document number.";
+    if (documentNumber.length < 4 || documentNumber.length > 40) return "Document number must be between 4 and 40 characters.";
     if (!submission.fileName || !submission.documentData) return "Upload a clear identity document.";
     if (submission.documentData.length > 2_800_000) return "The document is too large. Use a file smaller than 2 MB.";
     updateWorkerProfile({
       kycStatus: "pending",
       kycDocumentType: submission.documentType,
-      kycDocumentNumber: submission.documentNumber.trim(),
+      kycDocumentNumber: documentNumber,
       kycDocumentFileName: submission.fileName,
       kycDocumentData: submission.documentData,
       kycSubmittedDate: today(),
@@ -448,7 +456,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const state: AppState = {
     currentPage, currentJobId, currentUser, workerProfile, providerProfile,
-    jobs: withMatches(data.jobs, workerProfile), applications: data.applications,
+    jobs: withMatches(data.jobs, workerProfile), externalJobs, applications: data.applications,
     savedJobIds: workerProfile ? data.savedJobs.filter(saved => saved.workerId === workerProfile.id).map(saved => saved.jobId) : [],
     notifications: data.notifications,
     allWorkerProfiles: data.workerProfiles.map(({
@@ -466,7 +474,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const unreadNotificationsCount = currentUser ? data.notifications.filter(note => note.userId === currentUser.id && !note.read).length : 0;
 
   const value = useMemo<AppContextValue>(() => ({
-    state, navigate, login, signupWorker, signupProvider,
+    state, setExternalJobs: setExternalJobsState, navigate, login, signupWorker, signupProvider,
     loginAsWorker: unsupportedDemo, loginAsProvider: unsupportedDemo, logout,
     applyToJob, saveJob, unsaveJob, updateApplicationStatus, postJob, updateJob, deleteJob,
     markNotificationRead: notificationId => setData(old => ({ ...old, notifications: old.notifications.map(note => note.id === notificationId && note.userId === currentUser?.id ? { ...note, read: true } : note) })),
@@ -478,7 +486,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     reportJob, reviewWorker, submitKyc, approveKyc,
     unreadNotificationsCount, myApplications, myJobs, jobApplications,
   // Function identities intentionally track current persisted state.
-  }), [data, currentPage, currentJobId, currentUser, workerProfile, providerProfile, discoverySkill]);
+  }), [data, currentPage, currentJobId, currentUser, workerProfile, providerProfile, discoverySkill, externalJobs]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

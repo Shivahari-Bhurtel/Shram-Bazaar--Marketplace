@@ -88,10 +88,10 @@ export default function Landing() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
               <span className="w-1.5 h-1.5 bg-green rounded-full" />
-              Nepal's Flexible Work Platform
+              Shram Bazzar
             </div>
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              Nepal's Bazaar<br />
+              Shram Bazzar<br />
               <span className="text-primary-light">for Flexible Work</span>
             </h1>
             <p className="text-lg text-white/80 leading-relaxed mb-10 max-w-xl">

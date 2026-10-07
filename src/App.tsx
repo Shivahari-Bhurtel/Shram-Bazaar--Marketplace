@@ -13,6 +13,7 @@ import ProviderProfile from './pages/provider/ProviderProfile';
 import CreateEditJob from './pages/provider/CreateEditJob';
 import MyJobs from './pages/provider/MyJobs';
 import ApplicantManagement from './pages/provider/ApplicantManagement';
+import Chat from './pages/Chat';
 import { LanguageSwitch } from './i18n/LanguageContext';
 
 export default function App() {
@@ -31,7 +32,7 @@ export default function App() {
       {isLoggedIn && <Navbar />}
       {!isLoggedIn && !isPublicPage && <Navbar />}
 
-      <main>
+      <main key={currentPage} className="animate-fade-in">
         {/* Public pages */}
         {currentPage === 'landing' && !isLoggedIn && <Landing />}
         {currentPage === 'login' && <AuthPage mode="login" />}
@@ -45,6 +46,7 @@ export default function App() {
         {(isWorker || isProvider) && currentPage === 'job-detail' && <JobDetail />}
         {isWorker && currentPage === 'my-applications' && <MyApplications />}
         {isWorker && currentPage === 'saved-jobs' && <SavedJobs />}
+        {(isWorker || isProvider) && currentPage === 'chat' && <Chat />}
 
         {/* Provider pages */}
         {isProvider && currentPage === 'provider-dashboard' && <ProviderDashboard />}

@@ -5,9 +5,9 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 
 export default function JobDetail() {
   const { state, navigate, applyToJob, hasApplied, saveJob, unsaveJob, isSaved, reportJob } = useApp();
-  const { jobs, workerProfile, currentUser } = state;
+  const { jobs, externalJobs, workerProfile, currentUser } = state;
 
-  const job = jobs.find(j => j.id === state.currentJobId);
+  const job = jobs.find(j => j.id === state.currentJobId) || externalJobs.find(j => j.id === state.currentJobId);
   const [coverNote, setCoverNote] = useState('');
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -30,6 +30,7 @@ export default function JobDetail() {
   const applied = hasApplied(job.id);
   const saved = isSaved(job.id);
   const isWorker = currentUser?.role === 'worker';
+  const isExternal = job.externalSource === 'himalayas';
 
   const handleApply = () => {
     applyToJob(job.id, coverNote);
@@ -59,7 +60,11 @@ export default function JobDetail() {
           <div className="bg-white border border-stone-200 rounded-2xl p-6">
             <div className="flex items-start gap-4">
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0">
-                <img src={job.providerLogo} alt={job.providerName} className="w-full h-full object-cover" />
+                {job.providerLogo ? (
+                  <img src={job.providerLogo} alt={job.providerName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center font-display text-xl font-bold text-stone-500">{job.providerName.slice(0, 1).toUpperCase()}</span>
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-3">
@@ -85,8 +90,11 @@ export default function JobDetail() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
-                  <CategoryBadge category={job.category} />
-                  <span className="text-xs font-medium px-2.5 py-1 bg-stone-100 text-stone-600 rounded-full">{workTypeLabel[job.workType]}</span>
+                  {isExternal ? (
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full border border-primary-100 bg-primary-50 text-primary">External Opportunity</span>
+                  ) : <CategoryBadge category={job.category} />}
+                  <span className="text-xs font-medium px-2.5 py-1 bg-stone-100 text-stone-600 rounded-full">{job.employmentType || workTypeLabel[job.workType]}</span>
+                  {isExternal && <span className="text-xs font-mono-data text-stone-400 px-2.5 py-1">Source: Himalayas</span>}
                 </div>
               </div>
             </div>
@@ -107,7 +115,7 @@ export default function JobDetail() {
           {/* Description */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6">
             <h2 className="font-semibold text-stone-900 mb-3">Job Description</h2>
-            <p className="text-stone-700 leading-relaxed text-sm">{job.description}</p>
+            <p className="text-stone-700 leading-relaxed text-sm">{job.description || 'Description not listed on the original posting.'}</p>
           </div>
 
           {/* Requirements */}
@@ -117,7 +125,7 @@ export default function JobDetail() {
               <div>
                 <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Skills Required</h3>
                 <div className="flex flex-wrap gap-2">
-                  {job.skillsRequired.map(skill => {
+                  {job.skillsRequired.length > 0 ? job.skillsRequired.map(skill => {
                     const workerHasIt = workerProfile?.skills.some(s => s.toLowerCase() === skill.toLowerCase());
                     return (
                       <span key={skill} className={`text-xs px-2.5 py-1 rounded-full border font-medium ${
@@ -126,7 +134,7 @@ export default function JobDetail() {
                         {workerHasIt && '✓ '}{skill}
                       </span>
                     );
-                  })}
+                  }) : <p className="text-sm text-stone-500">Skills are listed on the original posting.</p>}
                 </div>
               </div>
               <div className="space-y-3">
@@ -143,7 +151,7 @@ export default function JobDetail() {
           </div>
 
           {/* Apply form */}
-          {isWorker && workerProfile?.kycStatus === 'verified' && showApplyForm && !applied && (
+          {isWorker && !isExternal && workerProfile?.kycStatus === 'verified' && showApplyForm && !applied && (
             <div className="bg-white border-2 border-primary rounded-2xl p-6 animate-fade-in">
               <h2 className="font-semibold text-stone-900 mb-1">Your Application</h2>
               <p className="text-stone-500 text-sm mb-4">Add a short note to stand out. Your full profile will be shared with the provider.</p>
@@ -189,10 +197,10 @@ export default function JobDetail() {
           <div className="bg-white border border-stone-200 rounded-2xl p-5">
             <div className="text-center border-b border-stone-100 pb-4 mb-4">
               <div className="font-display text-3xl font-bold text-stone-900">
-                NPR {job.payment.toLocaleString()}
+                {isExternal ? (job.salaryText || 'Salary not listed') : `NPR ${job.payment.toLocaleString()}`}
               </div>
-              <div className="text-stone-500 text-sm mt-0.5">per {job.paymentType.replace('per-', '')}</div>
-              {job.workType === 'multi-day' && (
+              {!isExternal && <div className="text-stone-500 text-sm mt-0.5">per {job.paymentType.replace('per-', '')}</div>}
+              {!isExternal && job.workType === 'multi-day' && (
                 <div className="text-xs text-stone-400 mt-1 font-mono-data">
                   ≈ NPR {(job.payment * parseInt(job.duration)).toLocaleString()} total
                 </div>
@@ -200,7 +208,11 @@ export default function JobDetail() {
             </div>
 
             <div className="space-y-3">
-              {[
+              {(isExternal ? [
+                { label: 'Location', value: job.location },
+                ...(job.seniority ? [{ label: 'Seniority', value: job.seniority }] : []),
+                ...(job.publishedDate ? [{ label: 'Published', value: new Date(job.publishedDate).toLocaleDateString('en-NP', { month: 'short', day: 'numeric', year: 'numeric' }) }] : []),
+              ] : [
                 { label: 'Date', value: job.endDate ? `${new Date(job.date).toLocaleDateString('en-NP', { month: 'short', day: 'numeric' })} – ${new Date(job.endDate).toLocaleDateString('en-NP', { month: 'short', day: 'numeric' })}` : new Date(job.date).toLocaleDateString('en-NP', { weekday: 'short', month: 'long', day: 'numeric' }) },
                 { label: 'Time', value: `${job.startTime} – ${job.endTime}` },
                 { label: 'Duration', value: job.duration },
@@ -208,7 +220,7 @@ export default function JobDetail() {
                 { label: 'Workers Needed', value: `${job.workersNeeded} workers (${spotsLeft} spots left)` },
                 { label: 'Applications', value: `${job.applicantCount} applicants` },
                 { label: 'Apply By', value: new Date(job.deadline).toLocaleDateString('en-NP', { month: 'short', day: 'numeric' }) },
-              ].map(item => (
+              ]).map(item => (
                 <div key={item.label}>
                   <div>
                     <p className="text-[11px] text-stone-400 font-mono-data uppercase">{item.label}</p>
@@ -219,7 +231,7 @@ export default function JobDetail() {
             </div>
 
             {/* Apply / Applied button */}
-            {isWorker && (
+            {isWorker && !isExternal && (
               <div className="mt-5">
                 {applied ? (
                   <div className="w-full py-2.5 bg-teal-50 text-teal text-sm font-semibold rounded-xl text-center border border-teal-100">
@@ -262,6 +274,15 @@ export default function JobDetail() {
                 )}
               </div>
             )}
+            {isExternal && (
+              job.externalUrl ? (
+                <a href={job.externalUrl} target="_blank" rel="noreferrer" className="mt-5 block w-full rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-dark">
+                  View Original Job / Apply on Himalayas
+                </a>
+              ) : (
+                <p className="mt-5 rounded-xl bg-stone-100 px-4 py-2.5 text-center text-sm text-stone-500">Original application link not listed.</p>
+              )
+            )}
           </div>
 
           {/* About provider */}
@@ -269,7 +290,7 @@ export default function JobDetail() {
             <h3 className="font-semibold text-stone-900 mb-3">About the Provider</h3>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl overflow-hidden bg-stone-100">
-                <img src={job.providerLogo} alt={job.providerName} className="w-full h-full object-cover" />
+                {job.providerLogo ? <img src={job.providerLogo} alt={job.providerName} className="w-full h-full object-cover" /> : <span className="flex h-full w-full items-center justify-center font-display font-bold text-stone-500">{job.providerName.slice(0, 1).toUpperCase()}</span>}
               </div>
               <div>
                 <p className="font-medium text-stone-900 text-sm">{job.providerName}</p>
@@ -282,10 +303,10 @@ export default function JobDetail() {
             </div>
             <div className="mt-3 p-3 bg-stone-50 rounded-lg">
               <p className="text-xs text-stone-500 leading-relaxed">
-                Jobs posted by verified providers include PAN registration and business verification for worker trust and safety.
+                {isExternal ? 'This opportunity is hosted on Himalayas. Review the original listing before applying.' : 'Jobs posted by verified providers include PAN registration and business verification for worker trust and safety.'}
               </p>
             </div>
-            {isWorker && (
+            {isWorker && !isExternal && (
               <button onClick={() => setShowReport(value => !value)} className="mt-3 text-xs text-stone-500 hover:text-primary">
                 Report this job
               </button>
@@ -305,7 +326,7 @@ export default function JobDetail() {
                     setReportMessage(error ?? 'Report submitted. Thank you.');
                     if (!error) setShowReport(false);
                   }}
-                  className="w-full py-2 bg-stone-800 text-white text-xs font-medium rounded-xl"
+                  className="w-full py-2 bg-primary text-white text-xs font-medium rounded-xl hover:bg-primary-dark transition-colors"
                 >
                   Submit report
                 </button>

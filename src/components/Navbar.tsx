@@ -17,6 +17,7 @@ export default function Navbar() {
     { label: 'My Applications', page: 'my-applications' as const },
     { label: 'Saved Jobs', page: 'saved-jobs' as const },
     { label: 'My Profile', page: 'worker-profile' as const },
+    { label: 'Chat', page: 'chat' as const },
   ];
 
   const providerLinks = [
@@ -24,6 +25,7 @@ export default function Navbar() {
     { label: 'Post a Job', page: 'create-job' as const },
     { label: 'My Jobs', page: 'my-jobs' as const },
     { label: 'Organisation', page: 'provider-profile' as const },
+    { label: 'Chat', page: 'chat' as const },
   ];
 
   const links = isWorker ? workerLinks : isProvider ? providerLinks : [];

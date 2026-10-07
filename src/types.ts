@@ -109,6 +109,12 @@ export interface Job {
   applicantCount: number;
   matchScore?: number;
   matchReasons?: string[];
+  externalSource?: 'himalayas';
+  externalUrl?: string;
+  salaryText?: string;
+  employmentType?: string;
+  seniority?: string;
+  publishedDate?: string;
 }
 
 export interface Application {

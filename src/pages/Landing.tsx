@@ -1,38 +1,38 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ALL_SKILLS } from '../data/mockData';
 import { useApp } from '../store/AppContext';
 
 const categories = [
   {
     key: 'qualified',
-    title: 'Professional work',
-    description: 'Healthcare, education, accounting, technology and other qualified roles.',
+    title: 'Professional jobs',
+    description: 'Healthcare, education, accounting, technology, and more.',
     image: 'https://images.unsplash.com/photo-1700305248594-39e17fe196de?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
   },
   {
     key: 'skill-based',
-    title: 'Skilled trades',
+    title: 'Hands-on work',
     description: 'Electrical, plumbing, carpentry, driving, hospitality and practical trades.',
     image: 'https://images.unsplash.com/photo-1768314668998-e7f306b27e08?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
   },
   {
     key: 'beginner-friendly',
-    title: 'Entry-level work',
-    description: 'Event support, loading, cleaning and flexible work open to new workers.',
+    title: 'Jobs for beginners',
+    description: 'Event help, loading, cleaning, and other jobs for people starting out.',
     image: 'https://images.unsplash.com/photo-1786948670276-214ab8f791ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800',
   },
 ];
 
 const workerSteps = [
   ['01', 'Build your profile', 'Add your location, skills, experience and availability.'],
-  ['02', 'Find relevant work', 'Search real provider jobs by district, skill, category and NPR payment.'],
-  ['03', 'Apply and track', 'Send one application and follow every status update from your dashboard.'],
+  ['02', 'Find the right work', 'Search by district, skill, type of work, and pay.'],
+  ['03', 'Apply and follow along', 'Apply for a job and check for updates in your account.'],
 ];
 
 const providerSteps = [
-  ['01', 'Register your organisation', 'Add your contact details, district and PAN information.'],
-  ['02', 'Post clear work', 'State the requirements, location, duration and NPR payment.'],
-  ['03', 'Review and hire', 'Compare profiles, shortlist applicants and record a hiring decision.'],
+  ['01', 'Create a business profile', 'Add your business and contact details.'],
+  ['02', 'Post a job', 'Describe the work, location, dates, and pay.'],
+  ['03', 'Choose a worker', 'Review applicants and choose the right person for the job.'],
 ];
 
 export default function Landing() {
@@ -67,12 +67,8 @@ export default function Landing() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 lg:py-40">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
-              <span className="w-1.5 h-1.5 bg-green rounded-full" />
-              Nepal's Flexible Work Platform
-            </div>
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              Nepal's Bazaar<br />
+              Shram Bazzar<br />
               <span className="text-primary-light">for Flexible Work</span>
             </h1>
             <p className="text-lg text-white/80 leading-relaxed mb-10 max-w-xl">
@@ -94,7 +90,7 @@ export default function Landing() {
             </div>
             <p className="mt-4 text-white/50 text-sm">
               Already have an account?{' '}
-              <button onClick={() => navigate('login')} className="text-white/80 hover:text-white underline">
+              <button onClick={() => navigate('login')} className="text-white/80 hover:text-white">
                 Sign in
               </button>
             </p>
@@ -106,12 +102,12 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
             [state.jobs.filter(job => job.status === 'active').length, 'Active jobs'],
-            [state.allWorkerProfiles.length, 'Worker profiles'],
-            [state.allProviderProfiles.filter(provider => provider.verified).length, 'Verified providers'],
-            [new Set(state.jobs.map(job => job.district)).size, 'Districts with jobs'],
+            [state.allWorkerProfiles.length, 'Workers'],
+            [state.allProviderProfiles.filter(provider => provider.verified).length, 'Verified businesses'],
+            [new Set(state.jobs.map(job => job.district)).size, 'Areas with jobs'],
           ].map(([value, label]) => (
             <div key={label} className="text-center md:text-left">
-              <strong className="font-display text-3xl text-primary">{value}</strong>
+              <strong className="font-display text-3xl text-primary tabular-nums"><CountUp value={Number(value)} /></strong>
               <p className="text-sm text-stone-500 mt-1">{label}</p>
             </div>
           ))}
@@ -119,15 +115,15 @@ export default function Landing() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-        <SectionHeading eyebrow="Simple for both sides" title="How Shram Bazar works" description="Clear steps for finding work and hiring dependable people." />
+        <SectionHeading eyebrow="Easy to get started" title="How Shram Bazar works" description="A few simple steps to find work or hire someone." />
         <div className="mt-10 grid md:grid-cols-2 border-y border-stone-200">
           <Journey title="For workers" steps={workerSteps} action="Create a worker profile" onAction={() => navigate('worker-signup')} />
-          <Journey title="For providers" steps={providerSteps} action="Post a job" onAction={() => navigate('provider-signup')} provider />
+          <Journey title="For businesses" steps={providerSteps} action="Post a job" onAction={() => navigate('provider-signup')} provider />
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-        <SectionHeading eyebrow="Browse the marketplace" title="Popular skills and categories" description="Start with the kind of work you need, then narrow results by skill and location." />
+        <SectionHeading eyebrow="Explore work" title="Popular skills and jobs" description="Choose the kind of work you are looking for." />
         <div className="mt-10 grid md:grid-cols-3 gap-5">
           {categories.map(item => (
             <button key={item.key} onClick={() => navigate('worker-signup')} className="relative h-64 text-left overflow-hidden group">
@@ -150,7 +146,7 @@ export default function Landing() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
-        <SectionHeading eyebrow="Organisations on Shram Bazar" title="Trusted providers" description="Verification is based on stored organisation and PAN status, never a decorative badge." />
+        <SectionHeading eyebrow="Businesses on Shram Bazar" title="Meet local employers" description="Get to know the businesses posting jobs on Shram Bazar." />
         {state.allProviderProfiles.length ? (
           <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {state.allProviderProfiles.slice(0, 8).map(provider => (
@@ -165,18 +161,18 @@ export default function Landing() {
               </div>
             ))}
           </div>
-        ) : <p className="mt-8 text-stone-500">Registered organisations will appear here.</p>}
+        ) : <p className="mt-8 text-stone-500">Local businesses will appear here.</p>}
       </section>
 
       <section className="bg-white border-y border-stone-200 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <SectionHeading eyebrow="Built for practical work" title="Why Shram Bazar" description="A focused Nepal marketplace with the information workers and providers need to make clear decisions." />
+          <SectionHeading eyebrow="Built for everyday work" title="Why Shram Bazar" description="Find dependable work or hire reliable people with clear details from the start." />
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              ['Verified providers', 'Organisation profiles show their stored PAN verification status clearly.'],
-              ['Transparent payment', 'Every listing states payment in NPR with a per-day, per-hour or fixed basis.'],
-              ['Flexible work', 'Workers can set availability and search by location, work type and duration.'],
-              ['Trusted profiles', 'Skills, experience, work history and provider reviews stay attached to the worker.'],
+              ['Verified businesses', 'See which businesses have confirmed their details.'],
+              ['Clear pay', 'Know how much a job pays before you apply.'],
+              ['Flexible work', 'Choose when you can work and search by place, job type, and length.'],
+              ['Worker profiles', 'Learn about each worker’s skills, experience, and reviews.'],
             ].map(([title, text]) => <div key={title} className="border-t border-stone-300 pt-5"><h3 className="font-semibold">{title}</h3><p className="text-sm text-stone-500 mt-2 leading-relaxed">{text}</p></div>)}
           </div>
         </div>
@@ -184,7 +180,7 @@ export default function Landing() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20 grid lg:grid-cols-2 gap-16">
         <div>
-          <SectionHeading eyebrow="Worker reputation" title="Ratings built from completed work" description="Providers can leave a simple rating and review after accepting a worker." />
+          <SectionHeading eyebrow="Worker reviews" title="Ratings from completed jobs" description="Employers can leave a rating and review after a job is complete." />
           {reviews.length ? <div className="mt-8 space-y-6">{reviews.map(review => (
             <blockquote key={`${review.jobId}-${review.workerName}`} className="border-l-2 border-primary pl-5">
               <p className="text-stone-700 leading-relaxed">“{review.review}”</p>
@@ -193,36 +189,66 @@ export default function Landing() {
           ))}</div> : <p className="mt-8 text-sm text-stone-500">Reviews will appear after completed work is rated.</p>}
         </div>
         <div className="border-l border-stone-200 lg:pl-16">
-          <SectionHeading eyebrow="Marketplace trust" title="Simple reporting when something is wrong" description="Workers can report misleading information, unsafe work or suspicious payment requests directly from a job page." />
+          <SectionHeading eyebrow="Your safety" title="Tell us when something seems wrong" description="Report a job that seems unsafe, misleading, or asks for unusual payment." />
           <div className="mt-8 bg-stone-100 p-6">
-            <p className="text-sm text-stone-600 leading-relaxed">Reports are stored for review and duplicate reports are prevented. Reporting does not add chat, public arguments or complicated case management.</p>
+            <p className="text-sm text-stone-600 leading-relaxed">Your report helps us review the job listing.</p>
           </div>
         </div>
       </section>
 
       <section className="bg-primary text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div><p className="text-white/70 text-sm font-medium">Ready to use Shram Bazar?</p><h2 className="font-display text-3xl md:text-4xl font-bold mt-2">Find work or build your workforce.</h2></div>
+          <div><p className="text-white/70 text-sm font-medium">Ready to get started?</p><h2 className="font-display text-3xl md:text-4xl font-bold mt-2">Find work or hire a worker.</h2></div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={() => navigate('worker-signup')} className="px-6 py-3 bg-white text-primary font-semibold">Create worker profile</button>
-            <button onClick={() => navigate('provider-signup')} className="px-6 py-3 border border-white/40 text-white font-semibold">Register as provider</button>
+            <button onClick={() => navigate('provider-signup')} className="px-6 py-3 border border-white/40 text-white font-semibold">Sign up as a business</button>
           </div>
         </div>
       </section>
 
       <footer className="bg-stone-950 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          <div><h2 className="font-display text-xl font-semibold">Shram Bazar</h2><p className="text-sm text-white/50 mt-3 leading-relaxed">A practical marketplace connecting workers and organisations across Nepal.</p></div>
-          <FooterGroup title="Marketplace" items={[['Find work', () => navigate('worker-signup')], ['Hire workers', () => navigate('provider-signup')], ['Sign in', () => navigate('login')]]} />
-          <FooterGroup title="Support" items={[['Contact support', () => { window.location.href = 'mailto:support@shrambazar.com'; }], ['Report a concern', () => navigate('login')], ['Account help', () => navigate('login')]]} />
-          <FooterGroup title="Legal & Nepal" items={[['Terms of use', () => window.alert('Terms of use are available from Shram Bazar support.')], ['Privacy', () => window.alert('Your MVP data is stored locally in this browser.')], ['Kathmandu, Nepal', () => window.scrollTo({ top: 0, behavior: 'smooth' })]]} />
+          <div><h2 className="font-display text-xl font-semibold">Shram Bazar</h2><p className="text-sm text-white/50 mt-3 leading-relaxed">Connecting workers and businesses across Nepal.</p></div>
+          <FooterGroup title="Get started" items={[['Find work', () => navigate('worker-signup')], ['Hire workers', () => navigate('provider-signup')], ['Sign in', () => navigate('login')]]} />
+          <FooterGroup title="Help" items={[['Contact us', () => { window.location.href = 'mailto:support@shrambazar.com'; }], ['Report a concern', () => navigate('login')], ['Account help', () => navigate('login')]]} />
+          <FooterGroup title="Learn more" items={[['Terms of use', () => window.alert('Terms of use are available from Shram Bazar support.')], ['Privacy', () => window.alert('Your information is saved in this browser.')], ['Kathmandu, Nepal', () => window.scrollTo({ top: 0, behavior: 'smooth' })]]} />
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 border-t border-white/10 text-xs text-white/40 flex flex-col sm:flex-row justify-between gap-2">
-          <span>© 2026 Shram Bazar</span><span>Nepal workforce marketplace</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 border-t border-stone-100 text-xs text-stone-400 flex flex-col sm:flex-row justify-between gap-2">
+          <span>© 2026 Shram Bazar</span><span>Work and hiring across Nepal</span>
         </div>
       </footer>
     </div>
   );
+}
+
+function CountUp({ value }: { value: number }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion || value === 0) {
+      setCount(value);
+      return;
+    }
+
+    let frame = 0;
+    let startTime: number | undefined;
+    const duration = 1400;
+
+    const animate = (time: number) => {
+      if (startTime === undefined) startTime = time;
+      const progress = Math.min((time - startTime) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 4);
+      setCount(Math.round(value * easedProgress));
+
+      if (progress < 1) frame = window.requestAnimationFrame(animate);
+    };
+
+    frame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frame);
+  }, [value]);
+
+  return <>{count}</>;
 }
 
 function SectionHeading({ eyebrow, title, description, dark = false }: { eyebrow: string; title: string; description: string; dark?: boolean }) {
@@ -230,7 +256,7 @@ function SectionHeading({ eyebrow, title, description, dark = false }: { eyebrow
 }
 
 function Journey({ title, steps, action, onAction, provider = false }: { title: string; steps: string[][]; action: string; onAction: () => void; provider?: boolean }) {
-  return <div className={`py-8 md:p-10 ${provider ? 'md:border-l border-stone-200' : ''}`}><h3 className="font-display text-2xl font-semibold">{title}</h3><div className="mt-7 space-y-6">{steps.map(([number, step, detail]) => <div key={number} className="grid grid-cols-[2rem_1fr] gap-3"><span className="font-mono-data text-sm text-stone-400">{number}</span><div><h4 className="font-semibold">{step}</h4><p className="text-sm text-stone-500 mt-1">{detail}</p></div></div>)}</div><button onClick={onAction} className={`mt-8 px-5 py-2.5 text-sm font-semibold ${provider ? 'bg-primary text-white' : 'bg-stone-900 text-white'}`}>{action}</button></div>;
+  return <div className={`py-8 md:p-10 ${provider ? 'md:border-l border-stone-200' : ''}`}><h3 className="font-display text-2xl font-semibold">{title}</h3><div className="mt-7 space-y-6">{steps.map(([number, step, detail]) => <div key={number} className="grid grid-cols-[2rem_1fr] gap-3"><span className="font-mono-data text-sm text-stone-400">{number}</span><div><h4 className="font-semibold">{step}</h4><p className="text-sm text-stone-500 mt-1">{detail}</p></div></div>)}</div><button onClick={onAction} className="mt-8 px-5 py-2.5 text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition-colors">{action}</button></div>;
 }
 
 function FooterGroup({ title, items }: { title: string; items: [string, () => void][] }) {

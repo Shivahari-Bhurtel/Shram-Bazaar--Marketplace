@@ -81,6 +81,12 @@ export default function WorkerProfile() {
     !(tempData.skills ?? []).includes(s)
   ).slice(0, 15);
   const kycStatus = workerProfile.kycStatus ?? 'not-verified';
+  const kycDocumentGuidance: Record<KycDocumentType, string> = {
+    'national-id': 'Use the number printed on your Nepal National ID card.',
+    citizenship: 'Use the citizenship certificate number exactly as printed.',
+    passport: 'Use your current passport number.',
+    'driving-licence': 'Use the licence number shown on your driving licence.',
+  };
   const maskedDocumentNumber = workerProfile.kycDocumentNumber
     ? `${'•'.repeat(Math.max(4, workerProfile.kycDocumentNumber.length - 4))}${workerProfile.kycDocumentNumber.slice(-4)}`
     : '';
@@ -149,6 +155,31 @@ export default function WorkerProfile() {
           </span>
         </div>
 
+        <div className={`mt-5 rounded-xl border px-4 py-3 ${
+          kycStatus === 'verified'
+            ? 'border-teal-100 bg-teal-50'
+            : kycStatus === 'pending'
+              ? 'border-amber-100 bg-amber-50'
+              : 'border-stone-200 bg-stone-50'
+        }`}>
+          <p className={`text-sm font-medium ${
+            kycStatus === 'verified' ? 'text-teal' : kycStatus === 'pending' ? 'text-amber-800' : 'text-stone-700'
+          }`}>
+            {kycStatus === 'verified'
+              ? `Verified on ${workerProfile.kycVerifiedDate || 'your latest review'}`
+              : kycStatus === 'pending'
+                ? `Submitted ${workerProfile.kycSubmittedDate ? `on ${workerProfile.kycSubmittedDate}` : 'for review'}.`
+                : 'Submit one clear identity document to unlock job applications.'}
+          </p>
+          <p className="mt-1 text-xs text-stone-500">
+            {kycStatus === 'verified'
+              ? 'Providers can see your verified badge, but never your document number or file.'
+              : kycStatus === 'pending'
+                ? 'Your profile stays private while the document is being reviewed.'
+                : 'Use a document that belongs to you and make sure all details are readable.'}
+          </p>
+        </div>
+
         {kycStatus === 'not-verified' && (
           <div className="grid sm:grid-cols-2 gap-4 mt-5 pt-5 border-t border-stone-100">
             <Field label="Identity document">
@@ -156,6 +187,7 @@ export default function WorkerProfile() {
                 value={kycForm.documentType}
                 onChange={event => setKycForm(current => ({ ...current, documentType: event.target.value as KycDocumentType }))}
                 className="input-style"
+                aria-describedby="kyc-document-guidance"
               >
                 <option value="national-id">Nepal National ID (NID)</option>
                 <option value="citizenship">Nepal Citizenship Certificate</option>
@@ -169,7 +201,11 @@ export default function WorkerProfile() {
                 onChange={event => setKycForm(current => ({ ...current, documentNumber: event.target.value }))}
                 placeholder="Enter your document number"
                 className="input-style"
+                minLength={4}
+                maxLength={40}
+                required
               />
+              <p id="kyc-document-guidance" className="text-xs text-stone-400 mt-1">{kycDocumentGuidance[kycForm.documentType]}</p>
             </Field>
             <Field label="Document upload" className="sm:col-span-2">
               <input
@@ -178,6 +214,11 @@ export default function WorkerProfile() {
                 onChange={event => {
                   const file = event.target.files?.[0];
                   if (!file) return;
+                  if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
+                    setKycMessage('Use a JPG, PNG or PDF identity document.');
+                    event.target.value = '';
+                    return;
+                  }
                   if (file.size > 2 * 1024 * 1024) {
                     setKycMessage('The document is too large. Use a file smaller than 2 MB.');
                     event.target.value = '';
@@ -192,7 +233,7 @@ export default function WorkerProfile() {
                 }}
                 className="input-style"
               />
-              <p className="text-xs text-stone-400 mt-1">JPG, PNG or PDF. Maximum file size: 2 MB.</p>
+              <p className="text-xs text-stone-400 mt-1">JPG, PNG or PDF. Maximum file size: 2 MB. Make sure the full document is visible.</p>
             </Field>
             <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-stone-500">{kycForm.fileName ? `Selected: ${kycForm.fileName}` : 'No document selected.'}</p>
@@ -214,10 +255,10 @@ export default function WorkerProfile() {
             <div>
               <p className="text-sm text-stone-700">Your identity document is waiting for review.</p>
               <p className="text-xs text-stone-500 mt-1">
-                {workerProfile.kycDocumentFileName} · Document ending in {maskedDocumentNumber.slice(-4)}
+                {workerProfile.kycDocumentFileName} · Document ending in {maskedDocumentNumber.slice(-4)} · Submitted {workerProfile.kycSubmittedDate || 'recently'}
               </p>
             </div>
-            <button onClick={approveKyc} className="px-4 py-2 bg-stone-800 text-white text-xs font-semibold rounded-xl">
+            <button onClick={approveKyc} className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-xl hover:bg-primary-dark transition-colors">
               Demo Admin: Approve KYC
             </button>
           </div>

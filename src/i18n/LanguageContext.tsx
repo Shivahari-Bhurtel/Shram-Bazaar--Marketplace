@@ -739,7 +739,7 @@ export function LanguageSwitch({ inline = false }: { inline?: boolean }) {
   return (
     <button
       onClick={() => setLanguage(language === 'en' ? 'ne' : 'en')}
-      className={`${inline ? '' : 'fixed right-4 top-4 z-50 shadow-sm'} border border-stone-200 bg-white/95 px-3 py-1.5 text-sm font-semibold text-stone-800`}
+      className={`${inline ? '' : 'fixed right-4 top-4 z-50 shadow-sm'} border border-stone-200 bg-white/95 px-3 py-1.5 text-sm font-semibold ${language === 'en' ? 'text-red-700' : 'text-blue-700'}`}
       aria-label={language === 'en' ? 'Switch to Nepali' : 'Switch to English'}
     >
       {language === 'en' ? 'नेपाली' : 'English'}

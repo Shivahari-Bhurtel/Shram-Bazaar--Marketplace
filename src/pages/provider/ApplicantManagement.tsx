@@ -309,7 +309,7 @@ export default function ApplicantManagement() {
                             const draft = reviewDraft[app.id] ?? { rating: 5, review: '' };
                             reviewWorker(app.id, draft.rating, draft.review);
                           }}
-                          className="px-4 py-2 bg-stone-800 text-white text-sm font-medium rounded-xl"
+                          className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors"
                         >
                           Save review
                         </button>
@@ -354,7 +354,7 @@ export default function ApplicantManagement() {
               </button>
               <button
                 onClick={() => handleAction(pendingAction.applicationId, 'rejected', rejectNote || undefined)}
-                className="flex-1 px-4 py-2 bg-stone-800 text-white rounded-xl text-sm font-medium hover:bg-stone-900 transition-colors"
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
               >
                 Confirm
               </button>
