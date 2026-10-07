@@ -7,7 +7,7 @@ import type {
 export type Page =
   | "landing" | "login" | "worker-signup" | "provider-signup"
   | "worker-dashboard" | "worker-profile" | "job-discovery" | "job-detail"
-  | "my-applications" | "saved-jobs" | "provider-dashboard" | "provider-profile"
+  | "my-applications" | "saved-jobs" | "settings" | "kyc-verification" | "provider-dashboard" | "provider-profile"
   | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "chat";
 
 type Credentials = { userId: string; password: string };

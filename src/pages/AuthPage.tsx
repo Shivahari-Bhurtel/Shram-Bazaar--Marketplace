@@ -40,14 +40,13 @@ export default function AuthPage({ mode }: Props) {
     if (isLogin) {
       const result = login(formData.email, formData.password);
       if (result) setError(result);
-    } else if (step < (isProvider ? 2 : 2)) {
+    } else if (isProvider && step < 2) {
       setStep(s => s + 1);
     } else {
       const result = isWorker
         ? signupWorker({
-            email: formData.email, password: formData.password, name: formData.name,
-            phone: formData.phone, district: formData.district, location: formData.location,
-            skills: formData.skills,
+            email: formData.email, password: formData.password,
+            name: formData.email.trim().split('@')[0], phone: '', district: '', location: '', skills: [],
           })
         : signupProvider({
             email: formData.email, password: formData.password, contactName: formData.contactName,
@@ -85,7 +84,7 @@ export default function AuthPage({ mode }: Props) {
   return (
     <div className="min-h-screen bg-cream flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-5/12 bg-stone-900 relative overflow-hidden flex-col justify-between p-12">
+      <div className="hidden lg:flex lg:w-5/12 bg-stone-900 relative overflow-hidden flex-col justify-center p-12">
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -94,17 +93,17 @@ export default function AuthPage({ mode }: Props) {
             backgroundPosition: 'center',
           }}
         />
-        <div className="relative">
+        <div className="absolute left-12 top-12 z-10">
           <button onClick={() => navigate('landing')} className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white text-xs font-bold">SB</span>
+              <span className="font-brand text-white text-lg font-semibold">S</span>
             </div>
-            <span className="font-display text-white text-lg font-bold">Shram Bazar</span>
+            <span className="font-brand text-2xl text-white font-semibold">Shrama</span>
           </button>
         </div>
-        <div className="relative">
+        <div className="relative my-auto w-full">
           <h2 className="font-display text-4xl font-bold text-white mb-4 leading-tight">
-            {isLogin ? 'Welcome back to Shram Bazar' : isWorker ? 'Find work that fits your life' : 'Hire the right people, fast'}
+            {isLogin ? 'Welcome back to Shrama' : isWorker ? 'Find work that fits your life' : 'Hire the right people, fast'}
           </h2>
           <p className="text-white/60 leading-relaxed">
             {isLogin
@@ -126,18 +125,17 @@ export default function AuthPage({ mode }: Props) {
             ))}
           </div>
         </div>
-        <div className="relative text-white/30 text-xs">© 2024 Shram Bazar Pvt. Ltd.</div>
       </div>
 
       {/* Right panel — form */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           {/* Back to landing */}
-          <button onClick={() => navigate('landing')} className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6 transition-colors">
+          <button onClick={() => navigate('landing')} className="flex items-center gap-2 text-sm font-medium text-stone-500 hover:text-stone-800 mb-8 transition-colors">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
-            Back to home
+            Back to homepage
           </button>
 
           {/* Mode toggle (login page) */}
@@ -153,12 +151,16 @@ export default function AuthPage({ mode }: Props) {
           )}
 
           <div className="mb-8">
-            <h1 className="font-display text-2xl font-bold text-stone-900 mb-1">
-              {isLogin ? 'Sign in to your account' : isWorker ? (step === 1 ? 'Create Worker Account' : 'Add Your Skills') : (step === 1 ? 'Create Provider Account' : 'Organisation Details')}
+            <h1 className="font-display text-3xl font-bold tracking-tight text-stone-900 mb-2">
+              {isLogin ? 'Sign in to your account' : isWorker ? (step === 1 ? 'Create Account' : 'Tell us about your skills') : (step === 1 ? 'Create Provider Account' : 'Organisation Details')}
             </h1>
-            {!isLogin && (
-              <p className="text-stone-500 text-sm">
-                Step {step} of 2 — {isWorker ? (step === 1 ? 'Basic information' : 'Skills & district') : (step === 1 ? 'Contact information' : 'Business details')}
+            {!isLogin && !(isWorker && step === 1) && (
+              <p className="text-stone-500 text-sm leading-relaxed">
+                {isWorker
+                  ? step === 1
+                    ? 'Step 1 of 2 · Account details. Start with your contact information; you’ll add your location and skills next.'
+                    : 'Step 2 of 2 · Location and skills. This helps us match you with relevant work nearby.'
+                  : `Step ${step} of 2 — ${step === 1 ? 'Contact information' : 'Business details'}`}
               </p>
             )}
           </div>
@@ -169,7 +171,7 @@ export default function AuthPage({ mode }: Props) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Login fields */}
             {isLogin && (
               <>
@@ -194,20 +196,14 @@ export default function AuthPage({ mode }: Props) {
               </>
             )}
 
-            {/* Worker signup step 1 */}
+            {/* Worker signup: email and password only */}
             {isWorker && step === 1 && (
               <>
-                <Field label="Full name">
-                  <input type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Aarav Sharma" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-                <Field label="Email address">
-                  <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="you@example.com" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-                <Field label="Phone number">
-                  <input type="tel" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} placeholder="+977-98XXXXXXXX" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
+                <Field label="Gmail address">
+                  <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="you@gmail.com" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="email" required />
                 </Field>
                 <Field label="Password">
-                  <input type="password" value={formData.password} onChange={e => setFormData(p => ({ ...p, password: e.target.value }))} placeholder="At least 8 characters" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" minLength={8} required />
+                  <input type="password" value={formData.password} onChange={e => setFormData(p => ({ ...p, password: e.target.value }))} placeholder="At least 8 characters" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="new-password" minLength={8} required />
                 </Field>
               </>
             )}
@@ -305,7 +301,7 @@ export default function AuthPage({ mode }: Props) {
               type="submit"
               className="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors mt-2"
             >
-              {isLogin ? 'Sign In' : step < 2 ? 'Continue →' : isWorker ? 'Create Worker Account' : 'Register Organisation'}
+              {isLogin ? 'Sign In' : isProvider && step < 2 ? <>Continue <span aria-hidden="true">→</span></> : isWorker ? 'Create my account' : 'Register Organisation'}
             </button>
           </form>
 
@@ -321,9 +317,9 @@ export default function AuthPage({ mode }: Props) {
               <>Already have an account?{' '}
                 <button onClick={() => navigate('login')} className="text-primary hover:underline font-medium">Sign in</button>
                 {isWorker ? (
-                  <> · <button onClick={() => navigate('provider-signup')} className="text-stone-400 hover:text-stone-600">Register as Provider</button></>
+                  <> · <button onClick={() => navigate('provider-signup')} className="text-stone-500 hover:text-stone-800">Register as a provider</button></>
                 ) : (
-                  <> · <button onClick={() => navigate('worker-signup')} className="text-stone-400 hover:text-stone-600">Register as Worker</button></>
+                  <> · <button onClick={() => navigate('worker-signup')} className="text-stone-500 hover:text-stone-800">Register as a worker</button></>
                 )}
               </>
             )}
@@ -338,7 +334,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   return (
     <div>
       <div className="flex justify-between mb-1.5">
-        <label className="text-sm font-medium text-stone-700">{label}</label>
+        <label className="text-sm font-semibold text-stone-800">{label}</label>
         {hint && <span className="text-xs text-stone-400">{hint}</span>}
       </div>
       {children}

@@ -6,7 +6,7 @@ const typeConfig: Record<Notification['type'], { icon: string; color: string }> 
   shortlisted: { icon: '★', color: 'bg-amber-100 text-amber-700' },
   rejection: { icon: '✗', color: 'bg-stone-100 text-stone-600' },
   application: { icon: '↑', color: 'bg-teal-100 text-teal' },
-  'new-job': { icon: '🔔', color: 'bg-primary-100 text-primary' },
+  'new-job': { icon: '+', color: 'bg-primary-100 text-primary' },
   'job-update': { icon: '!', color: 'bg-amber-100 text-amber-700' },
 };
 
@@ -39,7 +39,6 @@ export default function NotificationPanel({ onClose }: { onClose: () => void }) 
         <div className="overflow-y-auto max-h-[26rem]">
           {myNotifs.length === 0 ? (
             <div className="py-12 text-center text-stone-400">
-              <div className="text-3xl mb-2">🔔</div>
               <p className="text-sm">No notifications yet</p>
             </div>
           ) : (

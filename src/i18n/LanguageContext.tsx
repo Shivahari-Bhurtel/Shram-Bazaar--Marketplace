@@ -6,7 +6,7 @@ const LANGUAGE_KEY = 'shram-bazar-language';
 
 const translations: Record<string, string> = {
   // Shared navigation and actions
-  'Shram Bazar': 'श्रम बजार',
+  Shrama: 'श्रम',
   'Discover Jobs': 'काम खोज्नुहोस्',
   'My Applications': 'मेरा आवेदन',
   'Saved Jobs': 'सेभ गरेका काम',
@@ -49,8 +49,8 @@ const translations: Record<string, string> = {
   // Landing hero and marketplace
   "Nepal's Flexible Work Platform": 'नेपालको लचिलो कामको प्लेटफर्म',
   "Nepal's Bazaar": 'नेपालको बजार',
-  'for Flexible Work': 'लचिलो कामका लागि',
-  'Shram Bazar connects skilled workers with businesses across Nepal. Find flexible work that fits your life, or hire the right people for your needs — quickly, safely, and fairly.': 'श्रम बजारले नेपालभरका सीप भएका कामदार र व्यवसायलाई जोड्छ। आफ्नो समयअनुसार काम खोज्नुहोस् वा आवश्यक कामदार छिटो, सुरक्षित र उचित तरिकाले राख्नुहोस्।',
+  'for Flexible Work': 'सीपलाई अवसरसँग जोडौँ',
+  'Shrama connects skilled workers with businesses across Nepal.': '',
   'Find Flexible Work': 'लचिलो काम खोज्नुहोस्',
   'Hire Workers': 'कामदार खोज्नुहोस्',
   'Already have an account?': 'पहिले नै खाता छ?',
@@ -59,7 +59,7 @@ const translations: Record<string, string> = {
   'Verified providers': 'प्रमाणित रोजगारदाता',
   'Districts with jobs': 'काम भएका जिल्ला',
   'Simple for both sides': 'दुवै पक्षका लागि सजिलो',
-  'How Shram Bazar works': 'श्रम बजार कसरी चल्छ',
+  'How Shrama works': 'श्रम कसरी चल्छ',
   'Clear steps for finding work and hiring dependable people.': 'काम खोज्न र भरपर्दो कामदार राख्न सजिला चरणहरू।',
   'For workers': 'कामदारका लागि',
   'For providers': 'रोजगारदाताका लागि',
@@ -107,13 +107,13 @@ const translations: Record<string, string> = {
   'Rating': 'मूल्याङ्कन',
   'Availability': 'उपलब्धता',
   'New': 'नयाँ',
-  'Organisations on Shram Bazar': 'श्रम बजारका संस्थाहरू',
+  'Organisations on Shrama': 'श्रम संस्थाहरू',
   'Trusted providers': 'भरपर्दा रोजगारदाता',
   'Verification is based on stored organisation and PAN status, never a decorative badge.': 'प्रमाणीकरण संस्थाको विवरण र PAN अवस्थाका आधारमा हुन्छ।',
   'Registered organisations will appear here.': 'दर्ता भएका संस्था यहाँ देखिन्छन्।',
   'No rating yet': 'अझै मूल्याङ्कन छैन',
   'Built for practical work': 'व्यवहारिक कामका लागि',
-  'Why Shram Bazar': 'किन श्रम बजार',
+  'Why Shrama': 'किन श्रम',
   'A focused Nepal marketplace with the information workers and providers need to make clear decisions.': 'कामदार र रोजगारदातालाई सही निर्णय गर्न चाहिने जानकारी भएको नेपालको काम बजार।',
   'Verified Providers': 'प्रमाणित रोजगारदाता',
   'Transparent payment': 'स्पष्ट भुक्तानी',
@@ -126,7 +126,7 @@ const translations: Record<string, string> = {
   'Marketplace trust': 'बजारको भरोसा',
   'Simple reporting when something is wrong': 'समस्या हुँदा सजिलो रिपोर्ट',
   'Workers can report misleading information, unsafe work or suspicious payment requests directly from a job page.': 'कामदारले गलत जानकारी, असुरक्षित काम वा शंकास्पद भुक्तानी माग कामको पेजबाट रिपोर्ट गर्न सक्छन्।',
-  'Ready to use Shram Bazar?': 'श्रम बजार प्रयोग गर्न तयार हुनुहुन्छ?',
+  'Ready to use Shrama?': 'श्रम प्रयोग गर्न तयार हुनुहुन्छ?',
   'Find work or build your workforce.': 'काम खोज्नुहोस् वा आफ्नो टोली बनाउनुहोस्।',
   'Create worker profile': 'कामदार प्रोफाइल बनाउनुहोस्',
   'Register as provider': 'रोजगारदाता दर्ता',
@@ -143,7 +143,7 @@ const translations: Record<string, string> = {
   'Kathmandu, Nepal': 'काठमाडौं, नेपाल',
 
   // Authentication
-  'Welcome back to Shram Bazar': 'श्रम बजारमा फेरि स्वागत छ',
+  'Welcome back to Shrama': 'श्रममा फेरि स्वागत छ',
   'Find work that fits your life': 'आफ्नो समयअनुसार काम खोज्नुहोस्',
   'Hire the right people, fast': 'सही कामदार छिटो खोज्नुहोस्',
   "Sign in to your account to continue your journey on Nepal's flexible work platform.": 'नेपालको लचिलो काम प्लेटफर्म प्रयोग गर्न आफ्नो खातामा साइन इन गर्नुहोस्।',
@@ -563,8 +563,8 @@ const translations: Record<string, string> = {
   '✓ Post detailed job descriptions': 'कामको स्पष्ट विवरण पोस्ट गर्नुहोस्',
   '✓ Respond to applicants promptly': 'आवेदकलाई समयमा जवाफ दिनुहोस्',
   '✓ Maintain high worker ratings': 'राम्रो कामदार मूल्याङ्कन कायम राख्नुहोस्',
-  '© 2024 Shram Bazar Pvt. Ltd.': '© २०२४ श्रम बजार प्रा. लि.',
-  '© 2026 Shram Bazar': '© २०२६ श्रम बजार',
+  '© 2024 Shrama Pvt. Ltd.': '© २०२४ श्रम प्रा. लि.',
+  '© 2026 Shrama': '© २०२६ श्रम',
   '9-digit PAN': '९ अङ्कको PAN',
   'At least 8 characters': 'कम्तीमा ८ अक्षर',
   'Describe the role, responsibilities, and what you expect from workers. The more detail, the better the match.': 'काम, जिम्मेवारी र कामदारबाट अपेक्षा गरिएको कुरा स्पष्ट लेख्नुहोस्।',
@@ -603,8 +603,10 @@ const originalAttributes = new WeakMap<Element, Map<string, string>>();
 const translatedAttributes = ['placeholder', 'title', 'aria-label'];
 
 function translateDynamic(value: string, language: Language) {
-  const exact = language === 'ne' ? translations[value] : reverseTranslations[value];
-  if (exact) return exact;
+  const hasTranslation = language === 'ne'
+    ? Object.prototype.hasOwnProperty.call(translations, value)
+    : Object.prototype.hasOwnProperty.call(reverseTranslations, value);
+  if (hasTranslation) return language === 'ne' ? translations[value] : reverseTranslations[value];
   if (language === 'en') return value;
 
   const patterns: [RegExp, (...parts: string[]) => string][] = [
@@ -739,10 +741,15 @@ export function LanguageSwitch({ inline = false }: { inline?: boolean }) {
   return (
     <button
       onClick={() => setLanguage(language === 'en' ? 'ne' : 'en')}
-      className={`${inline ? '' : 'fixed right-4 top-4 z-50 shadow-sm'} border border-stone-200 bg-white/95 px-3 py-1.5 text-sm font-semibold ${language === 'en' ? 'text-red-700' : 'text-blue-700'}`}
+      className={`${inline ? '' : 'fixed right-4 top-4 z-50 shadow-sm'} inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white/95 px-3 py-2 text-sm font-semibold text-stone-700 transition-colors hover:border-stone-300 hover:bg-stone-50`}
       aria-label={language === 'en' ? 'Switch to Nepali' : 'Switch to English'}
+      title={language === 'en' ? 'Switch to Nepali' : 'Switch to English'}
     >
-      {language === 'en' ? 'नेपाली' : 'English'}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path strokeLinecap="round" d="M3 12h18M12 3a15 15 0 0 1 0 18m0-18a15 15 0 0 0 0 18" />
+      </svg>
+      <span>{language === 'en' ? 'EN' : 'ने'}</span>
     </button>
   );
 }

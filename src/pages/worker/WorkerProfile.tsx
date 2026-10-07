@@ -1,23 +1,16 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useApp } from '../../store/AppContext';
 import { ALL_SKILLS, DISTRICTS } from '../../data/mockData';
-import type { KycDocumentType } from '../../types';
 
 export default function WorkerProfile() {
-  const { state, updateWorkerProfile, submitKyc, approveKyc } = useApp();
+  const { state, updateWorkerProfile, navigate } = useApp();
   const { workerProfile } = state;
   const [editing, setEditing] = useState<string | null>(null);
   const [tempData, setTempData] = useState<any>({});
   const [skillInput, setSkillInput] = useState('');
   const [dateInput, setDateInput] = useState('');
   const [saved, setSaved] = useState(false);
-  const [kycForm, setKycForm] = useState({
-    documentType: 'national-id' as KycDocumentType,
-    documentNumber: '',
-    fileName: '',
-    documentData: '',
-  });
-  const [kycMessage, setKycMessage] = useState('');
+  const [photoMessage, setPhotoMessage] = useState('');
 
   if (!workerProfile) return null;
 
@@ -32,7 +25,6 @@ export default function WorkerProfile() {
         district: workerProfile.district,
         bio: workerProfile.bio,
         availability: workerProfile.availability,
-        photo: workerProfile.photo,
       });
     } else if (section === 'skills') {
       setTempData({ skills: [...workerProfile.skills] });
@@ -81,15 +73,28 @@ export default function WorkerProfile() {
     !(tempData.skills ?? []).includes(s)
   ).slice(0, 15);
   const kycStatus = workerProfile.kycStatus ?? 'not-verified';
-  const kycDocumentGuidance: Record<KycDocumentType, string> = {
-    'national-id': 'Use the number printed on your Nepal National ID card.',
-    citizenship: 'Use the citizenship certificate number exactly as printed.',
-    passport: 'Use your current passport number.',
-    'driving-licence': 'Use the licence number shown on your driving licence.',
+
+  const handleProfilePhoto = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setPhotoMessage('Choose a JPG, PNG, or WebP image.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 1_000_000) {
+      setPhotoMessage('Choose an image smaller than 1 MB.');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateWorkerProfile({ photo: String(reader.result) });
+      setPhotoMessage('Profile photo updated.');
+      window.setTimeout(() => setPhotoMessage(''), 2500);
+    };
+    reader.readAsDataURL(file);
   };
-  const maskedDocumentNumber = workerProfile.kycDocumentNumber
-    ? `${'•'.repeat(Math.max(4, workerProfile.kycDocumentNumber.length - 4))}${workerProfile.kycDocumentNumber.slice(-4)}`
-    : '';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
@@ -106,14 +111,21 @@ export default function WorkerProfile() {
       </div>
 
       {/* Profile hero */}
-      <div className="bg-gradient-to-r from-stone-900 to-stone-800 rounded-2xl p-6 mb-6 flex items-center gap-5">
-        {workerProfile.photo ? (
-          <img src={workerProfile.photo} alt={workerProfile.name} className="w-20 h-20 rounded-xl object-cover bg-stone-700" />
-        ) : (
-          <div className="w-20 h-20 rounded-xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-display text-2xl font-bold">
-            {workerProfile.name.slice(0, 1).toUpperCase()}
-          </div>
-        )}
+      <div className="bg-gradient-to-r from-stone-900 to-stone-800 rounded-2xl p-6 mb-6 flex flex-wrap items-center gap-5">
+        <div className="relative shrink-0">
+          {workerProfile.photo ? (
+            <img src={workerProfile.photo} alt={`${workerProfile.name} profile`} className="h-20 w-20 rounded-2xl border border-white/20 object-cover bg-stone-700" />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/20 bg-white/10 font-display text-2xl font-bold text-white">
+              {workerProfile.name.slice(0, 1).toUpperCase()}
+            </div>
+          )}
+          <label htmlFor="worker-profile-photo" className="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-white/20">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M4 7h3l2-2h6l2 2h3v12H4V7Z"/><circle cx="12" cy="13" r="3"/></svg>
+            {workerProfile.photo ? 'Change photo' : 'Add photo'}
+          </label>
+          <input id="worker-profile-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhoto} className="sr-only" />
+        </div>
         <div className="flex-1">
           <h2 className="font-display text-xl font-bold text-white">{workerProfile.name}</h2>
           <p className="text-white/60 text-sm">{workerProfile.location}</p>
@@ -132,147 +144,26 @@ export default function WorkerProfile() {
           </div>
         </div>
       </div>
+      {photoMessage && <p role="status" className="-mt-3 mb-5 text-sm font-medium text-stone-600">{photoMessage}</p>}
 
-      {/* Private identity verification */}
-      <div id="identity-verification" className="bg-white border border-stone-200 rounded-2xl p-5 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-mono-data uppercase tracking-wider text-stone-400">Private account information</p>
-            <h3 className="font-display text-xl font-semibold text-stone-900 mt-1">Identity Verification / KYC</h3>
-            <p className="text-sm text-stone-500 mt-1 max-w-2xl">
-              Verification is optional during signup, but your identity must be verified before you can apply for jobs.
-              Your document number and uploaded file are never shown on your public profile.
-            </p>
-          </div>
-          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-            kycStatus === 'verified'
-              ? 'bg-teal-50 text-teal border border-teal-100'
-              : kycStatus === 'pending'
-                ? 'bg-amber-50 text-amber-700 border border-amber-100'
-                : 'bg-stone-100 text-stone-600 border border-stone-200'
-          }`}>
-            {kycStatus === 'verified' ? 'Verified' : kycStatus === 'pending' ? 'Pending Verification' : 'Not Verified'}
-          </span>
-        </div>
-
-        <div className={`mt-5 rounded-xl border px-4 py-3 ${
-          kycStatus === 'verified'
-            ? 'border-teal-100 bg-teal-50'
-            : kycStatus === 'pending'
-              ? 'border-amber-100 bg-amber-50'
-              : 'border-stone-200 bg-stone-50'
-        }`}>
-          <p className={`text-sm font-medium ${
-            kycStatus === 'verified' ? 'text-teal' : kycStatus === 'pending' ? 'text-amber-800' : 'text-stone-700'
-          }`}>
-            {kycStatus === 'verified'
-              ? `Verified on ${workerProfile.kycVerifiedDate || 'your latest review'}`
-              : kycStatus === 'pending'
-                ? `Submitted ${workerProfile.kycSubmittedDate ? `on ${workerProfile.kycSubmittedDate}` : 'for review'}.`
-                : 'Submit one clear identity document to unlock job applications.'}
-          </p>
-          <p className="mt-1 text-xs text-stone-500">
-            {kycStatus === 'verified'
-              ? 'Providers can see your verified badge, but never your document number or file.'
-              : kycStatus === 'pending'
-                ? 'Your profile stays private while the document is being reviewed.'
-                : 'Use a document that belongs to you and make sure all details are readable.'}
-          </p>
-        </div>
-
-        {kycStatus === 'not-verified' && (
-          <div className="grid sm:grid-cols-2 gap-4 mt-5 pt-5 border-t border-stone-100">
-            <Field label="Identity document">
-              <select
-                value={kycForm.documentType}
-                onChange={event => setKycForm(current => ({ ...current, documentType: event.target.value as KycDocumentType }))}
-                className="input-style"
-                aria-describedby="kyc-document-guidance"
-              >
-                <option value="national-id">Nepal National ID (NID)</option>
-                <option value="citizenship">Nepal Citizenship Certificate</option>
-                <option value="passport">Passport</option>
-                <option value="driving-licence">Driving Licence</option>
-              </select>
-            </Field>
-            <Field label="Document number">
-              <input
-                value={kycForm.documentNumber}
-                onChange={event => setKycForm(current => ({ ...current, documentNumber: event.target.value }))}
-                placeholder="Enter your document number"
-                className="input-style"
-                minLength={4}
-                maxLength={40}
-                required
-              />
-              <p id="kyc-document-guidance" className="text-xs text-stone-400 mt-1">{kycDocumentGuidance[kycForm.documentType]}</p>
-            </Field>
-            <Field label="Document upload" className="sm:col-span-2">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,application/pdf"
-                onChange={event => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
-                    setKycMessage('Use a JPG, PNG or PDF identity document.');
-                    event.target.value = '';
-                    return;
-                  }
-                  if (file.size > 2 * 1024 * 1024) {
-                    setKycMessage('The document is too large. Use a file smaller than 2 MB.');
-                    event.target.value = '';
-                    return;
-                  }
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    setKycForm(current => ({ ...current, fileName: file.name, documentData: String(reader.result) }));
-                    setKycMessage('');
-                  };
-                  reader.readAsDataURL(file);
-                }}
-                className="input-style"
-              />
-              <p className="text-xs text-stone-400 mt-1">JPG, PNG or PDF. Maximum file size: 2 MB. Make sure the full document is visible.</p>
-            </Field>
-            <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs text-stone-500">{kycForm.fileName ? `Selected: ${kycForm.fileName}` : 'No document selected.'}</p>
-              <button
-                onClick={() => {
-                  const error = submitKyc(kycForm);
-                  setKycMessage(error ?? 'KYC submitted for verification.');
-                }}
-                className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark"
-              >
-                Submit for Verification
-              </button>
+      <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${kycStatus === 'verified' ? 'bg-teal-50 text-teal' : kycStatus === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-primary-50 text-primary'}`} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3 20 6v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-3Z"/><path strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4"/></svg>
             </div>
-          </div>
-        )}
-
-        {kycStatus === 'pending' && (
-          <div className="mt-5 pt-5 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-stone-700">Your identity document is waiting for review.</p>
-              <p className="text-xs text-stone-500 mt-1">
-                {workerProfile.kycDocumentFileName} · Document ending in {maskedDocumentNumber.slice(-4)} · Submitted {workerProfile.kycSubmittedDate || 'recently'}
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-stone-500">Account verification</p>
+              <h3 className="mt-1 font-display text-xl font-bold text-stone-900">Verify your account</h3>
+              <p className="mt-1 max-w-xl text-sm leading-relaxed text-stone-600">
+                {kycStatus === 'verified' ? 'Your identity has been verified.' : kycStatus === 'pending' ? 'Your identity document is being reviewed.' : 'Confirm your details and submit an identity document to verify your account.'}
               </p>
             </div>
-            <button onClick={approveKyc} className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-xl hover:bg-primary-dark transition-colors">
-              Demo Admin: Approve KYC
-            </button>
           </div>
-        )}
-
-        {kycStatus === 'verified' && (
-          <div className="mt-5 pt-5 border-t border-stone-100">
-            <p className="text-sm font-medium text-teal">Your identity is verified. You can apply for jobs.</p>
-            <p className="text-xs text-stone-500 mt-1">
-              {workerProfile.kycDocumentFileName} · Document ending in {maskedDocumentNumber.slice(-4)}
-            </p>
-          </div>
-        )}
-        {kycMessage && <p className="mt-3 text-sm text-stone-600">{kycMessage}</p>}
+          <button onClick={() => navigate('kyc-verification')} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+            {kycStatus === 'verified' ? 'View verification' : kycStatus === 'pending' ? 'Check status' : 'Verify account'} <span aria-hidden="true">→</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -308,9 +199,6 @@ export default function WorkerProfile() {
                     <option value="full-day">Full day</option>
                     <option value="flexible">Flexible</option>
                   </select>
-                </Field>
-                <Field label="Profile image URL" className="sm:col-span-2">
-                  <input value={tempData.photo} onChange={e => setTempData((p: any) => ({ ...p, photo: e.target.value }))} placeholder="Optional — leave blank to use your initial" className="input-style" />
                 </Field>
                 <Field label="Bio" className="sm:col-span-2">
                   <textarea value={tempData.bio} onChange={e => setTempData((p: any) => ({ ...p, bio: e.target.value }))} rows={3} className="input-style resize-none" />

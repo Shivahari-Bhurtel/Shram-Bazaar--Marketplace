@@ -8,6 +8,7 @@ export default function Navbar() {
   const { currentUser, currentPage } = state;
   const [showNotifs, setShowNotifs] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const isWorker = currentUser?.role === 'worker';
   const isProvider = currentUser?.role === 'provider';
@@ -16,7 +17,6 @@ export default function Navbar() {
     { label: 'Discover Jobs', page: 'job-discovery' as const },
     { label: 'My Applications', page: 'my-applications' as const },
     { label: 'Saved Jobs', page: 'saved-jobs' as const },
-    { label: 'My Profile', page: 'worker-profile' as const },
     { label: 'Chat', page: 'chat' as const },
   ];
 
@@ -32,9 +32,9 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 bg-white border-b border-stone-200 shadow-sm">
+      <nav className="sticky top-0 z-40 border-b border-stone-100 bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex h-[4.5rem] items-center justify-between">
             {/* Logo */}
             <button
               onClick={() => navigate(currentUser ? (isWorker ? 'worker-dashboard' : 'provider-dashboard') : 'landing')}
@@ -46,27 +46,36 @@ export default function Navbar() {
                 </svg>
               </div>
               <div className="leading-none">
-                <span className="font-display text-lg font-bold text-primary tracking-tight">Shram Bazar</span>
-                <span className="block text-[10px] text-stone-400 font-mono-data tracking-wider">Nepal workforce</span>
+                <span className="font-display text-3xl font-extrabold tracking-tight text-primary leading-none">Shrama</span>
               </div>
             </button>
 
             {/* Desktop Nav */}
             {currentUser && (
-              <div className="hidden md:flex items-center gap-1">
+              <div className={`hidden items-center md:flex ${isWorker ? 'gap-2' : 'gap-1'}`}>
                 {links.map(link => (
                   <button
                     key={link.page}
                     onClick={() => navigate(link.page)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`${isWorker ? 'rounded-xl px-4 py-2.5 text-base font-semibold tracking-tight' : 'rounded-lg px-3 py-1.5 text-sm font-medium'} transition-colors ${
                       currentPage === link.page
-                        ? 'bg-primary-50 text-primary'
-                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                        ? isWorker ? 'bg-stone-200 text-stone-950 font-bold' : 'bg-primary-50 text-primary font-bold'
+                        : isWorker ? 'text-stone-950 hover:bg-stone-100' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                     }`}
                   >
                     {link.label}
                   </button>
                 ))}
+              </div>
+            )}
+            {!currentUser && (
+              <div className="hidden md:flex items-center gap-6 text-sm font-medium text-stone-600">
+                <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary transition-colors">
+                  How it works
+                </button>
+                <button onClick={() => document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary transition-colors">
+                  For businesses
+                </button>
               </div>
             )}
 
@@ -91,20 +100,51 @@ export default function Navbar() {
                     )}
                   </button>
 
-                  {/* Role badge + logout */}
+                  {/* Profile menu */}
                   <div className="hidden md:flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      isWorker ? 'bg-teal-50 text-teal' : 'bg-primary-50 text-primary'
-                    }`}>
-                      {isWorker ? 'Worker' : 'Provider'}
-                    </span>
-                    <span className="text-sm text-stone-700 font-medium">{currentUser.name.split(' ')[0]}</span>
-                    <button
-                      onClick={logout}
-                      className="text-sm text-stone-500 hover:text-primary transition-colors px-2 py-1 rounded"
-                    >
-                      Sign out
-                    </button>
+                    {!isWorker && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary-50 text-primary">
+                        Provider
+                      </span>
+                    )}
+                    <div className="relative">
+                      <button
+                        onClick={() => setProfileOpen(open => !open)}
+                        aria-haspopup="menu"
+                        aria-expanded={profileOpen}
+                        className={`${isWorker ? 'text-[15px] font-semibold tracking-tight' : 'text-sm font-medium'} inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-stone-700 transition-colors hover:bg-stone-100 hover:text-primary`}
+                      >
+                        Profile
+                        <svg viewBox="0 0 20 20" fill="currentColor" className={`h-4 w-4 transition-transform ${profileOpen ? 'rotate-180' : ''}`} aria-hidden="true">
+                          <path fillRule="evenodd" d="M5.22 7.22a.75.75 0 0 1 1.06 0L10 10.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      {profileOpen && (
+                        <div role="menu" className="absolute right-0 top-full z-50 mt-2 min-w-44 rounded-xl border border-stone-200 bg-white p-1.5 shadow-lg">
+                          <button
+                            role="menuitem"
+                            onClick={() => { setProfileOpen(false); navigate(isWorker ? 'worker-profile' : 'provider-profile'); }}
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-primary"
+                          >
+                            View profile
+                          </button>
+                          <button
+                            role="menuitem"
+                            onClick={() => { setProfileOpen(false); navigate('settings'); }}
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-primary"
+                          >
+                            Settings
+                          </button>
+                          <button
+                            role="menuitem"
+                            onClick={() => { setProfileOpen(false); logout(); }}
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-600 transition-colors hover:bg-red-50 hover:text-red-700"
+                          >
+                            Sign out
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Mobile menu button */}
@@ -141,20 +181,32 @@ export default function Navbar() {
 
           {/* Mobile menu */}
           {currentUser && mobileOpen && (
-            <div className="md:hidden border-t border-stone-100 py-3 space-y-1">
+            <div className="md:hidden py-3 space-y-1">
               {links.map(link => (
                 <button
                   key={link.page}
                   onClick={() => { navigate(link.page); setMobileOpen(false); }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${isWorker ? 'text-base font-semibold tracking-tight' : 'text-sm font-medium'} ${
                     currentPage === link.page
-                      ? 'bg-primary-50 text-primary'
-                      : 'text-stone-600 hover:bg-stone-100'
+                      ? isWorker ? 'bg-stone-200 text-stone-950 font-bold' : 'bg-primary-50 text-primary font-bold'
+                      : isWorker ? 'text-stone-950 hover:bg-stone-100' : 'text-stone-600 hover:bg-stone-100'
                   }`}
                 >
                   {link.label}
                 </button>
               ))}
+              <button
+                onClick={() => { navigate(isWorker ? 'worker-profile' : 'provider-profile'); setMobileOpen(false); }}
+                className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-stone-800 hover:bg-stone-100"
+              >
+                Profile
+              </button>
+              <button
+                onClick={() => { navigate('settings'); setMobileOpen(false); }}
+                className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-stone-800 hover:bg-stone-100"
+              >
+                Settings
+              </button>
               <button
                 onClick={() => { logout(); setMobileOpen(false); }}
                 className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-stone-500 hover:bg-stone-100"

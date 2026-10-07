@@ -7,143 +7,147 @@ export default function MyApplications() {
   const { myApplications, navigate, state } = useApp();
   const [activeTab, setActiveTab] = useState<ApplicationStatus | 'all'>('all');
 
-  const filtered = activeTab === 'all' ? myApplications : myApplications.filter(a => a.status === activeTab);
-
+  const countFor = (status: ApplicationStatus) => myApplications.filter(app => app.status === status).length;
+  const filtered = activeTab === 'all' ? myApplications : myApplications.filter(app => app.status === activeTab);
   const tabs: { key: ApplicationStatus | 'all'; label: string }[] = [
-    { key: 'all', label: `All (${myApplications.length})` },
-    { key: 'accepted', label: `Accepted (${myApplications.filter(a => a.status === 'accepted').length})` },
-    { key: 'shortlisted', label: `Shortlisted (${myApplications.filter(a => a.status === 'shortlisted').length})` },
-    { key: 'pending', label: `Applied (${myApplications.filter(a => a.status === 'pending').length})` },
-    { key: 'rejected', label: `Not Selected (${myApplications.filter(a => a.status === 'rejected').length})` },
+    { key: 'all', label: 'All applications' },
+    { key: 'pending', label: 'Applied' },
+    { key: 'shortlisted', label: 'Shortlisted' },
+    { key: 'accepted', label: 'Accepted' },
+    { key: 'rejected', label: 'Not selected' },
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-stone-900 mb-1">My Applications</h1>
-        <p className="text-stone-500">Track the status of all your job applications.</p>
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        {[
-          { label: 'Total Applied', value: myApplications.length, color: 'text-stone-900' },
-          { label: 'Accepted', value: myApplications.filter(a => a.status === 'accepted').length, color: 'text-green-700' },
-          { label: 'Shortlisted', value: myApplications.filter(a => a.status === 'shortlisted').length, color: 'text-amber-700' },
-          { label: 'Applied', value: myApplications.filter(a => a.status === 'pending').length, color: 'text-stone-500' },
-        ].map(s => (
-          <div key={s.label} className="bg-white border border-stone-200 rounded-xl p-4 text-center">
-            <div className={`font-display text-2xl font-bold mb-1 ${s.color}`}>{s.value}</div>
-            <div className="text-xs text-stone-500">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 bg-stone-100 rounded-xl p-1 mb-6 overflow-x-auto">
-        {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === tab.key ? 'bg-white shadow text-stone-900' : 'text-stone-500 hover:text-stone-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Applications list */}
-      {filtered.length === 0 ? (
-        <div className="bg-white border border-stone-200 rounded-2xl p-16 text-center">
-          <div className="text-4xl mb-4">📋</div>
-          <h3 className="font-semibold text-stone-900 mb-2">No applications here</h3>
-          <p className="text-stone-500 text-sm mb-6">
-            {activeTab === 'all' ? "You haven't applied to any jobs yet." : `No applications with ${activeTab} status.`}
-          </p>
-          <button onClick={() => navigate('job-discovery')} className="px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors">
-            Discover Jobs
-          </button>
+    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">Your workspace</p>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-stone-950 sm:text-4xl">My applications</h1>
+          <p className="mt-2 text-sm leading-relaxed text-stone-600 sm:text-base">Keep track of your applications and the latest updates from employers.</p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {filtered.map(app => {
-            const job = state.jobs.find(j => j.id === app.jobId);
+        <button
+          onClick={() => navigate('job-discovery')}
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        >
+          Browse jobs <span aria-hidden="true">→</span>
+        </button>
+      </header>
+
+      <section aria-label="Application list">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <h2 className="text-lg font-bold tracking-tight text-stone-900">Application activity</h2>
+          <span className="text-sm text-stone-500">{myApplications.length} {myApplications.length === 1 ? 'application' : 'applications'}</span>
+        </div>
+
+        <div className="mb-5 flex gap-2 overflow-x-auto border-b border-stone-200 pb-0.5" role="tablist" aria-label="Filter applications by status">
+          {tabs.map(tab => {
+            const count = tab.key === 'all' ? myApplications.length : countFor(tab.key);
+            const selected = activeTab === tab.key;
             return (
-              <div key={app.id} className="bg-white border border-stone-200 rounded-2xl p-5 hover:shadow-sm transition-shadow">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <button
-                      onClick={() => navigate('job-detail', app.jobId)}
-                      className="font-semibold text-stone-900 hover:text-primary transition-colors text-left leading-snug"
-                    >
-                      {app.jobTitle}
-                    </button>
-                    <p className="text-sm text-stone-500 mt-0.5">{app.providerName}</p>
-                    {job && (
-                      <div className="flex flex-wrap gap-3 mt-2">
-                        <span className="text-xs text-stone-500 flex items-center gap-1">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                          {job.location.split(',').slice(-1)[0].trim()}
-                        </span>
-                        <span className="text-xs font-semibold text-stone-800 font-mono-data">
-                          NPR {job.payment.toLocaleString()}/{job.paymentType.replace('per-', '')}
-                        </span>
-                        <span className="text-xs text-stone-500">
-                          {new Date(job.date).toLocaleDateString('en-NP', { month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-shrink-0">
-                    <ApplicationStatusBadge status={app.status} />
-                  </div>
-                </div>
-
-                {/* Cover note */}
-                <div className="mt-4 pt-4 border-t border-stone-100">
-                  <p className="text-xs text-stone-400 mb-1">Your cover note:</p>
-                  <p className="text-sm text-stone-600 italic leading-relaxed line-clamp-2">"{app.coverNote}"</p>
-                </div>
-
-                {/* Provider note if rejected/accepted */}
-                {app.providerNote && (
-                  <div className={`mt-3 p-3 rounded-xl text-sm ${
-                    app.status === 'accepted' ? 'bg-green-50 text-green-700' : 'bg-stone-50 text-stone-600'
-                  }`}>
-                    <span className="font-medium">{app.providerName} says:</span> "{app.providerNote}"
-                  </div>
-                )}
-
-                {/* Status context message */}
-                {app.status === 'accepted' && (
-                  <div className="mt-3 bg-green-50 border border-green-100 rounded-xl p-3 flex items-center gap-2">
-                    <span className="text-green text-lg">🎉</span>
-                    <p className="text-sm text-green-700 font-medium">Congratulations! Show up on {job ? new Date(job.date).toLocaleDateString('en-NP', { weekday: 'long', month: 'long', day: 'numeric' }) : 'the job date'}.</p>
-                  </div>
-                )}
-                {app.status === 'shortlisted' && (
-                  <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl p-3 flex items-center gap-2">
-                    <span className="text-lg">⭐</span>
-                    <p className="text-sm text-amber-700">You've been shortlisted. Final decision coming soon.</p>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs text-stone-400 font-mono-data">Applied {app.appliedDate}</span>
-                  <button
-                    onClick={() => navigate('job-detail', app.jobId)}
-                    className="text-xs text-primary hover:underline font-medium"
-                  >
-                    View Job →
-                  </button>
-                </div>
-              </div>
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${selected ? 'border-primary text-primary' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+              >
+                {tab.label}
+                <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${selected ? 'bg-primary-50 text-primary' : 'bg-stone-100 text-stone-500'}`}>{count}</span>
+              </button>
             );
           })}
         </div>
-      )}
-    </div>
+
+        {filtered.length === 0 ? (
+          <div className="rounded-2xl border border-stone-200 bg-white px-6 py-14 text-center sm:px-12 sm:py-16">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 text-primary" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-8 w-8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7m-13 2h18l-1.2 10.2a2 2 0 0 1-2 1.8H6.2a2 2 0 0 1-2-1.8L3 9Zm0 0V7h18v2m-12 4h6" />
+              </svg>
+            </div>
+            <h3 className="mt-5 font-display text-xl font-bold text-stone-900">
+              {activeTab === 'all' ? 'Your next opportunity starts here' : `No ${tabs.find(tab => tab.key === activeTab)?.label.toLowerCase()} applications`}
+            </h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-stone-500">
+              {activeTab === 'all'
+                ? 'Explore current openings, find work that matches your skills, and your applications will be tracked here.'
+                : 'There are no applications in this status yet. You can check another status or explore more jobs.'}
+            </p>
+            <button
+              onClick={() => navigate('job-discovery')}
+              className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            >
+              Discover jobs <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map(app => {
+              const job = state.jobs.find(item => item.id === app.jobId);
+              const jobDate = job?.date ? new Date(job.date) : null;
+              return (
+                <article key={app.id} className="rounded-2xl border border-stone-200 bg-white p-5 transition-shadow hover:shadow-md sm:p-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <button
+                        onClick={() => navigate('job-detail', app.jobId)}
+                        className="text-left font-display text-lg font-bold leading-snug text-stone-900 transition-colors hover:text-primary sm:text-xl"
+                      >
+                        {app.jobTitle}
+                      </button>
+                      <p className="mt-1 text-sm font-medium text-stone-600">{app.providerName}</p>
+                      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-stone-500">
+                        {job && (
+                          <>
+                            <span className="inline-flex items-center gap-1.5">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4 text-stone-400" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                              {job.location.split(',').slice(-1)[0].trim()}
+                            </span>
+                            <span className="font-semibold text-stone-700">NPR {job.payment.toLocaleString()}/{job.paymentType.replace('per-', '')}</span>
+                            {jobDate && !Number.isNaN(jobDate.getTime()) && <span>{jobDate.toLocaleDateString('en-NP', { month: 'short', day: 'numeric' })}</span>}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <ApplicationStatusBadge status={app.status} />
+                  </div>
+
+                  {app.coverNote && (
+                    <div className="mt-5 rounded-xl bg-stone-50 px-4 py-3.5">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-stone-500">Your message</p>
+                      <p className="line-clamp-2 text-sm leading-relaxed text-stone-600">{app.coverNote}</p>
+                    </div>
+                  )}
+
+                  {app.providerNote && (
+                    <div className={`mt-3 rounded-xl px-4 py-3 text-sm leading-relaxed ${app.status === 'accepted' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+                      <span className="font-semibold">Update from {app.providerName}: </span>{app.providerNote}
+                    </div>
+                  )}
+
+                  {app.status === 'accepted' && (
+                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                      <span className="font-bold" aria-hidden="true">✓</span>
+                      <p className="font-medium">You’re accepted. {jobDate && !Number.isNaN(jobDate.getTime()) ? `Your job is scheduled for ${jobDate.toLocaleDateString('en-NP', { weekday: 'long', month: 'long', day: 'numeric' })}.` : 'Check the job details for next steps.'}</p>
+                    </div>
+                  )}
+                  {app.status === 'shortlisted' && (
+                    <div className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">You’re shortlisted. The employer may contact you with an update.</div>
+                  )}
+
+                  <div className="mt-5 flex items-center justify-between border-t border-stone-100 pt-4">
+                    <span className="text-xs text-stone-400">Applied {app.appliedDate}</span>
+                    <button onClick={() => navigate('job-detail', app.jobId)} className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary-dark">
+                      View job <span aria-hidden="true">→</span>
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </main>
   );
 }

@@ -14,6 +14,9 @@ import CreateEditJob from './pages/provider/CreateEditJob';
 import MyJobs from './pages/provider/MyJobs';
 import ApplicantManagement from './pages/provider/ApplicantManagement';
 import Chat from './pages/Chat';
+import ChatLauncher from './components/ChatLauncher';
+import Settings from './pages/Settings';
+import KycVerification from './pages/worker/KycVerification';
 import { LanguageSwitch } from './i18n/LanguageContext';
 
 export default function App() {
@@ -42,11 +45,13 @@ export default function App() {
         {/* Worker pages */}
         {isWorker && currentPage === 'worker-dashboard' && <WorkerDashboard />}
         {isWorker && currentPage === 'worker-profile' && <WorkerProfile />}
+        {isWorker && currentPage === 'kyc-verification' && <KycVerification />}
         {isWorker && currentPage === 'job-discovery' && <JobDiscovery />}
         {(isWorker || isProvider) && currentPage === 'job-detail' && <JobDetail />}
         {isWorker && currentPage === 'my-applications' && <MyApplications />}
         {isWorker && currentPage === 'saved-jobs' && <SavedJobs />}
         {(isWorker || isProvider) && currentPage === 'chat' && <Chat />}
+        {isLoggedIn && currentPage === 'settings' && <Settings />}
 
         {/* Provider pages */}
         {isProvider && currentPage === 'provider-dashboard' && <ProviderDashboard />}
@@ -60,6 +65,7 @@ export default function App() {
         {isWorker && currentPage === 'landing' && <WorkerDashboard />}
         {isProvider && currentPage === 'landing' && <ProviderDashboard />}
       </main>
+      {currentPage !== 'chat' && <ChatLauncher />}
     </div>
   );
 }

@@ -136,10 +136,29 @@ export default function JobDiscovery() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div className="relative isolate mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 1000 460"
+        fill="none"
+        className="pointer-events-none fixed left-1/2 top-[calc(50%+2rem)] z-0 w-[min(94vw,72rem)] -translate-x-1/2 -translate-y-1/2 text-primary opacity-[0.08]"
+      >
+        <g stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M48 410V224h106v186M154 410V163h130v247M284 410V255h100v155M384 410V194h128v216M512 410V128h148v282M660 410V226h112v184M772 410V176h116v234M888 410V270h70v140" />
+          <path d="m48 224 26-22h106l-26 22m0-61 30-24h100l-30 24m100 92 23-18h100l-23 18m0-61 27-22h101l-27 22m23-66 30-25h108l-30 25m112 98 23-18h89l-24 18m0-50 25-20h91l-25 20m116 74 20-15h50l-20 15" />
+          <path d="M154 163v-27h26v-24h22V88h18V62h9V34h5V14h5v20h8v28h19v26h18v27h20v48M660 226l24-18v133l-24 19m-276 50 24 15h104l-24-15m148-282v-29h18V78h17V52h7V28h5V9h5v19h8v24h17v26h15v29h24v21m-410 282 26 15h104l-30-15M772 176l25-20h91l-25 20m-479 234 26 16h97l-25-16" />
+          <path d="M75 250v22m25-22v22m25-22v22m-50 28v22m25-22v22m25-22v22m-50 28v22m25-22v22m25-22v22m-50 28v22m25-22v22m25-22v22" />
+          <path d="M178 190h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18zm-76 42h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18zm-76 42h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18zm-76 42h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18zm-76 42h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18z" />
+          <path d="M411 222h17v22h-17zm37 0h17v22h-17zm37 0h17v22h-17zm-74 43h17v22h-17zm37 0h17v22h-17zm37 0h17v22h-17zm-74 43h17v22h-17zm37 0h17v22h-17zm37 0h17v22h-17zm-74 43h17v22h-17zm37 0h17v22h-17zm37 0h17v22h-17z" />
+          <path d="M540 157h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21zm-88 46h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21zm-88 46h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21zm-88 46h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21zm-88 46h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21z" />
+          <path d="M693 252h20v22h-20zm39 0h20v22h-20zm-39 42h20v22h-20zm39 0h20v22h-20zm-39 42h20v22h-20zm39 0h20v22h-20zm-39 42h20v22h-20zm39 0h20v22h-20zM803 202h19v22h-19zm38 0h19v22h-19zm-38 42h19v22h-19zm38 0h19v22h-19zm-38 42h19v22h-19zm38 0h19v22h-19zm-38 42h19v22h-19zm38 0h19v22h-19z" />
+          <path d="M35 410h930" />
+        </g>
+      </svg>
+      <div className="relative z-10">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-stone-900 mb-1">Discover Jobs</h1>
-        <p className="text-stone-500">{filtered.length} jobs available · Shram Bazar and Himalayas opportunities</p>
+        <p className="text-stone-500">{filtered.length} jobs available</p>
       </div>
 
       {/* Search bar */}
@@ -269,29 +288,6 @@ export default function JobDiscovery() {
         </div>
       )}
 
-      {/* Category quick filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {[
-          { key: '', label: 'All Jobs', count: allJobs.length },
-          { key: 'qualified', label: '🎓 Qualified', count: activeJobs.filter(j => j.category === 'qualified').length },
-          { key: 'skill-based', label: '🔧 Skill Based', count: activeJobs.filter(j => j.category === 'skill-based').length },
-          { key: 'beginner-friendly', label: '🤝 Beginner', count: activeJobs.filter(j => j.category === 'beginner-friendly').length },
-        ].map(btn => (
-          <button
-            key={btn.key}
-            onClick={() => setFilterCategory(btn.key as any)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5 ${
-              filterCategory === btn.key
-                ? 'bg-primary text-white'
-                : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-300'
-            }`}
-          >
-            {btn.label}
-            <span className={`text-xs ${filterCategory === btn.key ? 'text-white/60' : 'text-stone-400'}`}>{btn.count}</span>
-          </button>
-        ))}
-      </div>
-
       {externalLoading && (
         <div className="mb-5 flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-500">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-primary" />
@@ -300,7 +296,7 @@ export default function JobDiscovery() {
       )}
       {externalError && (
         <div className="mb-5 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          External jobs are temporarily unavailable. Shram Bazar jobs are still shown below.
+          External jobs are temporarily unavailable. Shrama jobs are still shown below.
         </div>
       )}
 
@@ -326,6 +322,7 @@ export default function JobDiscovery() {
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }
