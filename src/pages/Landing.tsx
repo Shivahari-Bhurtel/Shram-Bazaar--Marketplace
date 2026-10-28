@@ -120,13 +120,13 @@ export default function Landing() {
         aria-label="Shram Bazzar landing navigation"
         className="bg-white"
       >
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-7 gap-y-3 px-4 py-4 font-sans text-[15px] font-semibold tracking-tight text-stone-700 sm:px-6">
+        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 lg:flex-nowrap lg:gap-x-5 xl:gap-x-7 xl:px-8">
           <div className="relative shrink-0">
             <button
               onClick={() => setOpenMenu(openMenu === 'worker' ? null : 'worker')}
               aria-haspopup="menu"
               aria-expanded={openMenu === 'worker'}
-              className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              className="whitespace-nowrap text-sm font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
               Find work
             </button>
@@ -139,13 +139,13 @@ export default function Landing() {
           </div>
           <button
             onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-sm font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             How it works
           </button>
           <button
             onClick={() => document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' })}
-            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-sm font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             For businesses
           </button>
@@ -154,7 +154,7 @@ export default function Landing() {
               onClick={() => setOpenMenu(openMenu === 'provider' ? null : 'provider')}
               aria-haspopup="menu"
               aria-expanded={openMenu === 'provider'}
-              className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              className="whitespace-nowrap text-sm font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
               Hire workers
             </button>
@@ -165,7 +165,7 @@ export default function Landing() {
               </div>
             )}
           </div>
-          <form onSubmit={handleSearch} className="order-last flex min-w-full items-center rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 transition-colors focus-within:border-primary focus-within:bg-white sm:order-none sm:ml-auto sm:min-w-0 sm:flex-1 sm:max-w-xs lg:max-w-sm">
+          <form onSubmit={handleSearch} className="order-last flex min-w-full items-center rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 transition-colors focus-within:border-primary focus-within:bg-white sm:order-none sm:ml-auto sm:min-w-0 sm:flex-1 sm:max-w-md lg:max-w-md xl:max-w-lg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2 h-4 w-4 shrink-0 text-stone-400" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -175,7 +175,7 @@ export default function Landing() {
               onChange={event => setSearchTerm(event.target.value)}
               placeholder="Search jobs or skills"
               aria-label="Search jobs or skills"
-              className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-stone-800 placeholder:text-stone-400 outline-none"
+              className="min-w-0 flex-1 bg-transparent text-sm font-medium text-stone-800 placeholder:text-stone-400 outline-none"
             />
             <button type="submit" className="ml-2 shrink-0 text-[15px] font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink">
               Search
@@ -183,13 +183,13 @@ export default function Landing() {
           </form>
           <button
             onClick={() => navigate('login')}
-            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight text-stone-700 transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-sm font-semibold tracking-tight text-stone-700 transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             Login
           </button>
           <button
             onClick={() => navigate('worker-signup')}
-            className="shrink-0 whitespace-nowrap text-[15px] font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-sm font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             Sign up
           </button>
@@ -266,13 +266,13 @@ export default function Landing() {
           </div>
         </div>
         <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-stone-950/90 via-stone-950/70 to-stone-950/45" />
-        <div className="relative z-[2] max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 lg:py-40">
+        <div className="relative z-[2] mx-auto max-w-screen-2xl px-5 py-20 sm:px-8 sm:py-24 lg:px-10 lg:py-28 xl:py-32">
           <div className="max-w-2xl">
-            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              <span className="font-brand text-6xl sm:text-7xl lg:text-8xl font-semibold text-white">Shram Bazzar</span><br />
+            <h1 className="mb-5 font-display text-4xl font-bold leading-tight text-white sm:mb-6 sm:text-5xl lg:text-6xl">
+              <span className="font-brand text-5xl font-semibold text-white sm:text-6xl lg:text-7xl xl:text-8xl">Shram Bazzar</span><br />
               <span className="text-primary-light">for Flexible Work</span>
             </h1>
-            <p className="text-lg text-white/80 leading-relaxed mb-10 max-w-xl">
+            <p className="mb-7 max-w-xl text-base leading-relaxed text-white/80 sm:mb-9 sm:text-lg">
               Shram Bazzar connects skilled workers with businesses across Nepal.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -283,12 +283,12 @@ export default function Landing() {
                 Find Flexible Work
               </button>
             </div>
-            <p className="mt-4 text-white/50 text-sm">
-              Already have an account?{' '}
-              <button onClick={() => navigate('login')} className="text-white/80 hover:text-white">
+            <div className="mt-5 flex flex-wrap items-center gap-x-2 text-sm text-white/70">
+              <span>Already have an account?</span>
+              <button onClick={() => navigate('login')} className="font-semibold text-white underline decoration-white/40 underline-offset-4 transition hover:decoration-white">
                 Sign in
               </button>
-            </p>
+            </div>
           </div>
         </div>
         {heroSlide === 'video' && (
