@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import type { Job } from '../types';
 
@@ -21,6 +22,7 @@ interface Props {
 
 export default function JobCard({ job, compact = false }: Props) {
   const { navigate, hasApplied, isSaved, saveJob, unsaveJob, browseSkill, state } = useApp();
+  const [logoFailed, setLogoFailed] = useState(false);
   const isWorker = state.currentUser?.role === 'worker';
   const applied = hasApplied(job.id);
   const saved = isSaved(job.id);
@@ -45,11 +47,17 @@ export default function JobCard({ job, compact = false }: Props) {
     >
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0">
-          {job.providerLogo ? (
-            <img src={job.providerLogo} alt={job.providerName} className="w-full h-full object-cover" />
+        <div className="w-11 h-11 rounded-xl overflow-hidden border border-stone-200 bg-white shadow-sm flex-shrink-0">
+          {job.providerLogo && !logoFailed ? (
+            <img
+              src={job.providerLogo}
+              alt={`${job.providerName} logo`}
+              loading="lazy"
+              onError={() => setLogoFailed(true)}
+              className="w-full h-full object-contain p-1.5"
+            />
           ) : (
-            <span className="flex h-full w-full items-center justify-center font-display font-bold text-stone-500">{job.providerName.slice(0, 1).toUpperCase()}</span>
+            <span aria-hidden="true" className="flex h-full w-full items-center justify-center bg-primary-50 font-display font-bold text-primary-ink">{job.providerName.trim().slice(0, 1).toUpperCase()}</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
