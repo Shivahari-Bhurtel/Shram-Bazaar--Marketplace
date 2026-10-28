@@ -190,9 +190,9 @@ export default function CreateEditJob({ editJobId }: Props) {
               {form.skillsRequired.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {form.skillsRequired.map(s => (
-                    <span key={s} className="text-xs px-2.5 py-1 bg-primary-50 text-primary rounded-full border border-primary-100 flex items-center gap-1">
+                    <span key={s} className="text-xs px-2.5 py-1 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1">
                       {s}
-                      <button type="button" onClick={() => toggleSkill(s)} className="text-primary/60 hover:text-primary font-bold">×</button>
+                      <button type="button" onClick={() => toggleSkill(s)} className="text-primary-ink/60 hover:text-primary-ink font-bold">×</button>
                     </span>
                   ))}
                 </div>
@@ -261,7 +261,7 @@ export default function CreateEditJob({ editJobId }: Props) {
                     type="button"
                     onClick={() => setForm(p => ({ ...p, workType: wt.value as WorkType }))}
                     className={`py-2.5 rounded-xl border text-sm font-medium transition-colors ${
-                      form.workType === wt.value ? 'border-primary bg-primary-50 text-primary' : 'border-stone-200 text-stone-700 hover:border-stone-300'
+                      form.workType === wt.value ? 'border-primary bg-primary-50 text-primary-ink' : 'border-stone-200 text-stone-700 hover:border-stone-300'
                     }`}
                   >
                     {wt.label}

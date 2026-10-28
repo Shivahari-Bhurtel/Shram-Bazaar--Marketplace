@@ -22,7 +22,7 @@ export default function JobDetail() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
         <p className="text-stone-500">Job not found.</p>
-        <button onClick={() => navigate('job-discovery')} className="mt-4 text-primary hover:underline">Back to jobs</button>
+        <button onClick={() => navigate('job-discovery')} className="mt-4 text-primary-ink hover:underline">Back to jobs</button>
       </div>
     );
   }
@@ -80,7 +80,7 @@ export default function JobDetail() {
                       onClick={() => saved ? unsaveJob(job.id) : saveJob(job.id)}
                       title={saved ? 'Remove saved job' : 'Save job'}
                       className={`p-2 rounded-lg border transition-colors flex-shrink-0 ${
-                        saved ? 'bg-primary-50 border-primary-100 text-primary' : 'bg-white border-stone-200 text-stone-400 hover:text-primary'
+                        saved ? 'bg-primary-50 border-primary-100 text-primary-ink' : 'bg-white border-stone-200 text-stone-400 hover:text-primary-ink'
                       }`}
                     >
                       <svg viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" className="w-5 h-5">
@@ -91,7 +91,7 @@ export default function JobDetail() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {isExternal ? (
-                    <span className="text-xs font-medium px-2.5 py-1 rounded-full border border-primary-100 bg-primary-50 text-primary">External Opportunity</span>
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full border border-primary-100 bg-primary-50 text-primary-ink">External Opportunity</span>
                   ) : <CategoryBadge category={job.category} />}
                   <span className="text-xs font-medium px-2.5 py-1 bg-stone-100 text-stone-600 rounded-full">{job.employmentType || workTypeLabel[job.workType]}</span>
                   {isExternal && <span className="text-xs font-mono-data text-stone-400 px-2.5 py-1">Source: Himalayas</span>}
@@ -266,7 +266,7 @@ export default function JobDetail() {
                     </p>
                     <button
                       onClick={() => navigate('worker-profile')}
-                      className="mt-3 text-xs font-semibold text-primary hover:underline"
+                      className="mt-3 text-xs font-semibold text-primary-ink hover:underline"
                     >
                       Complete KYC
                     </button>
@@ -307,7 +307,7 @@ export default function JobDetail() {
               </p>
             </div>
             {isWorker && !isExternal && (
-              <button onClick={() => setShowReport(value => !value)} className="mt-3 text-xs text-stone-500 hover:text-primary">
+              <button onClick={() => setShowReport(value => !value)} className="mt-3 text-xs text-stone-500 hover:text-primary-ink">
                 Report this job
               </button>
             )}

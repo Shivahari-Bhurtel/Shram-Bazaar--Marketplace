@@ -141,7 +141,7 @@ export default function JobDiscovery() {
         aria-hidden="true"
         viewBox="0 0 1000 460"
         fill="none"
-        className="pointer-events-none fixed left-1/2 top-[calc(50%+2rem)] z-0 w-[min(94vw,72rem)] -translate-x-1/2 -translate-y-1/2 text-primary opacity-[0.08]"
+        className="pointer-events-none fixed left-1/2 top-[calc(50%+2rem)] z-0 w-[min(94vw,72rem)] -translate-x-1/2 -translate-y-1/2 text-primary-ink opacity-[0.08]"
       >
         <g stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
           <path d="M48 410V224h106v186M154 410V163h130v247M284 410V255h100v155M384 410V194h128v216M512 410V128h148v282M660 410V226h112v184M772 410V176h116v234M888 410V270h70v140" />
@@ -196,7 +196,7 @@ export default function JobDiscovery() {
           </svg>
           Filters
           {activeFiltersCount > 0 && (
-            <span className="w-5 h-5 bg-white text-primary rounded-full text-xs font-bold flex items-center justify-center">{activeFiltersCount}</span>
+            <span className="w-5 h-5 bg-white text-primary-ink rounded-full text-xs font-bold flex items-center justify-center">{activeFiltersCount}</span>
           )}
         </button>
 
@@ -218,7 +218,7 @@ export default function JobDiscovery() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-stone-900">Filters</h3>
             {activeFiltersCount > 0 && (
-              <button onClick={clearFilters} className="text-xs text-primary hover:underline">Clear all</button>
+              <button onClick={clearFilters} className="text-xs text-primary-ink hover:underline">Clear all</button>
             )}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">

@@ -46,7 +46,7 @@ export default function Navbar() {
                 </svg>
               </div>
               <div className="leading-none">
-                <span className="font-display text-3xl font-extrabold tracking-tight text-primary leading-none">Shrama</span>
+                <span className="font-display text-3xl font-extrabold tracking-tight text-primary-ink leading-none">Shrama</span>
               </div>
             </button>
 
@@ -59,7 +59,7 @@ export default function Navbar() {
                     onClick={() => navigate(link.page)}
                     className={`${isWorker ? 'rounded-xl px-4 py-2.5 text-base font-semibold tracking-tight' : 'rounded-lg px-3 py-1.5 text-sm font-medium'} transition-colors ${
                       currentPage === link.page
-                        ? isWorker ? 'bg-stone-200 text-stone-950 font-bold' : 'bg-primary-50 text-primary font-bold'
+                        ? isWorker ? 'bg-stone-200 text-stone-950 font-bold' : 'bg-primary-50 text-primary-ink font-bold'
                         : isWorker ? 'text-stone-950 hover:bg-stone-100' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                     }`}
                   >
@@ -70,10 +70,10 @@ export default function Navbar() {
             )}
             {!currentUser && (
               <div className="hidden md:flex items-center gap-6 text-sm font-medium text-stone-600">
-                <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary transition-colors">
+                <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary-ink transition-colors">
                   How it works
                 </button>
-                <button onClick={() => document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary transition-colors">
+                <button onClick={() => document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary-ink transition-colors">
                   For businesses
                 </button>
               </div>
@@ -103,7 +103,7 @@ export default function Navbar() {
                   {/* Profile menu */}
                   <div className="hidden md:flex items-center gap-2">
                     {!isWorker && (
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary-50 text-primary">
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary-50 text-primary-ink">
                         Provider
                       </span>
                     )}
@@ -112,7 +112,7 @@ export default function Navbar() {
                         onClick={() => setProfileOpen(open => !open)}
                         aria-haspopup="menu"
                         aria-expanded={profileOpen}
-                        className={`${isWorker ? 'text-[15px] font-semibold tracking-tight' : 'text-sm font-medium'} inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-stone-700 transition-colors hover:bg-stone-100 hover:text-primary`}
+                        className={`${isWorker ? 'text-[15px] font-semibold tracking-tight' : 'text-sm font-medium'} inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-stone-700 transition-colors hover:bg-stone-100 hover:text-primary-ink`}
                       >
                         Profile
                         <svg viewBox="0 0 20 20" fill="currentColor" className={`h-4 w-4 transition-transform ${profileOpen ? 'rotate-180' : ''}`} aria-hidden="true">
@@ -124,21 +124,21 @@ export default function Navbar() {
                           <button
                             role="menuitem"
                             onClick={() => { setProfileOpen(false); navigate(isWorker ? 'worker-profile' : 'provider-profile'); }}
-                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-primary"
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-primary-ink"
                           >
                             View profile
                           </button>
                           <button
                             role="menuitem"
                             onClick={() => { setProfileOpen(false); navigate('settings'); }}
-                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-primary"
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-primary-ink"
                           >
                             Settings
                           </button>
                           <button
                             role="menuitem"
                             onClick={() => { setProfileOpen(false); logout(); }}
-                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-600 transition-colors hover:bg-primary-50 hover:text-primary-dark"
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-600 transition-colors hover:bg-primary-50 hover:text-primary-ink"
                           >
                             Sign out
                           </button>
@@ -164,7 +164,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => navigate('login')}
-                    className="text-sm font-medium text-stone-700 hover:text-primary transition-colors px-3 py-1.5"
+                    className="text-sm font-medium text-stone-700 hover:text-primary-ink transition-colors px-3 py-1.5"
                   >
                     Sign in
                   </button>
@@ -188,7 +188,7 @@ export default function Navbar() {
                   onClick={() => { navigate(link.page); setMobileOpen(false); }}
                   className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${isWorker ? 'text-base font-semibold tracking-tight' : 'text-sm font-medium'} ${
                     currentPage === link.page
-                      ? isWorker ? 'bg-stone-200 text-stone-950 font-bold' : 'bg-primary-50 text-primary font-bold'
+                      ? isWorker ? 'bg-stone-200 text-stone-950 font-bold' : 'bg-primary-50 text-primary-ink font-bold'
                       : isWorker ? 'text-stone-950 hover:bg-stone-100' : 'text-stone-600 hover:bg-stone-100'
                   }`}
                 >

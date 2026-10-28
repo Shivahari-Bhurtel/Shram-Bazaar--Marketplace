@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useApp } from '../store/AppContext';
 import heroVideo from '../assets/hero/gemini_generated_video_f3c61e6d.mp4';
 
@@ -14,32 +14,98 @@ const providerSteps = [
   ['3', 'Choose a worker', 'Review applicants and select the right person for your opening.'],
 ];
 
+const workCategories = [
+  { label: 'Professional & Qualified', icon: 'professional' },
+  { label: 'Skilled Work', icon: 'skilled' },
+  { label: 'Hospitality & Food', icon: 'hospitality' },
+  { label: 'Retail & Sales', icon: 'retail' },
+  { label: 'Events & Temporary', icon: 'events' },
+  { label: 'Delivery & Logistics', icon: 'delivery' },
+  { label: 'Digital & Creative', icon: 'digital' },
+  { label: 'Construction & Maintenance', icon: 'construction' },
+] as const;
+
+function CategoryIcon({ type }: { type: (typeof workCategories)[number]['icon'] }) {
+  const commonProps = {
+    viewBox: '0 0 64 64',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    className: 'h-16 w-16',
+    'aria-hidden': true,
+  };
+
+  if (type === 'professional') {
+    return <svg {...commonProps}><path d="M12 35 23 25c3-3 7-3 10 0l6 6 8-8c2-2 5-2 7 0l3 3-13 13c-3 3-7 3-10 0l-4-4-7 7-11-7Z" /><path d="m18 23 7-6 7 4M43 23l7-7 5 1-1 6" /><path d="M29 12v5M24 14l-3-3M35 14l3-3" /></svg>;
+  }
+  if (type === 'skilled') {
+    return <svg {...commonProps}><path d="M17 33h30v12H17zM13 45h38M22 33V21h20v12M27 21v-5h10v5M24 39h16" /><path d="M29 48v4M35 48v4" /></svg>;
+  }
+  if (type === 'hospitality') {
+    return <svg {...commonProps}><path d="M13 31h38M17 31c1 10 7 15 15 15s14-5 15-15M14 31c0-7 5-12 18-12s18 5 18 12M32 13v6M26 13h12M21 51h22" /><path d="M47 24c4 0 6 2 6 5" /></svg>;
+  }
+  if (type === 'retail') {
+    return <svg {...commonProps}><path d="M16 25h32l-2 27H18l-2-27Z" /><path d="m19 25 4-10h18l4 10M25 25c0 4 3 6 7 6s7-2 7-6M25 38h14M25 44h9" /></svg>;
+  }
+  if (type === 'events') {
+    return <svg {...commonProps}><path d="M14 20h36v32H14zM14 28h36M23 13v14M41 13v14" /><path d="m22 38 5 5 15-15" /></svg>;
+  }
+  if (type === 'delivery') {
+    return <svg {...commonProps}><path d="M10 24h29v22H10zM39 32h8l7 8v6H39zM17 46a4 4 0 1 0 8 0M44 46a4 4 0 1 0 8 0M48 32v8h6" /><path d="M15 19h12M10 14h13" /></svg>;
+  }
+  if (type === 'digital') {
+    return <svg {...commonProps}><path d="m13 19 10 10-10 10M29 43h22M38 15h13M38 22h13M38 29h8" /><path d="M22 17h8v8h-8z" /></svg>;
+  }
+  return <svg {...commonProps}><path d="M15 51h34M20 51V24h24v27M16 24l4-9h24l4 9M27 51V38h10v13M25 30h2M37 30h2" /><path d="M13 15h10M41 15h10" /></svg>;
+}
+
 export default function Landing() {
   const { navigate, state, browseSkill } = useApp();
   const [openMenu, setOpenMenu] = useState<'worker' | 'provider' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [heroSlide, setHeroSlide] = useState<'image' | 'video'>('image');
+  const [heroVideoMuted, setHeroVideoMuted] = useState(true);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const heroTrackRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef<{ pointerId: number; x: number; scrollLeft: number } | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
-  const changeHeroSlide = (slide: 'image' | 'video') => {
+  const changeHeroSlide = (slide: 'image' | 'video', instant = slide === 'image') => {
     const video = heroVideoRef.current;
     if (slide === 'video') {
       if (video) {
-        video.volume = 1;
-        video.muted = false;
+        video.muted = true;
+        setHeroVideoMuted(true);
+        video.currentTime = 0;
         void video.play().catch(() => undefined);
       }
     } else if (video) {
       video.muted = true;
+      setHeroVideoMuted(true);
       video.pause();
+      video.currentTime = 0;
     }
     setHeroSlide(slide);
     const track = heroTrackRef.current;
-    if (track) track.scrollTo({ left: slide === 'video' ? track.clientWidth : 0, behavior: 'smooth' });
+    if (track) track.scrollTo({ left: slide === 'video' ? track.clientWidth : 0, behavior: instant ? 'instant' : 'smooth' });
   };
+
+  const toggleHeroVideoSound = () => {
+    const video = heroVideoRef.current;
+    if (!video) return;
+    const nextMuted = !heroVideoMuted;
+    video.muted = nextMuted;
+    setHeroVideoMuted(nextMuted);
+    if (!nextMuted && video.paused) void video.play().catch(() => undefined);
+  };
+
+  useEffect(() => {
+    if (heroSlide !== 'image') return;
+    const timer = window.setTimeout(() => changeHeroSlide('video', false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [heroSlide]);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -60,26 +126,26 @@ export default function Landing() {
               onClick={() => setOpenMenu(openMenu === 'worker' ? null : 'worker')}
               aria-haspopup="menu"
               aria-expanded={openMenu === 'worker'}
-              className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-primary transition-colors hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
               Find work
             </button>
             {openMenu === 'worker' && (
               <div role="menu" className="absolute left-0 top-full z-50 mt-3 min-w-40 rounded-xl border border-stone-200 bg-white p-2 shadow-lg">
-                <button onClick={() => { setOpenMenu(null); navigate('login'); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary">Login</button>
-                <button onClick={() => { setOpenMenu(null); navigate('worker-signup'); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary">Register</button>
+                <button onClick={() => { setOpenMenu(null); navigate('login'); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary-ink">Login</button>
+                <button onClick={() => { setOpenMenu(null); navigate('worker-signup'); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary-ink">Register</button>
               </div>
             )}
           </div>
           <button
             onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             How it works
           </button>
           <button
             onClick={() => document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' })}
-            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             For businesses
           </button>
@@ -88,14 +154,14 @@ export default function Landing() {
               onClick={() => setOpenMenu(openMenu === 'provider' ? null : 'provider')}
               aria-haspopup="menu"
               aria-expanded={openMenu === 'provider'}
-              className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-primary transition-colors hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
               Hire workers
             </button>
             {openMenu === 'provider' && (
               <div role="menu" className="absolute left-0 top-full z-50 mt-3 min-w-40 rounded-xl border border-stone-200 bg-white p-2 shadow-lg">
-                <button onClick={() => { setOpenMenu(null); navigate('login'); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary">Login</button>
-                <button onClick={() => { setOpenMenu(null); navigate('provider-signup'); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary">Register</button>
+                <button onClick={() => { setOpenMenu(null); navigate('login'); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary-ink">Login</button>
+                <button onClick={() => { setOpenMenu(null); navigate('provider-signup'); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary-ink">Register</button>
               </div>
             )}
           </div>
@@ -111,19 +177,19 @@ export default function Landing() {
               aria-label="Search jobs or skills"
               className="min-w-0 flex-1 bg-transparent text-[15px] font-medium text-stone-800 placeholder:text-stone-400 outline-none"
             />
-            <button type="submit" className="ml-2 shrink-0 text-[15px] font-bold tracking-tight text-primary transition-colors hover:text-primary-dark">
+            <button type="submit" className="ml-2 shrink-0 text-[15px] font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink">
               Search
             </button>
           </form>
           <button
             onClick={() => navigate('login')}
-            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight text-stone-700 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-[15px] font-semibold tracking-tight text-stone-700 transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             Login
           </button>
           <button
             onClick={() => navigate('worker-signup')}
-            className="shrink-0 whitespace-nowrap text-[15px] font-bold tracking-tight text-primary transition-colors hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-[15px] font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             Sign up
           </button>
@@ -190,10 +256,10 @@ export default function Landing() {
             <video
               ref={heroVideoRef}
               src={heroVideo}
-              muted
+              muted={heroVideoMuted}
               playsInline
-              loop
               preload="auto"
+              onEnded={() => changeHeroSlide('image', true)}
               aria-label="Shram Bazzar hero video"
               className="h-full w-full object-cover"
             />
@@ -203,7 +269,7 @@ export default function Landing() {
         <div className="relative z-[2] max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 lg:py-40">
           <div className="max-w-2xl">
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              <span className="font-brand text-6xl sm:text-7xl lg:text-8xl font-semibold">Shram Bazzar</span><br />
+              <span className="font-brand text-6xl sm:text-7xl lg:text-8xl font-semibold text-white">Shram Bazzar</span><br />
               <span className="text-primary-light">for Flexible Work</span>
             </h1>
             <p className="text-lg text-white/80 leading-relaxed mb-10 max-w-xl">
@@ -225,49 +291,40 @@ export default function Landing() {
             </p>
           </div>
         </div>
-        <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3" role="group" aria-label="Choose hero background">
+        {heroSlide === 'video' && (
           <button
             type="button"
-            onClick={() => changeHeroSlide('image')}
-            aria-label="Show image background"
-            aria-pressed={heroSlide === 'image'}
-            className={`h-3 w-3 rounded-full shadow-sm ring-offset-2 ring-offset-stone-900/40 transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white ${heroSlide === 'image' ? 'bg-white ring-2 ring-white/70' : 'bg-white/50 hover:bg-white/80'}`}
-          />
-          <button
-            type="button"
-            onClick={() => changeHeroSlide('video')}
-            aria-label="Show video background"
-            aria-pressed={heroSlide === 'video'}
-            className={`h-3 w-3 rounded-full shadow-sm ring-offset-2 ring-offset-stone-900/40 transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white ${heroSlide === 'video' ? 'bg-white ring-2 ring-white/70' : 'bg-white/50 hover:bg-white/80'}`}
-          />
-        </div>
+            onClick={toggleHeroVideoSound}
+            aria-label={heroVideoMuted ? 'Turn video sound on' : 'Mute video'}
+            aria-pressed={!heroVideoMuted}
+            className="absolute bottom-4 right-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-stone-950/45 text-white shadow-lg backdrop-blur-sm transition hover:bg-stone-950/65 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:bottom-5 sm:right-6"
+          >
+            {heroVideoMuted ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5 6 9H3v6h3l5 4V5Zm5 4 5 6m0-6-5 6" /></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5 6 9H3v6h3l5 4V5Zm4 4a5 5 0 0 1 0 6m3-9a9 9 0 0 1 0 12" /></svg>
+            )}
+          </button>
+        )}
       </section>
 
       <section className="bg-white px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-2xl">
             <h2 className="font-sans text-3xl font-bold leading-tight tracking-normal text-stone-900 sm:text-4xl lg:text-5xl">
-              Find Your right work
+              Find Your Right Work
             </h2>
           </div>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              'Professional & Qualified',
-              'Skilled Work',
-              'Hospitality & Food',
-              'Retail & Sales',
-              'Events & Temporary',
-              'Delivery & Logistics',
-              'Digital & Creative',
-              'Construction & Maintenance',
-            ].map(category => (
+          <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
+            {workCategories.map(category => (
               <button
-                key={category}
+                key={category.label}
                 onClick={() => navigate('worker-signup')}
-                className="group flex min-h-24 items-center justify-between rounded-2xl border-l-4 border-primary bg-white px-5 py-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg sm:px-6"
+                aria-label={`Find work in ${category.label}`}
+                className="group relative flex min-h-36 flex-col items-center justify-center rounded-xl border-2 border-primary-dark bg-[#fff0dd] px-4 py-5 text-center text-primary-ink shadow-[6px_7px_0_0_#68432c] transition-all hover:-translate-y-1 hover:shadow-[8px_9px_0_0_#68432c] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
               >
-                <span className="font-display text-lg font-semibold leading-snug text-stone-800 transition-colors group-hover:text-primary sm:text-xl">{category}</span>
-                <span className="ml-3 text-xl text-stone-300 transition-all group-hover:translate-x-1 group-hover:text-primary">→</span>
+                <CategoryIcon type={category.icon} />
+                <span className="mt-3 font-display text-lg font-semibold leading-tight text-stone-900 transition-colors group-hover:text-primary-ink sm:text-xl">{category.label}</span>
               </button>
             ))}
           </div>
@@ -283,7 +340,7 @@ export default function Landing() {
             {state.allProviderProfiles.slice(0, 4).map(provider => (
                 <article key={provider.id} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-50 text-lg font-semibold text-primary">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-50 text-lg font-semibold text-primary-ink">
                       {provider.logo ? (
                         <img src={provider.logo} alt="" className="h-full w-full object-cover" />
                       ) : (
@@ -332,7 +389,7 @@ export default function Landing() {
             <p className="inline-flex rounded-full bg-white/15 px-3 py-1 text-sm font-semibold tracking-wide text-white">For businesses</p>
             <h2 className="mt-4 font-sans text-4xl font-bold leading-tight sm:text-5xl">Find the right people for your next job</h2>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg">Post your opening, connect with skilled workers across Nepal, and manage your hiring in one place.</p>
-            <button onClick={() => navigate('provider-signup')} className="mt-8 inline-flex items-center gap-3 rounded-lg bg-white px-6 py-3 text-base font-semibold text-primary transition-colors hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            <button onClick={() => navigate('provider-signup')} className="mt-8 inline-flex items-center gap-3 rounded-lg bg-white px-6 py-3 text-base font-semibold text-primary-ink transition-colors hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
               Create your business account <span aria-hidden="true">→</span>
             </button>
           </div>
@@ -386,7 +443,7 @@ function WhyShramaSection() {
 }
 
 function SectionHeading({ eyebrow, title, description, dark = false }: { eyebrow: string; title: string; description: string; dark?: boolean }) {
-  return <div className="max-w-2xl">{eyebrow && <p className="text-xs uppercase tracking-[0.16em] font-semibold text-primary">{eyebrow}</p>}<h2 className={`font-display text-3xl md:text-4xl font-bold ${eyebrow ? 'mt-3' : ''} ${dark ? 'text-white' : 'text-stone-900'}`}>{title}</h2><p className={`mt-3 leading-relaxed ${dark ? 'text-white/60' : 'text-stone-500'}`}>{description}</p></div>;
+  return <div className="max-w-2xl">{eyebrow && <p className="text-xs uppercase tracking-[0.16em] font-semibold text-primary-ink">{eyebrow}</p>}<h2 className={`font-display text-3xl md:text-4xl font-bold ${eyebrow ? 'mt-3' : ''} ${dark ? 'text-white' : 'text-stone-900'}`}>{title}</h2><p className={`mt-3 leading-relaxed ${dark ? 'text-white/60' : 'text-stone-500'}`}>{description}</p></div>;
 }
 
 function Journey({ title, steps, action, onAction, provider = false }: { title: string; steps: string[][]; action: string; onAction: () => void; provider?: boolean }) {
@@ -396,7 +453,7 @@ function Journey({ title, steps, action, onAction, provider = false }: { title: 
       <div className="mt-8 space-y-7">
         {steps.map(([number, step, detail]) => (
           <div key={number} className="grid grid-cols-[2.75rem_1fr] gap-4">
-            <span className={`flex h-11 w-11 items-center justify-center rounded-full font-sans text-xl font-extrabold leading-none tracking-tight ring-1 sm:text-2xl ${provider ? 'bg-white/10 text-white ring-white/15' : 'bg-primary-50 text-primary ring-primary-100'}`}>
+            <span className={`flex h-11 w-11 items-center justify-center rounded-full font-sans text-xl font-extrabold leading-none tracking-tight ring-1 sm:text-2xl ${provider ? 'bg-white/10 text-white ring-white/15' : 'bg-primary-50 text-primary-ink ring-primary-100'}`}>
               {number}
             </span>
             <div>

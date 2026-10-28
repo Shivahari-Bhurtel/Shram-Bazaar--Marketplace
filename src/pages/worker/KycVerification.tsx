@@ -78,13 +78,13 @@ export default function KycVerification() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
-      <button onClick={() => navigate('worker-profile')} className="mb-7 inline-flex items-center gap-2 text-sm font-semibold text-stone-600 transition-colors hover:text-primary">
+      <button onClick={() => navigate('worker-profile')} className="mb-7 inline-flex items-center gap-2 text-sm font-semibold text-stone-600 transition-colors hover:text-primary-ink">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5m7 7-7-7 7-7" /></svg>
         Back to profile
       </button>
 
       <header className="mb-8">
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">Account security</p>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary-ink">Account security</p>
         <h1 className="font-display text-3xl font-bold tracking-tight text-stone-950 sm:text-4xl">Verify your account</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600 sm:text-base">Confirm your contact details and submit an identity document for review.</p>
       </header>
@@ -114,7 +114,7 @@ export default function KycVerification() {
             <span className="mb-1.5 block text-sm font-semibold text-stone-700">Mobile number</span>
             <input type="tel" value={phone} onChange={event => setPhone(event.target.value)} autoComplete="tel" placeholder="+977 98XXXXXXXX" className="input-style" />
           </label>
-          <button type="button" onClick={savePhone} className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:border-primary hover:text-primary">Save number</button>
+          <button type="button" onClick={savePhone} className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:border-primary hover:text-primary-ink">Save number</button>
           <button type="button" onClick={requestPhoneCode} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark">Send verification code</button>
         </div>
         <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
@@ -174,7 +174,7 @@ export default function KycVerification() {
             </div>
           </form>
         )}
-        {formMessage && <p role="status" className={`mt-4 text-sm font-medium ${formMessage.includes('submitted') ? 'text-teal' : 'text-primary-dark'}`}>{formMessage}</p>}
+        {formMessage && <p role="status" className={`mt-4 text-sm font-medium ${formMessage.includes('submitted') ? 'text-teal' : 'text-primary-ink'}`}>{formMessage}</p>}
       </section>
 
       <p className="mt-5 text-xs leading-relaxed text-stone-500">This prototype stores verification details in the browser. A secure server-side review and SMS service are required before using this flow for real identity or phone verification.</p>

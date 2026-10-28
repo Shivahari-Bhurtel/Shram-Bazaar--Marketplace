@@ -32,7 +32,7 @@ export default function Settings() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
       <header className="mb-8">
-        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">Your account</p>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary-ink">Your account</p>
         <h1 className="font-display text-3xl font-bold tracking-tight text-stone-950 sm:text-4xl">Settings</h1>
         <p className="mt-2 text-sm leading-relaxed text-stone-600 sm:text-base">Manage your account details and notification preferences.</p>
       </header>
@@ -54,7 +54,7 @@ export default function Settings() {
           <div className="sm:col-span-2">
             <button
               onClick={() => navigate(user?.role === 'provider' ? 'provider-profile' : 'worker-profile')}
-              className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:border-primary hover:text-primary"
+              className="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:border-primary hover:text-primary-ink"
             >
               Edit profile <span aria-hidden="true">→</span>
             </button>

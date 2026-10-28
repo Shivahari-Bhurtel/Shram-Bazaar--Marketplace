@@ -78,7 +78,7 @@ export default function ProviderProfile() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-stone-900">Organisation Details</h3>
               {!editing ? (
-                <button onClick={startEdit} className="text-xs text-primary hover:underline font-medium">Edit</button>
+                <button onClick={startEdit} className="text-xs text-primary-ink hover:underline font-medium">Edit</button>
               ) : (
                 <div className="flex gap-2">
                   <button onClick={() => setEditing(false)} className="text-xs text-stone-500 hover:text-stone-700">Cancel</button>

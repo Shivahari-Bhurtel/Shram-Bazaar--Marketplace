@@ -58,7 +58,7 @@ export default function ProviderDashboard() {
           { label: 'Active Jobs', value: activeJobs.length, color: 'text-green-700', bg: 'bg-green-50', page: 'my-jobs' as const },
           { label: 'Total Posted', value: myJobs.length, color: 'text-stone-700', bg: 'bg-stone-50', page: 'my-jobs' as const },
           { label: 'Total Applicants', value: totalApplicants, color: 'text-teal', bg: 'bg-teal-50', page: 'my-jobs' as const },
-          { label: 'Workers Hired', value: totalAccepted, color: 'text-primary', bg: 'bg-primary-50', page: 'my-jobs' as const },
+          { label: 'Workers Hired', value: totalAccepted, color: 'text-primary-ink', bg: 'bg-primary-50', page: 'my-jobs' as const },
         ].map(s => (
           <button
             key={s.label}
@@ -67,7 +67,7 @@ export default function ProviderDashboard() {
           >
             <div className={`font-display text-3xl font-bold mb-1 ${s.color}`}>{s.value}</div>
             <div className="text-xs text-stone-500">{s.label}</div>
-            <div className="text-xs text-stone-400 mt-1 group-hover:text-primary transition-colors">View →</div>
+            <div className="text-xs text-stone-400 mt-1 group-hover:text-primary-ink transition-colors">View →</div>
           </button>
         ))}
       </div>

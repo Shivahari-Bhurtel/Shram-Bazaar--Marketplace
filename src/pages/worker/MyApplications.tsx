@@ -7,7 +7,6 @@ export default function MyApplications() {
   const { myApplications, navigate, state } = useApp();
   const [activeTab, setActiveTab] = useState<ApplicationStatus | 'all'>('all');
 
-  const countFor = (status: ApplicationStatus) => myApplications.filter(app => app.status === status).length;
   const filtered = activeTab === 'all' ? myApplications : myApplications.filter(app => app.status === activeTab);
   const tabs: { key: ApplicationStatus | 'all'; label: string }[] = [
     { key: 'all', label: 'All applications' },
@@ -21,7 +20,7 @@ export default function MyApplications() {
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">Your workspace</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary-ink">Your workspace</p>
           <h1 className="font-display text-3xl font-bold tracking-tight text-stone-950 sm:text-4xl">My applications</h1>
           <p className="mt-2 text-sm leading-relaxed text-stone-600 sm:text-base">Keep track of your applications and the latest updates from employers.</p>
         </div>
@@ -34,14 +33,10 @@ export default function MyApplications() {
       </header>
 
       <section aria-label="Application list">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold tracking-tight text-stone-900">Application activity</h2>
-          <span className="text-sm text-stone-500">{myApplications.length} {myApplications.length === 1 ? 'application' : 'applications'}</span>
-        </div>
+        <div className="mb-5"><h2 className="text-lg font-bold tracking-tight text-stone-900">Application activity</h2></div>
 
         <div className="mb-5 flex gap-2 overflow-x-auto border-b border-stone-200 pb-0.5" role="tablist" aria-label="Filter applications by status">
           {tabs.map(tab => {
-            const count = tab.key === 'all' ? myApplications.length : countFor(tab.key);
             const selected = activeTab === tab.key;
             return (
               <button
@@ -50,10 +45,9 @@ export default function MyApplications() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${selected ? 'border-primary text-primary' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
+                className={`flex shrink-0 items-center border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${selected ? 'border-primary text-primary-ink' : 'border-transparent text-stone-500 hover:text-stone-800'}`}
               >
                 {tab.label}
-                <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${selected ? 'bg-primary-50 text-primary' : 'bg-stone-100 text-stone-500'}`}>{count}</span>
               </button>
             );
           })}
@@ -61,7 +55,7 @@ export default function MyApplications() {
 
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-stone-200 bg-white px-6 py-14 text-center sm:px-12 sm:py-16">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 text-primary" aria-hidden="true">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-50 text-primary-ink" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-8 w-8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7m-13 2h18l-1.2 10.2a2 2 0 0 1-2 1.8H6.2a2 2 0 0 1-2-1.8L3 9Zm0 0V7h18v2m-12 4h6" />
               </svg>
@@ -92,7 +86,7 @@ export default function MyApplications() {
                     <div className="min-w-0">
                       <button
                         onClick={() => navigate('job-detail', app.jobId)}
-                        className="text-left font-display text-lg font-bold leading-snug text-stone-900 transition-colors hover:text-primary sm:text-xl"
+                        className="text-left font-display text-lg font-bold leading-snug text-stone-900 transition-colors hover:text-primary-ink sm:text-xl"
                       >
                         {app.jobTitle}
                       </button>
@@ -138,7 +132,7 @@ export default function MyApplications() {
 
                   <div className="mt-5 flex items-center justify-between border-t border-stone-100 pt-4">
                     <span className="text-xs text-stone-400">Applied {app.appliedDate}</span>
-                    <button onClick={() => navigate('job-detail', app.jobId)} className="inline-flex items-center gap-1 text-sm font-semibold text-primary transition-colors hover:text-primary-dark">
+                    <button onClick={() => navigate('job-detail', app.jobId)} className="inline-flex items-center gap-1 text-sm font-semibold text-primary-ink transition-colors hover:text-primary-ink">
                       View job <span aria-hidden="true">→</span>
                     </button>
                   </div>

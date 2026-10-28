@@ -166,7 +166,7 @@ export default function AuthPage({ mode }: Props) {
           </div>
 
           {error && (
-            <div className="mb-5 rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary">
+            <div className="mb-5 rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-ink">
               {error}
             </div>
           )}
@@ -230,9 +230,9 @@ export default function AuthPage({ mode }: Props) {
                   {formData.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {formData.skills.map(s => (
-                        <span key={s} className="text-xs px-2 py-1 bg-primary-50 text-primary rounded-full border border-primary-100 flex items-center gap-1">
+                        <span key={s} className="text-xs px-2 py-1 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1">
                           {s}
-                          <button type="button" onClick={() => toggleSkill(s)} className="text-primary/60 hover:text-primary">×</button>
+                          <button type="button" onClick={() => toggleSkill(s)} className="text-primary-ink/60 hover:text-primary-ink">×</button>
                         </span>
                       ))}
                     </div>
@@ -309,13 +309,13 @@ export default function AuthPage({ mode }: Props) {
           <div className="mt-6 text-center text-sm text-stone-500">
             {isLogin ? (
               <>Don't have an account?{' '}
-                <button onClick={() => navigate('worker-signup')} className="text-primary hover:underline font-medium">Register as Worker</button>
+                <button onClick={() => navigate('worker-signup')} className="text-primary-ink hover:underline font-medium">Register as Worker</button>
                 {' or '}
-                <button onClick={() => navigate('provider-signup')} className="text-primary hover:underline font-medium">as Provider</button>
+                <button onClick={() => navigate('provider-signup')} className="text-primary-ink hover:underline font-medium">as Provider</button>
               </>
             ) : (
               <>Already have an account?{' '}
-                <button onClick={() => navigate('login')} className="text-primary hover:underline font-medium">Sign in</button>
+                <button onClick={() => navigate('login')} className="text-primary-ink hover:underline font-medium">Sign in</button>
                 {isWorker ? (
                   <> · <button onClick={() => navigate('provider-signup')} className="text-stone-500 hover:text-stone-800">Register as a provider</button></>
                 ) : (

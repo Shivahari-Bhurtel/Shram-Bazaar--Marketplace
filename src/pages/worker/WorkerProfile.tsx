@@ -149,7 +149,7 @@ export default function WorkerProfile() {
       <div className="mb-6 rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${kycStatus === 'verified' ? 'bg-teal-50 text-teal' : kycStatus === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-primary-50 text-primary'}`} aria-hidden="true">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${kycStatus === 'verified' ? 'bg-teal-50 text-teal' : kycStatus === 'pending' ? 'bg-amber-50 text-amber-700' : 'bg-primary-50 text-primary-ink'}`} aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3 20 6v5c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10V6l8-3Z"/><path strokeLinecap="round" strokeLinejoin="round" d="m9 12 2 2 4-4"/></svg>
             </div>
             <div>
@@ -236,9 +236,9 @@ export default function WorkerProfile() {
                 />
                 <div className="flex flex-wrap gap-2 mb-3">
                   {(tempData.skills ?? []).map((s: string) => (
-                    <span key={s} className="text-xs px-2.5 py-1 bg-primary-50 text-primary rounded-full border border-primary-100 flex items-center gap-1">
+                    <span key={s} className="text-xs px-2.5 py-1 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1">
                       {s}
-                      <button type="button" onClick={() => toggleSkill(s)} className="text-primary/60 hover:text-primary font-bold">×</button>
+                      <button type="button" onClick={() => toggleSkill(s)} className="text-primary-ink/60 hover:text-primary-ink font-bold">×</button>
                     </span>
                   ))}
                 </div>
@@ -392,7 +392,7 @@ function Section({ title, onEdit, editing, onSave, onCancel, children, editable 
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-stone-900">{title}</h3>
         {!editing ? editable && (
-          <button onClick={onEdit} className="text-xs text-primary hover:underline font-medium">Edit</button>
+          <button onClick={onEdit} className="text-xs text-primary-ink hover:underline font-medium">Edit</button>
         ) : (
           <div className="flex gap-2">
             <button onClick={onCancel} className="text-xs text-stone-500 hover:text-stone-700">Cancel</button>

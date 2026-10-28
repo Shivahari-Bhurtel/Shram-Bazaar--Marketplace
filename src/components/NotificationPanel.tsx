@@ -6,7 +6,7 @@ const typeConfig: Record<Notification['type'], { icon: string; color: string }> 
   shortlisted: { icon: '★', color: 'bg-amber-100 text-amber-700' },
   rejection: { icon: '✗', color: 'bg-stone-100 text-stone-600' },
   application: { icon: '↑', color: 'bg-teal-100 text-teal' },
-  'new-job': { icon: '+', color: 'bg-primary-100 text-primary' },
+  'new-job': { icon: '+', color: 'bg-primary-100 text-primary-ink' },
   'job-update': { icon: '!', color: 'bg-amber-100 text-amber-700' },
 };
 
@@ -24,7 +24,7 @@ export default function NotificationPanel({ onClose }: { onClose: () => void }) 
           <h3 className="font-semibold text-stone-900">Notifications</h3>
           <div className="flex items-center gap-2">
             {myNotifs.some(n => !n.read) && (
-              <button onClick={markAllNotificationsRead} className="text-xs text-primary hover:underline">
+              <button onClick={markAllNotificationsRead} className="text-xs text-primary-ink hover:underline">
                 Mark all read
               </button>
             )}

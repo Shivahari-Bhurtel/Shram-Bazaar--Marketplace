@@ -65,7 +65,7 @@ export default function App() {
         {isWorker && currentPage === 'landing' && <WorkerDashboard />}
         {isProvider && currentPage === 'landing' && <ProviderDashboard />}
       </main>
-      {currentPage !== 'chat' && <ChatLauncher />}
+      {currentPage !== 'chat' && currentPage !== 'landing' && <ChatLauncher />}
     </div>
   );
 }

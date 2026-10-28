@@ -19,7 +19,7 @@ export default function ApplicantManagement() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
         <p className="text-stone-500">Job not found.</p>
-        <button onClick={() => navigate('my-jobs')} className="mt-4 text-primary hover:underline">Back to My Jobs</button>
+        <button onClick={() => navigate('my-jobs')} className="mt-4 text-primary-ink hover:underline">Back to My Jobs</button>
       </div>
     );
   }

@@ -48,16 +48,16 @@ export default function JobCard({ job, compact = false }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-stone-900 text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+            <h3 className="font-semibold text-stone-900 text-sm leading-snug group-hover:text-primary-ink transition-colors line-clamp-2">
               {job.title}
             </h3>
             {isWorker && (
               <button
                 onClick={handleSave}
-                className="p-1 flex-shrink-0 text-stone-400 hover:text-primary transition-colors"
+                className="p-1 flex-shrink-0 text-stone-400 hover:text-primary-ink transition-colors"
                 title={saved ? 'Unsave' : 'Save job'}
               >
-                <svg viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-primary">
+                <svg viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-primary-ink">
                   <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
                 </svg>
               </button>
@@ -85,7 +85,7 @@ export default function JobCard({ job, compact = false }: Props) {
           {job.employmentType || workTypeLabel[job.workType]}
         </span>
         {isExternal && (
-          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary-50 text-primary border border-primary-100">
+          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary-50 text-primary-ink border border-primary-100">
             External Opportunity
           </span>
         )}
@@ -135,7 +135,7 @@ export default function JobCard({ job, compact = false }: Props) {
             <button
               key={skill}
               onClick={event => { event.stopPropagation(); browseSkill(skill); }}
-              className="text-[11px] px-2 py-0.5 bg-stone-100 text-stone-600 rounded-full border border-stone-200 hover:border-primary hover:text-primary"
+              className="text-[11px] px-2 py-0.5 bg-stone-100 text-stone-600 rounded-full border border-stone-200 hover:border-primary hover:text-primary-ink"
             >
               {skill}
             </button>
@@ -171,7 +171,7 @@ export default function JobCard({ job, compact = false }: Props) {
           {applied ? (
             <span className="text-[11px] font-medium text-teal px-2 py-0.5 bg-teal-50 rounded-full">Applied</span>
           ) : (
-            <span className="text-[11px] font-medium text-primary group-hover:underline">{isExternal ? 'View Original →' : 'View Details →'}</span>
+            <span className="text-[11px] font-medium text-primary-ink group-hover:underline">{isExternal ? 'View Original →' : 'View Details →'}</span>
           )}
         </div>
       </div>
