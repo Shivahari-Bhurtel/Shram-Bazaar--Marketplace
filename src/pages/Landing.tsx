@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useApp } from '../store/AppContext';
 import heroVideo from '../assets/hero/gemini_generated_video_f3c61e6d.mp4';
+import { getFeaturedHimalayasJobs } from '../services/himalayas';
+import type { Job } from '../types';
 
 const workerSteps = [
   ['1', 'Build your profile', 'Add your location, skills, experience, and availability.'],
@@ -62,7 +64,7 @@ function CategoryIcon({ type }: { type: (typeof workCategories)[number]['icon'] 
 }
 
 export default function Landing() {
-  const { navigate, state, browseSkill } = useApp();
+  const { navigate, browseSkill } = useApp();
   const [openMenu, setOpenMenu] = useState<'worker' | 'provider' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [heroSlide, setHeroSlide] = useState<'image' | 'video'>('image');
@@ -120,13 +122,13 @@ export default function Landing() {
         aria-label="Shram Bazzar landing navigation"
         className="bg-white"
       >
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 lg:flex-nowrap lg:gap-x-4 xl:gap-x-6 xl:px-0">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-5 font-sans text-base font-semibold tracking-tight text-stone-700 sm:px-6 lg:flex-nowrap lg:gap-x-4 xl:gap-x-7 xl:px-0">
           <div className="relative shrink-0">
             <button
               onClick={() => setOpenMenu(openMenu === 'worker' ? null : 'worker')}
               aria-haspopup="menu"
               aria-expanded={openMenu === 'worker'}
-              className="whitespace-nowrap text-sm font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              className="whitespace-nowrap text-base font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
               Find work
             </button>
@@ -139,13 +141,13 @@ export default function Landing() {
           </div>
           <button
             onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-            className="shrink-0 whitespace-nowrap text-sm font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-base font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             How it works
           </button>
           <button
             onClick={() => document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' })}
-            className="shrink-0 whitespace-nowrap text-sm font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-base font-semibold tracking-tight transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             For businesses
           </button>
@@ -154,7 +156,7 @@ export default function Landing() {
               onClick={() => setOpenMenu(openMenu === 'provider' ? null : 'provider')}
               aria-haspopup="menu"
               aria-expanded={openMenu === 'provider'}
-              className="whitespace-nowrap text-sm font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              className="whitespace-nowrap text-base font-semibold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
               Hire workers
             </button>
@@ -175,21 +177,21 @@ export default function Landing() {
               onChange={event => setSearchTerm(event.target.value)}
               placeholder="Search jobs or skills"
               aria-label="Search jobs or skills"
-              className="min-w-0 flex-1 bg-transparent text-sm font-medium text-stone-800 placeholder:text-stone-400 outline-none"
+              className="min-w-0 flex-1 bg-transparent text-base font-medium text-stone-800 placeholder:text-stone-400 outline-none"
             />
-            <button type="submit" className="ml-2 shrink-0 text-[15px] font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink">
+            <button type="submit" className="ml-2 shrink-0 text-base font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink">
               Search
             </button>
           </form>
           <button
             onClick={() => navigate('login')}
-            className="shrink-0 whitespace-nowrap text-sm font-semibold tracking-tight text-stone-700 transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-base font-semibold tracking-tight text-stone-700 transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             Login
           </button>
           <button
             onClick={() => navigate('worker-signup')}
-            className="shrink-0 whitespace-nowrap text-sm font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-base font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
           >
             Sign up
           </button>
@@ -331,35 +333,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {state.allProviderProfiles.length > 0 && <section id="popular-providers" className="bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-16">
-          <h2 className="mb-8 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
-            Popular Providers
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {state.allProviderProfiles.slice(0, 4).map(provider => (
-                <article key={provider.id} className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary-50 text-lg font-semibold text-primary-ink">
-                      {provider.logo ? (
-                        <img src={provider.logo} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        provider.orgName.slice(0, 1)
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="truncate font-display text-lg font-semibold text-stone-900">{provider.orgName}</h3>
-                      <p className="mt-1 text-xs text-stone-500">{provider.industry}</p>
-                    </div>
-                  </div>
-                  <div className="mt-5 flex items-center gap-3 pt-4 text-xs text-stone-500">
-                    <span>{provider.district}</span>
-                  </div>
-                </article>
-            ))}
-          </div>
-        </div>
-      </section>}
+      <FeaturedOpportunities />
 
       <section id="how-it-works" className="bg-white px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-7xl">
@@ -430,6 +404,111 @@ export default function Landing() {
           <span>© 2026 Shram Bazzar</span><span>Work and hiring across Nepal</span>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function FeaturedOpportunities() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    getFeaturedHimalayasJobs(10, controller.signal)
+      .then(listings => setJobs(listings.filter(job => job.providerName.toLowerCase().replace(/[^a-z0-9]/g, '') !== 'aihimalaya')))
+      .catch(cause => {
+        if (cause.name !== 'AbortError') {
+          setError(cause instanceof Error ? cause.message : 'Featured opportunities are temporarily unavailable.');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [retry]);
+
+  return (
+    <section id="popular-providers" className="bg-white">
+      <div className="mx-auto max-w-7xl px-4 pb-12 pt-10 sm:px-6 sm:pb-14 sm:pt-12">
+        <h2 className="mb-7 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">Popular Providers</h2>
+        {loading && jobs.length === 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Loading job listings">
+            {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-[200px] w-full animate-pulse rounded-2xl border border-stone-100 bg-stone-50" />)}
+          </div>
+        )}
+
+        {error && (
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-600">
+            <span>Listings unavailable</span>
+            <button onClick={() => setRetry(value => value + 1)} className="rounded-lg px-3 py-2 font-semibold text-primary-ink transition hover:bg-stone-50">Retry</button>
+          </div>
+        )}
+
+        {jobs.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {jobs.map((job, index) => <FeaturedOpportunityCard key={job.id} job={job} index={index} />)}
+          </div>
+        )}
+
+      </div>
+    </section>
+  );
+}
+
+function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
+  return (
+    <article
+      style={{ animationDelay: `${Math.min(index * 55, 360)}ms`, animationFillMode: 'backwards' }}
+      className="group flex h-[200px] w-full min-w-0 flex-col rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#91AC67]/60 hover:bg-white hover:shadow-md motion-reduce:animate-none motion-reduce:transition-none animate-fade-in"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <CompanyLogo job={job} />
+        {job.externalUrl ? (
+          <a href={job.externalUrl} target="_blank" rel="noreferrer" className="group/apply inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 font-sans text-[13px] font-semibold tracking-tight text-primary-ink transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+            Apply <span aria-hidden="true" className="text-sm transition-transform duration-200 group-hover/apply:-translate-y-0.5 group-hover/apply:translate-x-0.5">↗</span>
+          </a>
+        ) : (
+          <span className="inline-flex shrink-0 items-center gap-1 px-2 py-1 font-sans text-[13px] font-semibold tracking-tight text-stone-400">Apply <span aria-hidden="true" className="text-sm">↗</span></span>
+        )}
+      </div>
+      <div className="mt-4 min-w-0">
+        <h3 className="line-clamp-2 font-sans text-[15px] font-semibold leading-[1.25] tracking-tight text-stone-900">{job.providerName}</h3>
+        {job.externalCategory && <p className="mt-1.5 line-clamp-2 font-sans text-[13px] font-medium leading-[1.4] tracking-[0.005em] text-stone-600">{job.externalCategory}</p>}
+      </div>
+      <span className="mt-auto inline-flex w-fit px-2.5 py-1 font-sans text-xs font-semibold tracking-tight text-[#597928]">Remote</span>
+    </article>
+  );
+}
+
+function CompanyLogo({ job }: { job: Job }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const initials = job.providerName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(part => part.charAt(0))
+    .join('')
+    .toUpperCase();
+
+  return (
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm ring-2 ring-stone-50 transition-transform duration-300 group-hover:scale-105">
+      {job.providerLogo && !imageFailed ? (
+        <img
+          src={job.providerLogo}
+          alt={`${job.providerName} logo`}
+          loading="lazy"
+          onError={() => setImageFailed(true)}
+          className="h-full w-full object-contain p-1.5"
+        />
+      ) : (
+        <span aria-hidden="true" className="flex h-full w-full items-center justify-center bg-primary-50 font-sans text-sm font-bold tracking-wide text-primary-ink">
+          {initials}
+        </span>
+      )}
     </div>
   );
 }

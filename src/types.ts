@@ -111,6 +111,7 @@ export interface Job {
   matchReasons?: string[];
   externalSource?: 'himalayas';
   externalUrl?: string;
+  externalCategory?: string;
   salaryText?: string;
   employmentType?: string;
   seniority?: string;

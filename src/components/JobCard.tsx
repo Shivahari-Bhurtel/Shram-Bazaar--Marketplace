@@ -34,7 +34,13 @@ export default function JobCard({ job, compact = false }: Props) {
 
   return (
     <div
-      onClick={() => navigate('job-detail', job.id)}
+      onClick={() => {
+        if (isExternal && !state.currentUser) {
+          if (job.externalUrl) window.open(job.externalUrl, '_blank', 'noopener,noreferrer');
+          return;
+        }
+        navigate('job-detail', job.id);
+      }}
       className="bg-white border border-stone-200 rounded-2xl p-5 cursor-pointer hover:shadow-md hover:border-stone-300 transition-all group animate-fade-in"
     >
       {/* Header */}
@@ -151,7 +157,7 @@ export default function JobCard({ job, compact = false }: Props) {
       {isExternal && !compact && (
         <div className="mt-3 border-t border-stone-100 pt-3">
           <p className="line-clamp-2 text-xs leading-relaxed text-stone-600">{job.description || 'Description not listed.'}</p>
-          <p className="mt-2 text-[10px] font-mono-data uppercase tracking-wider text-stone-400">Source: Himalayas</p>
+          <p className="mt-2 text-[10px] font-mono-data uppercase tracking-wider text-stone-400"><a href="https://himalayas.app" target="_blank" rel="noreferrer" onClick={event => event.stopPropagation()} className="underline underline-offset-2 hover:text-primary-ink">Source: Himalayas</a></p>
         </div>
       )}
 

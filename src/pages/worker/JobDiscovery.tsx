@@ -7,6 +7,20 @@ import type { JobCategory, WorkType } from '../../types';
 
 type SortOption = 'match' | 'payment-high' | 'payment-low' | 'newest' | 'deadline';
 
+const employmentTypeForApi: Record<string, string> = {
+  'full-time': 'Full Time',
+  'part-time': 'Part Time',
+  contract: 'Contractor',
+  freelance: 'Contractor',
+};
+
+const seniorityForApi: Record<string, string> = {
+  'entry-level': 'Entry-level',
+  'mid-level': 'Mid-level',
+  'senior-level': 'Senior',
+  manager: 'Manager',
+};
+
 export default function JobDiscovery() {
   const { state, setExternalJobs } = useApp();
   const { jobs, externalJobs } = state;
@@ -27,7 +41,9 @@ export default function JobDiscovery() {
   const [externalLoading, setExternalLoading] = useState(true);
   const [externalLoadingMore, setExternalLoadingMore] = useState(false);
   const [externalError, setExternalError] = useState('');
-  const [externalTotal, setExternalTotal] = useState(0);
+  const [externalPage, setExternalPage] = useState(1);
+  const [externalHasMore, setExternalHasMore] = useState(true);
+  const [externalRetry, setExternalRetry] = useState(0);
 
   useEffect(() => setFilterSkill(state.discoverySkill), [state.discoverySkill]);
 
@@ -42,21 +58,21 @@ export default function JobDiscovery() {
 
     searchHimalayasJobs({
       q: submittedSearch,
-      employmentType: filterEmploymentType,
+      employmentType: employmentTypeForApi[filterEmploymentType] || '',
       country: filterCountry,
-      seniority: filterSeniority,
-      sort: sortBy === 'newest' ? 'newest' : sortBy === 'match' ? 'relevance' : '',
-      offset: 0,
-      limit: 12,
+      seniority: seniorityForApi[filterSeniority] || '',
+      sort: sortBy === 'newest' ? 'recent' : 'relevant',
+      page: 1,
     }, controller.signal)
       .then(result => {
         setExternalJobs(result.jobs);
-        setExternalTotal(result.totalCount);
+        setExternalPage(result.page);
+        setExternalHasMore(result.jobs.length > 0);
       })
       .catch(error => {
         if (error.name !== 'AbortError') {
           setExternalError(error instanceof Error ? error.message : 'External jobs could not be loaded.');
-          setExternalTotal(0);
+          setExternalHasMore(false);
         }
       })
       .finally(() => {
@@ -64,7 +80,7 @@ export default function JobDiscovery() {
       });
 
     return () => controller.abort();
-  }, [submittedSearch, filterEmploymentType, filterCountry, filterSeniority, sortBy, setExternalJobs]);
+  }, [submittedSearch, filterEmploymentType, filterCountry, filterSeniority, sortBy, externalRetry, setExternalJobs]);
 
   const filtered = useMemo(() => {
     return activeJobs
@@ -80,7 +96,7 @@ export default function JobDiscovery() {
           }
         }
         if (filterDistrict && !job.externalSource && job.district !== filterDistrict) return false;
-        if (filterCategory && !job.externalSource && job.category !== filterCategory) return false;
+        if (filterCategory && job.category !== filterCategory) return false;
         if (filterWorkType && !job.externalSource && job.workType !== filterWorkType) return false;
         if (filterPayMin && !job.externalSource && job.payment < Number(filterPayMin)) return false;
         if (filterSkill && !job.skillsRequired.some(s => s.toLowerCase().includes(filterSkill.toLowerCase())) &&
@@ -114,20 +130,24 @@ export default function JobDiscovery() {
   };
 
   const loadMoreExternal = async () => {
-    if (externalLoadingMore || externalJobs.length >= externalTotal) return;
+    if (externalLoadingMore || !externalHasMore) return;
     setExternalLoadingMore(true);
     try {
+      const nextPage = externalPage + 1;
       const result = await searchHimalayasJobs({
         q: submittedSearch,
-        employmentType: filterEmploymentType,
+        employmentType: employmentTypeForApi[filterEmploymentType] || '',
         country: filterCountry,
-        seniority: filterSeniority,
-        sort: sortBy === 'newest' ? 'newest' : sortBy === 'match' ? 'relevance' : '',
-        offset: externalJobs.length,
-        limit: 12,
+        seniority: seniorityForApi[filterSeniority] || '',
+        sort: sortBy === 'newest' ? 'recent' : 'relevant',
+        page: nextPage,
       });
-      setExternalJobs([...externalJobs, ...result.jobs]);
-      setExternalTotal(result.totalCount);
+      const existingIds = new Set(externalJobs.map(job => job.id));
+      const nextJobs = result.jobs.filter(job => !existingIds.has(job.id));
+      setExternalJobs([...externalJobs, ...nextJobs]);
+      setExternalPage(nextPage);
+      setExternalHasMore(result.jobs.length > 0 && nextJobs.length > 0);
+      setExternalError('');
     } catch (error) {
       setExternalError(error instanceof Error ? error.message : 'More external jobs could not be loaded.');
     } finally {
@@ -269,7 +289,7 @@ export default function JobDiscovery() {
                 <option value="entry-level">Entry level</option>
                 <option value="mid-level">Mid level</option>
                 <option value="senior-level">Senior level</option>
-                <option value="lead">Lead</option>
+                <option value="manager">Manager</option>
               </select>
             </div>
             <div>
@@ -296,12 +316,25 @@ export default function JobDiscovery() {
       )}
       {externalError && (
         <div className="mb-5 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          External jobs are temporarily unavailable. Shrama jobs are still shown below.
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>External jobs are temporarily unavailable. Shram Bazzar jobs are still shown below.</span>
+            <button onClick={() => setExternalRetry(value => value + 1)} className="font-semibold underline underline-offset-2">Retry</button>
+          </div>
         </div>
       )}
 
       {/* Results */}
-      {filtered.length === 0 ? (
+      {externalLoading && filtered.length === 0 ? (
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3" aria-label="Loading jobs">
+          {Array.from({ length: 6 }, (_, index) => (
+            <div key={index} className="animate-pulse rounded-2xl border border-stone-200 bg-white p-5">
+              <div className="flex gap-3"><div className="h-11 w-11 rounded-xl bg-stone-100" /><div className="flex-1 space-y-2 pt-1"><div className="h-3 w-3/4 rounded bg-stone-100" /><div className="h-3 w-1/2 rounded bg-stone-100" /></div></div>
+              <div className="mt-5 h-3 w-2/3 rounded bg-stone-100" /><div className="mt-3 h-3 w-full rounded bg-stone-100" /><div className="mt-2 h-3 w-5/6 rounded bg-stone-100" />
+              <div className="mt-6 h-9 rounded-lg bg-stone-100" />
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="bg-white border border-stone-200 rounded-2xl p-16 text-center">
           <div className="text-4xl mb-4">🔍</div>
           <h3 className="font-semibold text-stone-900 mb-2">No jobs found</h3>
@@ -315,7 +348,7 @@ export default function JobDiscovery() {
           {filtered.map(job => <JobCard key={job.id} job={job} />)}
         </div>
       )}
-      {!externalLoading && externalJobs.length < externalTotal && (
+      {!externalLoading && externalHasMore && externalJobs.length > 0 && (
         <div className="mt-6 text-center">
           <button onClick={loadMoreExternal} disabled={externalLoadingMore} className="px-5 py-2.5 border border-stone-200 bg-white text-stone-700 text-sm font-medium rounded-xl hover:bg-stone-50 disabled:opacity-60">
             {externalLoadingMore ? 'Loading…' : 'Load more external jobs'}

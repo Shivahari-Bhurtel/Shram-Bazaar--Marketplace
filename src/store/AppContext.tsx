@@ -32,6 +32,7 @@ interface AppState {
   workerProfile: WorkerProfile | null;
   providerProfile: ProviderProfile | null;
   jobs: Job[];
+  externalJobs: Job[];
   applications: Application[];
   savedJobIds: string[];
   notifications: Notification[];
@@ -59,7 +60,7 @@ const DATA_KEY = "shram-bazar-data-v1";
 const SESSION_KEY = "shram-bazar-session-v1";
 const emptyData: PersistedData = {
   users: [], credentials: [], workerProfiles: [], providerProfiles: [],
-  jobs: [], applications: [], savedJobs: [], notifications: [], reports: [],
+  jobs: [], externalJobs: [], applications: [], savedJobs: [], notifications: [], reports: [],
 };
 const id = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const today = () => new Date().toISOString().split("T")[0];
@@ -116,9 +117,9 @@ function withMatches(jobs: Job[], worker: WorkerProfile | null) {
   });
 }
 
-const workerOnly: Page[] = ["worker-dashboard", "worker-profile", "job-discovery", "my-applications", "saved-jobs"];
+const workerOnly: Page[] = ["worker-dashboard", "worker-profile", "my-applications", "saved-jobs"];
 const providerOnly: Page[] = ["provider-dashboard", "provider-profile", "create-job", "edit-job", "my-jobs", "applicant-management"];
-const publicOnly: Page[] = ["landing", "login", "worker-signup", "provider-signup"];
+const publicOnly: Page[] = ["landing", "login", "worker-signup", "provider-signup", "job-discovery"];
 
 interface AppContextValue {
   state: AppState;
@@ -189,7 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!currentUser && !publicOnly.includes(currentPage)) setCurrentPage("login");
-    if (currentUser && publicOnly.includes(currentPage)) {
+    if (currentUser && publicOnly.includes(currentPage) && currentPage !== "job-discovery") {
       setCurrentPage(currentUser.role === "worker" ? "worker-dashboard" : "provider-dashboard");
     }
     if (currentUser?.role === "worker" && providerOnly.includes(currentPage)) setCurrentPage("worker-dashboard");

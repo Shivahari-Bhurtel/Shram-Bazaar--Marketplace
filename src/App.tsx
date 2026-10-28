@@ -46,7 +46,7 @@ export default function App() {
         {isWorker && currentPage === 'worker-dashboard' && <WorkerDashboard />}
         {isWorker && currentPage === 'worker-profile' && <WorkerProfile />}
         {isWorker && currentPage === 'kyc-verification' && <KycVerification />}
-        {isWorker && currentPage === 'job-discovery' && <JobDiscovery />}
+        {currentPage === 'job-discovery' && <JobDiscovery />}
         {(isWorker || isProvider) && currentPage === 'job-detail' && <JobDetail />}
         {isWorker && currentPage === 'my-applications' && <MyApplications />}
         {isWorker && currentPage === 'saved-jobs' && <SavedJobs />}

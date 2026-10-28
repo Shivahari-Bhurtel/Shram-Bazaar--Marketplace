@@ -94,7 +94,7 @@ export default function JobDetail() {
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full border border-primary-100 bg-primary-50 text-primary-ink">External Opportunity</span>
                   ) : <CategoryBadge category={job.category} />}
                   <span className="text-xs font-medium px-2.5 py-1 bg-stone-100 text-stone-600 rounded-full">{job.employmentType || workTypeLabel[job.workType]}</span>
-                  {isExternal && <span className="text-xs font-mono-data text-stone-400 px-2.5 py-1">Source: Himalayas</span>}
+                  {isExternal && <a href="https://himalayas.app" target="_blank" rel="noreferrer" className="text-xs font-mono-data text-stone-500 px-2.5 py-1 underline underline-offset-2 hover:text-primary-ink">Source: Himalayas</a>}
                 </div>
               </div>
             </div>
