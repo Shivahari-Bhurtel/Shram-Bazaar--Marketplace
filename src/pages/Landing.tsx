@@ -120,7 +120,7 @@ export default function Landing() {
         aria-label="Shram Bazzar landing navigation"
         className="bg-white"
       >
-        <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 lg:flex-nowrap lg:gap-x-5 xl:gap-x-7 xl:px-8">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 lg:flex-nowrap lg:gap-x-4 xl:gap-x-6 xl:px-0">
           <div className="relative shrink-0">
             <button
               onClick={() => setOpenMenu(openMenu === 'worker' ? null : 'worker')}
@@ -198,7 +198,7 @@ export default function Landing() {
 
       {/* Hero */}
       <section
-        className="relative mx-3 my-4 overflow-hidden rounded-[2rem] bg-stone-900 sm:mx-6 lg:mx-10"
+        className="relative mx-auto my-5 w-[calc(100%-2rem)] max-w-[1200px] overflow-hidden rounded-[2rem] bg-stone-900 sm:my-7 sm:w-[calc(100%-3rem)] lg:my-9 lg:w-[calc(100%-5rem)]"
         onTouchStart={event => {
           const touch = event.touches[0];
           touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
@@ -266,7 +266,7 @@ export default function Landing() {
           </div>
         </div>
         <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-stone-950/90 via-stone-950/70 to-stone-950/45" />
-        <div className="relative z-[2] mx-auto max-w-screen-2xl px-5 py-20 sm:px-8 sm:py-24 lg:px-10 lg:py-28 xl:py-32">
+        <div className="relative z-[2] mx-auto max-w-[1200px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10 lg:py-28 xl:py-32">
           <div className="max-w-2xl">
             <h1 className="mb-5 font-display text-4xl font-bold leading-tight text-white sm:mb-6 sm:text-5xl lg:text-6xl">
               <span className="font-brand text-5xl font-semibold text-white sm:text-6xl lg:text-7xl xl:text-8xl">Shram Bazzar</span><br />
@@ -373,7 +373,8 @@ export default function Landing() {
 
       <WhyShramaSection />
 
-      <section id="businesses" className="relative overflow-hidden bg-primary text-white">
+      <section id="businesses" className="bg-white px-4 py-8 sm:px-6 sm:py-12 lg:py-16">
+        <div className="relative mx-auto flex min-h-80 max-w-[1200px] items-center overflow-hidden rounded-[2rem] bg-primary px-6 py-12 text-white shadow-sm sm:px-10 sm:py-16 lg:px-14">
         <svg aria-hidden="true" viewBox="0 0 420 280" fill="none" className="pointer-events-none absolute bottom-0 right-0 hidden h-[74%] w-[38%] max-w-md text-amber-300/75 md:block">
           <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {/* Three prominent towers only, with simple 3D side planes. */}
@@ -384,7 +385,7 @@ export default function Landing() {
             <path d="M40 260h320" />
           </g>
         </svg>
-        <div className="relative mx-auto flex min-h-80 max-w-7xl items-center px-4 py-16 sm:px-6 sm:py-20">
+        <div className="relative w-full">
           <div className="relative z-10 max-w-3xl">
             <p className="inline-flex rounded-full bg-white/15 px-3 py-1 text-sm font-semibold tracking-wide text-white">For businesses</p>
             <h2 className="mt-4 font-sans text-4xl font-bold leading-tight sm:text-5xl">Find the right people for your next job</h2>
@@ -393,6 +394,7 @@ export default function Landing() {
               Create your business account <span aria-hidden="true">→</span>
             </button>
           </div>
+        </div>
         </div>
       </section>
 
