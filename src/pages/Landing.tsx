@@ -347,9 +347,9 @@ export default function Landing() {
 
       <WhyShramaSection />
 
-      <section id="businesses" className="bg-white px-4 py-8 sm:px-6 sm:py-12 lg:py-16">
+      <section id="businesses" className="bg-white px-4 pb-8 pt-2 sm:px-6 sm:pb-10 sm:pt-3 lg:pb-12 lg:pt-3">
         <div className="relative mx-auto flex min-h-80 max-w-[1200px] items-center overflow-hidden rounded-[2rem] bg-primary px-6 py-12 text-white shadow-sm sm:px-10 sm:py-16 lg:px-14">
-        <svg aria-hidden="true" viewBox="0 0 420 280" fill="none" className="pointer-events-none absolute bottom-0 right-0 hidden h-[74%] w-[38%] max-w-md text-amber-300/75 md:block">
+        <svg aria-hidden="true" viewBox="0 0 420 280" fill="none" className="pointer-events-none absolute bottom-0 right-0 hidden h-[74%] w-[32%] max-w-md text-amber-300/75 xl:block">
           <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {/* Three prominent towers only, with simple 3D side planes. */}
             <path d="M40 260V118h105v142M145 260V75h110v185M255 260V118h105v142" />
@@ -360,7 +360,7 @@ export default function Landing() {
           </g>
         </svg>
         <div className="relative w-full">
-          <div className="relative z-10 max-w-3xl">
+          <div className="relative z-10 max-w-[42rem]">
             <p className="inline-flex rounded-full bg-white/15 px-3 py-1 text-sm font-semibold tracking-wide text-white">For businesses</p>
             <h2 className="mt-4 font-sans text-4xl font-bold leading-tight sm:text-5xl">Find the right people for your next job</h2>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg">Post your opening, connect with skilled workers across Nepal, and manage your hiring in one place.</p>
@@ -468,18 +468,18 @@ function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
       <div className="flex items-start justify-between gap-2">
         <CompanyLogo job={job} />
         {job.externalUrl ? (
-          <a href={job.externalUrl} target="_blank" rel="noreferrer" className="group/apply inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 font-sans text-[13px] font-semibold tracking-tight text-primary-ink transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <a href={job.externalUrl} target="_blank" rel="noreferrer" className="group/apply inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 font-sans text-sm font-bold tracking-tight text-primary-ink transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             Apply <span aria-hidden="true" className="text-sm transition-transform duration-200 group-hover/apply:-translate-y-0.5 group-hover/apply:translate-x-0.5">↗</span>
           </a>
         ) : (
-          <span className="inline-flex shrink-0 items-center gap-1 px-2 py-1 font-sans text-[13px] font-semibold tracking-tight text-stone-400">Apply <span aria-hidden="true" className="text-sm">↗</span></span>
+          <span className="inline-flex shrink-0 items-center gap-1 px-2 py-1 font-sans text-sm font-bold tracking-tight text-stone-400">Apply <span aria-hidden="true" className="text-sm">↗</span></span>
         )}
       </div>
-      <div className="mt-4 min-w-0">
-        <h3 className="line-clamp-2 font-sans text-[15px] font-semibold leading-[1.25] tracking-tight text-stone-900">{job.providerName}</h3>
-        {job.externalCategory && <p className="mt-1.5 line-clamp-2 font-sans text-[13px] font-medium leading-[1.4] tracking-[0.005em] text-stone-600">{job.externalCategory}</p>}
+      <div className="mt-2 min-w-0">
+        <h3 className="line-clamp-2 font-sans text-[17px] font-bold leading-[1.2] tracking-tight text-stone-950">{job.providerName}</h3>
+        {job.externalCategory && <p className="mt-1 line-clamp-1 font-sans text-sm font-medium leading-5 tracking-normal text-stone-700">{job.externalCategory}</p>}
       </div>
-      <span className="mt-auto inline-flex w-fit px-2.5 py-1 font-sans text-xs font-semibold tracking-tight text-[#597928]">Remote</span>
+      <span className="mt-auto inline-flex w-fit px-2.5 py-1 font-sans text-sm font-semibold tracking-tight text-[#405D1B]">Remote</span>
     </article>
   );
 }
@@ -515,8 +515,8 @@ function CompanyLogo({ job }: { job: Job }) {
 
 function WhyShramaSection() {
   return (
-    <section className="bg-white px-4 py-10 sm:px-6 sm:py-12">
-      <div className="mx-auto max-w-7xl">
+    <section className="bg-white px-4 pb-0 pt-8 sm:px-6 sm:pt-10">
+      <div className="mx-auto max-w-[1200px] px-6 sm:px-10 lg:px-14">
         <h2 className="font-display text-3xl font-bold tracking-tight text-stone-900 md:text-4xl">Why Shram Bazzar?</h2>
       </div>
     </section>
