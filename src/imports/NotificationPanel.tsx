@@ -8,6 +8,7 @@ const typeConfig: Record<Notification['type'], { icon: string; color: string }> 
   application: { icon: '↑', color: 'bg-teal-100 text-teal' },
   'new-job': { icon: '🔔', color: 'bg-primary-100 text-primary' },
   'job-update': { icon: '!', color: 'bg-amber-100 text-amber-700' },
+  'profile-update': { icon: '✓', color: 'bg-amber-100 text-amber-800' },
 };
 
 export default function NotificationPanel({ onClose }: { onClose: () => void }) {

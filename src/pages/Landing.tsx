@@ -3,6 +3,7 @@ import { useApp } from '../store/AppContext';
 import heroVideo from '../assets/hero/gemini_generated_video_f3c61e6d.mp4';
 import { getFeaturedHimalayasJobs } from '../services/himalayas';
 import type { Job } from '../types';
+import { useDismissOnOutside } from '../hooks/useDismissOnOutside';
 
 const workerSteps = [
   ['1', 'Build your profile', 'Add your location, skills, experience, and availability.'],
@@ -27,40 +28,40 @@ const workCategories = [
   { label: 'Construction & Maintenance', icon: 'construction' },
 ] as const;
 
-function CategoryIcon({ type }: { type: (typeof workCategories)[number]['icon'] }) {
+function CategoryIcon({ type, className = 'h-20 w-20' }: { type: (typeof workCategories)[number]['icon']; className?: string }) {
   const commonProps = {
     viewBox: '0 0 64 64',
     fill: 'none',
     stroke: 'currentColor',
-    strokeWidth: 2,
+    strokeWidth: 1.8,
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
-    className: 'h-16 w-16',
+    className,
     'aria-hidden': true,
   };
 
   if (type === 'professional') {
-    return <svg {...commonProps}><path d="M12 35 23 25c3-3 7-3 10 0l6 6 8-8c2-2 5-2 7 0l3 3-13 13c-3 3-7 3-10 0l-4-4-7 7-11-7Z" /><path d="m18 23 7-6 7 4M43 23l7-7 5 1-1 6" /><path d="M29 12v5M24 14l-3-3M35 14l3-3" /></svg>;
+    return <svg {...commonProps}><path d="m8 29 9-15 12 6-8 15-13-6ZM56 29l-9-15-12 6 8 15 13-6Z" /><path d="m21 33 7-7c2-2 5-2 7 0l3 3 4-2 9 10-8 9c-2 2-5 2-7 0L21 33Z" /><path d="m27 36-4 5m10-2-5 6m11-3-4 5M32 5v5m-8-2 3 4m13-4-3 4" /></svg>;
   }
   if (type === 'skilled') {
-    return <svg {...commonProps}><path d="M17 33h30v12H17zM13 45h38M22 33V21h20v12M27 21v-5h10v5M24 39h16" /><path d="M29 48v4M35 48v4" /></svg>;
+    return <svg {...commonProps}><path d="m12 48 24-24m-4-7 7-7 9 2-2 9-7 7-7-7 7-7m-20 29 4 4" /><path d="m15 16 5-5 10 10-5 5M8 50l6 6 7-7-6-6-7 7Z" /><path d="M35 40h17v14H35zM39 40v-5h9v5" /></svg>;
   }
   if (type === 'hospitality') {
-    return <svg {...commonProps}><path d="M13 31h38M17 31c1 10 7 15 15 15s14-5 15-15M14 31c0-7 5-12 18-12s18 5 18 12M32 13v6M26 13h12M21 51h22" /><path d="M47 24c4 0 6 2 6 5" /></svg>;
+    return <svg {...commonProps}><path d="M10 39h44M15 39c1-12 8-19 22-19s20 7 21 19M19 46h29M24 52h19" /><path d="M31 18a11 11 0 1 1 22 0M36 18h12M42 12v6" /><path d="M16 39v5m9-5v5m9-5v5m9-5v5m9-5v5" /></svg>;
   }
   if (type === 'retail') {
-    return <svg {...commonProps}><path d="M16 25h32l-2 27H18l-2-27Z" /><path d="m19 25 4-10h18l4 10M25 25c0 4 3 6 7 6s7-2 7-6M25 38h14M25 44h9" /></svg>;
+    return <svg {...commonProps}><path d="M10 28h44l-4-12H14l-4 12Z" /><path d="M13 28v27h38V28M10 28c0 5 8 5 8 0 0 5 8 5 8 0 0 5 8 5 8 0 0 5 8 5 8 0 0 5 8 5 8 0" /><path d="M20 55V39h11v16m7-16h8v9h-8zM27 10a6 6 0 1 1 12 0m-14 0h16" /></svg>;
   }
   if (type === 'events') {
-    return <svg {...commonProps}><path d="M14 20h36v32H14zM14 28h36M23 13v14M41 13v14" /><path d="m22 38 5 5 15-15" /></svg>;
+    return <svg {...commonProps}><path d="M8 27 32 9l24 18M13 27h38M16 27v28m32-28v28M27 55V39h10v16M10 55h44" /><path d="M22 27v28m20-28v28" /></svg>;
   }
   if (type === 'delivery') {
-    return <svg {...commonProps}><path d="M10 24h29v22H10zM39 32h8l7 8v6H39zM17 46a4 4 0 1 0 8 0M44 46a4 4 0 1 0 8 0M48 32v8h6" /><path d="M15 19h12M10 14h13" /></svg>;
+    return <svg {...commonProps}><path d="M6 29h32v18H6zM38 35h9l9 9v3H38zM13 47a4 4 0 1 0 8 0m22 0a4 4 0 1 0 8 0M43 35v9h13M11 24h17" /><path d="M25 16 36 8l11 8-11 8-11-8Z" /><path d="M30 14v8m6-11v8m6-5v8" /></svg>;
   }
   if (type === 'digital') {
-    return <svg {...commonProps}><path d="m13 19 10 10-10 10M29 43h22M38 15h13M38 22h13M38 29h8" /><path d="M22 17h8v8h-8z" /></svg>;
+    return <svg {...commonProps}><path d="M9 35V20h13c0-5 8-5 8 0h12v12c5 0 5 8 0 8v9H29c0-5-8-5-8 0H9V35Z" /><path d="M29 20v8m13 4h-8m-13 8v9m8-14h7" /><path d="m46 14 10-7-1 12-3-3-6 7-4-4 7-6-3-3Z" /></svg>;
   }
-  return <svg {...commonProps}><path d="M15 51h34M20 51V24h24v27M16 24l4-9h24l4 9M27 51V38h10v13M25 30h2M37 30h2" /><path d="M13 15h10M41 15h10" /></svg>;
+  return <svg {...commonProps}><path d="M11 55V18h42v37M7 18h50M17 25h30M17 32h30M17 39h30M17 46h30M18 55V46m10 9V46m10 9V46m10 9V46" /><path d="M32 18V8m0 0h17m-4 0v10m4-10 8 5" /><path d="M26 8h12" /></svg>;
 }
 
 export default function Landing() {
@@ -70,9 +71,14 @@ export default function Landing() {
   const [heroSlide, setHeroSlide] = useState<'image' | 'video'>('image');
   const [heroVideoMuted, setHeroVideoMuted] = useState(true);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const workerMenuRef = useRef<HTMLDivElement>(null);
+  const providerMenuRef = useRef<HTMLDivElement>(null);
   const heroTrackRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef<{ pointerId: number; x: number; scrollLeft: number } | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  useDismissOnOutside(openMenu === 'worker', [workerMenuRef], () => setOpenMenu(null));
+  useDismissOnOutside(openMenu === 'provider', [providerMenuRef], () => setOpenMenu(null));
 
   const changeHeroSlide = (slide: 'image' | 'video', instant = slide === 'image') => {
     const video = heroVideoRef.current;
@@ -117,13 +123,14 @@ export default function Landing() {
   };
 
   return (
-    <div className="landing-page min-h-screen bg-cream">
+    <div className="landing-page min-h-screen bg-white">
+      <div className="flex min-h-screen flex-col gap-4 sm:gap-5">
       <nav
         aria-label="Shram Bazzar landing navigation"
-        className="bg-white"
+        className="shrink-0 bg-white"
       >
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-5 font-sans text-base font-semibold tracking-tight text-stone-700 sm:px-6 lg:flex-nowrap lg:gap-x-4 xl:gap-x-7 xl:px-0">
-          <div className="relative shrink-0">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 sm:py-4 sm:text-base lg:flex-nowrap lg:gap-x-4 xl:gap-x-7 xl:px-0">
+          <div ref={workerMenuRef} className="relative shrink-0">
             <button
               onClick={() => setOpenMenu(openMenu === 'worker' ? null : 'worker')}
               aria-haspopup="menu"
@@ -151,7 +158,7 @@ export default function Landing() {
           >
             For businesses
           </button>
-          <div className="relative shrink-0">
+          <div ref={providerMenuRef} className="relative shrink-0">
             <button
               onClick={() => setOpenMenu(openMenu === 'provider' ? null : 'provider')}
               aria-haspopup="menu"
@@ -198,9 +205,22 @@ export default function Landing() {
         </div>
       </nav>
 
+      <aside className="mx-auto flex w-[calc(100%-2rem)] max-w-[1200px] shrink-0 flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#F3E4D9] px-5 py-3.5 text-center text-base text-[#5E3122] sm:w-[calc(100%-3rem)] sm:justify-between sm:px-7 sm:py-4 sm:text-lg lg:w-[calc(100%-5rem)] lg:px-9">
+        <p className="font-medium leading-snug sm:text-xl">Get connected with local personnel for your everyday business and service needs</p>
+        <button
+          onClick={() => navigate('provider-signup')}
+          className="group inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b border-[#8C3D2B]/70 pb-1 text-lg font-semibold tracking-tight text-[#8C3D2B] transition-colors hover:border-[#713121] hover:text-[#713121] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8C3D2B] sm:text-xl"
+        >
+          <span>Get started</span>
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1">
+            <path d="M3.5 10h12m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </aside>
+
       {/* Hero */}
       <section
-        className="relative mx-auto my-5 w-[calc(100%-2rem)] max-w-[1200px] overflow-hidden rounded-[2rem] bg-stone-900 sm:my-7 sm:w-[calc(100%-3rem)] lg:my-9 lg:w-[calc(100%-5rem)]"
+        className="relative mx-auto mt-2 min-h-[34rem] w-[calc(100%-2rem)] max-w-[1200px] overflow-hidden rounded-[2rem] bg-stone-900 sm:mt-3 sm:min-h-[36rem] sm:w-[calc(100%-3rem)] lg:w-[calc(100%-5rem)]"
         onTouchStart={event => {
           const touch = event.touches[0];
           touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
@@ -268,7 +288,7 @@ export default function Landing() {
           </div>
         </div>
         <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-stone-950/90 via-stone-950/70 to-stone-950/45" />
-        <div className="relative z-[2] mx-auto max-w-[1200px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10 lg:py-28 xl:py-32">
+        <div className="relative z-[2] mx-auto flex h-full min-h-[34rem] max-w-[1200px] items-center px-5 py-16 sm:min-h-[36rem] sm:px-8 sm:py-20 lg:px-10 lg:py-24">
           <div className="max-w-2xl">
             <h1 className="mb-5 font-display text-4xl font-bold leading-tight text-white sm:mb-6 sm:text-5xl lg:text-6xl">
               <span className="font-brand text-5xl font-semibold text-white sm:text-6xl lg:text-7xl xl:text-8xl">Shram Bazzar</span><br />
@@ -309,26 +329,32 @@ export default function Landing() {
           </button>
         )}
       </section>
+      </div>
 
-      <section className="bg-white px-4 py-16 sm:px-6 sm:py-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-2xl">
-            <h2 className="font-sans text-3xl font-bold leading-tight tracking-normal text-stone-900 sm:text-4xl lg:text-5xl">
-              Find Your Right Work
-            </h2>
-          </div>
-          <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
-            {workCategories.map(category => (
-              <button
+      <section className="bg-white px-4 pb-20 pt-0 sm:px-6 sm:pb-24">
+        <div className="mx-auto grid max-w-[1280px] items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:gap-10">
+          <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
+              <span>Find</span>
+              <span>Your</span>
+              <span>Right</span>
+              <span>Work</span>
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-[18px]">
+            {workCategories.map((category, index) => {
+              const isDark = [0, 2, 5, 7].includes(index);
+              return <button
                 key={category.label}
                 onClick={() => navigate('worker-signup')}
                 aria-label={`Find work in ${category.label}`}
-                className="group relative flex min-h-36 flex-col items-center justify-center rounded-xl border-2 border-primary-dark bg-[#fff0dd] px-4 py-5 text-center text-primary-ink shadow-[6px_7px_0_0_#68432c] transition-all hover:-translate-y-1 hover:shadow-[8px_9px_0_0_#68432c] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                className={`group relative flex aspect-[0.9] flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-7 text-center transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5E3122] sm:px-4 ${isDark ? 'bg-[#5E3122] text-[#FFF1DF]' : 'bg-[#FFF0DD] text-[#5E3122]'}`}
               >
-                <CategoryIcon type={category.icon} />
-                <span className="mt-3 font-display text-lg font-semibold leading-tight text-stone-900 transition-colors group-hover:text-primary-ink sm:text-xl">{category.label}</span>
-              </button>
-            ))}
+                <span className={`absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full ${isDark ? 'bg-[#FFF1DF] text-[#5E3122]' : 'bg-[#5E3122] text-[#FFF1DF]'}`} aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="h-3.5 w-3.5"><path d="M8 3v10M3 8h10" /></svg>
+                </span>
+                <CategoryIcon type={category.icon} className="h-[4.5rem] w-[4.5rem] shrink-0 sm:h-20 sm:w-20" />
+                <span className={`mt-3 max-w-[12ch] text-lg font-medium leading-[1.08] transition-opacity group-hover:opacity-85 sm:text-xl xl:text-[1.35rem] ${isDark ? 'text-[#FFF5E9]' : 'text-black'}`} style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{category.label}</span>
+              </button>;
+            })}
           </div>
         </div>
       </section>
@@ -362,7 +388,7 @@ export default function Landing() {
         <div className="relative w-full">
           <div className="relative z-10 max-w-[42rem]">
             <p className="inline-flex rounded-full bg-white/15 px-3 py-1 text-sm font-semibold tracking-wide text-white">For businesses</p>
-            <h2 className="mt-4 font-sans text-4xl font-bold leading-tight sm:text-5xl">Find the right people for your next job</h2>
+            <h2 className="mt-4 font-sans text-4xl font-bold leading-tight sm:text-5xl">Finds the right people for your next job</h2>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/80 sm:text-lg">Post your opening, connect with skilled workers across Nepal, and manage your hiring in one place.</p>
             <button onClick={() => navigate('provider-signup')} className="mt-8 inline-flex items-center gap-3 rounded-lg bg-white px-6 py-3 text-base font-semibold text-primary-ink transition-colors hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
               Create your business account <span aria-hidden="true">→</span>
@@ -372,7 +398,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="bg-stone-50 px-4 py-16 sm:px-6 sm:py-20">
+      <section className="bg-white px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-3xl border border-red-900 bg-red-950 p-6 text-white shadow-sm sm:p-10 lg:grid-cols-[1fr_auto] lg:gap-12">
           <div className="flex items-center gap-7 sm:gap-10">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] bg-white/10 text-red-100 ring-8 ring-white/5 sm:h-28 sm:w-28" aria-hidden="true">
@@ -433,11 +459,11 @@ function FeaturedOpportunities() {
 
   return (
     <section id="popular-providers" className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-10 sm:px-6 sm:pb-14 sm:pt-12">
-        <h2 className="mb-7 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">Popular Providers</h2>
+      <div className="mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pb-16 sm:pt-20">
+        <h2 className="mb-9 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:mb-10 sm:text-4xl">Popular Providers</h2>
         {loading && jobs.length === 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Loading job listings">
-            {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-[200px] w-full animate-pulse rounded-2xl border border-stone-100 bg-stone-50" />)}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Loading job listings">
+            {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-[220px] w-full animate-pulse rounded-2xl border border-stone-100 bg-stone-50" />)}
           </div>
         )}
 
@@ -449,7 +475,7 @@ function FeaturedOpportunities() {
         )}
 
         {jobs.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {jobs.map((job, index) => <FeaturedOpportunityCard key={job.id} job={job} index={index} />)}
           </div>
         )}
@@ -463,7 +489,7 @@ function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
   return (
     <article
       style={{ animationDelay: `${Math.min(index * 55, 360)}ms`, animationFillMode: 'backwards' }}
-      className="group flex h-[200px] w-full min-w-0 flex-col rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#91AC67]/60 hover:bg-white hover:shadow-md motion-reduce:animate-none motion-reduce:transition-none animate-fade-in"
+      className="group flex min-h-[220px] w-full min-w-0 flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#91AC67]/60 hover:bg-white hover:shadow-md motion-reduce:animate-none motion-reduce:transition-none animate-fade-in"
     >
       <div className="flex items-start justify-between gap-2">
         <CompanyLogo job={job} />
@@ -475,11 +501,11 @@ function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
           <span className="inline-flex shrink-0 items-center gap-1 px-2 py-1 font-sans text-sm font-bold tracking-tight text-stone-400">Apply <span aria-hidden="true" className="text-sm">↗</span></span>
         )}
       </div>
-      <div className="mt-2 min-w-0">
+      <div className="mt-4 min-w-0">
         <h3 className="line-clamp-2 font-sans text-[17px] font-bold leading-[1.2] tracking-tight text-stone-950">{job.providerName}</h3>
-        {job.externalCategory && <p className="mt-1 line-clamp-1 font-sans text-sm font-medium leading-5 tracking-normal text-stone-700">{job.externalCategory}</p>}
+        {job.externalCategory && <p className="mt-1.5 line-clamp-1 font-sans text-sm font-medium leading-5 tracking-normal text-stone-700">{job.externalCategory}</p>}
       </div>
-      <span className="mt-auto inline-flex w-fit px-2.5 py-1 font-sans text-sm font-semibold tracking-tight text-[#405D1B]">Remote</span>
+      <span className="mt-auto inline-flex w-fit pt-3 font-sans text-sm font-semibold tracking-tight text-[#405D1B]">Remote</span>
     </article>
   );
 }
@@ -515,7 +541,7 @@ function CompanyLogo({ job }: { job: Job }) {
 
 function WhyShramaSection() {
   return (
-    <section className="bg-white px-4 pb-0 pt-8 sm:px-6 sm:pt-10">
+    <section id="why-shrama" className="scroll-mt-8 bg-white px-4 pb-0 pt-8 sm:px-6 sm:pt-10">
       <div className="mx-auto max-w-[1200px] px-6 sm:px-10 lg:px-14">
         <h2 className="font-display text-3xl font-bold tracking-tight text-stone-900 md:text-4xl">Why Shram Bazzar?</h2>
       </div>

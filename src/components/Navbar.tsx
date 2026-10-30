@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import NotificationPanel from './NotificationPanel';
 import { LanguageSwitch } from '../i18n/LanguageContext';
+import { useDismissOnOutside } from '../hooks/useDismissOnOutside';
 
 export default function Navbar() {
   const { state, navigate, logout, unreadNotificationsCount } = useApp();
@@ -9,6 +10,12 @@ export default function Navbar() {
   const [showNotifs, setShowNotifs] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  useDismissOnOutside(profileOpen, [profileMenuRef], () => setProfileOpen(false));
+  useDismissOnOutside(mobileOpen, [mobileMenuButtonRef, mobileMenuRef], () => setMobileOpen(false));
 
   const isWorker = currentUser?.role === 'worker';
   const isProvider = currentUser?.role === 'provider';
@@ -17,7 +24,6 @@ export default function Navbar() {
     { label: 'Discover Jobs', page: 'job-discovery' as const },
     { label: 'My Applications', page: 'my-applications' as const },
     { label: 'Saved Jobs', page: 'saved-jobs' as const },
-    { label: 'Chat', page: 'chat' as const },
   ];
 
   const providerLinks = [
@@ -25,43 +31,40 @@ export default function Navbar() {
     { label: 'Post a Job', page: 'create-job' as const },
     { label: 'My Jobs', page: 'my-jobs' as const },
     { label: 'Organisation', page: 'provider-profile' as const },
-    { label: 'Chat', page: 'chat' as const },
   ];
 
   const links = isWorker ? workerLinks : isProvider ? providerLinks : [];
 
   return (
     <>
-      <nav className="sticky top-0 z-40 border-b border-stone-100 bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex h-[4.5rem] items-center justify-between">
+      <nav className="sticky top-0 z-40 border-b border-stone-200 bg-white shadow-[0_1px_3px_rgba(23,30,37,0.04)]">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+          <div className="grid h-[4.5rem] grid-cols-[1fr_auto] items-center md:grid-cols-[auto_1fr_auto] md:gap-4 lg:gap-8">
             {/* Logo */}
             <button
               onClick={() => navigate(currentUser ? (isWorker ? 'worker-dashboard' : 'provider-dashboard') : 'landing')}
-              className="flex items-center gap-2 group"
+              aria-label="Shram Bazaar home"
+              className="group flex items-center"
             >
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
-                </svg>
-              </div>
-              <div className="leading-none">
-                <span className="font-display text-3xl font-extrabold tracking-tight text-primary-ink leading-none">Shrama</span>
-              </div>
+              <span className="flex items-baseline whitespace-nowrap leading-none" aria-hidden="true">
+                <span className="text-[1.75rem] font-semibold leading-[0.92] text-[#5E3122]" style={{ fontFamily: "'Noto Serif Devanagari', serif" }}>
+                  श्रम
+                </span>
+                <span className="font-script text-[1.65rem] font-semibold leading-none text-black">
+                  Bazaar
+                </span>
+              </span>
             </button>
 
             {/* Desktop Nav */}
             {currentUser && (
-              <div className={`hidden items-center md:flex ${isWorker ? 'gap-2' : 'gap-1'}`}>
+              <div className="hidden h-full items-stretch justify-self-center md:flex md:gap-2">
                 {links.map(link => (
                   <button
                     key={link.page}
                     onClick={() => navigate(link.page)}
-                    className={`${isWorker ? 'rounded-xl px-4 py-2.5 text-base font-semibold tracking-tight' : 'rounded-lg px-3 py-1.5 text-sm font-medium'} transition-colors ${
-                      currentPage === link.page
-                        ? isWorker ? 'bg-stone-200 text-stone-950 font-bold' : 'bg-primary-50 text-primary-ink font-bold'
-                        : isWorker ? 'text-stone-950 hover:bg-stone-100' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-                    }`}
+                    aria-current={currentPage === link.page ? 'page' : undefined}
+                    className={`flex h-full items-center border-b-2 px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 ${isWorker ? 'lg:hidden' : ''} ${currentPage === link.page ? 'border-primary-ink font-semibold text-primary-ink' : 'border-transparent font-medium text-stone-600 hover:border-stone-300 hover:text-stone-950'}`}
                   >
                     {link.label}
                   </button>
@@ -69,25 +72,27 @@ export default function Navbar() {
               </div>
             )}
             {!currentUser && (
-              <div className="hidden md:flex items-center gap-6 text-sm font-medium text-stone-600">
-                <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary-ink transition-colors">
+              <div className="hidden h-full items-stretch justify-self-center gap-7 text-sm font-medium text-stone-600 md:flex">
+                <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="border-b-2 border-transparent transition-colors hover:border-stone-300 hover:text-primary-ink">
                   How it works
                 </button>
-                <button onClick={() => document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-primary-ink transition-colors">
+                <button onClick={() => document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' })} className="border-b-2 border-transparent transition-colors hover:border-stone-300 hover:text-primary-ink">
                   For businesses
                 </button>
               </div>
             )}
 
             {/* Right actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-self-end gap-1.5 sm:gap-2">
               <LanguageSwitch inline />
               {currentUser ? (
                 <>
                   {/* Notifications */}
-                  <button
+                  {!isWorker && <button
                     onClick={() => setShowNotifs(!showNotifs)}
-                    className="relative p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
+                    aria-label="Notifications"
+                    title="Notifications"
+                    className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
                       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -98,7 +103,7 @@ export default function Navbar() {
                         {unreadNotificationsCount}
                       </span>
                     )}
-                  </button>
+                  </button>}
 
                   {/* Profile menu */}
                   <div className="hidden md:flex items-center gap-2">
@@ -107,16 +112,18 @@ export default function Navbar() {
                         Provider
                       </span>
                     )}
-                    <div className="relative">
+                    <div ref={profileMenuRef} className="relative">
                       <button
                         onClick={() => setProfileOpen(open => !open)}
+                        aria-label="Profile and settings"
+                        title="Profile and settings"
                         aria-haspopup="menu"
                         aria-expanded={profileOpen}
-                        className={`${isWorker ? 'text-[15px] font-semibold tracking-tight' : 'text-sm font-medium'} inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-stone-700 transition-colors hover:bg-stone-100 hover:text-primary-ink`}
+                        className="inline-flex items-center justify-center rounded-lg p-2 text-stone-700 transition-colors hover:bg-stone-100 hover:text-primary-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
-                        Profile
-                        <svg viewBox="0 0 20 20" fill="currentColor" className={`h-4 w-4 transition-transform ${profileOpen ? 'rotate-180' : ''}`} aria-hidden="true">
-                          <path fillRule="evenodd" d="M5.22 7.22a.75.75 0 0 1 1.06 0L10 10.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 8.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden="true">
+                          <path d="M10 3h4l.55 2.05c.68.17 1.3.43 1.87.78l1.94-.73 2 3.46-1.4 1.55a7.2 7.2 0 0 1 0 2.16l1.4 1.55-2 3.46-1.94-.73a7.2 7.2 0 0 1-1.87.78L14 19.4h-4l-.55-2.07a7.2 7.2 0 0 1-1.87-.78l-1.94.73-2-3.46 1.4-1.55a7.2 7.2 0 0 1 0-2.16l-1.4-1.55 2-3.46 1.94.73a7.2 7.2 0 0 1 1.87-.78L10 3Z" />
+                          <circle cx="12" cy="11.2" r="2.6" />
                         </svg>
                       </button>
                       {profileOpen && (
@@ -149,8 +156,11 @@ export default function Navbar() {
 
                   {/* Mobile menu button */}
                   <button
+                    ref={mobileMenuButtonRef}
                     onClick={() => setMobileOpen(!mobileOpen)}
-                    className="md:hidden p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
+                    aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+                    aria-expanded={mobileOpen}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
                       {mobileOpen
@@ -181,16 +191,13 @@ export default function Navbar() {
 
           {/* Mobile menu */}
           {currentUser && mobileOpen && (
-            <div className="md:hidden py-3 space-y-1">
+            <div ref={mobileMenuRef} className="md:hidden py-3 space-y-1">
               {links.map(link => (
                 <button
                   key={link.page}
                   onClick={() => { navigate(link.page); setMobileOpen(false); }}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${isWorker ? 'text-base font-semibold tracking-tight' : 'text-sm font-medium'} ${
-                    currentPage === link.page
-                      ? isWorker ? 'bg-stone-200 text-stone-950 font-bold' : 'bg-primary-50 text-primary-ink font-bold'
-                      : isWorker ? 'text-stone-950 hover:bg-stone-100' : 'text-stone-600 hover:bg-stone-100'
-                  }`}
+                  aria-current={currentPage === link.page ? 'page' : undefined}
+                  className={`w-full rounded-lg border-l-2 px-3 py-2.5 text-left text-sm transition-colors ${currentPage === link.page ? 'border-primary-ink bg-primary-50/60 font-semibold text-primary-ink' : 'border-transparent font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-950'}`}
                 >
                   {link.label}
                 </button>
@@ -218,7 +225,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {showNotifs && <NotificationPanel onClose={() => setShowNotifs(false)} />}
+      {showNotifs && !isWorker && <NotificationPanel onClose={() => setShowNotifs(false)} />}
     </>
   );
 }

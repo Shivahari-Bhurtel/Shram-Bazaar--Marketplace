@@ -17,8 +17,8 @@ const jobConfig: Record<JobStatus, { label: string; bg: string; text: string }> 
 export function ApplicationStatusBadge({ status }: { status: ApplicationStatus }) {
   const cfg = applicationConfig[status];
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+    <span className={`inline-flex min-h-8 items-center gap-2 text-[13px] font-semibold px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text}`}>
+      <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
   );
@@ -27,7 +27,7 @@ export function ApplicationStatusBadge({ status }: { status: ApplicationStatus }
 export function JobStatusBadge({ status }: { status: JobStatus }) {
   const cfg = jobConfig[status];
   return (
-    <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>
+    <span className={`inline-flex min-h-8 items-center text-[13px] font-semibold px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text}`}>
       {cfg.label}
     </span>
   );
@@ -36,8 +36,8 @@ export function JobStatusBadge({ status }: { status: JobStatus }) {
 export function VerifiedBadge({ small }: { small?: boolean }) {
   if (small) {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-teal bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-100">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-2.5 h-2.5">
+      <span className="inline-flex min-h-7 items-center gap-1.5 text-xs font-semibold text-teal bg-teal-50 px-2 py-1 rounded-full border border-teal-100">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3">
           <path d="M20 6L9 17l-5-5"/>
         </svg>
         Verified
@@ -45,7 +45,7 @@ export function VerifiedBadge({ small }: { small?: boolean }) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-teal bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
+    <span className="inline-flex min-h-9 items-center gap-2 text-sm font-semibold text-teal bg-teal-50 px-3.5 py-1.5 rounded-full border border-teal-100">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3.5 h-3.5">
         <path d="M20 6L9 17l-5-5"/>
       </svg>
@@ -55,14 +55,14 @@ export function VerifiedBadge({ small }: { small?: boolean }) {
 }
 
 export function CategoryBadge({ category }: { category: string }) {
-  const configs: Record<string, { label: string; bg: string; text: string }> = {
-    'qualified':          { label: 'Qualified / Professional', bg: 'bg-teal-50',   text: 'text-teal' },
-    'skill-based':        { label: 'Skill Based',              bg: 'bg-amber-50',  text: 'text-amber-700' },
-    'beginner-friendly':  { label: 'Beginner Friendly',        bg: 'bg-green-50',  text: 'text-green-700' },
+  const configs: Record<string, { label: string }> = {
+    'qualified':          { label: 'Qualified / Professional' },
+    'skill-based':        { label: 'Skill Based' },
+    'beginner-friendly':  { label: 'Beginner Friendly' },
   };
-  const cfg = configs[category] ?? { label: category, bg: 'bg-stone-100', text: 'text-stone-600' };
+  const cfg = configs[category] ?? { label: category };
   return (
-    <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>
+    <span className="inline-flex items-center text-sm font-medium text-stone-900">
       {cfg.label}
     </span>
   );

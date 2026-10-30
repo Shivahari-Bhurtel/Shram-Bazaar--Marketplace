@@ -14,10 +14,10 @@ import CreateEditJob from './pages/provider/CreateEditJob';
 import MyJobs from './pages/provider/MyJobs';
 import ApplicantManagement from './pages/provider/ApplicantManagement';
 import Chat from './pages/Chat';
-import ChatLauncher from './components/ChatLauncher';
 import Settings from './pages/Settings';
 import KycVerification from './pages/worker/KycVerification';
 import { LanguageSwitch } from './i18n/LanguageContext';
+import WorkerSidebar from './components/WorkerSidebar';
 
 export default function App() {
   const { state } = useApp();
@@ -25,17 +25,22 @@ export default function App() {
   const isLoggedIn = !!currentUser;
   const isWorker = currentUser?.role === 'worker';
   const isProvider = currentUser?.role === 'provider';
+  const isWorkerAIChat = isWorker && currentPage === 'chat';
+  const showWorkerSidebar = isWorker && !['landing', 'login', 'worker-signup', 'provider-signup'].includes(currentPage);
+  const isAuthPage = ['login', 'worker-signup', 'provider-signup'].includes(currentPage);
 
   const publicPages = ['landing', 'login', 'worker-signup', 'provider-signup'];
   const isPublicPage = publicPages.includes(currentPage);
 
   return (
-    <div className="min-h-screen bg-cream">
-      {!isLoggedIn && <LanguageSwitch />}
-      {isLoggedIn && <Navbar />}
+    <div className={`min-h-screen bg-cream ${isWorker ? 'worker-interface' : ''}`}>
+      {!isLoggedIn && !isAuthPage && <LanguageSwitch />}
+      {isLoggedIn && !isWorkerAIChat && <Navbar />}
+      {isWorkerAIChat && <div className="lg:hidden"><Navbar /></div>}
       {!isLoggedIn && !isPublicPage && <Navbar />}
+      {showWorkerSidebar && <WorkerSidebar fullHeight={isWorkerAIChat} />}
 
-      <main key={currentPage} className="animate-fade-in">
+      <main key={currentPage} className={`animate-fade-in ${showWorkerSidebar ? 'lg:ml-20' : ''}`}>
         {/* Public pages */}
         {currentPage === 'landing' && !isLoggedIn && <Landing />}
         {currentPage === 'login' && <AuthPage mode="login" />}
@@ -65,7 +70,6 @@ export default function App() {
         {isWorker && currentPage === 'landing' && <WorkerDashboard />}
         {isProvider && currentPage === 'landing' && <ProviderDashboard />}
       </main>
-      {currentPage !== 'chat' && currentPage !== 'landing' && <ChatLauncher />}
     </div>
   );
 }

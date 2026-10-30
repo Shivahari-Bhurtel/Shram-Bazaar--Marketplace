@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
@@ -9,6 +11,7 @@
 @theme {
   --font-display: 'Fraunces', Georgia, serif;
   --font-brand: 'Cormorant Garamond', 'Noto Serif Devanagari', Georgia, serif;
+  --font-script: 'Dancing Script', cursive;
   --font-sans: 'Outfit', 'Noto Sans Devanagari', system-ui, sans-serif;
   --font-mono: 'DM Mono', 'Courier New', monospace;
 
@@ -39,31 +42,96 @@
   --color-green-50: #F0FDF4;
   --color-green-100: #DCFCE7;
 
-  --color-cream: #FFFFFF;
+  --color-cream: #F8FAFC;
   --color-card: #FFFFFF;
 
-  --color-stone-50: #FAFAF9;
-  --color-stone-100: #F5F5F4;
-  --color-stone-200: #E7E5E4;
-  --color-stone-300: #D6D3D1;
-  --color-stone-400: #A8A29E;
-  --color-stone-500: #78716C;
-  --color-stone-600: #57534E;
-  --color-stone-700: #44403C;
-  --color-stone-800: #292524;
-  --color-stone-900: #1C1917;
+  --color-stone-50: #F8FAFC;
+  --color-stone-100: #F1F5F8;
+  --color-stone-200: #DCE3E8;
+  --color-stone-300: #C5CFD7;
+  --color-stone-400: #737F89;
+  --color-stone-500: #59636D;
+  --color-stone-600: #434D57;
+  --color-stone-700: #323B44;
+  --color-stone-800: #252D35;
+  --color-stone-900: #171E25;
+}
+
+/* Keep existing brown button styles consistent without recoloring status UI. */
+:is(button, a).bg-primary:not(:disabled),
+:is(button, a).bg-primary-dark:not(:disabled) {
+  background-color: #5E3122;
+}
+
+:is(button, a)[class~="hover:bg-primary"]:not(:disabled):hover,
+:is(button, a)[class~="hover:bg-primary-dark"]:not(:disabled):hover,
+:is(button, a).bg-primary:not(:disabled):hover,
+:is(button, a).bg-primary-dark:not(:disabled):hover {
+  background-color: #4C281D;
+}
+
+:is(button, a).border-primary,
+:is(button, a)[class~="hover:border-primary"]:hover {
+  border-color: #5E3122;
+}
+
+:is(button, a).text-primary,
+:is(button, a)[class~="hover:text-primary"]:hover {
+  color: #5E3122;
+}
+
+:is(button, a)[class~="focus-visible:outline-primary"]:focus-visible {
+  outline-color: #5E3122;
+}
+
+:is(button, a[role="button"]) {
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease,
+    box-shadow 180ms ease, transform 140ms ease, translate 140ms ease, filter 160ms ease;
+}
+
+:is(button, a[role="button"]):not(:disabled):not([aria-disabled="true"]):hover {
+  filter: brightness(0.97);
+  translate: 0 -1px;
+}
+
+:is(button, a[role="button"]):not(:disabled):not([aria-disabled="true"]):active {
+  filter: brightness(0.92);
+  transform: scale(0.98);
+  translate: 0 1px;
+}
+
+:is(button, a[role="button"]).bg-primary:hover,
+:is(button, a[role="button"]).bg-primary-dark:hover,
+:is(button, a[role="button"])[class~="hover:bg-primary"]:hover,
+:is(button, a[role="button"])[class~="hover:bg-primary-dark"]:hover {
+  box-shadow: 0 5px 14px -6px rgb(94 49 34 / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(button, a[role="button"]) {
+    transition-duration: 1ms;
+  }
+
+  :is(button, a[role="button"]):hover,
+  :is(button, a[role="button"]):active {
+    translate: none;
+    transform: none;
+  }
 }
 
 html {
   font-family: var(--font-sans);
-  background-color: #FFFFFF;
-  color: #1C1917;
+  background-color: #F8FAFC;
+  color: #171E25;
   scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   padding: 0;
+  min-width: 320px;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -94,6 +162,16 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+@media (min-width: 1440px) {
+  .worker-workspace-rail {
+    left: calc((100vw - 1440px) / 2);
+  }
+
+  .worker-notification-panel {
+    left: calc((100vw - 1440px) / 2 + 6rem);
+  }
 }
 
 .animate-fade-in {
@@ -132,4 +210,34 @@ body {
 
 .input-style::placeholder {
   color: #A8A29E;
+}
+
+.auth-form input:not([type="checkbox"]),
+.auth-form select {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  background-color: #FFFFFF;
+  color: #111111;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.auth-form input::placeholder {
+  color: #737F89;
+}
+
+.auth-form input:focus,
+.auth-form select:focus {
+  outline: none;
+  border-color: #5A2A27;
+  box-shadow: 0 0 0 3px rgb(90 42 39 / 0.16);
+}
+
+.worker-interface [class*="text-stone-"],
+.worker-interface [class*="text-primary-ink"] {
+  color: #111111 !important;
 }

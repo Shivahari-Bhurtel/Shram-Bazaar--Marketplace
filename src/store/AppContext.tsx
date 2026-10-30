@@ -58,6 +58,7 @@ export interface KycSubmission {
 
 const DATA_KEY = "shram-bazar-data-v1";
 const SESSION_KEY = "shram-bazar-session-v1";
+const FRESH_START_KEY = "shram-bazar-fresh-start-2026-10";
 const emptyData: PersistedData = {
   users: [], credentials: [], workerProfiles: [], providerProfiles: [],
   jobs: [], externalJobs: [], applications: [], savedJobs: [], notifications: [], reports: [],
@@ -68,6 +69,11 @@ const blankProviderLogo = "https://images.unsplash.com/photo-1486406146926-c627a
 
 function loadData(): PersistedData {
   try {
+    if (localStorage.getItem(FRESH_START_KEY) !== "complete") {
+      localStorage.removeItem(DATA_KEY);
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.setItem(FRESH_START_KEY, "complete");
+    }
     const parsed = JSON.parse(localStorage.getItem(DATA_KEY) || "{}");
     return { ...emptyData, ...parsed };
   } catch {
@@ -141,6 +147,7 @@ interface AppContextValue {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   updateWorkerProfile: (updates: Partial<WorkerProfile>) => void;
+  notifyProfileUpdated: (message: string) => void;
   updateProviderProfile: (updates: Partial<ProviderProfile>) => void;
   hasApplied: (jobId: string) => boolean;
   isSaved: (jobId: string) => boolean;
@@ -445,6 +452,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       };
     });
   };
+  const notifyProfileUpdated = (message: string) => {
+    if (!currentUser || !workerProfile) return;
+    setData(old => {
+      const draft = structuredClone(old);
+      addNotification(draft, {
+        userId: currentUser.id,
+        type: "profile-update",
+        title: "Profile updated",
+        message,
+      });
+      return draft;
+    });
+  };
   const updateProviderProfile = (updates: Partial<ProviderProfile>) => {
     if (!providerProfile) return;
     setData(old => ({ ...old,
@@ -480,7 +500,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     applyToJob, saveJob, unsaveJob, updateApplicationStatus, postJob, updateJob, deleteJob,
     markNotificationRead: notificationId => setData(old => ({ ...old, notifications: old.notifications.map(note => note.id === notificationId && note.userId === currentUser?.id ? { ...note, read: true } : note) })),
     markAllNotificationsRead: () => setData(old => ({ ...old, notifications: old.notifications.map(note => note.userId === currentUser?.id ? { ...note, read: true } : note) })),
-    updateWorkerProfile, updateProviderProfile,
+    updateWorkerProfile, notifyProfileUpdated, updateProviderProfile,
     hasApplied: jobId => !!workerProfile && data.applications.some(app => app.jobId === jobId && app.workerId === workerProfile.id),
     isSaved: jobId => !!workerProfile && data.savedJobs.some(saved => saved.jobId === jobId && saved.workerId === workerProfile.id),
     browseSkill: skill => { setDiscoverySkill(skill); navigate("job-discovery"); },

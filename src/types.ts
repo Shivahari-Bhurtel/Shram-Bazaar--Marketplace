@@ -36,6 +36,7 @@ export interface WorkHistory {
 export interface WorkerProfile {
   id: string;
   name: string;
+  professionalTitle?: string;
   photo: string;
   phone: string;
   email: string;
@@ -140,7 +141,7 @@ export interface Application {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'application' | 'selection' | 'new-job' | 'job-update' | 'rejection' | 'shortlisted';
+  type: 'application' | 'selection' | 'new-job' | 'job-update' | 'profile-update' | 'rejection' | 'shortlisted';
   title: string;
   message: string;
   date: string;

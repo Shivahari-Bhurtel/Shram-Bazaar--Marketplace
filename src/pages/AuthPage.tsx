@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { ALL_SKILLS, DISTRICTS } from '../data/mockData';
+import { LanguageSwitch } from '../i18n/LanguageContext';
 
 type AuthMode = 'login' | 'worker-signup' | 'provider-signup';
 
@@ -46,7 +47,7 @@ export default function AuthPage({ mode }: Props) {
       const result = isWorker
         ? signupWorker({
             email: formData.email, password: formData.password,
-            name: formData.email.trim().split('@')[0], phone: '', district: '', location: '', skills: [],
+            name: formData.name.trim(), phone: '', district: '', location: '', skills: [],
           })
         : signupProvider({
             email: formData.email, password: formData.password, contactName: formData.contactName,
@@ -84,9 +85,11 @@ export default function AuthPage({ mode }: Props) {
   return (
     <div className="min-h-screen bg-cream flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-5/12 bg-stone-900 relative overflow-hidden flex-col justify-center p-12">
+      <div className="relative hidden flex-col justify-center overflow-hidden bg-[#3C3431] p-12 lg:flex lg:w-5/12">
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-[#302825] to-[#49403C]" />
         <div
-          className="absolute inset-0 opacity-10"
+          aria-hidden="true"
+          className="absolute inset-0 opacity-30 mix-blend-overlay"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=800&h=1200&fit=crop&auto=format')`,
             backgroundSize: 'cover',
@@ -95,7 +98,7 @@ export default function AuthPage({ mode }: Props) {
         />
         <div className="absolute left-12 top-12 z-10">
           <button onClick={() => navigate('landing')} className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5A2A27]">
               <span className="font-brand text-white text-lg font-semibold">S</span>
             </div>
             <span className="font-brand text-2xl text-white font-semibold">Shrama</span>
@@ -105,19 +108,19 @@ export default function AuthPage({ mode }: Props) {
           <h2 className="font-display text-4xl font-bold text-white mb-4 leading-tight">
             {isLogin ? 'Welcome back to Shrama' : isWorker ? 'Find work that fits your life' : 'Hire the right people, fast'}
           </h2>
-          <p className="text-white/60 leading-relaxed">
+          <p className="text-white/75 leading-relaxed">
             {isLogin
               ? 'Sign in to your account to continue your journey on Nepal\'s flexible work platform.'
               : isWorker
               ? 'Thousands of flexible jobs across Nepal. Match your skills and availability with the right opportunity.'
               : 'Post jobs, review qualified applicants, and build your flexible workforce with confidence.'}
           </p>
-          <div className="mt-8 space-y-3">
+          <div className="mt-8 space-y-2">
             {(isWorker ? ['Discover jobs matched to your skills', 'Track all your applications in one place', 'Build your work history and rating'] :
               isProvider ? ['Verified provider badge builds trust', 'Review ranked applicant profiles', 'Manage all hirings from your dashboard'] :
               ['Your profile and applications', 'New matching jobs in your district', 'Messages from providers']).map(item => (
-              <div key={item} className="flex items-center gap-2 text-white/70 text-sm">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#14A085" strokeWidth="2.5" className="w-4 h-4 flex-shrink-0">
+              <div key={item} className="flex items-center gap-3 py-1 text-sm text-white/85">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 flex-shrink-0 text-emerald-400">
                   <path d="M20 6L9 17l-5-5"/>
                 </svg>
                 {item}
@@ -128,37 +131,45 @@ export default function AuthPage({ mode }: Props) {
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
-          {/* Back to landing */}
-          <button onClick={() => navigate('landing')} className="flex items-center gap-2 text-sm font-medium text-stone-500 hover:text-stone-800 mb-8 transition-colors">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
+      <div className="relative flex min-h-screen flex-1 flex-col bg-white px-6 pb-8 pt-24 sm:px-10 lg:px-14">
+        <div className="absolute inset-x-6 top-5 sm:inset-x-10 lg:inset-x-14">
+          <div className="mx-auto flex w-full max-w-md items-center justify-between">
+          <button onClick={() => navigate('landing')} className="group inline-flex min-h-11 items-center gap-2 text-sm font-medium text-stone-600 transition-colors hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" aria-hidden="true">
+              <path d="M19 12H5m7 7-7-7 7-7" />
             </svg>
             Back to homepage
           </button>
+          <div className="translate-x-3">
+            <LanguageSwitch inline />
+          </div>
+          </div>
+        </div>
+
+        <div className="flex flex-1 items-center justify-center">
+        <div className="my-auto mx-auto w-full max-w-md lg:-translate-y-3">
 
           {/* Mode toggle (login page) */}
           {isLogin && (
-            <div className="bg-stone-100 rounded-xl p-1 flex mb-8">
-              <button onClick={() => navigate('login')} className="flex-1 py-2 rounded-lg text-sm font-medium bg-white shadow text-stone-900">
+            <div className="mb-8 flex rounded-xl bg-stone-100 p-1">
+              <button onClick={() => navigate('login')} className="flex-1 rounded-lg bg-white py-2.5 text-sm font-medium text-stone-900 shadow-sm transition-colors">
                 Sign In
               </button>
-              <button onClick={() => navigate('worker-signup')} className="flex-1 py-2 rounded-lg text-sm font-medium text-stone-500 hover:text-stone-700">
+              <button onClick={() => navigate('worker-signup')} className="flex-1 rounded-lg py-2.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900">
                 Register
               </button>
             </div>
           )}
 
           <div className="mb-8">
-            <h1 className="font-display text-3xl font-bold tracking-tight text-stone-900 mb-2">
+            <h1 className="mb-3 font-sans text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
               {isLogin ? 'Sign in to your account' : isWorker ? (step === 1 ? 'Create Account' : 'Tell us about your skills') : (step === 1 ? 'Create Provider Account' : 'Organisation Details')}
             </h1>
-            {!isLogin && !(isWorker && step === 1) && (
+            {!isLogin && (
               <p className="text-stone-500 text-sm leading-relaxed">
                 {isWorker
                   ? step === 1
-                    ? 'Step 1 of 2 · Account details. Start with your contact information; you’ll add your location and skills next.'
+                    ? 'Add your full name, email address, and password to get started.'
                     : 'Step 2 of 2 · Location and skills. This helps us match you with relevant work nearby.'
                   : `Step ${step} of 2 — ${step === 1 ? 'Contact information' : 'Business details'}`}
               </p>
@@ -171,7 +182,7 @@ export default function AuthPage({ mode }: Props) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="auth-form space-y-4">
             {/* Login fields */}
             {isLogin && (
               <>
@@ -199,8 +210,11 @@ export default function AuthPage({ mode }: Props) {
             {/* Worker signup: email and password only */}
             {isWorker && step === 1 && (
               <>
-                <Field label="Gmail address">
-                  <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="you@gmail.com" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="email" required />
+                <Field label="Full name">
+                  <input type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Hariom Sharma" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="name" required />
+                </Field>
+                <Field label="Email address">
+                  <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="you@example.com" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="email" required />
                 </Field>
                 <Field label="Password">
                   <input type="password" value={formData.password} onChange={e => setFormData(p => ({ ...p, password: e.target.value }))} placeholder="At least 8 characters" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="new-password" minLength={8} required />
@@ -299,31 +313,33 @@ export default function AuthPage({ mode }: Props) {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors mt-2"
+              className="min-h-12 w-full rounded-lg bg-[#5A2A27] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27]"
             >
               {isLogin ? 'Sign In' : isProvider && step < 2 ? <>Continue <span aria-hidden="true">→</span></> : isWorker ? 'Create my account' : 'Register Organisation'}
             </button>
           </form>
 
           {/* Footer links */}
-          <div className="mt-6 text-center text-sm text-stone-500">
-            {isLogin ? (
-              <>Don't have an account?{' '}
-                <button onClick={() => navigate('worker-signup')} className="text-primary-ink hover:underline font-medium">Register as Worker</button>
-                {' or '}
-                <button onClick={() => navigate('provider-signup')} className="text-primary-ink hover:underline font-medium">as Provider</button>
-              </>
-            ) : (
-              <>Already have an account?{' '}
-                <button onClick={() => navigate('login')} className="text-primary-ink hover:underline font-medium">Sign in</button>
+          {isLogin ? (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-stone-600">
+              <span>Don’t have an account?</span>
+              <button onClick={() => navigate('worker-signup')} className="font-semibold text-[#5A2A27] hover:underline">Register as Worker</button>
+              <span aria-hidden="true" className="text-stone-400">·</span>
+              <button onClick={() => navigate('provider-signup')} className="font-semibold text-[#5A2A27] hover:underline">Register as Provider</button>
+            </div>
+          ) : (
+            <div className="mt-6 text-center">
+              <p className="text-[13px] text-stone-600">Already have an account? <button onClick={() => navigate('login')} className="font-semibold text-[#5A2A27] hover:underline">Sign in</button></p>
+              <div className="mt-4 border-t border-stone-200 pt-4">
                 {isWorker ? (
-                  <> · <button onClick={() => navigate('provider-signup')} className="text-stone-500 hover:text-stone-800">Register as a provider</button></>
+                  <p className="text-sm text-stone-600">Looking to hire? <button onClick={() => navigate('provider-signup')} className="ml-1 font-semibold text-[#5A2A27] underline-offset-4 hover:underline">Register as a provider</button></p>
                 ) : (
-                  <> · <button onClick={() => navigate('worker-signup')} className="text-stone-500 hover:text-stone-800">Register as a worker</button></>
+                  <p className="text-sm text-stone-600">Looking for work? <button onClick={() => navigate('worker-signup')} className="ml-1 font-semibold text-[#5A2A27] underline-offset-4 hover:underline">Register as a worker</button></p>
                 )}
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
+        </div>
         </div>
       </div>
     </div>
@@ -333,8 +349,8 @@ export default function AuthPage({ mode }: Props) {
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex justify-between mb-1.5">
-        <label className="text-sm font-semibold text-stone-800">{label}</label>
+      <div className="mb-1.5 flex justify-between">
+        <label className="text-sm font-semibold text-stone-700">{label}</label>
         {hint && <span className="text-xs text-stone-400">{hint}</span>}
       </div>
       {children}

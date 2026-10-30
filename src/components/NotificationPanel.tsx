@@ -8,9 +8,10 @@ const typeConfig: Record<Notification['type'], { icon: string; color: string }> 
   application: { icon: '↑', color: 'bg-teal-100 text-teal' },
   'new-job': { icon: '+', color: 'bg-primary-100 text-primary-ink' },
   'job-update': { icon: '!', color: 'bg-amber-100 text-amber-700' },
+  'profile-update': { icon: '✓', color: 'bg-amber-100 text-amber-800' },
 };
 
-export default function NotificationPanel({ onClose }: { onClose: () => void }) {
+export default function NotificationPanel({ onClose, placement = 'navbar' }: { onClose: () => void; placement?: 'navbar' | 'sidebar' }) {
   const { state, markNotificationRead, markAllNotificationsRead } = useApp();
   const myNotifs = state.notifications
     .filter(n => n.userId === state.currentUser?.id)
@@ -19,7 +20,7 @@ export default function NotificationPanel({ onClose }: { onClose: () => void }) 
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="fixed right-4 top-[4.5rem] z-50 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 overflow-hidden animate-fade-in">
+      <div className={`fixed ${placement === 'sidebar' ? 'worker-notification-panel left-24 top-20' : 'right-4 top-[4.5rem]'} z-50 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-stone-200 overflow-hidden animate-fade-in`}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-100">
           <h3 className="font-semibold text-stone-900">Notifications</h3>
           <div className="flex items-center gap-2">

@@ -656,7 +656,7 @@ const translations: Record<string, string> = {
   'For businesses': 'व्यवसायका लागि',
   'Connecting workers and businesses across Nepal.': 'नेपालभरका कामदार र व्यवसायलाई जोड्दै।',
   'Work and hiring across Nepal': 'नेपालभर काम र भर्ना',
-  'Find the right people for your next job': 'आफ्नो कामका लागि सही कामदार खोज्नुहोस्',
+  'Finds the right people for your next job': 'आफ्नो कामका लागि सही कामदार खोज्नुहोस्',
   'Find Your right work': 'आफूलाई मिल्ने काम खोज्नुहोस्',
   'Popular Providers': 'लोकप्रिय रोजगारदाता',
   'Choose hero background': 'मुख्य पृष्ठभूमि छान्नुहोस्',
