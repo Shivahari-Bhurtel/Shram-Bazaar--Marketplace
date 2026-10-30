@@ -129,7 +129,7 @@ export default function Landing() {
         aria-label="Shram Bazzar landing navigation"
         className="shrink-0 bg-white"
       >
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 sm:py-4 sm:text-base lg:flex-nowrap lg:gap-x-4 xl:gap-x-7 xl:px-0">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 sm:py-4 sm:text-base lg:flex-nowrap lg:gap-x-4 xl:gap-x-7 xl:px-0 2xl:max-w-[1400px] 2xl:text-base min-[1800px]:max-w-[1500px] min-[1800px]:gap-x-8 min-[1800px]:text-lg">
           <div ref={workerMenuRef} className="relative shrink-0">
             <button
               onClick={() => setOpenMenu(openMenu === 'worker' ? null : 'worker')}
@@ -205,11 +205,11 @@ export default function Landing() {
         </div>
       </nav>
 
-      <aside className="mx-auto flex w-[calc(100%-2rem)] max-w-[1200px] shrink-0 flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#F3E4D9] px-5 py-3.5 text-center text-base text-[#5E3122] sm:w-[calc(100%-3rem)] sm:justify-between sm:px-7 sm:py-4 sm:text-lg lg:w-[calc(100%-5rem)] lg:px-9">
-        <p className="font-medium leading-snug sm:text-xl">Get connected with local personnel for your everyday business and service needs</p>
+      <aside className="mx-auto flex w-[calc(100%-2rem)] max-w-[1200px] shrink-0 flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#F3E4D9] px-5 py-3.5 text-center text-base text-[#5E3122] sm:w-[calc(100%-3rem)] sm:justify-between sm:px-7 sm:py-4 sm:text-lg lg:w-[calc(100%-5rem)] lg:px-9 2xl:max-w-[1400px] min-[1800px]:max-w-[1500px] min-[1800px]:px-10 min-[1800px]:py-5">
+        <p className="font-medium leading-snug sm:text-xl 2xl:text-2xl min-[1800px]:text-2xl">Get connected with local personnel for your everyday business and service needs</p>
         <button
           onClick={() => navigate('provider-signup')}
-          className="group inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b border-[#8C3D2B]/70 pb-1 text-lg font-semibold tracking-tight text-[#8C3D2B] transition-colors hover:border-[#713121] hover:text-[#713121] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8C3D2B] sm:text-xl"
+          className="group inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b border-[#8C3D2B]/70 pb-1 text-lg font-semibold tracking-tight text-[#8C3D2B] transition-colors hover:border-[#713121] hover:text-[#713121] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8C3D2B] sm:text-xl 2xl:text-2xl min-[1800px]:text-2xl"
         >
           <span>Get started</span>
           <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1">
@@ -220,7 +220,7 @@ export default function Landing() {
 
       {/* Hero */}
       <section
-        className="relative mx-auto mt-2 min-h-[34rem] w-[calc(100%-2rem)] max-w-[1200px] overflow-hidden rounded-[2rem] bg-stone-900 sm:mt-3 sm:min-h-[36rem] sm:w-[calc(100%-3rem)] lg:w-[calc(100%-5rem)]"
+        className="relative mx-auto mt-2 min-h-[34rem] w-[calc(100%-2rem)] max-w-[1200px] overflow-hidden rounded-[2rem] bg-stone-900 sm:mt-3 sm:min-h-[36rem] sm:w-[calc(100%-3rem)] lg:w-[calc(100%-5rem)] 2xl:min-h-[42rem] 2xl:max-w-[1400px] min-[1800px]:max-w-[1500px]"
         onTouchStart={event => {
           const touch = event.touches[0];
           touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
@@ -288,13 +288,13 @@ export default function Landing() {
           </div>
         </div>
         <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-stone-950/90 via-stone-950/70 to-stone-950/45" />
-        <div className="relative z-[2] mx-auto flex h-full min-h-[34rem] max-w-[1200px] items-center px-5 py-16 sm:min-h-[36rem] sm:px-8 sm:py-20 lg:px-10 lg:py-24">
+        <div className="relative z-[2] mx-auto flex h-full min-h-[34rem] max-w-[1200px] items-center px-5 py-16 sm:min-h-[36rem] sm:px-8 sm:py-20 lg:px-10 lg:py-24 2xl:min-h-[42rem] 2xl:max-w-[1400px] 2xl:px-12 min-[1800px]:max-w-[1500px] min-[1800px]:px-14">
           <div className="max-w-2xl">
-            <h1 className="mb-5 font-display text-4xl font-bold leading-tight text-white sm:mb-6 sm:text-5xl lg:text-6xl">
-              <span className="font-brand text-5xl font-semibold text-white sm:text-6xl lg:text-7xl xl:text-8xl">Shram Bazzar</span><br />
+            <h1 className="mb-5 font-display text-4xl font-bold leading-tight text-white sm:mb-6 sm:text-5xl lg:text-6xl 2xl:text-[4.5rem] min-[1800px]:text-7xl">
+              <span className="font-brand text-5xl font-semibold text-white sm:text-6xl lg:text-7xl xl:text-8xl 2xl:text-[7.5rem] min-[1800px]:text-[7.5rem]">Shram Bazzar</span><br />
               <span className="text-primary-light">for Flexible Work</span>
             </h1>
-            <p className="mb-7 max-w-xl text-base leading-relaxed text-white/80 sm:mb-9 sm:text-lg">
+            <p className="mb-7 max-w-xl text-base leading-relaxed text-white/80 sm:mb-9 sm:text-lg 2xl:max-w-2xl 2xl:text-xl min-[1800px]:text-xl">
               Shram Bazzar connects skilled workers with businesses across Nepal.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -332,8 +332,8 @@ export default function Landing() {
       </div>
 
       <section className="bg-white px-4 pb-20 pt-0 sm:px-6 sm:pb-24">
-        <div className="mx-auto grid max-w-[1280px] items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:gap-10">
-          <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
+        <div className="mx-auto grid max-w-[1280px] items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:gap-10 2xl:max-w-[1400px] 2xl:grid-cols-[260px_minmax(0,1fr)] min-[1800px]:max-w-[1600px] min-[1800px]:grid-cols-[300px_minmax(0,1fr)] min-[1800px]:gap-12">
+          <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl 2xl:text-8xl min-[1800px]:text-8xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
               <span>Find</span>
               <span>Your</span>
               <span>Right</span>
@@ -351,8 +351,8 @@ export default function Landing() {
                 <span className={`absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full ${isDark ? 'bg-[#FFF1DF] text-[#5E3122]' : 'bg-[#5E3122] text-[#FFF1DF]'}`} aria-hidden="true">
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="h-3.5 w-3.5"><path d="M8 3v10M3 8h10" /></svg>
                 </span>
-                <CategoryIcon type={category.icon} className="h-[4.5rem] w-[4.5rem] shrink-0 sm:h-20 sm:w-20" />
-                <span className={`mt-3 max-w-[12ch] text-lg font-medium leading-[1.08] transition-opacity group-hover:opacity-85 sm:text-xl xl:text-[1.35rem] ${isDark ? 'text-[#FFF5E9]' : 'text-black'}`} style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{category.label}</span>
+                <CategoryIcon type={category.icon} className="h-[4.5rem] w-[4.5rem] shrink-0 sm:h-20 sm:w-20 2xl:h-[5.5rem] 2xl:w-[5.5rem] min-[1800px]:h-24 min-[1800px]:w-24" />
+                <span className={`mt-3 max-w-[12ch] text-lg font-medium leading-[1.08] transition-opacity group-hover:opacity-85 sm:text-xl xl:text-[1.35rem] 2xl:mt-4 2xl:text-2xl min-[1800px]:mt-5 min-[1800px]:text-2xl ${isDark ? 'text-[#FFF5E9]' : 'text-black'}`} style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{category.label}</span>
               </button>;
             })}
           </div>
@@ -362,7 +362,7 @@ export default function Landing() {
       <FeaturedOpportunities />
 
       <section id="how-it-works" className="bg-white px-4 py-20 sm:px-6">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
         <SectionHeading eyebrow="" title="How Shram Bazzar works" description="Get started in three simple steps." />
         <div className="mt-10 grid gap-5 md:grid-cols-2">
           <Journey title="For workers" steps={workerSteps} action="Create a worker profile" onAction={() => navigate('worker-signup')} />
@@ -374,7 +374,7 @@ export default function Landing() {
       <WhyShramaSection />
 
       <section id="businesses" className="bg-white px-4 pb-8 pt-2 sm:px-6 sm:pb-10 sm:pt-3 lg:pb-12 lg:pt-3">
-        <div className="relative mx-auto flex min-h-80 max-w-[1200px] items-center overflow-hidden rounded-[2rem] bg-primary px-6 py-12 text-white shadow-sm sm:px-10 sm:py-16 lg:px-14">
+        <div className="relative mx-auto flex min-h-80 max-w-[1200px] items-center overflow-hidden rounded-[2rem] bg-primary px-6 py-12 text-white shadow-sm sm:px-10 sm:py-16 lg:px-14 2xl:max-w-[1400px] min-[1800px]:min-h-[26rem] min-[1800px]:max-w-[1500px] min-[1800px]:px-16">
         <svg aria-hidden="true" viewBox="0 0 420 280" fill="none" className="pointer-events-none absolute bottom-0 right-0 hidden h-[74%] w-[32%] max-w-md text-amber-300/75 xl:block">
           <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {/* Three prominent towers only, with simple 3D side planes. */}
@@ -399,7 +399,7 @@ export default function Landing() {
       </section>
 
       <section className="bg-white px-4 py-16 sm:px-6 sm:py-20">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-3xl border border-red-900 bg-red-950 p-6 text-white shadow-sm sm:p-10 lg:grid-cols-[1fr_auto] lg:gap-12">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-3xl border border-red-900 bg-red-950 p-6 text-white shadow-sm sm:p-10 lg:grid-cols-[1fr_auto] lg:gap-12 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] min-[1800px]:p-12">
           <div className="flex items-center gap-7 sm:gap-10">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] bg-white/10 text-red-100 ring-8 ring-white/5 sm:h-28 sm:w-28" aria-hidden="true">
               <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" className="h-14 w-14 sm:h-16 sm:w-16">
@@ -420,13 +420,13 @@ export default function Landing() {
       </section>
 
       <footer className="bg-stone-950 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="max-w-7xl 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] mx-auto px-4 sm:px-6 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-10 min-[1800px]:gap-14">
           <div><h2 className="font-brand text-3xl font-semibold">Shram Bazzar</h2><p className="text-sm text-white/50 mt-3 leading-relaxed">Connecting workers and businesses across Nepal.</p></div>
           <FooterGroup title="Get started" items={[['Find work', () => navigate('worker-signup')], ['Hire workers', () => navigate('provider-signup')], ['Sign in', () => navigate('login')]]} />
           <FooterGroup title="Help" items={[['Contact us', () => { window.location.href = 'mailto:support@shrama.com'; }], ['Report a concern', () => navigate('login')], ['Account help', () => navigate('login')]]} />
           <FooterGroup title="Learn more" items={[['Terms of use', () => window.alert('Terms of use are available from Shram Bazzar support.')], ['Privacy', () => window.alert('Your information is saved in this browser.')], ['Kathmandu, Nepal', () => window.scrollTo({ top: 0, behavior: 'smooth' })]]} />
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-xs text-stone-400 flex flex-col sm:flex-row justify-between gap-2">
+        <div className="max-w-7xl 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] mx-auto px-4 sm:px-6 py-6 text-xs text-stone-400 flex flex-col sm:flex-row justify-between gap-2">
           <span>© 2026 Shram Bazzar</span><span>Work and hiring across Nepal</span>
         </div>
       </footer>
@@ -459,11 +459,11 @@ function FeaturedOpportunities() {
 
   return (
     <section id="popular-providers" className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pb-16 sm:pt-20">
-        <h2 className="mb-9 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:mb-10 sm:text-4xl">Popular Providers</h2>
+      <div className="mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pb-16 sm:pt-20 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] min-[1800px]:px-8">
+        <h2 className="mb-9 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:mb-10 sm:text-4xl 2xl:text-[2.75rem] min-[1800px]:mb-12 min-[1800px]:text-5xl">Popular Providers</h2>
         {loading && jobs.length === 0 && (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-label="Loading job listings">
-            {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-[220px] w-full animate-pulse rounded-2xl border border-stone-100 bg-stone-50" />)}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-6 min-[1800px]:gap-7" aria-label="Loading job listings">
+            {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-[220px] w-full animate-pulse rounded-2xl border border-stone-100 bg-stone-50 2xl:h-[245px] min-[1800px]:h-[270px]" />)}
           </div>
         )}
 
@@ -475,7 +475,7 @@ function FeaturedOpportunities() {
         )}
 
         {jobs.length > 0 && (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:gap-6 min-[1800px]:gap-7">
             {jobs.map((job, index) => <FeaturedOpportunityCard key={job.id} job={job} index={index} />)}
           </div>
         )}
@@ -489,7 +489,7 @@ function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
   return (
     <article
       style={{ animationDelay: `${Math.min(index * 55, 360)}ms`, animationFillMode: 'backwards' }}
-      className="group flex min-h-[220px] w-full min-w-0 flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#91AC67]/60 hover:bg-white hover:shadow-md motion-reduce:animate-none motion-reduce:transition-none animate-fade-in"
+      className="group flex min-h-[220px] w-full min-w-0 flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#91AC67]/60 hover:bg-white hover:shadow-md motion-reduce:animate-none motion-reduce:transition-none animate-fade-in 2xl:min-h-[245px] 2xl:p-[1.375rem] min-[1800px]:min-h-[270px] min-[1800px]:p-6"
     >
       <div className="flex items-start justify-between gap-2">
         <CompanyLogo job={job} />
@@ -502,8 +502,8 @@ function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
         )}
       </div>
       <div className="mt-4 min-w-0">
-        <h3 className="line-clamp-2 font-sans text-[17px] font-bold leading-[1.2] tracking-tight text-stone-950">{job.providerName}</h3>
-        {job.externalCategory && <p className="mt-1.5 line-clamp-1 font-sans text-sm font-medium leading-5 tracking-normal text-stone-700">{job.externalCategory}</p>}
+        <h3 className="line-clamp-2 font-sans text-[17px] font-bold leading-[1.2] tracking-tight text-stone-950 2xl:text-lg min-[1800px]:text-xl">{job.providerName}</h3>
+        {job.externalCategory && <p className="mt-1.5 line-clamp-1 font-sans text-sm font-medium leading-5 tracking-normal text-stone-700 2xl:text-[0.9375rem] min-[1800px]:text-base">{job.externalCategory}</p>}
       </div>
       <span className="mt-auto inline-flex w-fit pt-3 font-sans text-sm font-semibold tracking-tight text-[#405D1B]">Remote</span>
     </article>
@@ -521,7 +521,7 @@ function CompanyLogo({ job }: { job: Job }) {
     .toUpperCase();
 
   return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm ring-2 ring-stone-50 transition-transform duration-300 group-hover:scale-105">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm ring-2 ring-stone-50 transition-transform duration-300 group-hover:scale-105 2xl:h-[3.75rem] 2xl:w-[3.75rem] min-[1800px]:h-16 min-[1800px]:w-16">
       {job.providerLogo && !imageFailed ? (
         <img
           src={job.providerLogo}
@@ -542,7 +542,7 @@ function CompanyLogo({ job }: { job: Job }) {
 function WhyShramaSection() {
   return (
     <section id="why-shrama" className="scroll-mt-8 bg-white px-4 pb-0 pt-8 sm:px-6 sm:pt-10">
-      <div className="mx-auto max-w-[1200px] px-6 sm:px-10 lg:px-14">
+      <div className="mx-auto max-w-[1200px] px-6 sm:px-10 lg:px-14 2xl:max-w-[1400px] min-[1800px]:max-w-[1500px]">
         <h2 className="font-display text-3xl font-bold tracking-tight text-stone-900 md:text-4xl">Why Shram Bazzar?</h2>
       </div>
     </section>
