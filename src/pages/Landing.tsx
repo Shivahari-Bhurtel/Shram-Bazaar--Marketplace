@@ -299,7 +299,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => navigate('worker-signup')}
+                onClick={() => navigate('login')}
                 className="px-8 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-lg"
               >
                 Find Flexible Work
