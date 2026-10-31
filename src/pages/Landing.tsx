@@ -130,6 +130,40 @@ function WorkCategoryCard({ category, index, onSelect }: { category: (typeof wor
   );
 }
 
+const workCategoryHotspots = [
+  { left: '24.4%', top: '13.9%' },
+  { left: '42.6%', top: '13.9%' },
+  { left: '60.8%', top: '13.9%' },
+  { left: '79.1%', top: '13.9%' },
+  { left: '24.4%', top: '49.8%' },
+  { left: '42.6%', top: '49.8%' },
+  { left: '60.8%', top: '49.8%' },
+  { left: '79.1%', top: '49.8%' },
+];
+
+function FindWorkArtwork({ onSelect }: { onSelect: (index: number) => void }) {
+  return (
+    <div className="relative mx-auto hidden w-full max-w-[1280px] xl:block">
+      <img
+        src={`${import.meta.env.BASE_URL}images/landing/find-your-right-work.svg`}
+        alt=""
+        aria-hidden="true"
+        className="block h-auto w-full"
+      />
+      {workCategories.map((category, index) => (
+        <button
+          key={category.label}
+          type="button"
+          onClick={() => onSelect(index)}
+          aria-label={`Find work in ${category.label}`}
+          className="absolute h-[33.5%] w-[16.9%] cursor-pointer rounded-xl focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-white"
+          style={{ ...workCategoryHotspots[index] }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function Landing() {
   const { navigate, browseSkill } = useApp();
   const [openMenu, setOpenMenu] = useState<'worker' | null>(null);
@@ -441,18 +475,21 @@ export default function Landing() {
       </div>
 
       <section className="bg-white px-4 pb-12 pt-14 sm:px-6 sm:pb-16 sm:pt-20 lg:pt-24">
-        <div className="mx-auto grid max-w-[1280px] items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:gap-10 2xl:max-w-[1400px] 2xl:grid-cols-[260px_minmax(0,1fr)] min-[1800px]:max-w-[1600px] min-[1800px]:grid-cols-[300px_minmax(0,1fr)] min-[1800px]:gap-12">
-          <div>
-          <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl 2xl:text-8xl min-[1800px]:text-8xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
-              <span>Find</span>
-              <span>Your</span>
-              <span>Right</span>
-              <span>Work</span>
-          </h2>
+        <div className="mx-auto max-w-[1280px] 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
+          <div className="grid items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:hidden">
+            <div>
+              <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
+                <span>Find</span>
+                <span>Your</span>
+                <span>Right</span>
+                <span>Work</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4 lg:gap-5">
+              {workCategories.map((category, index) => <WorkCategoryCard key={category.label} category={category} index={index} onSelect={() => navigate('worker-signup')} />)}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4 lg:gap-5">
-            {workCategories.map((category, index) => <WorkCategoryCard key={category.label} category={category} index={index} onSelect={() => navigate('worker-signup')} />)}
-          </div>
+          <FindWorkArtwork onSelect={() => navigate('worker-signup')} />
         </div>
       </section>
 
