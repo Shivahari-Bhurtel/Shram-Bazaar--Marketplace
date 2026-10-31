@@ -38,7 +38,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="sticky top-0 z-40 border-b border-stone-200 bg-white shadow-[0_1px_3px_rgba(23,30,37,0.04)]">
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className={`${isWorker ? 'w-full' : 'mx-auto max-w-[1440px]'} px-4 sm:px-6 lg:px-8`}>
           <div className="grid h-[4.5rem] grid-cols-[1fr_auto] items-center md:grid-cols-[auto_1fr_auto] md:gap-4 lg:gap-8">
             {/* Logo */}
             <button

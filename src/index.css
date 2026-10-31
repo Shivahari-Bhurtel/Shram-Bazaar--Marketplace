@@ -164,16 +164,6 @@ body {
   overflow: hidden;
 }
 
-@media (min-width: 1440px) {
-  .worker-workspace-rail {
-    left: calc((100vw - 1440px) / 2);
-  }
-
-  .worker-notification-panel {
-    left: calc((100vw - 1440px) / 2 + 6rem);
-  }
-}
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-in-out;
 }

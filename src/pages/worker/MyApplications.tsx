@@ -17,7 +17,7 @@ export default function MyApplications() {
   ];
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+    <main className="w-full max-w-[1600px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-primary-ink">Your workspace</p>

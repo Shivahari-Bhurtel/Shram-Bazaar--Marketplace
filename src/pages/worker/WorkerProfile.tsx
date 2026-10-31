@@ -144,7 +144,7 @@ export default function WorkerProfile() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-7 font-sans sm:px-6 sm:py-8">
+    <div className="w-full max-w-[1600px] px-4 py-7 font-sans sm:px-6 sm:py-8 lg:px-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-sans text-3xl font-semibold tracking-tight text-stone-950 mb-1">My Profile</h1>

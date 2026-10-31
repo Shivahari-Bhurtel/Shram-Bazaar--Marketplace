@@ -77,7 +77,7 @@ export default function KycVerification() {
   };
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+    <main className="w-full max-w-[1400px] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <button onClick={() => navigate('worker-profile')} className="mb-7 inline-flex items-center gap-2 text-sm font-semibold text-stone-600 transition-colors hover:text-primary-ink">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5m7 7-7-7 7-7" /></svg>
         Back to profile

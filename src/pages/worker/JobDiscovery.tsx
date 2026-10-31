@@ -180,7 +180,7 @@ export default function JobDiscovery() {
   };
 
   return (
-    <div className="relative isolate mx-auto max-w-7xl bg-cream px-4 py-6 sm:px-6 sm:py-8">
+    <div className="relative isolate w-full max-w-[1800px] bg-cream px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <img
         aria-hidden="true"
         alt=""

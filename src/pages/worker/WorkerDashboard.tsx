@@ -51,8 +51,8 @@ export default function WorkerDashboard() {
   };
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 py-5 sm:px-6 sm:py-8 lg:pr-8">
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_236px] xl:gap-8">
+    <div className="w-full max-w-[1800px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_260px] 2xl:gap-8">
         <main className="order-3 min-w-0 lg:order-2">
           <header className="relative mb-6 overflow-hidden rounded-2xl border border-[#3D241A] bg-gradient-to-r from-[#3D241A] via-[#5E3122] to-[#70452F] px-5 py-5 shadow-md shadow-[#3D241A]/10 sm:px-7 sm:py-6">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_86%_20%,rgba(255,255,255,0.15),transparent_48%)]" />
@@ -97,7 +97,7 @@ export default function WorkerDashboard() {
           </section>
         </main>
 
-        <aside className="order-2 space-y-3 lg:order-3 lg:sticky lg:top-24">
+        <aside className="order-2 space-y-3 lg:order-3 xl:sticky xl:top-24">
           <section className="rounded-2xl border border-stone-200 bg-white p-5">
             <div className="flex items-center gap-3.5">
               {workerProfile.photo ? (

@@ -6,7 +6,7 @@ export default function SavedJobs() {
   const savedJobs = state.jobs.filter(j => state.savedJobIds.includes(j.id));
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <div className="w-full max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-stone-900 mb-1">Saved Jobs</h1>
         <p className="text-stone-500">{savedJobs.length} job{savedJobs.length !== 1 ? 's' : ''} saved</p>
