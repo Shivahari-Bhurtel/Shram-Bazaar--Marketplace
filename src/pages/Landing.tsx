@@ -50,39 +50,23 @@ const workCategories = [
 ] as const;
 
 function CategoryIcon({ type, className = 'h-20 w-20' }: { type: (typeof workCategories)[number]['icon']; className?: string }) {
-  const commonProps = {
-    viewBox: '0 0 64 64',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 1.8,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    className,
-    'aria-hidden': true,
-  };
-
-  if (type === 'professional') {
-    return <svg {...commonProps}><path d="m8 29 9-15 12 6-8 15-13-6ZM56 29l-9-15-12 6 8 15 13-6Z" /><path d="m21 33 7-7c2-2 5-2 7 0l3 3 4-2 9 10-8 9c-2 2-5 2-7 0L21 33Z" /><path d="m27 36-4 5m10-2-5 6m11-3-4 5M32 5v5m-8-2 3 4m13-4-3 4" /></svg>;
-  }
-  if (type === 'skilled') {
-    return <svg {...commonProps}><path d="m12 48 24-24m-4-7 7-7 9 2-2 9-7 7-7-7 7-7m-20 29 4 4" /><path d="m15 16 5-5 10 10-5 5M8 50l6 6 7-7-6-6-7 7Z" /><path d="M35 40h17v14H35zM39 40v-5h9v5" /></svg>;
-  }
-  if (type === 'hospitality') {
-    return <svg {...commonProps}><path d="M10 39h44M15 39c1-12 8-19 22-19s20 7 21 19M19 46h29M24 52h19" /><path d="M31 18a11 11 0 1 1 22 0M36 18h12M42 12v6" /><path d="M16 39v5m9-5v5m9-5v5m9-5v5m9-5v5" /></svg>;
-  }
-  if (type === 'retail') {
-    return <svg {...commonProps}><path d="M10 28h44l-4-12H14l-4 12Z" /><path d="M13 28v27h38V28M10 28c0 5 8 5 8 0 0 5 8 5 8 0 0 5 8 5 8 0 0 5 8 5 8 0 0 5 8 5 8 0" /><path d="M20 55V39h11v16m7-16h8v9h-8zM27 10a6 6 0 1 1 12 0m-14 0h16" /></svg>;
-  }
-  if (type === 'events') {
-    return <svg {...commonProps}><path d="M8 27 32 9l24 18M13 27h38M16 27v28m32-28v28M27 55V39h10v16M10 55h44" /><path d="M22 27v28m20-28v28" /></svg>;
-  }
-  if (type === 'delivery') {
-    return <svg {...commonProps}><path d="M6 29h32v18H6zM38 35h9l9 9v3H38zM13 47a4 4 0 1 0 8 0m22 0a4 4 0 1 0 8 0M43 35v9h13M11 24h17" /><path d="M25 16 36 8l11 8-11 8-11-8Z" /><path d="M30 14v8m6-11v8m6-5v8" /></svg>;
-  }
-  if (type === 'digital') {
-    return <svg {...commonProps}><path d="M9 35V20h13c0-5 8-5 8 0h12v12c5 0 5 8 0 8v9H29c0-5-8-5-8 0H9V35Z" /><path d="M29 20v8m13 4h-8m-13 8v9m8-14h7" /><path d="m46 14 10-7-1 12-3-3-6 7-4-4 7-6-3-3Z" /></svg>;
-  }
-  return <svg {...commonProps}><path d="M11 55V18h42v37M7 18h50M17 25h30M17 32h30M17 39h30M17 46h30M18 55V46m10 9V46m10 9V46m10 9V46" /><path d="M32 18V8m0 0h17m-4 0v10m4-10 8 5" /><path d="M26 8h12" /></svg>;
+  const iconUrl = `${import.meta.env.BASE_URL}images/landing/category-icons/${type}.png`;
+  return (
+    <span
+      aria-hidden="true"
+      className={`block shrink-0 bg-current ${className}`}
+      style={{
+        maskImage: `url("${iconUrl}")`,
+        WebkitMaskImage: `url("${iconUrl}")`,
+        maskPosition: 'center',
+        WebkitMaskPosition: 'center',
+        maskRepeat: 'no-repeat',
+        WebkitMaskRepeat: 'no-repeat',
+        maskSize: 'contain',
+        WebkitMaskSize: 'contain',
+      }}
+    />
+  );
 }
 
 function useScrollReveal<T extends HTMLElement>(delay = 0) {
@@ -127,40 +111,6 @@ function WorkCategoryCard({ category, index, onSelect }: { category: (typeof wor
       <CategoryIcon type={category.icon} className="h-[4.5rem] w-[4.5rem] shrink-0 sm:h-20 sm:w-20 2xl:h-[5.5rem] 2xl:w-[5.5rem] min-[1800px]:h-24 min-[1800px]:w-24" />
       <span className={`mt-3 max-w-[12ch] text-lg font-medium leading-[1.08] transition-opacity group-hover:opacity-85 sm:text-xl xl:text-[1.35rem] 2xl:mt-4 2xl:text-2xl min-[1800px]:mt-5 min-[1800px]:text-2xl ${isDark ? 'text-[#FFF5E9]' : 'text-black'}`} style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{category.label}</span>
     </button>
-  );
-}
-
-const workCategoryHotspots = [
-  { left: '24.4%', top: '13.9%' },
-  { left: '42.6%', top: '13.9%' },
-  { left: '60.8%', top: '13.9%' },
-  { left: '79.1%', top: '13.9%' },
-  { left: '24.4%', top: '49.8%' },
-  { left: '42.6%', top: '49.8%' },
-  { left: '60.8%', top: '49.8%' },
-  { left: '79.1%', top: '49.8%' },
-];
-
-function FindWorkArtwork({ onSelect }: { onSelect: (index: number) => void }) {
-  return (
-    <div className="relative mx-auto hidden w-full max-w-[1280px] xl:block">
-      <img
-        src={`${import.meta.env.BASE_URL}images/landing/find-your-right-work.svg`}
-        alt=""
-        aria-hidden="true"
-        className="block h-auto w-full"
-      />
-      {workCategories.map((category, index) => (
-        <button
-          key={category.label}
-          type="button"
-          onClick={() => onSelect(index)}
-          aria-label={`Find work in ${category.label}`}
-          className="absolute h-[33.5%] w-[16.9%] cursor-pointer rounded-xl focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-white"
-          style={{ ...workCategoryHotspots[index] }}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -475,21 +425,18 @@ export default function Landing() {
       </div>
 
       <section className="bg-white px-4 pb-12 pt-14 sm:px-6 sm:pb-16 sm:pt-20 lg:pt-24">
-        <div className="mx-auto max-w-[1280px] 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
-          <div className="grid items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:hidden">
-            <div>
-              <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
-                <span>Find</span>
-                <span>Your</span>
-                <span>Right</span>
-                <span>Work</span>
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4 lg:gap-5">
-              {workCategories.map((category, index) => <WorkCategoryCard key={category.label} category={category} index={index} onSelect={() => navigate('worker-signup')} />)}
-            </div>
+        <div className="mx-auto grid max-w-[1280px] items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:gap-10 2xl:max-w-[1400px] 2xl:grid-cols-[260px_minmax(0,1fr)] min-[1800px]:max-w-[1600px] min-[1800px]:grid-cols-[300px_minmax(0,1fr)] min-[1800px]:gap-12">
+          <div>
+            <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl 2xl:text-8xl min-[1800px]:text-8xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
+              <span>Find</span>
+              <span>Your</span>
+              <span>Right</span>
+              <span>Work</span>
+            </h2>
           </div>
-          <FindWorkArtwork onSelect={() => navigate('worker-signup')} />
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4 lg:gap-5">
+            {workCategories.map((category, index) => <WorkCategoryCard key={category.label} category={category} index={index} onSelect={() => navigate('worker-signup')} />)}
+          </div>
         </div>
       </section>
 
