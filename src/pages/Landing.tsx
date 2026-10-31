@@ -8,6 +8,8 @@ import { useDismissOnOutside } from '../hooks/useDismissOnOutside';
 
 type JourneyAudience = 'worker' | 'business';
 
+const landingImagePath = (filename: string) => `${import.meta.env.BASE_URL}images/landing/${filename}`;
+
 const journeySteps: Record<JourneyAudience, { title: string; detail: string; points: string[] }[]> = {
   worker: [
     { title: 'Build Your Profile', detail: 'Give employers a clear picture of your experience, skills, and availability.', points: ['Add your district and contact details', 'List your trade skills and expected daily pay', 'Include work history or references'] },
@@ -727,19 +729,19 @@ function JourneyStepCard({ step, index, audience }: { step: { title: string; det
   const isProfileStep = isWorker && index === 0;
   const characterImage = !isWorker
     ? index === 3
-      ? '/images/landing/business-hiring-decision-guide.jpeg'
+      ? landingImagePath('business-hiring-decision-guide.jpeg')
       : index === 0
-      ? '/images/landing/business-profile-guide.jpeg'
+      ? landingImagePath('business-profile-guide.jpeg')
       : index === 1
-        ? '/images/landing/business-job-post-guide.jpeg'
-        : '/images/landing/business-applicant-review-guide.jpeg'
+        ? landingImagePath('business-job-post-guide.jpeg')
+        : landingImagePath('business-applicant-review-guide.jpeg')
     : index === 0
-      ? '/images/landing/worker-profile-guide.jpeg'
+      ? landingImagePath('worker-profile-guide.jpeg')
       : index === 1
-        ? '/images/landing/worker-job-search-guide.jpeg'
+        ? landingImagePath('worker-job-search-guide.jpeg')
         : index === 2
-          ? '/images/landing/worker-application-guide.jpeg'
-          : '/images/landing/worker-work-record-guide.jpeg';
+          ? landingImagePath('worker-application-guide.jpeg')
+          : landingImagePath('worker-work-record-guide.jpeg');
   const cardSurface = useWorkerCardStyle
     ? 'gap-3 bg-[#FFF0DD] p-6 text-[#111111] sm:p-8'
     : 'gap-5 border border-[#8B5E3C] bg-[#A8754F] p-6 text-[#FFF9F2] shadow-sm sm:p-8';
