@@ -8,6 +8,12 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 
+@media (min-width: 1800px) and (max-height: 1200px) {
+  html:has(.worker-interface) {
+    font-size: 115%;
+  }
+}
+
 @theme {
   --font-display: 'Fraunces', Georgia, serif;
   --font-brand: 'Cormorant Garamond', 'Noto Serif Devanagari', Georgia, serif;
