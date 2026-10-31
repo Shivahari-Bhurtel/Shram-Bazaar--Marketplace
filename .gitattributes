@@ -149,7 +149,6 @@
 src/assets/hero/*.mp4 -filter -diff -merge -text
 src/assets/hero/*.mp3 -filter -diff -merge -text
 public/images/landing/*.jpeg -filter -diff -merge -text
-public/images/landing/category-icons/*.png -filter -diff -merge -text
 public/images/profile-avatars/*.jpeg -filter -diff -merge -text
 public/images/profile-avatars/*.png -filter -diff -merge -text
 public/images/worker/*.png -filter -diff -merge -text
