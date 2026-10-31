@@ -148,3 +148,4 @@
 # Keep the small landing page media in Git so contributors do not need Git LFS.
 src/assets/hero/*.mp4 -filter -diff -merge -text
 src/assets/hero/*.mp3 -filter -diff -merge -text
+public/images/landing/*.jpeg -filter -diff -merge -text
