@@ -2,14 +2,6 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { useApp } from '../store/AppContext';
 import heroVideo from '../assets/hero/gemini_generated_video_f3c61e6d.mp4';
 import heroAudio from '../assets/hero/gemini_generated_video_f3c61e6d.mp3';
-import businessApplicantReviewGuide from '../assets/landing/business-applicant-review-guide.jpeg';
-import businessHiringDecisionGuide from '../assets/landing/business-hiring-decision-guide.jpeg';
-import businessJobPostGuide from '../assets/landing/business-job-post-guide.jpeg';
-import businessProfileGuide from '../assets/landing/business-profile-guide.jpeg';
-import workerApplicationGuide from '../assets/landing/worker-application-guide.jpeg';
-import workerJobSearchGuide from '../assets/landing/worker-job-search-guide.jpeg';
-import workerProfileGuide from '../assets/landing/worker-profile-guide.jpeg';
-import workerWorkRecordGuide from '../assets/landing/worker-work-record-guide.jpeg';
 import { getFeaturedHimalayasJobs } from '../services/himalayas';
 import type { Job } from '../types';
 import { useDismissOnOutside } from '../hooks/useDismissOnOutside';
@@ -17,8 +9,18 @@ import { useDismissOnOutside } from '../hooks/useDismissOnOutside';
 type JourneyAudience = 'worker' | 'business';
 
 const journeyImages: Record<JourneyAudience, string[]> = {
-  worker: [workerProfileGuide, workerJobSearchGuide, workerApplicationGuide, workerWorkRecordGuide],
-  business: [businessProfileGuide, businessJobPostGuide, businessApplicantReviewGuide, businessHiringDecisionGuide],
+  worker: [
+    'worker-profile-guide.jpeg',
+    'worker-job-search-guide.jpeg',
+    'worker-application-guide.jpeg',
+    'worker-work-record-guide.jpeg',
+  ],
+  business: [
+    'business-profile-guide.jpeg',
+    'business-job-post-guide.jpeg',
+    'business-applicant-review-guide.jpeg',
+    'business-hiring-decision-guide.jpeg',
+  ],
 };
 
 const journeySteps: Record<JourneyAudience, { title: string; detail: string; points: string[] }[]> = {
@@ -738,7 +740,7 @@ function JourneyStepCard({ step, index, audience }: { step: { title: string; det
   const businessProfileIllustration = !isWorker && index === 0;
   const useWorkerCardStyle = isWorker;
   const isProfileStep = isWorker && index === 0;
-  const characterImage = journeyImages[audience][index];
+  const characterImage = `${import.meta.env.BASE_URL}images/landing/${journeyImages[audience][index]}`;
   const cardSurface = useWorkerCardStyle
     ? 'gap-3 bg-[#FFF0DD] p-6 text-[#111111] sm:p-8'
     : 'gap-5 border border-[#8B5E3C] bg-[#A8754F] p-6 text-[#FFF9F2] shadow-sm sm:p-8';
