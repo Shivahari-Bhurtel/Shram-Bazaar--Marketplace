@@ -34,7 +34,7 @@ export default function WorkerSidebar({ fullHeight = false }: { fullHeight?: boo
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const sidebar = (
-    <aside className={`worker-workspace-rail fixed left-0 z-30 hidden w-20 border-r border-stone-200/80 bg-white lg:flex ${fullHeight ? 'top-0 h-dvh' : 'top-[4.5rem] h-[calc(100dvh-4.5rem)]'}`} aria-label="Worker workspace">
+    <aside className={`worker-workspace-rail fixed left-0 z-30 hidden w-20 border-r border-[#E5E7EB] bg-white lg:flex ${fullHeight ? 'top-0 h-dvh' : 'top-[4.5rem] h-[calc(100dvh-4.5rem)]'}`} aria-label="Worker workspace">
       <nav className="flex h-full w-full flex-col items-center gap-1 px-1.5 pt-4">
         {links.map(link => {
           const active = state.currentPage === link.page;

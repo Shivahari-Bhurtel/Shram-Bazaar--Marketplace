@@ -1,0 +1,241 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="distant-stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e7dfd6" />
+      <stop offset="1" stop-color="#cfc2b5" />
+    </linearGradient>
+    <linearGradient id="middle-stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c7b4a3" />
+      <stop offset="1" stop-color="#9f8877" />
+    </linearGradient>
+    <linearGradient id="temple-stone" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#765744" />
+      <stop offset="1" stop-color="#4d3529" />
+    </linearGradient>
+    <filter id="temple-depth" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#39271f" flood-opacity="0.16" />
+    </filter>
+    <style>
+      .bg-skyline { fill: url(#distant-stone); }
+      .mid-skyline { fill: url(#middle-stone); filter: url(#temple-depth); }
+      .fg-temple { fill: url(#temple-stone); filter: url(#temple-depth); }
+      .fg-detail { fill: #f4ece3; }
+    </style>
+  </defs>
+
+  <!-- Background Light Gray Skyline Silhouettes -->
+  <g class="bg-skyline">
+    <!-- Far Background Silhouettes -->
+    <rect x="25" y="140" width="30" height="120" />
+    <path d="M 65 180 L 80 120 L 95 180 Z" />
+    <rect x="105" y="130" width="20" height="130" />
+    <path d="M 150 160 L 160 110 L 170 160 Z" />
+    <path d="M 180 130 L 205 70 L 230 130 Z" />
+    <path d="M 240 100 L 255 45 L 270 100 Z" />
+    <rect x="280" y="140" width="30" height="120" />
+    <path d="M 390 150 L 410 90 L 430 150 Z" />
+    <path d="M 500 130 L 515 80 L 530 130 Z" />
+    <path d="M 660 120 L 675 70 L 690 120 Z" />
+    <path d="M 750 110 L 765 50 L 780 110 Z" />
+    <rect x="800" y="140" width="35" height="120" />
+    <path d="M 835 150 L 845 100 L 855 150 Z" />
+    <rect x="910" y="130" width="25" height="130" />
+    <path d="M 980 120 L 995 65 L 1010 120 Z" />
+  </g>
+
+  <!-- Midground Medium Gray Skyline Layers -->
+  <g class="mid-skyline">
+    <!-- Midground Pagoda 1 (Left-Mid) -->
+    <path d="M 180 220 L 195 180 L 210 220 Z" />
+    <path d="M 170 185 L 195 150 L 220 185 Z" />
+    <path d="M 160 155 L 195 120 L 230 155 Z" />
+    <rect x="190" y="105" width="10" height="20" />
+
+    <!-- Midground Shikhara Style Temple (Center-Left) -->
+    <path d="M 310 230 C 310 180, 320 100, 330 70 C 340 100, 350 180, 350 230 Z" />
+    <polygon points="325,70 330,55 335,70" />
+
+    <!-- Midground Small Pagodas (Right Side) -->
+    <path d="M 840 210 L 860 170 L 880 210 Z" />
+    <path d="M 830 175 L 860 140 L 890 175 Z" />
+    <rect x="856" y="125" width="8" height="18" />
+  </g>
+
+  <!-- Foreground Main Black Silhouettes & Temples -->
+  <g class="fg-temple">
+    <!-- Base Fill Ground Line -->
+    <rect x="0" y="250" width="1200" height="50" />
+
+    <!-- 1. Far Left Pagoda (3-Tier) -->
+    <rect x="50" y="220" width="80" height="30" />
+    <!-- Roof 1 -->
+    <polygon points="35,220 90,190 145,220" />
+    <rect x="58" y="180" width="64" height="12" />
+    <!-- Roof 2 -->
+    <polygon points="45,180 90,155 135,180" />
+    <rect x="68" y="148" width="44" height="9" />
+    <!-- Roof 3 -->
+    <polygon points="55,148 90,130 125,148" />
+    <!-- Gajur / Pinnacle -->
+    <polygon points="87,130 90,115 93,130" />
+
+    <!-- 2. Second Pagoda (Left-Center) -->
+    <rect x="140" y="210" width="80" height="40" />
+    <polygon points="120,210 180,175 240,210" />
+    <rect x="148" y="165" width="64" height="12" />
+    <polygon points="130,165 180,135 230,165" />
+    <rect x="158" y="128" width="44" height="9" />
+    <polygon points="140,128 180,105 220,128" />
+    <polygon points="177,105 180,90 183,105" />
+
+    <!-- 3. Krishna Mandir / Shikhara Style Temple -->
+    <rect x="230" y="180" width="80" height="70" />
+    <!-- Arcaded Pillar Section -->
+    <path d="M 230 180 Q 270 160 310 180 L 310 250 L 230 250 Z" />
+    <!-- Spire/Shikhara Roof -->
+    <path d="M 235 160 C 245 120, 260 80, 270 50 C 280 80, 295 120, 305 160 Z" />
+    <!-- Small side pinnacles -->
+    <polygon points="230,160 237,140 244,160" />
+    <polygon points="296,160 303,140 310,160" />
+    <polygon points="266,50 270,35 274,50" />
+
+    <!-- 4. Domed/Multi-roofed Temple -->
+    <rect x="310" y="160" width="90" height="90" />
+    <polygon points="300,160 355,120 410,160" />
+    <rect x="320" y="105" width="70" height="18" />
+    <polygon points="310,105 355,75 400,105" />
+    <rect x="335" y="65" width="40" height="12" />
+    <polygon points="325,65 355,40 385,65" />
+    <polygon points="352,40 355,25 358,40" />
+
+    <!-- 5. Massive Central Pagoda (Nyatapola Style) -->
+    <!-- Base structures & roofs -->
+    <rect x="395" y="210" width="130" height="40" />
+    <polygon points="380,210 460,170 540,210" />
+    <rect x="410" y="160" width="100" height="12" />
+    <polygon points="395,160 460,125 525,160" />
+    <rect x="422" y="118" width="76" height="9" />
+    <polygon points="410,118 460,88 510,118" />
+    <rect x="435" y="82" width="50" height="8" />
+    <polygon points="425,82 460,55 495,82" />
+    <rect x="445" y="50" width="30" height="7" />
+    <polygon points="438,50 460,28 482,50" />
+    <polygon points="457,28 460,10 463,28" />
+
+    <!-- 6. Large Secondary Central Pagoda -->
+    <rect x="525" y="200" width="130" height="50" />
+    <polygon points="510,200 590,160 670,200" />
+    <rect x="540" y="150" width="100" height="12" />
+    <polygon points="525,150 590,115 655,150" />
+    <rect x="552" y="108" width="76" height="9" />
+    <polygon points="540,108 590,78 640,108" />
+    <rect x="565" y="72" width="50" height="8" />
+    <polygon points="555,72 590,45 625,72" />
+    <polygon points="587,45 590,25 593,45" />
+
+    <!-- Residential / Palace Base Buildings (Middle Right) -->
+    <rect x="480" y="195" width="110" height="55" />
+    <polygon points="475,195 535,170 595,195" />
+
+    <rect x="590" y="200" width="130" height="50" />
+    <polygon points="585,200 655,175 725,200" />
+
+    <rect x="640" y="180" width="150" height="70" />
+    <polygon points="630,180 715,150 800,180" />
+
+    <!-- Pillar / Statue Structure (Pratap Malla Column) -->
+    <rect x="810" y="160" width="12" height="90" />
+    <polygon points="800,160 816,145 832,160" />
+    <circle cx="816" cy="135" r="8" />
+
+    <!-- 7. Right Pagoda 1 -->
+    <rect x="825" y="210" width="100" height="40" />
+    <polygon points="810,210 875,175 940,210" />
+    <rect x="838" y="165" width="74" height="12" />
+    <polygon points="825,165 875,135 925,165" />
+    <rect x="850" y="128" width="50" height="9" />
+    <polygon points="840,128 875,105 910,128" />
+    <polygon points="872,105 875,88 878,105" />
+
+    <!-- 8. Right Pagoda 2 (Far Right) -->
+    <rect x="915" y="200" width="100" height="50" />
+    <polygon points="900,200 965,160 1030,200" />
+    <rect x="925" y="150" width="80" height="12" />
+    <polygon points="912,150 965,118 1018,150" />
+    <rect x="938" y="110" width="54" height="9" />
+    <polygon points="928,110 965,85 1002,110" />
+    <rect x="948" y="80" width="34" height="7" />
+    <polygon points="940,80 965,60 990,80" />
+    <polygon points="962,60 965,42 968,60" />
+
+    <!-- Low Base Traditional Houses (Far Right Edge) -->
+    <rect x="950" y="220" width="120" height="30" />
+    <polygon points="940,220 1010,195 1080,220" />
+    <rect x="1060" y="210" width="140" height="40" />
+    <polygon points="1050,210 1130,185 1210,210" />
+  </g>
+
+  <!-- White Cutout Details (Windows, Pillars, Railings, Beams) -->
+  <g class="fg-detail">
+    <!-- Left Pagoda 1 Details -->
+    <rect x="70" y="230" width="12" height="20" />
+    <rect x="98" y="230" width="12" height="20" />
+    <line x1="35" y1="220" x2="145" y2="220" stroke="#ffffff" stroke-width="2" />
+
+    <!-- Left Pagoda 2 Details -->
+    <rect x="160" y="222" width="10" height="18" />
+    <rect x="180" y="222" width="10" height="18" />
+    <rect x="200" y="222" width="10" height="18" />
+
+    <!-- Krishna Mandir Pillars & Arches -->
+    <rect x="242" y="200" width="10" height="35" />
+    <rect x="265" y="200" width="10" height="35" />
+    <rect x="288" y="200" width="10" height="35" />
+    <path d="M 240 190 Q 250 180 260 190" stroke="#ffffff" fill="none" stroke-width="2" />
+    <path d="M 263 190 Q 273 180 283 190" stroke="#ffffff" fill="none" stroke-width="2" />
+    <path d="M 286 190 Q 296 180 306 190" stroke="#ffffff" fill="none" stroke-width="2" />
+
+    <!-- Center Houses Windows -->
+    <rect x="335" y="215" width="12" height="16" />
+    <rect x="360" y="215" width="12" height="16" />
+
+    <rect x="500" y="215" width="14" height="14" />
+    <rect x="530" y="215" width="14" height="14" />
+    <rect x="560" y="215" width="14" height="14" />
+
+    <!-- Center Main Pagoda (Nyatapola) Open Openings -->
+    <rect x="440" y="222" width="14" height="28" />
+    <rect x="466" y="222" width="14" height="28" />
+    <line x1="380" y1="210" x2="540" y2="210" stroke="#ffffff" stroke-width="2" />
+    <line x1="395" y1="160" x2="525" y2="160" stroke="#ffffff" stroke-width="2" />
+    <line x1="410" y1="118" x2="510" y2="118" stroke="#ffffff" stroke-width="2" />
+
+    <!-- Second Center Pagoda Openings & Lines -->
+    <rect x="570" y="215" width="14" height="25" />
+    <rect x="596" y="215" width="14" height="25" />
+    <line x1="510" y1="200" x2="670" y2="200" stroke="#ffffff" stroke-width="2" />
+    <line x1="525" y1="150" x2="655" y2="150" stroke="#ffffff" stroke-width="2" />
+
+    <!-- Residential Traditional Newari Windows (Sanjhya) -->
+    <rect x="660" y="200" width="15" height="18" />
+    <rect x="690" y="200" width="15" height="18" />
+    <rect x="720" y="200" width="15" height="18" />
+    <rect x="750" y="200" width="15" height="18" />
+
+    <rect x="770" y="225" width="10" height="12" />
+    <rect x="790" y="225" width="10" height="12" />
+
+    <!-- Right Pagodas Details -->
+    <rect x="850" y="220" width="12" height="20" />
+    <rect x="872" y="220" width="12" height="20" />
+    <rect x="894" y="220" width="12" height="20" />
+
+    <rect x="945" y="212" width="12" height="22" />
+    <rect x="968" y="212" width="12" height="22" />
+    <rect x="990" y="212" width="12" height="22" />
+
+    <rect x="1070" y="225" width="14" height="16" />
+    <rect x="1095" y="225" width="14" height="16" />
+    <rect x="1120" y="225" width="14" height="16" />
+  </g>
+</svg>

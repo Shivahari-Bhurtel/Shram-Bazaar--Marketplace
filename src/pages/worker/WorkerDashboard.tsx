@@ -47,8 +47,7 @@ export default function WorkerDashboard() {
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
-    if (search.trim()) browseSkill(search.trim());
-    else navigate('job-discovery');
+    browseSkill(search.trim());
   };
 
   return (
@@ -61,7 +60,7 @@ export default function WorkerDashboard() {
             <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div><h1 className="font-sans text-[1.65rem] font-semibold leading-tight tracking-[-0.025em] text-white sm:text-2xl lg:text-3xl">{greeting()}, {firstName.charAt(0).toUpperCase() + firstName.slice(1)}</h1></div>
               <form onSubmit={submitSearch} className="flex w-full max-w-md items-center gap-2 rounded-xl border border-white/60 bg-white p-1.5 shadow-md focus-within:ring-2 focus-within:ring-white/40">
-                <input aria-label="Search jobs by skill or role" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search for jobs" className="min-w-0 flex-1 border-0 bg-transparent px-1 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-400" />
+                <input aria-label="Search jobs by skill or role" value={search} onChange={event => setSearch(event.target.value)} onFocus={() => browseSkill(search.trim())} placeholder="Search by title, skill, or keyword..." className="min-w-0 flex-1 border-0 bg-transparent px-1 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-400" />
                 <button type="submit" aria-label="Search jobs" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-transparent text-primary-ink transition-colors hover:text-[#4C281D]">
                   <SidebarIcon name="search" className="!h-5 !w-5 shrink-0" />
                 </button>

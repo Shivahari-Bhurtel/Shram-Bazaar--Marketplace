@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type FormEvent } from 'react';
+import { useState, useMemo, useEffect, useRef, type FormEvent } from 'react';
 import { useApp } from '../../store/AppContext';
 import JobCard from '../../components/JobCard';
 import { DISTRICTS, ALL_SKILLS } from '../../data/mockData';
@@ -22,11 +22,13 @@ const seniorityForApi: Record<string, string> = {
 };
 
 export default function JobDiscovery() {
-  const { state, setExternalJobs } = useApp();
+  const { state, setExternalJobs, browseSkill } = useApp();
   const { jobs, externalJobs } = state;
 
-  const [search, setSearch] = useState('');
-  const [submittedSearch, setSubmittedSearch] = useState('');
+  const [search, setSearch] = useState(state.discoverySkill);
+  const [submittedSearch, setSubmittedSearch] = useState(state.discoverySkill);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const filterOptionsRef = useRef<HTMLDivElement>(null);
   const [filterDistrict, setFilterDistrict] = useState('');
   const [filterCategory, setFilterCategory] = useState<JobCategory | ''>('');
   const [filterWorkType, setFilterWorkType] = useState<WorkType | ''>('');
@@ -34,7 +36,7 @@ export default function JobDiscovery() {
   const [filterCountry, setFilterCountry] = useState('');
   const [filterSeniority, setFilterSeniority] = useState('');
   const [filterPayMin, setFilterPayMin] = useState('');
-  const [filterSkill, setFilterSkill] = useState(state.discoverySkill);
+  const [filterSkill, setFilterSkill] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('match');
   const [showFilters, setShowFilters] = useState(false);
@@ -45,7 +47,25 @@ export default function JobDiscovery() {
   const [externalHasMore, setExternalHasMore] = useState(true);
   const [externalRetry, setExternalRetry] = useState(0);
 
-  useEffect(() => setFilterSkill(state.discoverySkill), [state.discoverySkill]);
+  useEffect(() => {
+    searchInputRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!filterOptionsRef.current?.contains(event.target as Node)) setShowFilters(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowFilters(false);
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
 
   const activeJobs = useMemo(() => jobs.filter(j => j.status === 'active' || j.status === 'filled'), [jobs]);
   const allJobs = useMemo(() => [...activeJobs, ...externalJobs], [activeJobs, externalJobs]);
@@ -118,6 +138,7 @@ export default function JobDiscovery() {
   const activeFiltersCount = [filterDistrict, filterCategory, filterWorkType, filterEmploymentType, filterCountry, filterSeniority, filterPayMin, filterSkill, filterDate, submittedSearch].filter(Boolean).length;
 
   const clearFilters = () => {
+    browseSkill('');
     setFilterDistrict(''); setFilterCategory(''); setFilterWorkType('');
     setFilterEmploymentType(''); setFilterCountry(''); setFilterSeniority('');
     setFilterPayMin(''); setFilterSkill(''); setFilterDate('');
@@ -126,7 +147,10 @@ export default function JobDiscovery() {
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
-    setSubmittedSearch(search.trim());
+    const query = search.trim();
+    browseSkill(query);
+    setSearch(query);
+    setSubmittedSearch(query);
   };
 
   const loadMoreExternal = async () => {
@@ -156,47 +180,37 @@ export default function JobDiscovery() {
   };
 
   return (
-    <div className="relative isolate mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <svg
+    <div className="relative isolate mx-auto max-w-7xl bg-cream px-4 py-6 sm:px-6 sm:py-8">
+      <img
         aria-hidden="true"
-        viewBox="0 0 1000 460"
-        fill="none"
-        className="pointer-events-none fixed left-1/2 top-[calc(50%+2rem)] z-0 w-[min(94vw,72rem)] -translate-x-1/2 -translate-y-1/2 text-primary-ink opacity-[0.08]"
-      >
-        <g stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M48 410V224h106v186M154 410V163h130v247M284 410V255h100v155M384 410V194h128v216M512 410V128h148v282M660 410V226h112v184M772 410V176h116v234M888 410V270h70v140" />
-          <path d="m48 224 26-22h106l-26 22m0-61 30-24h100l-30 24m100 92 23-18h100l-23 18m0-61 27-22h101l-27 22m23-66 30-25h108l-30 25m112 98 23-18h89l-24 18m0-50 25-20h91l-25 20m116 74 20-15h50l-20 15" />
-          <path d="M154 163v-27h26v-24h22V88h18V62h9V34h5V14h5v20h8v28h19v26h18v27h20v48M660 226l24-18v133l-24 19m-276 50 24 15h104l-24-15m148-282v-29h18V78h17V52h7V28h5V9h5v19h8v24h17v26h15v29h24v21m-410 282 26 15h104l-30-15M772 176l25-20h91l-25 20m-479 234 26 16h97l-25-16" />
-          <path d="M75 250v22m25-22v22m25-22v22m-50 28v22m25-22v22m25-22v22m-50 28v22m25-22v22m25-22v22m-50 28v22m25-22v22m25-22v22" />
-          <path d="M178 190h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18zm-76 42h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18zm-76 42h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18zm-76 42h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18zm-76 42h18v22h-18zm38 0h18v22h-18zm38 0h18v22h-18z" />
-          <path d="M411 222h17v22h-17zm37 0h17v22h-17zm37 0h17v22h-17zm-74 43h17v22h-17zm37 0h17v22h-17zm37 0h17v22h-17zm-74 43h17v22h-17zm37 0h17v22h-17zm37 0h17v22h-17zm-74 43h17v22h-17zm37 0h17v22h-17zm37 0h17v22h-17z" />
-          <path d="M540 157h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21zm-88 46h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21zm-88 46h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21zm-88 46h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21zm-88 46h21v24h-21zm44 0h21v24h-21zm44 0h21v24h-21z" />
-          <path d="M693 252h20v22h-20zm39 0h20v22h-20zm-39 42h20v22h-20zm39 0h20v22h-20zm-39 42h20v22h-20zm39 0h20v22h-20zm-39 42h20v22h-20zm39 0h20v22h-20zM803 202h19v22h-19zm38 0h19v22h-19zm-38 42h19v22h-19zm38 0h19v22h-19zm-38 42h19v22h-19zm38 0h19v22h-19zm-38 42h19v22h-19zm38 0h19v22h-19z" />
-          <path d="M35 410h930" />
-        </g>
-      </svg>
+        alt=""
+        src="/images/worker/nepali-temple-skyline.svg"
+        className="pointer-events-none fixed left-1/2 top-[calc(50%+2rem)] z-0 w-[min(94vw,72rem)] -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"
+      />
       <div className="relative z-10">
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-stone-900 mb-1">Discover Jobs</h1>
-        <p className="text-stone-500">{filtered.length} jobs available</p>
+      <div className="mb-6">
+        <div className="flex items-center gap-2.5">
+          <h1 className="font-sans text-[1.85rem] font-semibold leading-none tracking-[-0.035em] text-stone-900 sm:text-3xl">Discover Jobs</h1>
+          <img src="/images/worker/detective.png" alt="" aria-hidden="true" className="h-[4.5rem] w-[3.375rem] shrink-0 object-contain" />
+        </div>
       </div>
 
+      <div ref={filterOptionsRef}>
       {/* Search bar */}
-      <form onSubmit={submitSearch} className="flex flex-col sm:flex-row gap-3 mb-5">
-        <div className="flex-1 relative">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none">
+      <form onSubmit={submitSearch} className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <div className="group flex h-14 min-w-0 flex-1 items-center gap-3 rounded-xl border border-stone-300 bg-white px-5 shadow-sm transition-all hover:border-stone-400 focus-within:border-[#8B5E3C] focus-within:ring-4 focus-within:ring-[#8B5E3C]/10 sm:min-w-[24rem]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-[18px] w-[18px] shrink-0 text-stone-500 transition-colors group-focus-within:text-[#5E3122]" aria-hidden="true">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
           <input
-            type="text" value={search}
+            type="search" value={search}
+            ref={searchInputRef}
+            aria-label="Search jobs by title, skill, or keyword"
             onChange={e => setSearch(e.target.value)}
             placeholder="Search jobs by title, skill, or keyword"
-            className="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+            className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-stone-900 outline-none placeholder:text-stone-500 focus:ring-0"
           />
         </div>
-        <button type="submit" className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors">
-          Search
-        </button>
         {submittedSearch && (
           <button type="button" onClick={() => { setSearch(''); setSubmittedSearch(''); }} className="px-4 py-2.5 border border-stone-200 bg-white text-stone-600 rounded-xl text-sm font-medium hover:bg-stone-50 transition-colors">
             Clear
@@ -307,6 +321,7 @@ export default function JobDiscovery() {
           </div>
         </div>
       )}
+      </div>
 
       {externalLoading && (
         <div className="mb-5 flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-500">
@@ -334,7 +349,7 @@ export default function JobDiscovery() {
             </div>
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : filtered.length === 0 && activeFiltersCount > 0 ? (
         <div className="bg-white border border-stone-200 rounded-2xl p-16 text-center">
           <div className="text-4xl mb-4">🔍</div>
           <h3 className="font-semibold text-stone-900 mb-2">No jobs found</h3>
@@ -343,11 +358,11 @@ export default function JobDiscovery() {
             Clear filters
           </button>
         </div>
-      ) : (
+      ) : filtered.length > 0 ? (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map(job => <JobCard key={job.id} job={job} />)}
         </div>
-      )}
+      ) : null}
       {!externalLoading && externalHasMore && externalJobs.length > 0 && (
         <div className="mt-6 text-center">
           <button onClick={loadMoreExternal} disabled={externalLoadingMore} className="px-5 py-2.5 border border-stone-200 bg-white text-stone-700 text-sm font-medium rounded-xl hover:bg-stone-50 disabled:opacity-60">
