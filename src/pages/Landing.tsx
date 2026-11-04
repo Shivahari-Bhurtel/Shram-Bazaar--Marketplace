@@ -119,13 +119,13 @@ function WorkCategoryCard({ category, index, onSelect }: { category: (typeof wor
     <button
       onClick={onSelect}
       aria-label={`Find work in ${category.label}`}
-      className={`group relative flex aspect-[1.02] flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-5 text-center transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5E3122] sm:px-4 ${isDark ? 'bg-[#5E3122] text-[#FFF1DF]' : 'bg-[#FFF0DD] text-[#5E3122]'}`}
+      className={`group relative flex aspect-[0.9] flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-7 text-center transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5E3122] sm:px-4 ${isDark ? 'bg-[#5E3122] text-[#FFF1DF]' : 'bg-[#FFF0DD] text-[#5E3122]'}`}
     >
       <span className={`absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full ${isDark ? 'bg-[#FFF1DF] text-[#5E3122]' : 'bg-[#5E3122] text-[#FFF1DF]'}`} aria-hidden="true">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="h-3.5 w-3.5"><path d="M8 3v10M3 8h10" /></svg>
       </span>
-      <CategoryIcon type={category.icon} className="h-14 w-14 shrink-0 sm:h-16 sm:w-16 2xl:h-[4.5rem] 2xl:w-[4.5rem]" />
-      <span className={`mt-2 max-w-[12ch] text-base font-medium leading-[1.08] transition-opacity group-hover:opacity-85 sm:text-lg xl:text-xl 2xl:mt-3 2xl:text-xl ${isDark ? 'text-[#FFF5E9]' : 'text-black'}`} style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{category.label}</span>
+      <CategoryIcon type={category.icon} className="h-[4.5rem] w-[4.5rem] shrink-0 sm:h-20 sm:w-20 2xl:h-[5.5rem] 2xl:w-[5.5rem] min-[1800px]:h-24 min-[1800px]:w-24" />
+      <span className={`mt-3 max-w-[12ch] text-lg font-medium leading-[1.08] transition-opacity group-hover:opacity-85 sm:text-xl xl:text-[1.35rem] 2xl:mt-4 2xl:text-2xl min-[1800px]:mt-5 min-[1800px]:text-2xl ${isDark ? 'text-[#FFF5E9]' : 'text-black'}`} style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{category.label}</span>
     </button>
   );
 }
@@ -460,7 +460,7 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
           <div className="grid items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:hidden">
             <div>
-              <h2 className="grid text-[2.75rem] font-bold leading-[0.98] tracking-tight text-black sm:text-5xl lg:text-6xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
+              <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
                 <span>Find</span>
                 <span>Your</span>
                 <span>Right</span>
@@ -570,7 +570,7 @@ export default function Landing() {
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8A302B] sm:text-sm">Safety and support</p>
-              <h2 className="mt-1.5 font-display text-2xl font-semibold tracking-tight text-[#29201F] sm:text-3xl">See something concerning?</h2>
+              <h2 className="mt-1.5 text-2xl font-semibold tracking-tight text-[#29201F] sm:text-3xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>See something concerning?</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#615553] sm:text-base">If a job seems unsafe or misleading, or asks you to pay upfront, report it. Our team can review the listing.</p>
             </div>
           </div>
@@ -623,7 +623,6 @@ function FeaturedOpportunities() {
       <div className="mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 sm:pb-12 sm:pt-10 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
         <div className="mb-6 sm:mb-7">
           <h2 className="font-display text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>Opportunities from popular providers</h2>
-          <p className="mt-2 text-sm leading-relaxed text-stone-600 sm:text-base">Explore current openings shared by employers and organizations.</p>
         </div>
         {loading && jobs.length === 0 && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:auto-rows-[15rem] xl:auto-rows-[16rem]" aria-label="Loading job listings">
@@ -769,15 +768,15 @@ function JourneyStepCard({ step, index, audience }: { step: { title: string; det
   const detailTone = isWorker ? workerTextTone : 'text-[#FFF9F2]';
   const pointsTone = isWorker ? workerTextTone : 'text-[#FFF9F2]';
   const bulletTone = isWorker ? 'bg-[#111111]' : 'bg-[#FFF9F2]';
-  const descriptionClass = `text-sm leading-relaxed ${detailTone}`;
-  const pointsClass = `space-y-2 text-xs font-medium leading-relaxed ${pointsTone}`;
+  const descriptionClass = `text-base leading-relaxed ${detailTone}`;
+  const pointsClass = `space-y-2.5 text-sm font-medium leading-relaxed ${pointsTone}`;
 
   return (
     <article className={`group flex min-h-[20rem] flex-col items-stretch rounded-2xl ${cardLayout} ${cardSurface}`}>
       {showCharacter && <img src={characterImage} alt="" aria-hidden="true" className={`h-32 w-full shrink-0 rounded-xl ${businessProfileIllustration ? 'object-cover object-[46%_center]' : 'object-contain'} mix-blend-multiply`} />}
       <div className="flex-1 space-y-3" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
         <div className="flex items-center gap-3">
-          <h3 className={`min-w-0 flex-1 text-lg font-semibold tracking-[-0.02em] leading-tight ${headingTone}`}>{step.title}</h3>
+          <h3 className={`min-w-0 flex-1 text-xl font-semibold tracking-[-0.02em] leading-tight ${headingTone}`}>{step.title}</h3>
         </div>
         <p className={`leading-relaxed ${descriptionClass}`}>{step.detail}</p>
         <ul className={`pt-1 ${pointsClass}`}>

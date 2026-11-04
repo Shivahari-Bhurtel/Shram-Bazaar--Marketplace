@@ -33,10 +33,6 @@ export default function WorkerSidebar({ fullHeight = false }: { fullHeight?: boo
   const sidebar = (
     <aside className={`worker-workspace-rail fixed left-0 z-30 hidden w-24 border-r border-[#E5E7EB] bg-[#F8F9FA] lg:flex ${fullHeight ? 'top-0 h-dvh' : 'top-[4.5rem] h-[calc(100dvh-4.5rem)]'}`} aria-label="Worker workspace">
       <nav className="flex h-full w-full flex-col items-center gap-1 px-2 pt-4">
-        <button type="button" onClick={() => navigate('worker-profile')} title="Your profile" aria-label="Your profile" className="mb-3 flex w-full flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-xs font-medium text-stone-700 transition-colors hover:bg-white hover:text-primary-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-          {state.workerProfile?.photo ? <img src={state.workerProfile.photo} alt="" className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-sm" /> : <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-[#5E3122] text-lg font-semibold text-white shadow-sm">{state.workerProfile?.name?.trim().charAt(0).toUpperCase() || 'W'}</span>}
-          <span>Profile</span>
-        </button>
         {links.map(link => {
           const active = state.currentPage === link.page;
           return <button key={link.page} onClick={() => navigate(link.page)} title={link.label} aria-label={link.label} aria-current={active ? 'page' : undefined} className={`relative flex w-full flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-3 text-center text-xs leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 ${active ? 'font-semibold text-primary-ink after:absolute after:bottom-3 after:left-0 after:top-3 after:w-0.5 after:rounded-full after:bg-primary-ink' : 'font-medium text-stone-600 hover:text-primary-ink'}`}>
