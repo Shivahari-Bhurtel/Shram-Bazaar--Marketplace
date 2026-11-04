@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { useApp } from '../store/AppContext';
-import NotificationPanel from './NotificationPanel';
 import ShramaAIMark from './ShramaAIMark';
 
 type WorkerPage = 'worker-dashboard' | 'job-discovery' | 'my-applications' | 'saved-jobs' | 'chat';
@@ -30,29 +28,23 @@ const links: { label: string; page: WorkerPage; icon: IconName }[] = [
 ];
 
 export default function WorkerSidebar({ fullHeight = false }: { fullHeight?: boolean }) {
-  const { state, navigate, unreadNotificationsCount } = useApp();
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { state, navigate } = useApp();
 
   const sidebar = (
-    <aside className={`worker-workspace-rail fixed left-0 z-30 hidden w-20 border-r border-[#E5E7EB] bg-white lg:flex ${fullHeight ? 'top-0 h-dvh' : 'top-[4.5rem] h-[calc(100dvh-4.5rem)]'}`} aria-label="Worker workspace">
-      <nav className="flex h-full w-full flex-col items-center gap-1 px-1.5 pt-4">
+    <aside className={`worker-workspace-rail fixed left-0 z-30 hidden w-24 border-r border-[#E5E7EB] bg-[#F8F9FA] lg:flex ${fullHeight ? 'top-0 h-dvh' : 'top-[4.5rem] h-[calc(100dvh-4.5rem)]'}`} aria-label="Worker workspace">
+      <nav className="flex h-full w-full flex-col items-center gap-1 px-2 pt-4">
+        <button type="button" onClick={() => navigate('worker-profile')} title="Your profile" aria-label="Your profile" className="mb-3 flex w-full flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-xs font-medium text-stone-700 transition-colors hover:bg-white hover:text-primary-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+          {state.workerProfile?.photo ? <img src={state.workerProfile.photo} alt="" className="h-11 w-11 rounded-full border-2 border-white object-cover shadow-sm" /> : <span className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-[#5E3122] text-lg font-semibold text-white shadow-sm">{state.workerProfile?.name?.trim().charAt(0).toUpperCase() || 'W'}</span>}
+          <span>Profile</span>
+        </button>
         {links.map(link => {
           const active = state.currentPage === link.page;
-          return <button key={link.page} onClick={() => navigate(link.page)} title={link.label} aria-label={link.label} aria-current={active ? 'page' : undefined} className={`relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-2.5 text-center text-xs leading-tight text-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 ${active ? 'font-medium after:absolute after:bottom-2 after:left-0 after:top-2 after:w-0.5 after:rounded-full after:bg-primary-ink' : 'font-normal hover:text-primary-ink'}`}>
-            <span className={`flex items-center justify-center text-black ${link.icon === 'ai' ? 'h-11 w-11' : 'h-10 w-10'}`}><WorkspaceIcon name={link.icon} /></span>
-            {link.icon !== 'ai' && <span className="max-w-full">{link.label}</span>}
+          return <button key={link.page} onClick={() => navigate(link.page)} title={link.label} aria-label={link.label} aria-current={active ? 'page' : undefined} className={`relative flex w-full flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-3 text-center text-xs leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 ${active ? 'font-semibold text-primary-ink after:absolute after:bottom-3 after:left-0 after:top-3 after:w-0.5 after:rounded-full after:bg-primary-ink' : 'font-medium text-stone-600 hover:text-primary-ink'}`}>
+            <span className={`flex items-center justify-center ${active ? 'text-primary-ink' : 'text-stone-600'} ${link.icon === 'ai' ? 'h-11 w-11' : 'h-10 w-10'}`}><WorkspaceIcon name={link.icon} /></span>
+            {link.icon !== 'ai' && <span className="max-w-full">{link.label === 'My applications' ? <>My<br />applications</> : link.label}</span>}
           </button>;
         })}
         <div className="mt-auto w-full space-y-0 pb-3">
-          <button type="button" onClick={() => setNotificationsOpen(open => !open)} title="Notifications" aria-label="Notifications" aria-expanded={notificationsOpen} className="relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-1.5 text-center text-xs text-black transition-colors hover:text-primary-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40">
-            <span className="flex h-10 w-10 items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M10 21h4" />
-              </svg>
-            </span>
-            {unreadNotificationsCount > 0 && <span className="absolute right-3 top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">{unreadNotificationsCount}</span>}
-          </button>
           <a href="mailto:support@shrama.com" title="Help" aria-label="Contact help and support" className="flex w-full flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-1.5 text-center text-xs text-black transition-colors hover:text-primary-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40">
             <span className="flex h-10 w-10 items-center justify-center">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
@@ -65,7 +57,6 @@ export default function WorkerSidebar({ fullHeight = false }: { fullHeight?: boo
           </a>
         </div>
       </nav>
-      {notificationsOpen && <NotificationPanel placement="sidebar" onClose={() => setNotificationsOpen(false)} />}
     </aside>
   );
 

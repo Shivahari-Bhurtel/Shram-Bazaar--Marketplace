@@ -20,12 +20,11 @@ function greeting() {
 
 export default function WorkerDashboard() {
   const { state, navigate, myApplications, browseSkill } = useApp();
-  const { workerProfile, jobs, externalJobs, notifications, currentUser } = state;
+  const { workerProfile, jobs, externalJobs } = state;
   const [search, setSearch] = useState('');
 
   if (!workerProfile) return null;
 
-  const myNotifs = notifications.filter(notification => notification.userId === currentUser?.id && !notification.read);
   const allJobs = [...jobs, ...externalJobs];
   const recommendedJobs = allJobs
     .filter(job => (job.status === 'active' || job.status === 'filled') && !myApplications.some(application => application.jobId === job.id))
@@ -51,8 +50,8 @@ export default function WorkerDashboard() {
   };
 
   return (
-    <div className="w-full max-w-[1800px] px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_16.25rem] 2xl:gap-8">
+    <div className="w-full max-w-[1920px] px-4 py-5 sm:px-6 sm:py-8 lg:px-10">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:gap-8">
         <main className="order-3 min-w-0 lg:order-2">
           <header className="relative mb-6 overflow-hidden rounded-2xl border border-[#3D241A] bg-gradient-to-r from-[#3D241A] via-[#5E3122] to-[#70452F] px-5 py-5 shadow-md shadow-[#3D241A]/10 sm:px-7 sm:py-6">
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_86%_20%,rgba(255,255,255,0.15),transparent_48%)]" />
@@ -60,7 +59,7 @@ export default function WorkerDashboard() {
             <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div><h1 className="font-sans text-[1.65rem] font-semibold leading-tight tracking-[-0.025em] text-white sm:text-2xl lg:text-3xl">{greeting()}, {firstName.charAt(0).toUpperCase() + firstName.slice(1)}</h1></div>
               <form onSubmit={submitSearch} className="flex w-full max-w-md items-center gap-2 rounded-xl border border-white/60 bg-white p-1.5 shadow-md focus-within:ring-2 focus-within:ring-white/40">
-                <input aria-label="Search jobs by skill or role" value={search} onChange={event => setSearch(event.target.value)} onFocus={() => browseSkill(search.trim())} placeholder="Search by title, skill, or keyword..." className="min-w-0 flex-1 border-0 bg-transparent px-1 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-400" />
+                <input aria-label="Search jobs by skill or role" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search by title, skill, or keyword..." className="min-w-0 flex-1 border-0 bg-transparent px-1 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-400" />
                 <button type="submit" aria-label="Search jobs" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-transparent text-primary-ink transition-colors hover:text-[#4C281D]">
                   <SidebarIcon name="search" className="!h-5 !w-5 shrink-0" />
                 </button>
@@ -98,37 +97,35 @@ export default function WorkerDashboard() {
         </main>
 
         <aside className="order-2 space-y-3 lg:order-3 xl:sticky xl:top-24">
-          <section className="rounded-2xl border border-stone-200 bg-white p-5">
-            <div className="flex items-center gap-3.5">
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex items-center gap-4">
               {workerProfile.photo ? (
-                <img src={workerProfile.photo} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" />
+                <img src={workerProfile.photo} alt="" className="h-16 w-16 shrink-0 rounded-full border-2 border-[#F7F1EB] object-cover" />
               ) : (
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#5E3122] font-sans text-xl font-semibold text-white">{displayName.slice(0, 1).toUpperCase()}</div>
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#5E3122] font-sans text-2xl font-semibold text-white">{displayName.slice(0, 1).toUpperCase()}</div>
               )}
               <div className="min-w-0">
-                <h2 className="truncate text-lg font-semibold tracking-tight text-black">{displayName}</h2>
-                {profileTitle && <p className="mt-0.5 truncate text-xs leading-relaxed text-stone-600">{profileTitle}</p>}
+                <button type="button" onClick={() => navigate('worker-profile')} className="block max-w-full truncate text-left text-lg font-semibold tracking-tight text-black underline decoration-stone-400 underline-offset-4 transition-colors hover:decoration-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">{displayName}</button>
+                {profileTitle ? <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-stone-600">{profileTitle}</p> : <p className="mt-1 text-sm text-stone-500">Add a professional title</p>}
               </div>
             </div>
 
             <div className="mt-5 border-t border-stone-100 pt-4">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-black">Profile completion</span>
-                <span className="text-sm font-semibold tabular-nums text-[#5E3122]">{profilePercent}%</span>
+                <span className="text-sm font-semibold text-black">Complete your profile</span>
+                <span className="text-xs font-medium text-stone-600">{completedProfileSections}/{profileSteps.length} sections</span>
               </div>
-              <p className="mt-1 text-xs leading-relaxed text-stone-600">{completedProfileSections} of {profileSteps.length} sections complete</p>
-              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-label="Profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={profilePercent}>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-label="Profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={profilePercent}>
                 <div className="h-full rounded-full bg-[#5E3122] transition-all duration-500" style={{ width: `${profilePercent}%` }} />
               </div>
-              <button onClick={() => navigate('worker-profile')} className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-black underline decoration-stone-400 underline-offset-4 transition-colors hover:decoration-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
-                Edit profile
+              <button onClick={() => navigate('worker-profile')} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#5E3122] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#462319] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5E3122]">
+                Improve your profile
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5" aria-hidden="true"><path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z" /></svg>
               </button>
             </div>
 
           </section>
 
-          {myNotifs.length > 0 && <button onClick={() => navigate('my-applications')} className="flex w-full items-start gap-3 p-2 text-left transition-colors"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs text-amber-700" aria-hidden="true">✓</span><span><span className="block text-xs font-medium text-red-700">New update</span><span className="mt-1 line-clamp-2 block text-xs leading-relaxed text-stone-900">{myNotifs[0].message}</span></span></button>}
         </aside>
       </div>
     </div>

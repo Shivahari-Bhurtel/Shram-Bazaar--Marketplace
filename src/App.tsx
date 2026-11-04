@@ -40,7 +40,7 @@ export default function App() {
       {!isLoggedIn && !isPublicPage && <Navbar />}
       {showWorkerSidebar && <WorkerSidebar fullHeight={isWorkerAIChat} />}
 
-      <main key={currentPage} className={`page-enter ${showWorkerSidebar ? 'lg:ml-20' : ''}`}>
+      <main key={currentPage} className={`page-enter ${showWorkerSidebar ? 'lg:ml-24' : ''}`}>
         {/* Public pages */}
         {currentPage === 'landing' && !isLoggedIn && <Landing />}
         {currentPage === 'login' && <AuthPage mode="login" />}

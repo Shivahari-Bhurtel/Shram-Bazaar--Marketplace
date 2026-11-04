@@ -14,7 +14,7 @@ const typeConfig: Record<Notification['type'], { icon: string; color: string }> 
 export default function NotificationPanel({ onClose, placement = 'navbar' }: { onClose: () => void; placement?: 'navbar' | 'sidebar' }) {
   const { state, markNotificationRead, markAllNotificationsRead } = useApp();
   const myNotifs = state.notifications
-    .filter(n => n.userId === state.currentUser?.id)
+    .filter(n => n.userId === state.currentUser?.id && !n.read)
     .sort((a, b) => b.date.localeCompare(a.date));
 
   return (
@@ -25,22 +25,17 @@ export default function NotificationPanel({ onClose, placement = 'navbar' }: { o
           <h3 className="font-semibold text-stone-900">Notifications</h3>
           <div className="flex items-center gap-2">
             {myNotifs.some(n => !n.read) && (
-              <button onClick={markAllNotificationsRead} className="text-xs text-primary-ink hover:underline">
+              <button onClick={markAllNotificationsRead} className="text-xs text-primary-ink underline underline-offset-2 hover:text-primary-dark">
                 Mark all read
               </button>
             )}
-            <button onClick={onClose} className="p-1 text-stone-400 hover:text-stone-700 rounded">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                <path d="M18 6L6 18M6 6l12 12"/>
-              </svg>
-            </button>
           </div>
         </div>
 
         <div className="overflow-y-auto max-h-[26rem]">
           {myNotifs.length === 0 ? (
             <div className="py-12 text-center text-stone-400">
-              <p className="text-sm">No notifications yet</p>
+              <p className="text-sm">No recent notifications</p>
             </div>
           ) : (
             myNotifs.map(notif => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useApp } from '../store/AppContext';
 import heroVideo from '../assets/hero/gemini_generated_video_f3c61e6d.mp4';
 import heroAudio from '../assets/hero/gemini_generated_video_f3c61e6d.mp3';
@@ -119,13 +119,13 @@ function WorkCategoryCard({ category, index, onSelect }: { category: (typeof wor
     <button
       onClick={onSelect}
       aria-label={`Find work in ${category.label}`}
-      className={`group relative flex aspect-[0.9] flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-7 text-center transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5E3122] sm:px-4 ${isDark ? 'bg-[#5E3122] text-[#FFF1DF]' : 'bg-[#FFF0DD] text-[#5E3122]'}`}
+      className={`group relative flex aspect-[1.02] flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-5 text-center transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5E3122] sm:px-4 ${isDark ? 'bg-[#5E3122] text-[#FFF1DF]' : 'bg-[#FFF0DD] text-[#5E3122]'}`}
     >
       <span className={`absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full ${isDark ? 'bg-[#FFF1DF] text-[#5E3122]' : 'bg-[#5E3122] text-[#FFF1DF]'}`} aria-hidden="true">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="h-3.5 w-3.5"><path d="M8 3v10M3 8h10" /></svg>
       </span>
-      <CategoryIcon type={category.icon} className="h-[4.5rem] w-[4.5rem] shrink-0 sm:h-20 sm:w-20 2xl:h-[5.5rem] 2xl:w-[5.5rem] min-[1800px]:h-24 min-[1800px]:w-24" />
-      <span className={`mt-3 max-w-[12ch] text-lg font-medium leading-[1.08] transition-opacity group-hover:opacity-85 sm:text-xl xl:text-[1.35rem] 2xl:mt-4 2xl:text-2xl min-[1800px]:mt-5 min-[1800px]:text-2xl ${isDark ? 'text-[#FFF5E9]' : 'text-black'}`} style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{category.label}</span>
+      <CategoryIcon type={category.icon} className="h-14 w-14 shrink-0 sm:h-16 sm:w-16 2xl:h-[4.5rem] 2xl:w-[4.5rem]" />
+      <span className={`mt-2 max-w-[12ch] text-base font-medium leading-[1.08] transition-opacity group-hover:opacity-85 sm:text-lg xl:text-xl 2xl:mt-3 2xl:text-xl ${isDark ? 'text-[#FFF5E9]' : 'text-black'}`} style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{category.label}</span>
     </button>
   );
 }
@@ -143,7 +143,7 @@ const workCategoryHotspots = [
 
 function FindWorkArtwork({ onSelect }: { onSelect: (index: number) => void }) {
   return (
-    <div className="relative mx-auto hidden w-full max-w-[1280px] xl:block">
+    <div className="relative mx-auto hidden w-full max-w-[1120px] xl:block">
       <img
         src={`${import.meta.env.BASE_URL}images/landing/find-your-right-work.svg`}
         alt=""
@@ -165,9 +165,8 @@ function FindWorkArtwork({ onSelect }: { onSelect: (index: number) => void }) {
 }
 
 export default function Landing() {
-  const { navigate, browseSkill } = useApp();
+  const { navigate } = useApp();
   const [openMenu, setOpenMenu] = useState<'worker' | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [journeyAudience, setJourneyAudience] = useState<JourneyAudience>('worker');
   const [heroSlide, setHeroSlide] = useState<'image' | 'video'>('image');
   const [heroAudioMuted, setHeroAudioMuted] = useState(false);
@@ -250,13 +249,6 @@ export default function Landing() {
     return () => window.clearTimeout(timer);
   }, [heroSlide]);
 
-  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const query = searchTerm.trim();
-    if (query) browseSkill(query);
-    else navigate('job-discovery');
-  };
-
   return (
     <div className="landing-page min-h-screen bg-white">
       <div className="flex min-h-screen flex-col gap-6 sm:gap-7">
@@ -264,7 +256,13 @@ export default function Landing() {
         aria-label="Shram Bazzar landing navigation"
         className="shrink-0 bg-white"
       >
-        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 sm:py-5 sm:text-base lg:flex-nowrap lg:gap-x-5 xl:gap-x-8 xl:px-0 2xl:max-w-[1450px] 2xl:text-base min-[1800px]:max-w-[1600px] min-[1800px]:gap-x-9 min-[1800px]:text-lg">
+        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4 font-sans text-sm font-semibold tracking-tight text-stone-700 sm:px-6 sm:py-5 sm:text-base lg:flex-nowrap lg:gap-x-5 xl:gap-x-8 xl:px-0 2xl:max-w-[1400px] 2xl:text-base min-[1800px]:max-w-[1600px] min-[1800px]:gap-x-9 min-[1800px]:text-lg">
+          <button onClick={() => navigate('landing')} aria-label="Shram Bazzar home" className="mr-2 flex shrink-0 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary lg:mr-4">
+            <span className="flex items-baseline whitespace-nowrap leading-none" aria-hidden="true">
+              <span className="text-[1.75rem] font-semibold leading-[0.92] text-[#5E3122]" style={{ fontFamily: "'Noto Serif Devanagari', serif" }}>श्रम</span>
+              <span className="font-script text-[1.65rem] font-semibold leading-none text-black">Bazzar</span>
+            </span>
+          </button>
           <div ref={workerMenuRef} className="relative shrink-0">
             <button
               onClick={() => setOpenMenu(openMenu === 'worker' ? null : 'worker')}
@@ -303,25 +301,9 @@ export default function Landing() {
           >
             Hire workers
           </button>
-          <form onSubmit={handleSearch} className="order-last flex min-w-full items-center rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 transition-colors focus-within:border-primary focus-within:bg-white sm:order-none sm:ml-auto sm:min-w-0 sm:flex-1 sm:max-w-md lg:max-w-md xl:max-w-lg">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2 h-4 w-4 shrink-0 text-stone-400" aria-hidden="true">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              value={searchTerm}
-              onChange={event => setSearchTerm(event.target.value)}
-              placeholder="Search jobs or skills"
-              aria-label="Search jobs or skills"
-              className="min-w-0 flex-1 bg-transparent text-base font-medium text-stone-800 placeholder:text-stone-400 outline-none"
-            />
-            <button type="submit" className="ml-2 shrink-0 text-base font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink">
-              Search
-            </button>
-          </form>
           <button
             onClick={() => navigate('login')}
-            className="shrink-0 whitespace-nowrap text-base font-semibold tracking-tight text-stone-700 transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            className="shrink-0 whitespace-nowrap text-base font-semibold tracking-tight text-stone-700 transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary sm:ml-auto"
           >
             Login
           </button>
@@ -334,7 +316,7 @@ export default function Landing() {
         </div>
       </nav>
 
-      <aside className="mx-auto flex w-[calc(100%-2rem)] max-w-[1280px] shrink-0 flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#F3E4D9] px-5 py-4 text-center text-base text-[#5E3122] sm:w-[calc(100%-3rem)] sm:justify-between sm:px-7 sm:py-5 sm:text-lg lg:w-[calc(100%-5rem)] lg:px-9 lg:py-5 2xl:max-w-[1450px] min-[1800px]:max-w-[1600px] min-[1800px]:px-10 min-[1800px]:py-6">
+      <aside className="mx-auto flex w-[calc(100%-2rem)] max-w-[1280px] shrink-0 flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#F3E4D9] px-5 py-4 text-center text-base text-[#5E3122] sm:w-[calc(100%-3rem)] sm:justify-between sm:px-7 sm:py-5 sm:text-lg lg:w-[calc(100%-5rem)] lg:px-9 lg:py-5 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] min-[1800px]:px-10 min-[1800px]:py-6">
         <p className="font-medium leading-snug sm:text-xl 2xl:text-2xl min-[1800px]:text-2xl">Get connected with local personnel for your everyday business and service needs</p>
         <button
           onClick={() => navigate('provider-signup')}
@@ -349,7 +331,7 @@ export default function Landing() {
 
       {/* Hero */}
       <section
-        className="relative mx-auto mb-8 mt-0 min-h-[38rem] w-[calc(100%-2rem)] max-w-[1280px] overflow-hidden rounded-[2rem] bg-stone-900 sm:mb-12 sm:min-h-[40rem] sm:w-[calc(100%-3rem)] lg:w-[calc(100%-3rem)] 2xl:min-h-[46rem] 2xl:max-w-[1450px] min-[1800px]:max-w-[1600px]"
+        className="relative mx-auto mb-8 mt-0 min-h-[34rem] w-[calc(100%-2rem)] max-w-[1280px] overflow-hidden rounded-[2rem] bg-stone-900 sm:mb-10 sm:min-h-[36rem] sm:w-[calc(100%-3rem)] lg:w-[calc(100%-3rem)] 2xl:min-h-[40rem] 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]"
         onTouchStart={event => {
           const touch = event.touches[0];
           touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
@@ -446,7 +428,7 @@ export default function Landing() {
           </div>
         )}
         <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-stone-950/90 via-stone-950/70 to-stone-950/45" />
-        <div className="relative z-[2] mx-auto flex h-full min-h-[38rem] max-w-[1280px] items-center px-5 py-20 sm:min-h-[40rem] sm:px-8 sm:py-24 lg:px-10 lg:py-28 2xl:min-h-[46rem] 2xl:max-w-[1450px] 2xl:px-12 min-[1800px]:max-w-[1600px] min-[1800px]:px-14">
+        <div className="relative z-[2] mx-auto flex h-full min-h-[34rem] max-w-[1280px] items-center px-5 py-16 sm:min-h-[36rem] sm:px-8 sm:py-20 lg:px-10 lg:py-24 2xl:min-h-[40rem] 2xl:max-w-[1400px] 2xl:px-12 min-[1800px]:max-w-[1600px] min-[1800px]:px-14">
           <div className="max-w-2xl">
             <h1 className="mb-5 font-display text-4xl font-bold leading-tight text-white sm:mb-6 sm:text-5xl lg:text-6xl 2xl:text-[4.5rem] min-[1800px]:text-7xl">
               <span className="font-brand text-5xl font-semibold text-white sm:text-6xl lg:text-7xl xl:text-8xl 2xl:text-[7.5rem] min-[1800px]:text-[7.5rem]">Shram Bazzar</span><br />
@@ -457,7 +439,7 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => navigate('login')}
+                onClick={() => navigate('worker-signup')}
                 className="px-8 py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-lg"
               >
                 Find Flexible Work
@@ -474,11 +456,11 @@ export default function Landing() {
       </section>
       </div>
 
-      <section className="bg-white px-4 pb-12 pt-14 sm:px-6 sm:pb-16 sm:pt-20 lg:pt-24">
-        <div className="mx-auto max-w-[1280px] 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
+      <section className="bg-white px-4 pb-10 pt-10 sm:px-6 sm:pb-12 sm:pt-14 lg:pt-16">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
           <div className="grid items-center gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:hidden">
             <div>
-              <h2 className="grid text-[3.25rem] font-bold leading-[0.98] tracking-tight text-black sm:text-6xl lg:text-7xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
+              <h2 className="grid text-[2.75rem] font-bold leading-[0.98] tracking-tight text-black sm:text-5xl lg:text-6xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
                 <span>Find</span>
                 <span>Your</span>
                 <span>Right</span>
@@ -495,16 +477,14 @@ export default function Landing() {
 
       <FeaturedOpportunities />
 
-      <section id="how-it-works" className="bg-white px-4 py-20 sm:px-6 sm:py-24">
+      <section id="how-it-works" className="bg-white px-4 py-14 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-7xl 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-3 flex items-center justify-center">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
               <h2 className="text-3xl font-semibold tracking-tight text-black sm:text-4xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>How Shram Bazzar Works</h2>
+              <p className="mt-2 text-sm leading-relaxed text-stone-600 sm:text-base">Simple steps to find work and hire local talent across Nepal.</p>
             </div>
-            <p className="mx-auto max-w-2xl text-base leading-relaxed text-stone-600 sm:text-lg">Simple steps to find work and hire local talent across Nepal.</p>
-          </div>
-
-          <div className="mx-auto mt-10 flex w-full max-w-xl gap-1 rounded-full border border-[#E8DDD2] bg-[#FAF8F5] p-1" role="tablist" aria-label="Choose how you use Shram Bazzar">
+          <div className="flex w-full max-w-[22rem] gap-1 self-start rounded-full border border-[#E8DDD2] bg-[#FAF8F5] p-1 sm:self-auto" role="tablist" aria-label="Choose how you use Shram Bazzar">
             <button
               id="journey-worker-tab"
               type="button"
@@ -514,10 +494,10 @@ export default function Landing() {
               aria-controls="journey-panel"
               onClick={() => setJourneyAudience('worker')}
               onKeyDown={handleJourneyTabKeyDown}
-              className={`flex min-h-10 flex-1 flex-col items-center justify-center rounded-full px-2 py-0 text-center transition-all sm:px-4 ${journeyAudience === 'worker' ? 'bg-[#FFF0DD] text-[#5E3122] shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
+              className={`flex min-h-9 flex-1 flex-col items-center justify-center rounded-full px-2 py-1 text-center transition-all ${journeyAudience === 'worker' ? 'bg-[#FFF0DD] text-[#5E3122] shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
             >
-              <span className="text-lg font-semibold leading-5 sm:text-xl sm:leading-5">For Workers</span>
-              <span className="text-xs font-normal leading-4 opacity-80 sm:text-sm">Job Seekers</span>
+              <span className="text-sm font-semibold leading-4">For Workers</span>
+              <span className="text-[11px] font-normal leading-4 opacity-80">Job Seekers</span>
             </button>
             <button
               id="journey-business-tab"
@@ -528,14 +508,15 @@ export default function Landing() {
               aria-controls="journey-panel"
               onClick={() => setJourneyAudience('business')}
               onKeyDown={handleJourneyTabKeyDown}
-              className={`flex min-h-10 flex-1 flex-col items-center justify-center rounded-full px-2 py-0 text-center transition-all sm:px-4 ${journeyAudience === 'business' ? 'bg-[#5E3122] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
+              className={`flex min-h-9 flex-1 flex-col items-center justify-center rounded-full px-2 py-1 text-center transition-all ${journeyAudience === 'business' ? 'bg-[#5E3122] text-white shadow-sm' : 'text-stone-600 hover:text-stone-900'}`}
             >
-              <span className="text-lg font-semibold leading-5 sm:text-xl sm:leading-5">For Businesses</span>
-              <span className="text-xs font-normal leading-4 opacity-80 sm:text-sm">Employers</span>
+              <span className="text-sm font-semibold leading-4">For Businesses</span>
+              <span className="text-[11px] font-normal leading-4 opacity-80">Employers</span>
             </button>
           </div>
+          </div>
 
-          <div id="journey-panel" role="tabpanel" aria-labelledby={journeyAudience === 'worker' ? 'journey-worker-tab' : 'journey-business-tab'} key={journeyAudience} className={`${journeyAudience === 'worker' ? 'journey-panel-enter' : ''} mt-8 grid gap-x-8 gap-y-10 xl:grid-cols-2 xl:gap-x-14 xl:gap-y-14`}>
+          <div id="journey-panel" role="tabpanel" aria-labelledby={journeyAudience === 'worker' ? 'journey-worker-tab' : 'journey-business-tab'} key={journeyAudience} className={`${journeyAudience === 'worker' ? 'journey-panel-enter' : ''} mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4`}>
             {journeySteps[journeyAudience].map((step, index) => <JourneyStepCard key={`${journeyAudience}-${step.title}`} step={step} index={index} audience={journeyAudience} />)}
           </div>
 
@@ -554,7 +535,7 @@ export default function Landing() {
       <WhyShramaSection />
 
       <section id="businesses" className="bg-white px-4 pb-8 pt-4 sm:px-6 sm:pb-10 sm:pt-6 lg:pb-12">
-        <div className="relative mx-auto flex min-h-80 max-w-[1200px] items-center overflow-hidden rounded-[2rem] bg-primary px-6 py-12 text-white shadow-sm sm:px-10 sm:py-16 lg:px-14 2xl:max-w-[1400px] min-[1800px]:min-h-[26rem] min-[1800px]:max-w-[1500px] min-[1800px]:px-16">
+        <div className="relative mx-auto flex min-h-80 max-w-7xl items-center overflow-hidden rounded-[2rem] bg-primary px-6 py-12 text-white shadow-sm sm:px-10 sm:py-16 lg:px-14 2xl:max-w-[1400px] min-[1800px]:min-h-[26rem] min-[1800px]:max-w-[1600px] min-[1800px]:px-16">
         <svg aria-hidden="true" viewBox="0 0 420 280" fill="none" className="pointer-events-none absolute bottom-0 right-0 hidden h-[74%] w-[32%] max-w-md text-amber-300/75 xl:block">
           <g stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {/* Three prominent towers only, with simple 3D side planes. */}
@@ -578,22 +559,22 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="bg-white px-4 py-16 sm:px-6 sm:py-20">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 rounded-3xl border border-red-900 bg-red-950 p-6 text-white shadow-sm sm:p-10 lg:grid-cols-[1fr_auto] lg:gap-12 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] min-[1800px]:p-12">
-          <div className="flex items-center gap-7 sm:gap-10">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[2rem] bg-white/10 text-red-100 ring-8 ring-white/5 sm:h-28 sm:w-28" aria-hidden="true">
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" className="h-14 w-14 sm:h-16 sm:w-16">
+      <section className="bg-white px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-3xl border border-[#F0D8D3] bg-[#FFF8F6] p-5 text-[#29201F] shadow-sm sm:p-8 lg:grid-cols-[1fr_auto] lg:gap-10 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] min-[1800px]:p-10">
+          <div className="flex items-start gap-4 sm:items-center sm:gap-6">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#F7E6E2] text-[#8A302B] sm:h-16 sm:w-16" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" className="h-8 w-8 sm:h-9 sm:w-9">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 3 27 7v7c0 7-4.7 12.1-11 15-6.3-2.9-11-8-11-15V7l11-4Z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 10v8m0 4h.02" />
               </svg>
             </div>
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-red-200">Safety and support</p>
-              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">See something concerning?</h2>
-              <p className="mt-3 max-w-2xl text-base leading-relaxed text-white/75 sm:text-lg">If a job seems unsafe or misleading, or asks you to pay upfront, report it. Our team can review the listing.</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8A302B] sm:text-sm">Safety and support</p>
+              <h2 className="mt-1.5 font-display text-2xl font-semibold tracking-tight text-[#29201F] sm:text-3xl">See something concerning?</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#615553] sm:text-base">If a job seems unsafe or misleading, or asks you to pay upfront, report it. Our team can review the listing.</p>
             </div>
           </div>
-          <button onClick={() => navigate('login')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-700 px-6 py-4 text-base font-bold text-white transition-colors hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+          <button onClick={() => navigate('login')} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#8A302B] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#702521] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8A302B] sm:w-auto sm:px-6 sm:py-3.5 sm:text-base">
             Report a concern <span aria-hidden="true">→</span>
           </button>
         </div>
@@ -639,11 +620,14 @@ function FeaturedOpportunities() {
 
   return (
     <section id="popular-providers" className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 pb-14 pt-12 sm:px-6 sm:pb-16 sm:pt-16 2xl:max-w-[1400px] 2xl:pt-20 min-[1800px]:max-w-[1600px] min-[1800px]:px-8">
-        <h2 className="mb-9 font-display text-3xl font-semibold tracking-tight text-stone-900 sm:mb-10 sm:text-4xl 2xl:text-[2.75rem] min-[1800px]:mb-12 min-[1800px]:text-5xl">Popular Providers</h2>
+      <div className="mx-auto max-w-7xl px-4 pb-10 pt-8 sm:px-6 sm:pb-12 sm:pt-10 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
+        <div className="mb-6 sm:mb-7">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>Opportunities from popular providers</h2>
+          <p className="mt-2 text-sm leading-relaxed text-stone-600 sm:text-base">Explore current openings shared by employers and organizations.</p>
+        </div>
         {loading && jobs.length === 0 && (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:auto-rows-[16rem] xl:auto-rows-[17rem] 2xl:auto-rows-[18rem]" aria-label="Loading job listings">
-            {Array.from({ length: 8 }, (_, index) => <div key={index} className={`min-h-[220px] w-full animate-pulse rounded-[1.5rem] ${providerTileColors[index % providerTileColors.length].skeleton}`} />)}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:auto-rows-[15rem] xl:auto-rows-[16rem]" aria-label="Loading job listings">
+            {Array.from({ length: 8 }, (_, index) => <div key={index} className={`min-h-[190px] w-full animate-pulse rounded-2xl ${providerTileColors[index % providerTileColors.length].skeleton}`} />)}
           </div>
         )}
 
@@ -655,7 +639,7 @@ function FeaturedOpportunities() {
         )}
 
         {jobs.length > 0 && (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:auto-rows-[16rem] xl:auto-rows-[17rem] 2xl:auto-rows-[18rem] 2xl:gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:auto-rows-[15rem] xl:auto-rows-[16rem]">
             {jobs.map((job, index) => <FeaturedOpportunityCard key={job.id} job={job} index={index} />)}
           </div>
         )}
@@ -694,10 +678,10 @@ function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
     <article
       ref={reveal.ref}
       style={reveal.style}
-      className={`${reveal.className} group relative flex min-h-[220px] w-full min-w-0 flex-col overflow-hidden rounded-[1.5rem] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-6 lg:min-h-0 lg:p-6 2xl:p-7 ${colors.card}`}
+      className={`${reveal.className} group relative flex min-h-[190px] w-full min-w-0 flex-col overflow-hidden rounded-2xl p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-5 lg:min-h-0 ${colors.card}`}
     >
       <div className="flex min-w-0 items-center gap-3 pr-1">
-        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-black/5 transition-transform duration-300 group-hover:scale-105">
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-black/5 transition-transform duration-300 group-hover:scale-105">
           <CompanyLogo job={job} className={colors.logo} />
         </div>
         <div className="min-w-0 flex-1">
@@ -706,11 +690,11 @@ function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
         </div>
       </div>
 
-      <div className="mt-4 min-w-0">
-        <h3 className="break-words font-sans text-lg font-medium leading-[1.25] tracking-[-0.015em] sm:text-xl">{job.title}</h3>
+      <div className="mt-3 min-w-0">
+        <h3 className="break-words font-sans text-base font-medium leading-[1.25] tracking-[-0.015em] sm:text-lg">{job.title}</h3>
       </div>
 
-      <p className="mt-2.5 flex min-w-0 items-start gap-1.5 text-xs font-medium leading-relaxed opacity-85 lg:text-sm">
+      <p className="mt-2 flex min-w-0 items-start gap-1.5 text-xs font-medium leading-relaxed opacity-85">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M16 8.3c0 4.2-6 9-6 9s-6-4.8-6-9a6 6 0 1 1 12 0Z"/><circle cx="10" cy="8" r="2"/></svg>
         <span className="break-words">{location}</span>
       </p>
@@ -763,7 +747,7 @@ function CompanyLogo({ job, className }: { job: Job; className: string }) {
 function WhyShramaSection() {
   return (
     <section id="why-shrama" className="scroll-mt-8 bg-white px-4 pb-6 pt-12 sm:px-6 sm:pb-8 sm:pt-16">
-      <div className="mx-auto max-w-[1200px] px-6 sm:px-10 lg:px-14 2xl:max-w-[1400px] min-[1800px]:max-w-[1500px]">
+      <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-14 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px]">
         <h2 className="font-display text-3xl font-bold tracking-tight text-stone-900 md:text-4xl">Why Shram Bazzar?</h2>
       </div>
     </section>
@@ -773,41 +757,33 @@ function WhyShramaSection() {
 function JourneyStepCard({ step, index, audience }: { step: { title: string; detail: string; points: string[] }; index: number; audience: JourneyAudience }) {
   const isWorker = audience === 'worker';
   const showCharacter = isWorker || (!isWorker && index < 4);
-  const imageOnRight = (isWorker && index >= 2) || (!isWorker && (index === 0 || index === 3));
   const businessProfileIllustration = !isWorker && index === 0;
   const useWorkerCardStyle = isWorker;
-  const isProfileStep = isWorker && index === 0;
   const characterImage = `${import.meta.env.BASE_URL}images/landing/${journeyImages[audience][index]}`;
   const cardSurface = useWorkerCardStyle
-    ? 'gap-3 bg-[#FFF0DD] p-6 text-[#111111] sm:p-8'
-    : 'gap-5 border border-[#8B5E3C] bg-[#A8754F] p-6 text-[#FFF9F2] shadow-sm sm:p-8';
-  const cardLayout = showCharacter
-    ? 'md:items-start md:justify-start md:gap-4'
-    : 'md:items-center md:justify-between';
+    ? 'gap-3 bg-[#FFF0DD] p-4 text-[#111111] sm:p-5'
+    : 'gap-3 border border-[#8B5E3C] bg-[#A8754F] p-4 text-[#FFF9F2] shadow-sm sm:p-5';
+  const cardLayout = 'md:items-stretch md:justify-start';
   const workerTextTone = 'text-[#111111]';
   const headingTone = isWorker ? workerTextTone : 'text-[#FFF9F2]';
   const detailTone = isWorker ? workerTextTone : 'text-[#FFF9F2]';
   const pointsTone = isWorker ? workerTextTone : 'text-[#FFF9F2]';
   const bulletTone = isWorker ? 'bg-[#111111]' : 'bg-[#FFF9F2]';
-  const descriptionClass = isProfileStep
-    ? `max-w-xl text-lg leading-8 ${detailTone}`
-    : `max-w-xl text-lg leading-relaxed ${detailTone}`;
-  const pointsClass = isProfileStep
-    ? `space-y-4 text-lg font-medium leading-8 ${pointsTone}`
-    : `space-y-3 text-base font-medium leading-relaxed ${pointsTone}`;
+  const descriptionClass = `text-sm leading-relaxed ${detailTone}`;
+  const pointsClass = `space-y-2 text-xs font-medium leading-relaxed ${pointsTone}`;
 
   return (
-    <article className={`group flex min-h-[21rem] flex-col items-stretch rounded-2xl md:flex-row ${cardLayout} ${cardSurface}`}>
-      <div className={`flex-1 ${isProfileStep ? 'space-y-5 sm:space-y-6' : 'space-y-4'} ${showCharacter ? imageOnRight ? 'order-2 md:order-1 md:pr-2' : 'order-2 md:order-2 md:pl-2' : ''}`} style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
+    <article className={`group flex min-h-[20rem] flex-col items-stretch rounded-2xl ${cardLayout} ${cardSurface}`}>
+      {showCharacter && <img src={characterImage} alt="" aria-hidden="true" className={`h-32 w-full shrink-0 rounded-xl ${businessProfileIllustration ? 'object-cover object-[46%_center]' : 'object-contain'} mix-blend-multiply`} />}
+      <div className="flex-1 space-y-3" style={{ fontFamily: '"TeX Gyre Termes", "Times New Roman", serif' }}>
         <div className="flex items-center gap-3">
-          <h3 className={`min-w-0 flex-1 text-2xl font-semibold tracking-[-0.02em] leading-tight sm:text-3xl ${headingTone}`}>{step.title}</h3>
+          <h3 className={`min-w-0 flex-1 text-lg font-semibold tracking-[-0.02em] leading-tight ${headingTone}`}>{step.title}</h3>
         </div>
         <p className={`leading-relaxed ${descriptionClass}`}>{step.detail}</p>
         <ul className={`pt-1 ${pointsClass}`}>
-          {step.points.map(point => <li key={point} className="flex items-start gap-2.5"><span className={`mt-[0.55rem] h-1.5 w-1.5 shrink-0 rounded-full ${bulletTone}`} aria-hidden="true" /><span>{point}</span></li>)}
+          {step.points.map(point => <li key={point} className="flex items-start gap-2"><span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${bulletTone}`} aria-hidden="true" /><span>{point}</span></li>)}
         </ul>
       </div>
-      {showCharacter && <img src={characterImage} alt="" aria-hidden="true" className={`mx-auto h-72 w-60 shrink-0 ${businessProfileIllustration ? 'object-cover object-[46%_center]' : 'object-contain'} mix-blend-multiply md:h-80 md:w-64 md:self-center ${imageOnRight ? 'order-1 md:order-2' : 'order-1 md:order-1'}`} />}
     </article>
   );
 }

@@ -88,7 +88,7 @@ export default function Navbar() {
               {currentUser ? (
                 <>
                   {/* Notifications */}
-                  {!isWorker && <button
+                  <button
                     onClick={() => setShowNotifs(!showNotifs)}
                     aria-label="Notifications"
                     title="Notifications"
@@ -103,7 +103,7 @@ export default function Navbar() {
                         {unreadNotificationsCount}
                       </span>
                     )}
-                  </button>}
+                  </button>
 
                   {/* Profile menu */}
                   <div className="hidden md:flex items-center gap-2">
@@ -225,7 +225,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {showNotifs && !isWorker && <NotificationPanel onClose={() => setShowNotifs(false)} />}
+      {showNotifs && <NotificationPanel onClose={() => setShowNotifs(false)} />}
     </>
   );
 }

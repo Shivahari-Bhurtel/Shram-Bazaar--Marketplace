@@ -229,9 +229,9 @@ export default function WorkerProfile() {
         </div>
         </div>
       </div>
-      {photoMessage && <div role="status" className="-mt-3 mb-5 flex items-center gap-2.5 text-sm">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700" aria-hidden="true">{photoError ? '!' : '✓'}</span>
-        <span>{!photoError && <span className="mr-2 font-medium text-red-700">New update</span>}<span className="text-stone-900">{photoMessage}</span></span>
+      {photoError && photoMessage && <div role="alert" className="-mt-3 mb-5 flex items-center gap-2.5 text-sm">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700" aria-hidden="true">!</span>
+        <span className="text-stone-900">{photoMessage}</span>
       </div>}
 
       <div className="grid items-start gap-5 md:grid-cols-3 md:gap-6">
