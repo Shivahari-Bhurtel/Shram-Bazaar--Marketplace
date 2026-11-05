@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from typing import Literal
 
+ENV_FILE = Path(__file__).resolve().parent / ".env"
+load_dotenv(ENV_FILE)
 load_dotenv()
 
 app = FastAPI(title="Shram Bazar AI Chat Prototype", version="0.1.0")
@@ -35,10 +37,11 @@ origins = [origin.strip() for origin in os.getenv(
 ).split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins if origins else ["*"],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

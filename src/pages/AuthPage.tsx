@@ -1,127 +1,193 @@
-import { useState } from 'react';
-import { useApp } from '../store/AppContext';
-import { ALL_SKILLS, DISTRICTS } from '../data/mockData';
-import { LanguageSwitch } from '../i18n/LanguageContext';
+import { useState } from "react"
+import { useApp } from "../store/AppContext"
+import { ALL_SKILLS, DISTRICTS } from "../data/mockData"
+import { LanguageSwitch } from "../i18n/LanguageContext"
 
-type AuthMode = 'login' | 'worker-signup' | 'provider-signup';
+type AuthMode = "login" | "worker-signup" | "provider-signup"
 
 interface Props {
-  mode: AuthMode;
+  mode: AuthMode
 }
 
 export default function AuthPage({ mode }: Props) {
-  const { navigate, login, signupWorker, signupProvider } = useApp();
-  const [step, setStep] = useState(1);
+  const { navigate, login, signupWorker, signupProvider } = useApp()
+  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    phone: '',
-    district: '',
-    location: '',
-    orgName: '',
-    pan: '',
-    industry: '',
-    contactName: '',
+    email: "",
+    password: "",
+    name: "",
+    phone: "",
+    district: "",
+    location: "",
+    orgName: "",
+    pan: "",
+    industry: "",
+    contactName: "",
     skills: [] as string[],
-  });
-  const [skillInput, setSkillInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  })
+  const [skillInput, setSkillInput] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const isLogin = mode === 'login';
-  const isWorker = mode === 'worker-signup';
-  const isProvider = mode === 'provider-signup';
+  const isLogin = mode === "login"
+  const isWorker = mode === "worker-signup"
+  const isProvider = mode === "provider-signup"
 
-  const industries = ['Information Technology', 'Hospitality & Tourism', 'Healthcare', 'Construction', 'Events & Entertainment', 'Retail', 'Manufacturing', 'Education', 'Finance & Banking', 'NGO / INGO', 'Other'];
+  const industries = [
+    "Information Technology",
+    "Hospitality & Tourism",
+    "Healthcare",
+    "Construction",
+    "Events & Entertainment",
+    "Retail",
+    "Manufacturing",
+    "Education",
+    "Finance & Banking",
+    "NGO / INGO",
+    "Other",
+  ]
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError("")
     if (isLogin) {
-      const result = login(formData.email, formData.password);
-      if (result) setError(result);
+      const result = login(formData.email, formData.password)
+      if (result) setError(result)
     } else if (isProvider && step < 2) {
-      setStep(s => s + 1);
+      setStep((s) => s + 1)
     } else {
       const result = isWorker
         ? signupWorker({
-            email: formData.email, password: formData.password,
-            name: formData.name.trim(), phone: '', district: '', location: '', skills: [],
+            email: formData.email,
+            password: formData.password,
+            name: formData.name.trim(),
+            phone: "",
+            district: "",
+            location: "",
+            skills: [],
           })
         : signupProvider({
-            email: formData.email, password: formData.password, contactName: formData.contactName,
-            phone: formData.phone, orgName: formData.orgName, pan: formData.pan,
-            industry: formData.industry, district: formData.district, location: formData.location,
-          });
-      if (result) setError(result);
+            email: formData.email,
+            password: formData.password,
+            contactName: formData.contactName,
+            phone: formData.phone,
+            orgName: formData.orgName,
+            pan: formData.pan,
+            industry: formData.industry,
+            district: formData.district,
+            location: formData.location,
+          })
+      if (result) setError(result)
     }
-  };
+  }
 
   const toggleSkill = (skill: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       skills: prev.skills.includes(skill)
-        ? prev.skills.filter(s => s !== skill)
+        ? prev.skills.filter((s) => s !== skill)
         : [...prev.skills, skill],
-    }));
-  };
+    }))
+  }
 
-  const filteredSkills = ALL_SKILLS.filter(s =>
-    s.toLowerCase().includes(skillInput.toLowerCase()) && !formData.skills.includes(s)
-  ).slice(0, 12);
+  const filteredSkills = ALL_SKILLS.filter(
+    (s) =>
+      s.toLowerCase().includes(skillInput.toLowerCase()) &&
+      !formData.skills.includes(s),
+  ).slice(0, 12)
 
   if (loading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderWidth: '3px' }} />
+          <div
+            className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"
+            style={{ borderWidth: "3px" }}
+          />
           <p className="text-stone-600 font-medium">Setting up your account…</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="min-h-screen bg-cream flex">
       {/* Left panel */}
       <div className="relative hidden flex-col justify-center overflow-hidden bg-[#3C3431] p-12 lg:flex lg:w-5/12">
-        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-[#302825] to-[#49403C]" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-br from-[#302825] to-[#49403C]"
+        />
         <div
           aria-hidden="true"
           className="absolute inset-0 opacity-30 mix-blend-overlay"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=800&h=1200&fit=crop&auto=format')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundSize: "cover",
+            backgroundPosition: "center",
           }}
         />
         <div className="absolute left-12 top-12 z-10">
-          <button onClick={() => navigate('landing')} className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("landing")}
+            className="flex items-center gap-2"
+          >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5A2A27]">
-              <span className="font-brand text-white text-lg font-semibold">S</span>
+              <span className="font-brand text-white text-lg font-semibold">
+                S
+              </span>
             </div>
-            <span className="font-brand text-2xl text-white font-semibold">Shrama</span>
+            <span className="font-brand text-2xl text-white font-semibold">
+              Shrama
+            </span>
           </button>
         </div>
         <div className="relative my-auto w-full">
           <h2 className="font-display text-4xl font-bold text-white mb-4 leading-tight">
-            {isLogin ? 'Welcome back to Shrama' : isWorker ? 'Find work that fits your life' : 'Hire the right people, fast'}
+            {isLogin
+              ? "Welcome back to Shrama"
+              : isWorker
+                ? "Find work that fits your life"
+                : "Hire the right people, fast"}
           </h2>
           <p className="text-white/75 leading-relaxed">
             {isLogin
-              ? 'Sign in to your account to continue your journey on Nepal\'s flexible work platform.'
+              ? "Sign in to your account to continue your journey on Nepal's flexible work platform."
               : isWorker
-              ? 'Thousands of flexible jobs across Nepal. Match your skills and availability with the right opportunity.'
-              : 'Post jobs, review qualified applicants, and build your flexible workforce with confidence.'}
+                ? "Thousands of flexible jobs across Nepal. Match your skills and availability with the right opportunity."
+                : "Post jobs, review qualified applicants, and build your flexible workforce with confidence."}
           </p>
           <div className="mt-8 space-y-2">
-            {(isWorker ? ['Discover jobs matched to your skills', 'Track all your applications in one place', 'Build your work history and rating'] :
-              isProvider ? ['Verified provider badge builds trust', 'Review ranked applicant profiles', 'Manage all hirings from your dashboard'] :
-              ['Your profile and applications', 'New matching jobs in your district', 'Messages from providers']).map(item => (
-              <div key={item} className="flex items-center gap-3 py-1 text-sm text-white/85">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4 flex-shrink-0 text-emerald-400">
-                  <path d="M20 6L9 17l-5-5"/>
+            {(isWorker
+              ? [
+                  "Discover jobs matched to your skills",
+                  "Track all your applications in one place",
+                  "Build your work history and rating",
+                ]
+              : isProvider
+                ? [
+                    "Verified provider badge builds trust",
+                    "Review ranked applicant profiles",
+                    "Manage all hirings from your dashboard",
+                  ]
+                : [
+                    "Your profile and applications",
+                    "New matching jobs in your district",
+                    "Messages from providers",
+                  ]
+            ).map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-3 py-1 text-sm text-white/85"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className="h-4 w-4 flex-shrink-0 text-emerald-400"
+                >
+                  <path d="M20 6L9 17l-5-5" />
                 </svg>
                 {item}
               </div>
@@ -134,219 +200,461 @@ export default function AuthPage({ mode }: Props) {
       <div className="relative flex min-h-screen flex-1 flex-col bg-white px-6 pb-8 pt-24 sm:px-10 lg:px-14">
         <div className="absolute inset-x-6 top-5 sm:inset-x-10 lg:inset-x-14">
           <div className="mx-auto flex w-full max-w-md items-center justify-between">
-          <button onClick={() => navigate('landing')} className="group inline-flex min-h-11 items-center gap-2 text-sm font-medium text-stone-600 transition-colors hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" aria-hidden="true">
-              <path d="M19 12H5m7 7-7-7 7-7" />
-            </svg>
-            Back to homepage
-          </button>
-          <div className="translate-x-3">
-            <LanguageSwitch inline />
-          </div>
+            <button
+              onClick={() => navigate("landing")}
+              className="group inline-flex min-h-11 items-center gap-2 text-sm font-medium text-stone-600 transition-colors hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 transition-transform group-hover:-translate-x-0.5"
+                aria-hidden="true"
+              >
+                <path d="M19 12H5m7 7-7-7 7-7" />
+              </svg>
+              Back to homepage
+            </button>
+            <div className="translate-x-3">
+              <LanguageSwitch inline />
+            </div>
           </div>
         </div>
 
         <div className="flex flex-1 items-center justify-center">
-        <div className="my-auto mx-auto w-full max-w-md lg:-translate-y-3">
-
-          {/* Mode toggle (login page) */}
-          {isLogin && (
-            <div className="mb-8 flex rounded-xl bg-stone-100 p-1">
-              <button onClick={() => navigate('login')} className="flex-1 rounded-lg bg-white py-2.5 text-sm font-medium text-stone-900 shadow-sm transition-colors">
-                Sign In
-              </button>
-              <button onClick={() => navigate('worker-signup')} className="flex-1 rounded-lg py-2.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900">
-                Register
-              </button>
-            </div>
-          )}
-
-          <div className="mb-8">
-            <h1 className="mb-3 font-sans text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
-              {isLogin ? 'Sign in to your account' : isWorker ? (step === 1 ? 'Create Account' : 'Tell us about your skills') : (step === 1 ? 'Create Provider Account' : 'Organisation Details')}
-            </h1>
-            {!isLogin && (
-              <p className="text-stone-500 text-sm leading-relaxed">
-                {isWorker
-                  ? step === 1
-                    ? 'Add your full name, email address, and password to get started.'
-                    : 'Step 2 of 2 · Location and skills. This helps us match you with relevant work nearby.'
-                  : `Step ${step} of 2 — ${step === 1 ? 'Contact information' : 'Business details'}`}
-              </p>
-            )}
-          </div>
-
-          {error && (
-            <div className="mb-5 rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-ink">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="auth-form space-y-4">
-            {/* Login fields */}
+          <div className="my-auto mx-auto w-full max-w-md lg:-translate-y-3">
+            {/* Mode toggle (login page) */}
             {isLogin && (
-              <>
-                <Field label="Email address">
-                  <input
-                    type="email" value={formData.email}
-                    onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
-                    placeholder="you@example.com"
-                    className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                    required
-                  />
-                </Field>
-                <Field label="Password">
-                  <input
-                    type="password" value={formData.password}
-                    onChange={e => setFormData(p => ({ ...p, password: e.target.value }))}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                    required
-                  />
-                </Field>
-              </>
+              <div className="mb-8 flex rounded-xl bg-stone-100 p-1">
+                <button
+                  onClick={() => navigate("login")}
+                  className="flex-1 rounded-lg bg-white py-2.5 text-sm font-medium text-stone-900 shadow-sm transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => navigate("worker-signup")}
+                  className="flex-1 rounded-lg py-2.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
+                >
+                  Register
+                </button>
+              </div>
             )}
 
-            {/* Worker signup: email and password only */}
-            {isWorker && step === 1 && (
-              <>
-                <Field label="Full name">
-                  <input type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Hariom Sharma" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="name" required />
-                </Field>
-                <Field label="Email address">
-                  <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="you@example.com" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="email" required />
-                </Field>
-                <Field label="Password">
-                  <input type="password" value={formData.password} onChange={e => setFormData(p => ({ ...p, password: e.target.value }))} placeholder="At least 8 characters" className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="new-password" minLength={8} required />
-                </Field>
-              </>
+            <div className="mb-8">
+              <h1 className="mb-3 font-sans text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
+                {isLogin
+                  ? "Sign in to your account"
+                  : isWorker
+                    ? step === 1
+                      ? "Create Account"
+                      : "Tell us about your skills"
+                    : step === 1
+                      ? "Create Provider Account"
+                      : "Organisation Details"}
+              </h1>
+              {!isLogin && (
+                <p className="text-stone-500 text-sm leading-relaxed">
+                  {isWorker
+                    ? step === 1
+                      ? "Add your full name, email address, and password to get started."
+                      : "Step 2 of 2 · Location and skills. This helps us match you with relevant work nearby."
+                    : `Step ${step} of 2 — ${
+                        step === 1 ? "Contact information" : "Business details"
+                      }`}
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <div className="mb-5 rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-ink">
+                {error}
+              </div>
             )}
 
-            {/* Worker signup step 2 */}
-            {isWorker && step === 2 && (
-              <>
-                <Field label="Your district">
-                  <select value={formData.district} onChange={e => setFormData(p => ({ ...p, district: e.target.value }))} className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required>
-                    <option value="">Select district</option>
-                    {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </Field>
-                <Field label="Local address">
-                  <input type="text" value={formData.location} onChange={e => setFormData(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Baneshwor, Kathmandu" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-                <Field label="Your skills" hint="Select all that apply">
-                  <input
-                    type="text" value={skillInput}
-                    onChange={e => setSkillInput(e.target.value)}
-                    placeholder="Search skills…"
-                    className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white mb-2"
-                  />
-                  {formData.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {formData.skills.map(s => (
-                        <span key={s} className="text-xs px-2 py-1 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1">
-                          {s}
-                          <button type="button" onClick={() => toggleSkill(s)} className="text-primary-ink/60 hover:text-primary-ink">×</button>
-                        </span>
+            <form onSubmit={handleSubmit} className="auth-form space-y-4">
+              {/* Login fields */}
+              {isLogin && (
+                <>
+                  <Field label="Email address">
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, email: e.target.value }))
+                      }
+                      placeholder="you@example.com"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="Password">
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, password: e.target.value }))
+                      }
+                      placeholder="••••••••"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                </>
+              )}
+
+              {/* Worker signup: email and password only */}
+              {isWorker && step === 1 && (
+                <>
+                  <Field label="Full name">
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, name: e.target.value }))
+                      }
+                      placeholder="e.g. Hariom Sharma"
+                      className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      autoComplete="name"
+                      required
+                    />
+                  </Field>
+                  <Field label="Email address">
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, email: e.target.value }))
+                      }
+                      placeholder="you@example.com"
+                      className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      autoComplete="email"
+                      required
+                    />
+                  </Field>
+                  <Field label="Password">
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, password: e.target.value }))
+                      }
+                      placeholder="At least 8 characters"
+                      className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                    />
+                  </Field>
+                </>
+              )}
+
+              {/* Worker signup step 2 */}
+              {isWorker && step === 2 && (
+                <>
+                  <Field label="Your district">
+                    <select
+                      value={formData.district}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, district: e.target.value }))
+                      }
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    >
+                      <option value="">Select district</option>
+                      {DISTRICTS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Local address">
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, location: e.target.value }))
+                      }
+                      placeholder="e.g. Baneshwor, Kathmandu"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="Your skills" hint="Select all that apply">
+                    <input
+                      type="text"
+                      value={skillInput}
+                      onChange={(e) => setSkillInput(e.target.value)}
+                      placeholder="Search skills…"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white mb-2"
+                    />
+                    {formData.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {formData.skills.map((s) => (
+                          <span
+                            key={s}
+                            className="text-xs px-2 py-1 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1"
+                          >
+                            {s}
+                            <button
+                              type="button"
+                              onClick={() => toggleSkill(s)}
+                              className="text-primary-ink/60 hover:text-primary-ink"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {filteredSkills.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            toggleSkill(s)
+                            setSkillInput("")
+                          }}
+                          className="text-xs px-2 py-1 bg-stone-100 text-stone-700 rounded-full border border-stone-200 hover:bg-stone-200 transition-colors"
+                        >
+                          + {s}
+                        </button>
                       ))}
                     </div>
-                  )}
-                  <div className="flex flex-wrap gap-1.5">
-                    {filteredSkills.map(s => (
-                      <button
-                        key={s} type="button" onClick={() => { toggleSkill(s); setSkillInput(''); }}
-                        className="text-xs px-2 py-1 bg-stone-100 text-stone-700 rounded-full border border-stone-200 hover:bg-stone-200 transition-colors"
-                      >
-                        + {s}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-              </>
-            )}
+                  </Field>
+                </>
+              )}
 
-            {/* Provider signup step 1 */}
-            {isProvider && step === 1 && (
-              <>
-                <Field label="Contact person name">
-                  <input type="text" value={formData.contactName} onChange={e => setFormData(p => ({ ...p, contactName: e.target.value }))} placeholder="e.g. Sanjay Manandhar" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-                <Field label="Email address">
-                  <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="org@example.com" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-                <Field label="Phone">
-                  <input type="tel" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} placeholder="+977-01XXXXXXX" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-                <Field label="Password">
-                  <input type="password" value={formData.password} onChange={e => setFormData(p => ({ ...p, password: e.target.value }))} placeholder="At least 8 characters" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" minLength={8} required />
-                </Field>
-              </>
-            )}
+              {/* Provider signup step 1 */}
+              {isProvider && step === 1 && (
+                <>
+                  <Field label="Contact person name">
+                    <input
+                      type="text"
+                      value={formData.contactName}
+                      onChange={(e) =>
+                        setFormData((p) => ({
+                          ...p,
+                          contactName: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. Sanjay Manandhar"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="Email address">
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, email: e.target.value }))
+                      }
+                      placeholder="org@example.com"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="Phone">
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, phone: e.target.value }))
+                      }
+                      placeholder="+977-01XXXXXXX"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="Password">
+                    <input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, password: e.target.value }))
+                      }
+                      placeholder="At least 8 characters"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      minLength={8}
+                      required
+                    />
+                  </Field>
+                </>
+              )}
 
-            {/* Provider signup step 2 */}
-            {isProvider && step === 2 && (
-              <>
-                <Field label="Organisation name">
-                  <input type="text" value={formData.orgName} onChange={e => setFormData(p => ({ ...p, orgName: e.target.value }))} placeholder="e.g. HimTech Solutions Pvt. Ltd." className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-                <Field label="PAN number" hint="Required for verification">
-                  <input type="text" value={formData.pan} onChange={e => setFormData(p => ({ ...p, pan: e.target.value }))} placeholder="9-digit PAN" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-                <Field label="Industry">
-                  <select value={formData.industry} onChange={e => setFormData(p => ({ ...p, industry: e.target.value }))} className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required>
-                    <option value="">Select industry</option>
-                    {industries.map(i => <option key={i} value={i}>{i}</option>)}
-                  </select>
-                </Field>
-                <Field label="District">
-                  <select value={formData.district} onChange={e => setFormData(p => ({ ...p, district: e.target.value }))} className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required>
-                    <option value="">Select district</option>
-                    {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </Field>
-                <Field label="Organisation address">
-                  <input type="text" value={formData.location} onChange={e => setFormData(p => ({ ...p, location: e.target.value }))} placeholder="e.g. New Baneshwor, Kathmandu" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                </Field>
-              </>
-            )}
+              {/* Provider signup step 2 */}
+              {isProvider && step === 2 && (
+                <>
+                  <Field label="Organisation name">
+                    <input
+                      type="text"
+                      value={formData.orgName}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, orgName: e.target.value }))
+                      }
+                      placeholder="e.g. HimTech Solutions Pvt. Ltd."
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="PAN number" hint="Required for verification">
+                    <input
+                      type="text"
+                      value={formData.pan}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, pan: e.target.value }))
+                      }
+                      placeholder="9-digit PAN"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="Industry">
+                    <select
+                      value={formData.industry}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, industry: e.target.value }))
+                      }
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    >
+                      <option value="">Select industry</option>
+                      {industries.map((i) => (
+                        <option key={i} value={i}>
+                          {i}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="District">
+                    <select
+                      value={formData.district}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, district: e.target.value }))
+                      }
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    >
+                      <option value="">Select district</option>
+                      {DISTRICTS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Organisation address">
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, location: e.target.value }))
+                      }
+                      placeholder="e.g. New Baneshwor, Kathmandu"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                </>
+              )}
 
-            {/* Submit */}
-            <button
-              type="submit"
-              className="min-h-12 w-full rounded-lg bg-[#5A2A27] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27]"
-            >
-              {isLogin ? 'Sign In' : isProvider && step < 2 ? <>Continue <span aria-hidden="true">→</span></> : isWorker ? 'Create my account' : 'Register Organisation'}
-            </button>
-          </form>
-
-          {/* Footer links */}
-          {isLogin ? (
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-stone-600">
-              <span>Don’t have an account?</span>
-              <button onClick={() => navigate('worker-signup')} className="font-semibold text-[#5A2A27] hover:underline">Register as Worker</button>
-              <span aria-hidden="true" className="text-stone-400">·</span>
-              <button onClick={() => navigate('provider-signup')} className="font-semibold text-[#5A2A27] hover:underline">Register as Provider</button>
-            </div>
-          ) : (
-            <div className="mt-6 text-center">
-              <p className="text-[13px] text-stone-600">Already have an account? <button onClick={() => navigate('login')} className="font-semibold text-[#5A2A27] hover:underline">Sign in</button></p>
-              <div className="mt-4 border-t border-stone-200 pt-4">
-                {isWorker ? (
-                  <p className="text-sm text-stone-600">Looking to hire? <button onClick={() => navigate('provider-signup')} className="ml-1 font-semibold text-[#5A2A27] underline-offset-4 hover:underline">Register as a provider</button></p>
+              {/* Submit */}
+              <button
+                type="submit"
+                className="min-h-12 w-full rounded-lg bg-[#5A2A27] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27]"
+              >
+                {isLogin ? (
+                  "Sign In"
+                ) : isProvider && step < 2 ? (
+                  <>
+                    Continue <span aria-hidden="true">→</span>
+                  </>
+                ) : isWorker ? (
+                  "Create my account"
                 ) : (
-                  <p className="text-sm text-stone-600">Looking for work? <button onClick={() => navigate('worker-signup')} className="ml-1 font-semibold text-[#5A2A27] underline-offset-4 hover:underline">Register as a worker</button></p>
+                  "Register Organisation"
                 )}
+              </button>
+            </form>
+
+            {/* Footer links */}
+            {isLogin ? (
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-stone-600">
+                <span>Don’t have an account?</span>
+                <button
+                  onClick={() => navigate("worker-signup")}
+                  className="font-semibold text-[#5A2A27] hover:underline"
+                >
+                  Register as Worker
+                </button>
+                <span aria-hidden="true" className="text-stone-400">
+                  ·
+                </span>
+                <button
+                  onClick={() => navigate("provider-signup")}
+                  className="font-semibold text-[#5A2A27] hover:underline"
+                >
+                  Register as Provider
+                </button>
               </div>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="mt-6 text-center">
+                <p className="text-[13px] text-stone-600">
+                  Already have an account?{" "}
+                  <button
+                    onClick={() => navigate("login")}
+                    className="font-semibold text-[#5A2A27] hover:underline"
+                  >
+                    Sign in
+                  </button>
+                </p>
+                <div className="mt-4 border-t border-stone-200 pt-4">
+                  {isWorker ? (
+                    <p className="text-sm text-stone-600">
+                      Looking to hire?{" "}
+                      <button
+                        onClick={() => navigate("provider-signup")}
+                        className="ml-1 font-semibold text-[#5A2A27] underline-offset-4 hover:underline"
+                      >
+                        Register as a provider
+                      </button>
+                    </p>
+                  ) : (
+                    <p className="text-sm text-stone-600">
+                      Looking for work?{" "}
+                      <button
+                        onClick={() => navigate("worker-signup")}
+                        className="ml-1 font-semibold text-[#5A2A27] underline-offset-4 hover:underline"
+                      >
+                        Register as a worker
+                      </button>
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string
+  hint?: string
+  children: React.ReactNode
+}) {
   return (
     <div>
       <div className="mb-1.5 flex justify-between">
@@ -355,5 +663,5 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
     </div>
-  );
+  )
 }

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "ai": "ai-service/.venv/bin/uvicorn main:app --app-dir ai-service --reload --host 0.0.0.0 --port 8000",
     "build": "vite build",
     "preview": "vite preview",
     "format": "oxfmt"
