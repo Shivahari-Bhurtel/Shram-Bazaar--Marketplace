@@ -1051,7 +1051,7 @@ export default function Landing() {
               <button
                 type="button"
                 onClick={() => navigate("login")}
-                className="mt-7 inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded-xl bg-[#5E3122] px-5 py-3 text-base font-semibold tracking-[0.01em] text-white transition hover:bg-[#4C281D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5E3122]"
+                className="mt-7 inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded-xl bg-[#E7DEFF] px-5 py-3 text-base font-semibold tracking-[0.01em] text-[#39265F] transition hover:bg-[#D8C8FF] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7655CE]"
               >
                 Sign in to explore Shram AI
                 <span aria-hidden="true">→</span>
