@@ -4,11 +4,12 @@ root = "."
 [services.api]
 root = "ai-service/"
 entrypoint = "main:app"
-
-[[rewrites]]
-source = "/(.*)"
-destination = { service = "web" }
+framework = "fastapi"
 
 [[rewrites]]
 source = "/api/(.*)"
 destination = { service = "api" }
+
+[[rewrites]]
+source = "/(.*)"
+destination = { service = "web" }
