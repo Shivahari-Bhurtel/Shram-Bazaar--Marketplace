@@ -23,6 +23,15 @@ export interface Experience {
   description: string
 }
 
+export type Weekday = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday"
+
+export interface AvailabilitySlot {
+  id: string
+  day: Weekday
+  startTime: string
+  endTime: string
+}
+
 export interface WorkHistory {
   jobId: string
   jobTitle: string
@@ -46,6 +55,7 @@ export interface WorkerProfile {
   qualifications: Qualification[]
   experience: Experience[]
   availableDates: string[]
+  weeklyAvailability?: AvailabilitySlot[]
   availability: "morning" | "afternoon" | "full-day" | "flexible"
   bio: string
   workHistory: WorkHistory[]
@@ -113,7 +123,14 @@ export interface Job {
   externalSource?: "himalayas"
   externalUrl?: string
   externalCategory?: string
+  externalCategories?: string[]
+  externalExcerpt?: string
   salaryText?: string
+  externalSalaryMin?: number
+  externalSalaryMax?: number
+  externalSalaryCurrency?: string
+  externalSalaryPeriod?: string
+  externalUpdatedAt?: string
   employmentType?: string
   seniority?: string
   publishedDate?: string

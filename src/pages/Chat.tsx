@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react"
 import { useApp, type Page } from "../store/AppContext"
 import { sendChatMessage, sendResumeAnalysis } from "../services/shramAi"
 import { useLanguage } from "../i18n/LanguageContext"
-import ShramaAIMark from "../components/ShramaAIMark"
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside"
 import ConfirmDialog from "../components/ConfirmDialog"
+import ShramaAIMark from "../components/ShramaAIMark"
 
 const MAX_RESUME_BYTES = 10 * 1024 * 1024
 const RESUME_TYPES: Record<string, string> = {
@@ -584,7 +584,7 @@ export default function Chat() {
         : await sendChatMessage(
             text,
             activeThread.conversationId ?? null,
-            [...priorHistory.slice(-19), { role: "user", text }],
+            priorHistory.slice(-20),
             language,
             controller.signal,
           )
@@ -814,13 +814,13 @@ export default function Chat() {
           sidebarOpen
             ? "absolute inset-y-0 left-0 z-40 flex w-[min(20rem,88vw)] ai-drawer-mobile-enter"
             : "hidden"
-        } ai-drawer-enter ai-conversation-sidebar shrink-0 flex-col border-r border-[#E5E2EC] bg-[#F8F7FB] md:relative md:flex md:w-72`}
+        } ai-drawer-enter ai-conversation-sidebar shrink-0 flex-col border-r border-[#E9DFD5] bg-[#F8F3EE] md:relative md:flex md:w-72`}
       >
         <div className="flex h-10 items-center justify-end px-3 pt-2 md:hidden">
           <button
             onClick={() => setSidebarOpen(false)}
             aria-label="Close sidebar"
-            className="rounded-lg p-2 text-[#625D73] hover:bg-[#E8E0FA] hover:text-[#5630A8]"
+            className="rounded-lg p-2 text-[#706A64] hover:bg-[#EEDFD2] hover:text-[#553421]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -839,7 +839,7 @@ export default function Chat() {
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-[#49445A] transition hover:bg-[#F1EDFF] hover:text-[#5630A8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7655CE]"
+            className="inline-flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-[#5A544F] transition hover:bg-[#F7F1EB] hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#80502F]"
             aria-label="Go back"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
@@ -849,7 +849,7 @@ export default function Chat() {
           </button>
           <button
             onClick={startNewChat}
-            className="flex w-fit items-center gap-3 rounded-2xl bg-[#6542B5] px-5 py-4 text-left text-xl font-bold text-white shadow-sm transition-colors hover:bg-[#5630A8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5630A8]"
+            className="flex w-fit items-center gap-3 rounded-2xl bg-[#80502F] px-5 py-4 text-left text-xl font-bold text-white shadow-sm transition-colors hover:bg-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -867,14 +867,14 @@ export default function Chat() {
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-3">
           {threadGroups.length === 0 ? (
-            <p className="px-2 py-3 text-sm text-[#777287]">
+            <p className="px-2 py-3 text-sm text-[#706A64]">
               Your conversations will appear here.
             </p>
           ) : (
             <div className="space-y-5">
               {threadGroups.map((group) => (
                 <section key={group.label}>
-                  <h3 className="mb-3 px-2 text-lg font-bold tracking-tight text-[#625D73]">
+                  <h3 className="mb-3 px-2 text-lg font-bold tracking-tight text-[#553421]">
                     {group.label}
                   </h3>
                   <div className="space-y-1">
@@ -883,7 +883,7 @@ export default function Chat() {
                         key={thread.id}
                         className={`group flex min-w-0 items-center rounded-r-lg border-l-2 transition-colors ${
                           activeThreadId === thread.id
-                            ? "border-[#7655CE] bg-transparent"
+                            ? "border-[#80502F] bg-transparent"
                             : "border-transparent hover:bg-white"
                         }`}
                       >
@@ -899,12 +899,12 @@ export default function Chat() {
                                 setThreadTitleDraft(event.target.value)
                               }
                               aria-label="Conversation name"
-                              className="min-w-0 flex-1 rounded-md border border-[#D7CDEE] bg-white px-2 py-1.5 text-xl text-[#211B42] outline-none focus:border-[#7655CE]"
+                              className="min-w-0 flex-1 rounded-md border border-[#D7C6B7] bg-white px-2 py-1.5 text-xl text-[#302B27] outline-none focus:border-[#80502F]"
                             />
                             <button
                               type="submit"
                               aria-label="Save conversation name"
-                              className="rounded-md p-1.5 text-[#5630A8] hover:bg-[#E8E0FA]"
+                              className="rounded-md p-1.5 text-[#553421] hover:bg-[#EEDFD2]"
                             >
                               <svg
                                 viewBox="0 0 24 24"
@@ -931,8 +931,8 @@ export default function Chat() {
                               }}
                               className={`flex min-w-0 flex-1 items-center px-3 py-3 text-left text-xl ${
                                 activeThreadId === thread.id
-                                  ? "font-bold text-[#5630A8]"
-                                  : "font-semibold text-[#49445A] hover:text-[#211B42]"
+                                  ? "font-bold text-[#553421]"
+                                  : "font-semibold text-[#5A544F] hover:text-[#302B27]"
                               }`}
                             >
                               <span className="truncate">{thread.title}</span>
@@ -942,7 +942,7 @@ export default function Chat() {
                               onClick={() => beginRename(thread)}
                               aria-label={`Rename chat: ${thread.title}`}
                               title="Rename chat"
-                              className="mr-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#89849A] opacity-100 transition-opacity hover:bg-[#E8E0FA] hover:text-[#5630A8] focus-visible:opacity-100 group-hover:opacity-100 md:opacity-0"
+                              className="mr-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#99918A] opacity-100 transition-opacity hover:bg-[#EEDFD2] hover:text-[#553421] focus-visible:opacity-100 group-hover:opacity-100 md:opacity-0"
                             >
                               <svg
                                 viewBox="0 0 24 24"
@@ -1021,11 +1021,11 @@ export default function Chat() {
                   style={{ animationDelay: "80ms" }}
                 >
                   <img
-                    src="/images/worker/ai-logo-trim.png"
+                    src="/images/worker/shram-ai-logo.png"
                     alt="Shram"
-                    className="h-14 w-11 object-contain"
+                    className="h-32 w-32 object-contain"
                   />
-                  <ShramaAIMark className="h-14 w-14" />
+                  <ShramaAIMark className="-ml-4 h-14 w-14" />
                 </div>
                 <h1
                   className="welcome-reveal mt-4 font-sans text-3xl font-semibold tracking-tight text-[#211B42] sm:text-4xl"

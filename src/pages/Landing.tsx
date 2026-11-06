@@ -274,13 +274,13 @@ function WorkCategoryCard({
     <button
       onClick={onSelect}
       aria-label={`Find work in ${category.label}`}
-      className={`group relative flex aspect-[0.9] flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-7 text-center transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5E3122] sm:px-4 ${
-        isDark ? "bg-[#5E3122] text-[#FFF1DF]" : "bg-[#FFF0DD] text-[#5E3122]"
+      className={`group relative flex aspect-[0.9] flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-7 text-center transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#553421] sm:px-4 ${
+        isDark ? "bg-[#553421] text-[#FFF1DF]" : "bg-[#FFF0DD] text-[#553421]"
       }`}
     >
       <span
         className={`absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full ${
-          isDark ? "bg-[#FFF1DF] text-[#5E3122]" : "bg-[#5E3122] text-[#FFF1DF]"
+          isDark ? "bg-[#FFF1DF] text-[#553421]" : "bg-[#553421] text-[#FFF1DF]"
         }`}
         aria-hidden="true"
       >
@@ -535,7 +535,7 @@ export default function Landing() {
                 aria-hidden="true"
               >
                 <span
-                  className="text-[1.75rem] font-semibold leading-[0.92] text-[#5E3122]"
+                  className="text-[1.75rem] font-semibold leading-[0.92] text-[#553421]"
                   style={{ fontFamily: "'Noto Serif Devanagari', serif" }}
                 >
                   श्रम
@@ -631,7 +631,7 @@ export default function Landing() {
           </div>
         </nav>
 
-        <aside className="mx-auto flex w-[calc(100%-2rem)] max-w-[1280px] shrink-0 flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#F3E4D9] px-5 py-4 text-center text-base text-[#5E3122] sm:w-[calc(100%-3rem)] sm:justify-between sm:px-7 sm:py-5 sm:text-lg lg:w-[calc(100%-5rem)] lg:px-9 lg:py-5 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] min-[1800px]:px-10 min-[1800px]:py-6">
+        <aside className="mx-auto flex w-[calc(100%-2rem)] max-w-[1280px] shrink-0 flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#F3E4D9] px-5 py-4 text-center text-base text-[#553421] sm:w-[calc(100%-3rem)] sm:justify-between sm:px-7 sm:py-5 sm:text-lg lg:w-[calc(100%-5rem)] lg:px-9 lg:py-5 2xl:max-w-[1400px] min-[1800px]:max-w-[1600px] min-[1800px]:px-10 min-[1800px]:py-6">
           <p className="font-medium leading-snug sm:text-xl 2xl:text-2xl min-[1800px]:text-2xl">
             Get connected with local personnel for your everyday business and
             service needs
@@ -921,7 +921,7 @@ export default function Landing() {
                 onKeyDown={handleJourneyTabKeyDown}
                 className={`flex min-h-9 flex-1 flex-col items-center justify-center rounded-full px-2 py-1 text-center transition-all ${
                   journeyAudience === "worker"
-                    ? "bg-[#FFF0DD] text-[#5E3122] shadow-sm"
+                    ? "bg-[#FFF0DD] text-[#553421] shadow-sm"
                     : "text-stone-600 hover:text-stone-900"
                 }`}
               >
@@ -943,7 +943,7 @@ export default function Landing() {
                 onKeyDown={handleJourneyTabKeyDown}
                 className={`flex min-h-9 flex-1 flex-col items-center justify-center rounded-full px-2 py-1 text-center transition-all ${
                   journeyAudience === "business"
-                    ? "bg-[#5E3122] text-white shadow-sm"
+                    ? "bg-[#553421] text-white shadow-sm"
                     : "text-stone-600 hover:text-stone-900"
                 }`}
               >
@@ -999,8 +999,8 @@ export default function Landing() {
               }
               className={`inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-semibold shadow-sm transition-all hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 ${
                 journeyAudience === "worker"
-                  ? "bg-[#FFF0DD] text-[#5E3122] hover:bg-[#F3E4D2] focus-visible:outline-[#8B5E3C]"
-                  : "bg-[#5E3122] text-white hover:bg-[#4C281D] focus-visible:outline-[#5E3122]"
+                  ? "bg-[#FFF0DD] text-[#553421] hover:bg-[#F3E4D2] focus-visible:outline-[#80502F]"
+                  : "bg-[#553421] text-white hover:bg-[#412719] focus-visible:outline-[#553421]"
               }`}
             >
               {journeyAudience === "worker"
@@ -1033,9 +1033,9 @@ export default function Landing() {
             <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-12">
               <div className="-mr-1 mb-5 flex w-fit items-center gap-0 self-end" role="img" aria-label="Shram AI">
                 <img
-                  src={`${import.meta.env.BASE_URL}images/worker/ai-logo-trim.png`}
+                  src={`${import.meta.env.BASE_URL}images/worker/shram-ai-logo.png`}
                   alt=""
-                  className="h-14 w-11 object-contain"
+                  className="h-20 w-16 object-contain"
                 />
                 <ShramaAIMark className="h-14 w-14" />
               </div>
@@ -1523,7 +1523,7 @@ function JourneyStepCard({
   const characterImage = `${import.meta.env.BASE_URL}images/landing/${journeyImages[audience][index]}`
   const cardSurface = useWorkerCardStyle
     ? "gap-3 bg-[#FFF0DD] p-4 text-[#111111] sm:p-5"
-    : "gap-3 border border-[#8B5E3C] bg-[#A8754F] p-4 text-[#FFF9F2] shadow-sm sm:p-5"
+    : "gap-3 border border-[#80502F] bg-[#96613A] p-4 text-[#FFF9F2] shadow-sm sm:p-5"
   const cardLayout = "md:items-stretch md:justify-start"
   const workerTextTone = "text-[#111111]"
   const headingTone = isWorker ? workerTextTone : "text-[#FFF9F2]"

@@ -2,6 +2,10 @@ import os
 import logging
 import json
 import zipfile
+import threading
+from collections import defaultdict, deque
+from datetime import datetime, timedelta, timezone
+from time import monotonic
 from io import BytesIO
 from pathlib import Path
 from uuid import uuid4
@@ -9,14 +13,14 @@ from xml.sax.saxutils import escape as escape_xml
 
 import httpx
 from docx import Document
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import types
 from pypdf import PdfReader
 from starlette.concurrency import run_in_threadpool
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Literal
 
 ENV_FILE = Path(__file__).resolve().parent / ".env"
@@ -31,6 +35,13 @@ MAX_DOCX_UNPACKED_BYTES = 30 * 1024 * 1024
 MAX_PDF_PAGES = 150
 PDF_MIME = "application/pdf"
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+VOICE_MODEL = "gemini-3.8-live"
+VOICE_TOKEN_TTL_MINUTES = 20
+VOICE_NEW_SESSION_TTL_SECONDS = 60
+VOICE_TOKEN_REQUEST_LIMIT = 6
+VOICE_TOKEN_WINDOW_SECONDS = 60
+voice_token_requests: dict[str, deque[float]] = defaultdict(deque)
+voice_token_requests_lock = threading.Lock()
 
 origins = [origin.strip() for origin in os.getenv(
     "CORS_ORIGINS", "http://localhost:8443,http://127.0.0.1:8443"
@@ -56,6 +67,14 @@ class ChatRequest(BaseModel):
     history: list[HistoryTurn] = Field(default_factory=list, max_length=20)
     language: Literal["en", "ne"] = "en"
 
+    @field_validator("message")
+    @classmethod
+    def message_must_contain_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Message cannot be empty.")
+        return value
+
 
 class ChatResponse(BaseModel):
     answer: str
@@ -66,6 +85,93 @@ class ChatResponse(BaseModel):
 class ResumeAnalysisResponse(BaseModel):
     answer: str
     conversation_id: str
+
+
+class VoiceTokenRequest(BaseModel):
+    language: Literal["en", "ne"] = "en"
+
+
+class VoiceTokenResponse(BaseModel):
+    token: str
+    model: str
+    expires_in_seconds: int
+    input_sample_rate: int
+    output_sample_rate: int
+    system_instruction: str
+
+
+def check_voice_token_rate_limit(client_id: str) -> None:
+    """Limit token minting per direct client address within this backend process."""
+    now = monotonic()
+    cutoff = now - VOICE_TOKEN_WINDOW_SECONDS
+    with voice_token_requests_lock:
+        if len(voice_token_requests) >= 1024:
+            for key in list(voice_token_requests):
+                bucket = voice_token_requests[key]
+                while bucket and bucket[0] <= cutoff:
+                    bucket.popleft()
+                if not bucket:
+                    del voice_token_requests[key]
+        if client_id not in voice_token_requests and len(voice_token_requests) >= 1024:
+            raise HTTPException(
+                status_code=429,
+                detail="Voice session capacity is temporarily limited. Try again shortly.",
+                headers={"Retry-After": str(VOICE_TOKEN_WINDOW_SECONDS)},
+            )
+        bucket = voice_token_requests[client_id]
+        while bucket and bucket[0] <= cutoff:
+            bucket.popleft()
+        if len(bucket) >= VOICE_TOKEN_REQUEST_LIMIT:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many voice sessions were requested. Wait a minute and try again.",
+                headers={"Retry-After": str(VOICE_TOKEN_WINDOW_SECONDS)},
+            )
+        bucket.append(now)
+
+
+def create_voice_ephemeral_token(api_key: str, language: str):
+    """Create a one-use token locked to Shram Bazar's audio-only Live session."""
+    now = datetime.now(timezone.utc)
+    language_instruction = (
+        "Speak in clear, simple Nepali (नेपाली). Use short, familiar sentences."
+        if language == "ne"
+        else "Speak in clear, concise English unless the user speaks Nepali; then respond in Nepali."
+    )
+    system_instruction = (
+        "You are Shram Bazar's work companion. Help workers find flexible and temporary work, "
+        "think about jobs that fit their skills, location, and availability, improve their profiles, "
+        "understand applications, and help providers with hiring. You do not have access to live "
+        "job listings, private account data, or official platform records. Never claim that a job "
+        "is currently available or that you have checked an account. Be practical, respectful, and "
+        "clear about uncertainty. Keep spoken answers brief and easy to understand. "
+        + language_instruction
+    )
+    session_config = types.LiveConnectConfig(
+        response_modalities=["AUDIO"],
+        system_instruction=system_instruction,
+        input_audio_transcription=types.AudioTranscriptionConfig(),
+        output_audio_transcription=types.AudioTranscriptionConfig(),
+    )
+    client = genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(timeout=15000),
+    )
+    token = client.auth_tokens.create(
+        config=types.CreateAuthTokenConfig(
+            uses=1,
+            expire_time=now + timedelta(minutes=VOICE_TOKEN_TTL_MINUTES),
+            new_session_expire_time=now + timedelta(seconds=VOICE_NEW_SESSION_TTL_SECONDS),
+            live_connect_constraints=types.LiveConnectConstraints(
+                model=VOICE_MODEL,
+                config=session_config,
+            ),
+            # An empty mask locks only the fields present above, leaving the
+            # session resumption handle available to the browser.
+            lock_additional_fields=[],
+        )
+    )
+    return token, system_instruction
 
 
 def extract_resume_text(filename: str, content_type: str, content: bytes) -> str:
@@ -149,8 +255,8 @@ def health():
 
 @app.post("/api/v1/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key or api_key == "PASTE_YOUR_GEMINI_API_KEY_HERE" or api_key.startswith("replace_with_"):
         raise HTTPException(status_code=503, detail="Gemini is not configured. Set GEMINI_API_KEY in ai-service/.env.")
 
     model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
@@ -171,15 +277,23 @@ def chat(request: ChatRequest):
         f"USER: {request.message}"
     )
     try:
-        client = genai.Client(
-            api_key=api_key,
-            http_options=types.HttpOptions(timeout=30000),
-        )
-        result = client.models.generate_content(model=model, contents=prompt)
-        answer = (result.text or "I couldn't generate a response. Please try again.").strip()
+        answer = generate_chat_response(prompt, api_key, model)
+    except (httpx.TimeoutException, TimeoutError) as exc:
+        logger.warning("Gemini chat timed out")
+        raise HTTPException(status_code=504, detail="Gemini took too long to respond. Please try again.") from exc
     except Exception as exc:
-        # Avoid exposing provider details or secrets to the browser.
-        logger.error("Gemini request failed (%s)", type(exc).__name__)
+        # SDK exceptions carry status codes; classify without logging request/key data.
+        status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+        provider_message = str(getattr(exc, "message", "")).lower()
+        key_rejected = "api key" in provider_message or "api_key_invalid" in provider_message
+        logger.error(
+            "Gemini chat failed (%s, status=%s, reason=%s)",
+            type(exc).__name__, status, getattr(exc, "status", None),
+        )
+        if status in (401, 403) or key_rejected:
+            raise HTTPException(status_code=401, detail="Gemini rejected the API key. Check GEMINI_API_KEY in ai-service/.env.") from exc
+        if status == 429:
+            raise HTTPException(status_code=429, detail="Gemini is rate limited. Wait a moment and try again.") from exc
         raise HTTPException(status_code=502, detail="Gemini could not generate a response. Check the backend logs and API configuration.") from exc
 
     return ChatResponse(
@@ -187,6 +301,63 @@ def chat(request: ChatRequest):
         conversation_id=request.conversation_id or str(uuid4()),
         source_files=[],
     )
+
+
+@app.post("/api/v1/voice/token", response_model=VoiceTokenResponse)
+def create_voice_token(request: VoiceTokenRequest, http_request: Request):
+    api_key = os.getenv("GEMINI_VOICE_API_KEY", "").strip()
+    if not api_key or api_key == "PASTE_YOUR_GEMINI_VOICE_API_KEY_HERE" or api_key.startswith("replace_with_"):
+        raise HTTPException(
+            status_code=503,
+            detail="Voice AI is not configured. Set GEMINI_VOICE_API_KEY in ai-service/.env.",
+        )
+
+    client_id = http_request.client.host if http_request.client else "unknown"
+    check_voice_token_rate_limit(client_id)
+    try:
+        token, system_instruction = create_voice_ephemeral_token(api_key, request.language)
+    except (httpx.TimeoutException, TimeoutError) as exc:
+        logger.warning("Gemini voice token request timed out")
+        raise HTTPException(status_code=504, detail="Voice service took too long to prepare. Please try again.") from exc
+    except Exception as exc:
+        status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+        provider_status = getattr(exc, "status", None)
+        provider_message = str(getattr(exc, "message", "")).lower()
+        key_rejected = "api key" in provider_message or "api_key_invalid" in provider_message
+        logger.error(
+            "Gemini voice token creation failed (%s, status=%s, reason=%s)",
+            type(exc).__name__, status, provider_status,
+        )
+        if status == 429:
+            raise HTTPException(status_code=429, detail="Voice service is busy. Wait a moment and try again.") from exc
+        if status in (401, 403) or key_rejected:
+            raise HTTPException(status_code=503, detail="Gemini rejected the voice API key. Check GEMINI_VOICE_API_KEY.") from exc
+        raise HTTPException(status_code=502, detail="Voice service could not create a session. Check the backend configuration.") from exc
+
+    if not token.name:
+        logger.error("Gemini voice token response did not contain a token name")
+        raise HTTPException(status_code=502, detail="Voice service returned an invalid session token.")
+    return VoiceTokenResponse(
+        token=token.name,
+        model=VOICE_MODEL,
+        expires_in_seconds=VOICE_TOKEN_TTL_MINUTES * 60,
+        input_sample_rate=16000,
+        output_sample_rate=24000,
+        system_instruction=system_instruction,
+    )
+
+
+def generate_chat_response(prompt: str, api_key: str, model: str) -> str:
+    """Shared text generation boundary for chat and future voice interfaces."""
+    client = genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(timeout=30000),
+    )
+    result = client.models.generate_content(model=model, contents=prompt)
+    answer = (result.text or "").strip()
+    if not answer:
+        raise RuntimeError("Gemini returned an empty response")
+    return answer
 
 
 @app.post("/api/v1/resume-analysis", response_model=ResumeAnalysisResponse)

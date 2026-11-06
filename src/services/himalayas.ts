@@ -1,6 +1,6 @@
 import type { Job, JobCategory, WorkType } from "../types"
 
-interface HimalayasLocation {
+type HimalayasLocation = string | {
   alpha2?: string
   name?: string
   slug?: string
@@ -10,6 +10,7 @@ interface HimalayasApiJob {
   guid?: string
   title?: string
   companyName?: string
+  companySlug?: string
   companyLogo?: string
   applicationLink?: string
   description?: string
@@ -17,6 +18,7 @@ interface HimalayasApiJob {
   employmentType?: string
   seniority?: string[] | string
   locationRestrictions?: HimalayasLocation[]
+  timezoneRestrictions?: (number | string)[]
   categories?: string[]
   parentCategories?: string[]
   minSalary?: number | null
@@ -51,6 +53,7 @@ export interface HimalayasSearchResult {
   totalCount: number
   page: number
   limit: number
+  hasMore: boolean
 }
 
 const toDate = (value?: number | string) => {
@@ -60,12 +63,31 @@ const toDate = (value?: number | string) => {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10)
 }
 
+const toDateTime = (value?: number | string) => {
+  if (value === undefined || value === null || value === "") return ""
+  const numeric = typeof value === "number" ? value : Number(value)
+  const date = new Date(Number.isFinite(numeric) ? numeric * 1000 : value)
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString()
+}
+
 const cleanText = (value?: string) =>
   value
-    ?.replace(/<[^>]*>/g, " ")
+    ?.replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<li\b[^>]*>/gi, "• ")
+    .replace(
+      /<\/(?:p|div|h[1-6]|li|ul|ol|section|article|blockquote)\s*>/gi,
+      "\n",
+    )
+    .replace(/<[^>]*>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
-    .replace(/\s+/g, " ")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim() || ""
 
 const seniorityList = (value?: string[] | string) =>
@@ -125,20 +147,42 @@ const salaryFor = (job: HimalayasApiJob) => {
     : `${minimum || maximum}${period}`
 }
 
+const countryName = (location: HimalayasLocation) =>
+  typeof location === "string"
+    ? location.trim()
+    : (location.name || location.alpha2 || location.slug || "").trim()
+
+const humanizeCategory = (value: string) =>
+  value.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim()
+
+const isExpired = (value?: number | string) => {
+  if (value === undefined || value === null || value === "") return false
+  const numeric = typeof value === "number" ? value : Number(value)
+  const expiryTime = Number.isFinite(numeric)
+    ? numeric * 1000
+    : Date.parse(String(value))
+  return Number.isFinite(expiryTime) && expiryTime <= Date.now()
+}
+
 export function mapHimalayasJob(job: HimalayasApiJob, index: number): Job {
   const publishedDate = toDate(job.pubDate)
   const allowedCountries =
-    job.locationRestrictions
-      ?.map((location) => location.name || location.alpha2)
-      .filter(Boolean) || []
+    job.locationRestrictions?.map(countryName).filter(Boolean) || []
   const location = allowedCountries.length
-    ? allowedCountries.join(", ")
+    ? `Remote · ${allowedCountries.join(", ")}`
     : "Worldwide remote"
   const description = cleanText(job.description) || cleanText(job.excerpt)
   const seniority = seniorityList(job.seniority).join(", ")
+  const categories = [
+    ...new Set(
+      [...(job.categories || []), ...(job.parentCategories || [])]
+        .map(humanizeCategory)
+        .filter(Boolean),
+    ),
+  ]
 
   return {
-    id: `himalayas-${job.guid || index}`,
+    id: `himalayas-${job.guid || `${job.companySlug || job.companyName || "job"}-${job.title || index}`}`,
     providerId: "himalayas",
     providerName: job.companyName || "Company not listed",
     providerLogo: job.companyLogo || "",
@@ -146,15 +190,13 @@ export function mapHimalayasJob(job: HimalayasApiJob, index: number): Job {
     title: job.title || "Untitled opportunity",
     description,
     category: categoryFor(job.seniority, job.parentCategories),
-    skillsRequired: [
-      ...new Set([...(job.categories || []), ...(job.parentCategories || [])]),
-    ],
+    skillsRequired: [],
     qualificationRequired: "",
     experienceRequired: seniority,
     workType: workTypeFor(job.employmentType),
     workersNeeded: 0,
     workersHired: 0,
-    date: publishedDate,
+    date: "",
     startTime: "",
     endTime: "",
     duration: "",
@@ -168,11 +210,18 @@ export function mapHimalayasJob(job: HimalayasApiJob, index: number): Job {
     applicantCount: 0,
     externalSource: "himalayas",
     externalUrl: job.applicationLink,
-    externalCategory: job.categories?.[0] || job.parentCategories?.[0],
+    externalCategory: categories[0],
+    externalCategories: categories,
+    externalExcerpt: cleanText(job.excerpt),
     salaryText: salaryFor(job),
+    externalSalaryMin: job.minSalary ?? undefined,
+    externalSalaryMax: job.maxSalary ?? undefined,
+    externalSalaryCurrency: job.currency || undefined,
+    externalSalaryPeriod: job.salaryPeriod || undefined,
     employmentType: job.employmentType,
     seniority,
     publishedDate,
+    externalUpdatedAt: toDateTime(job.pubDate),
   }
 }
 
@@ -207,7 +256,13 @@ export async function getFeaturedHimalayasJobs(
     limit: String(Math.min(20, Math.max(1, limit))),
   })
   const payload = await fetchJobs(query, signal)
-  return (payload.jobs || []).map((job, index) => mapHimalayasJob(job, index))
+  return (payload.jobs || [])
+    .filter(
+      (job) =>
+        Boolean(job.guid && job.title && job.applicationLink) &&
+        !isExpired(job.expiryDate),
+    )
+    .map((job, index) => mapHimalayasJob(job, index))
 }
 
 export async function searchHimalayasJobs(
@@ -225,13 +280,21 @@ export async function searchHimalayasJobs(
   query.set("page", String(page))
 
   const payload = await fetchJobs(query, signal)
-  const jobs = (payload.jobs || []).map((job, index) =>
-    mapHimalayasJob(job, index + (page - 1) * (payload.limit || 20)),
-  )
+  const rawJobs = payload.jobs || []
+  const jobs = rawJobs
+    .filter(
+      (job) =>
+        Boolean(job.guid && job.title && job.applicationLink) &&
+        !isExpired(job.expiryDate),
+    )
+    .map((job, index) =>
+      mapHimalayasJob(job, index + (page - 1) * (payload.limit || 20)),
+    )
   return {
     jobs,
     totalCount: payload.totalCount || jobs.length,
     page,
     limit: payload.limit || jobs.length,
+    hasMore: rawJobs.length >= (payload.limit || 20),
   }
 }

@@ -1,6 +1,21 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react"
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactElement,
+} from "react"
 import { useApp } from "../../store/AppContext"
 import { ALL_SKILLS, DISTRICTS } from "../../data/mockData"
+import type {
+  AvailabilitySlot,
+  Experience,
+  Qualification,
+  Weekday,
+} from "../../types"
 
 const presetAvatars = [
   {
@@ -17,6 +32,16 @@ const presetAvatars = [
   },
 ]
 
+const weekdays: { value: Weekday label: string }[] = [
+  { value: "sunday", label: "Sunday" },
+  { value: "monday", label: "Monday" },
+  { value: "tuesday", label: "Tuesday" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "thursday", label: "Thursday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+]
+
 export default function WorkerProfile() {
   const { state, updateWorkerProfile, notifyProfileUpdated, navigate } =
     useApp()
@@ -26,9 +51,16 @@ export default function WorkerProfile() {
   const [skillInput, setSkillInput] = useState("")
   const [dateInput, setDateInput] = useState("")
   const [saved, setSaved] = useState(false)
+  const [editError, setEditError] = useState("")
   const [photoMessage, setPhotoMessage] = useState("")
   const [photoError, setPhotoError] = useState(false)
   const [photoChoicesOpen, setPhotoChoicesOpen] = useState(false)
+  const [availabilityDay, setAvailabilityDay] = useState<Weekday>("monday")
+  const [availabilityStart, setAvailabilityStart] = useState("18:00")
+  const [availabilityEnd, setAvailabilityEnd] = useState("21:00")
+  const [editingAvailabilityId, setEditingAvailabilityId] =
+    useState<string | null>(null)
+  const [availabilityError, setAvailabilityError] = useState("")
   const photoInputRef = useRef<HTMLInputElement>(null)
   const photoPickerRef = useRef<HTMLDivElement>(null)
 
@@ -67,6 +99,7 @@ export default function WorkerProfile() {
   const startEdit = (section: string) => {
     setEditing(section)
     setSaved(false)
+    setEditError("")
     if (section === "basic") {
       setTempData({
         name: workerProfile.name,
@@ -80,55 +113,104 @@ export default function WorkerProfile() {
     } else if (section === "skills") {
       setTempData({ skills: [...workerProfile.skills] })
     } else if (section === "qualifications") {
-      const qualification = workerProfile.qualifications[0]
-      setTempData(
-        qualification
-          ? { ...qualification }
-          : {
-              degree: "",
-              institution: "",
-              year: new Date().getFullYear(),
-              field: "",
-            },
-      )
+      setTempData({
+        qualifications: workerProfile.qualifications.length
+          ? workerProfile.qualifications.map((qualification) => ({
+              ...qualification,
+            }))
+          : [
+              {
+                id: `q-${Date.now()}`,
+                degree: "",
+                institution: "",
+                year: new Date().getFullYear(),
+                field: "",
+              },
+            ],
+      })
     } else if (section === "experience") {
-      const experience = workerProfile.experience[0]
-      setTempData(
-        experience
-          ? { ...experience }
-          : { title: "", company: "", duration: "", description: "" },
-      )
+      setTempData({
+        experience: workerProfile.experience.length
+          ? workerProfile.experience.map((experience) => ({ ...experience }))
+          : [
+              {
+                id: `e-${Date.now()}`,
+                title: "",
+                company: "",
+                duration: "",
+                description: "",
+              },
+            ],
+      })
     }
   }
 
   const saveEdit = () => {
     if (editing === "basic") {
-      updateWorkerProfile(tempData)
+      const name = String(tempData.name ?? "").trim()
+      const phone = String(tempData.phone ?? "").trim()
+      const phoneDigits = phone.replace(/\D/g, "")
+      const location = String(tempData.location ?? "").trim()
+      const district = String(tempData.district ?? "").trim()
+      if (!name || !phone || !location || !district) {
+        setEditError("Name, phone, location, and district are required.")
+        return
+      }
+      if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+        setEditError("Enter a valid phone number with 7 to 15 digits.")
+        return
+      }
+      if (String(tempData.bio ?? "").length > 600) {
+        setEditError("Keep your bio under 600 characters.")
+        return
+      }
+      updateWorkerProfile({
+        ...tempData,
+        name,
+        phone,
+        location,
+        district,
+        professionalTitle: String(tempData.professionalTitle ?? "").trim(),
+        bio: String(tempData.bio ?? "").trim(),
+      })
     } else if (editing === "skills") {
       updateWorkerProfile({ skills: tempData.skills })
     } else if (editing === "qualifications") {
+      const qualifications =
+        (tempData.qualifications as Qualification[]).filter((item) =>
+          [item.degree, item.institution, item.field].some((value) =>
+            value.trim(),
+          ),
+        )
+      const invalidYear = qualifications.some(
+        (item) =>
+          !Number.isInteger(Number(item.year)) ||
+          Number(item.year) < 1900 ||
+          Number(item.year) > new Date().getFullYear(),
+      )
+      if (qualifications.some((item) => !item.degree.trim()) || invalidYear) {
+        setEditError(
+          "Add a qualification name and a valid completion year for each entry.",
+        )
+        return
+      }
       updateWorkerProfile({
-        qualifications: tempData.degree
-          ? [
-              {
-                id: workerProfile.qualifications[0]?.id ?? `q-${Date.now()}`,
-                ...tempData,
-                year: Number(tempData.year),
-              },
-            ]
-          : [],
+        qualifications: qualifications.map((item) => ({
+          ...item,
+          year: Number(item.year),
+        })),
       })
     } else if (editing === "experience") {
-      updateWorkerProfile({
-        experience: tempData.title
-          ? [
-              {
-                id: workerProfile.experience[0]?.id ?? `e-${Date.now()}`,
-                ...tempData,
-              },
-            ]
-          : [],
-      })
+      const experience = (tempData.experience as Experience[]).filter((item) =>
+        [item.title, item.company, item.duration, item.description].some(
+          (value) => value.trim(),
+        ),
+      )
+      if (experience.some((item) => !item.title.trim())) {
+        setEditError("Add a role title for each work experience entry.")
+        return
+      }
+      updateWorkerProfile({ experience })
     }
     const sectionNames: Record<string, string> = {
       basic: "Basic information",
@@ -138,27 +220,102 @@ export default function WorkerProfile() {
     }
     if (editing && sectionNames[editing])
       showProfileUpdate(`${sectionNames[editing]} saved successfully.`)
+    setEditError("")
     setEditing(null)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   const toggleSkill = (skill: string) => {
-    const skills = tempData.skills ?? []
-    setTempData((p: any) => ({
-      ...p,
-      skills: skills.includes(skill)
-        ? skills.filter((s: string) => s !== skill)
-        : [...skills, skill],
-    }))
+    setTempData((previous: any) => {
+      const skills: string[] = previous.skills ?? []
+      const existing = skills.find(
+        (item) => item.toLowerCase() === skill.toLowerCase(),
+      )
+      return {
+        ...previous,
+        skills: existing
+          ? skills.filter((item) => item !== existing)
+          : [...skills, skill.trim()],
+      }
+    })
   }
 
   const filteredSkills = ALL_SKILLS.filter(
     (s) =>
       s.toLowerCase().includes(skillInput.toLowerCase()) &&
-      !(tempData.skills ?? []).includes(s),
+      !(tempData.skills ?? []).some(
+        (selected: string) => selected.toLowerCase() === s.toLowerCase(),
+      ),
   ).slice(0, 15)
   const kycStatus = workerProfile.kycStatus ?? "not-verified"
+  const todayInKathmandu = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kathmandu",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
+
+  const addWeeklyAvailability = () => {
+    if (availabilityEnd <= availabilityStart) {
+      setAvailabilityError("End time must be later than start time.")
+      return
+    }
+    const slots = workerProfile.weeklyAvailability ?? []
+    const start = availabilityStart
+      .split(":")
+      .reduce(
+        (hours, part, index) => hours + Number(part) * (index === 0 ? 60 : 1),
+        0,
+      )
+    const end = availabilityEnd
+      .split(":")
+      .reduce(
+        (hours, part, index) => hours + Number(part) * (index === 0 ? 60 : 1),
+        0,
+      )
+    const overlaps = slots.some((slot) => {
+      if (slot.id === editingAvailabilityId || slot.day !== availabilityDay)
+        return false
+      const existingStart = slot.startTime
+        .split(":")
+        .reduce(
+          (hours, part, index) => hours + Number(part) * (index === 0 ? 60 : 1),
+          0,
+        )
+      const existingEnd = slot.endTime
+        .split(":")
+        .reduce(
+          (hours, part, index) => hours + Number(part) * (index === 0 ? 60 : 1),
+          0,
+        )
+      return start < existingEnd && end > existingStart
+    })
+    if (overlaps) {
+      setAvailabilityError("This overlaps another time slot on that day.")
+      return
+    }
+    const nextSlots: AvailabilitySlot[] = [
+      ...slots.filter((slot) => slot.id !== editingAvailabilityId),
+      {
+        id: editingAvailabilityId ?? `availability-${Date.now()}`,
+        day: availabilityDay,
+        startTime: availabilityStart,
+        endTime: availabilityEnd,
+      },
+    ].sort(
+      (a, b) =>
+        weekdays.findIndex((day) => day.value === a.day) -
+          weekdays.findIndex((day) => day.value === b.day) ||
+        a.startTime.localeCompare(b.startTime),
+    )
+    updateWorkerProfile({ weeklyAvailability: nextSlots })
+    setEditingAvailabilityId(null)
+    setAvailabilityError("")
+    showProfileUpdate(
+      `Weekly hours ${editingAvailabilityId ? "updated" : "added"}.`,
+    )
+  }
 
   const handleProfilePhoto = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -180,6 +337,12 @@ export default function WorkerProfile() {
     reader.onload = () => {
       updateWorkerProfile({ photo: String(reader.result) })
       showProfileUpdate("Your profile photo was updated.")
+      event.target.value = ""
+    }
+    reader.onerror = () => {
+      setPhotoError(true)
+      setPhotoMessage("The image could not be read. Choose another file.")
+      event.target.value = ""
     }
     reader.readAsDataURL(file)
   }
@@ -200,7 +363,7 @@ export default function WorkerProfile() {
       </div>
 
       {/* Profile hero */}
-      <div className="mb-6 flex flex-wrap items-stretch justify-between gap-5 rounded-2xl bg-gradient-to-r from-stone-900 to-stone-800 px-6 py-7 sm:px-7 sm:py-8">
+      <div className="mb-6 flex flex-wrap items-stretch justify-between gap-5 rounded-2xl bg-gradient-to-r from-[#553421] to-[#80502F] px-6 py-7 sm:px-7 sm:py-8">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-5">
           <div ref={photoPickerRef} className="group relative shrink-0">
             {workerProfile.photo ? (
@@ -280,9 +443,9 @@ export default function WorkerProfile() {
                       <img
                         src={avatar.src}
                         alt=""
-                        className={`h-14 w-14 rounded-full object-cover transition-shadow hover:shadow-[0_0_0_2px_white,0_0_0_4px_#5E3122] ${
+                        className={`h-14 w-14 rounded-full object-cover transition-shadow hover:shadow-[0_0_0_2px_white,0_0_0_4px_#553421] ${
                           workerProfile.photo === avatar.src
-                            ? "shadow-[0_0_0_2px_white,0_0_0_4px_#5E3122]"
+                            ? "shadow-[0_0_0_2px_white,0_0_0_4px_#553421]"
                             : ""
                         }`}
                       />
@@ -295,7 +458,7 @@ export default function WorkerProfile() {
                 <button
                   type="button"
                   onClick={() => photoInputRef.current?.click()}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm font-medium text-stone-800 transition-colors hover:border-[#5E3122] hover:text-[#5E3122] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5E3122]"
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm font-medium text-stone-800 transition-colors hover:border-[#553421] hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -444,6 +607,7 @@ export default function WorkerProfile() {
             editing={editing === "basic"}
             onSave={saveEdit}
             onCancel={() => setEditing(null)}
+            error={editing === "basic" ? editError : ""}
           >
             {editing === "basic" ? (
               <div className="grid sm:grid-cols-2 gap-4">
@@ -458,6 +622,7 @@ export default function WorkerProfile() {
                 </Field>
                 <Field label="Professional title">
                   <input
+                    maxLength={80}
                     value={tempData.professionalTitle}
                     onChange={(e) =>
                       setTempData((p: any) => ({
@@ -471,6 +636,8 @@ export default function WorkerProfile() {
                 </Field>
                 <Field label="Phone">
                   <input
+                    type="tel"
+                    autoComplete="tel"
                     value={tempData.phone}
                     onChange={(e) =>
                       setTempData((p: any) => ({ ...p, phone: e.target.value }))
@@ -533,6 +700,7 @@ export default function WorkerProfile() {
                       setTempData((p: any) => ({ ...p, bio: e.target.value }))
                     }
                     rows={4}
+                    maxLength={600}
                     placeholder="Share a little about your experience, strengths, and the work you do best."
                     className="input-style min-h-28 resize-y"
                   />
@@ -584,24 +752,36 @@ export default function WorkerProfile() {
                   type="text"
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && skillInput.trim()) {
+                      event.preventDefault()
+                      const customSkill = skillInput.trim()
+                      const alreadyAdded = (tempData.skills ?? []).some(
+                        (skill: string) =>
+                          skill.toLowerCase() === customSkill.toLowerCase(),
+                      )
+                      if (!alreadyAdded) toggleSkill(customSkill)
+                      setSkillInput("")
+                    }
+                  }}
+                  aria-label="Search or add a skill"
                   placeholder="Search skills to add…"
                   className="input-style mb-3 w-full"
                 />
                 <div className="flex flex-wrap gap-2 mb-3">
                   {(tempData.skills ?? []).map((s: string) => (
-                    <span
+                    <button
                       key={s}
-                      className="text-sm px-3 py-1.5 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1"
+                      type="button"
+                      onClick={() => toggleSkill(s)}
+                      aria-label={`Remove skill ${s}`}
+                      className="text-sm px-3 py-1.5 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1 hover:bg-primary-100"
                     >
                       {s}
-                      <button
-                        type="button"
-                        onClick={() => toggleSkill(s)}
-                        className="text-primary-ink/60 hover:text-primary-ink font-bold"
-                      >
+                      <span aria-hidden="true" className="font-bold">
                         ×
-                      </button>
-                    </span>
+                      </span>
+                    </button>
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -618,6 +798,26 @@ export default function WorkerProfile() {
                       + {s}
                     </button>
                   ))}
+                  {skillInput.trim() &&
+                    !ALL_SKILLS.some(
+                      (skill) =>
+                        skill.toLowerCase() === skillInput.trim().toLowerCase(),
+                    ) &&
+                    !(tempData.skills ?? []).some(
+                      (skill: string) =>
+                        skill.toLowerCase() === skillInput.trim().toLowerCase(),
+                    ) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          toggleSkill(skillInput.trim())
+                          setSkillInput("")
+                        }}
+                        className="text-sm px-3 py-1.5 bg-primary-50 text-primary-ink rounded-full border border-primary-100 hover:bg-primary-100"
+                      >
+                        + Add “{skillInput.trim()}”
+                      </button>
+                    )}
                 </div>
               </div>
             ) : (
@@ -654,52 +854,143 @@ export default function WorkerProfile() {
             editing={editing === "qualifications"}
             onSave={saveEdit}
             onCancel={() => setEditing(null)}
+            error={editing === "qualifications" ? editError : ""}
           >
             {editing === "qualifications" ? (
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Qualification">
-                  <input
-                    value={tempData.degree}
-                    onChange={(e) =>
-                      setTempData((p: any) => ({
-                        ...p,
-                        degree: e.target.value,
-                      }))
-                    }
-                    className="input-style"
-                  />
-                </Field>
-                <Field label="Field">
-                  <input
-                    value={tempData.field}
-                    onChange={(e) =>
-                      setTempData((p: any) => ({ ...p, field: e.target.value }))
-                    }
-                    className="input-style"
-                  />
-                </Field>
-                <Field label="Institution">
-                  <input
-                    value={tempData.institution}
-                    onChange={(e) =>
-                      setTempData((p: any) => ({
-                        ...p,
-                        institution: e.target.value,
-                      }))
-                    }
-                    className="input-style"
-                  />
-                </Field>
-                <Field label="Year">
-                  <input
-                    type="number"
-                    value={tempData.year}
-                    onChange={(e) =>
-                      setTempData((p: any) => ({ ...p, year: e.target.value }))
-                    }
-                    className="input-style"
-                  />
-                </Field>
+              <div className="space-y-4">
+                {(tempData.qualifications as Qualification[]).map(
+                  (qualification, index) => (
+                    <div
+                      key={qualification.id}
+                      className="relative rounded-xl border border-stone-200 bg-stone-50/70 p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <p className="text-sm font-semibold text-stone-800">
+                          Qualification {index + 1}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTempData((previous: any) => ({
+                              ...previous,
+                              qualifications: previous.qualifications.filter(
+                                (item: Qualification) =>
+                                  item.id !== qualification.id,
+                              ),
+                            }))
+                          }
+                          aria-label={`Remove qualification ${index + 1}`}
+                          className="rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Field label="Qualification">
+                          <input
+                            value={qualification.degree}
+                            onChange={(event) =>
+                              setTempData((previous: any) => ({
+                                ...previous,
+                                qualifications: previous.qualifications.map(
+                                  (item: Qualification) =>
+                                    item.id === qualification.id
+                                      ? { ...item, degree: event.target.value }
+                                      : item,
+                                ),
+                              }))
+                            }
+                            className="input-style"
+                            placeholder="e.g. Diploma in Electrical Engineering"
+                          />
+                        </Field>
+                        <Field label="Field of study">
+                          <input
+                            value={qualification.field}
+                            onChange={(event) =>
+                              setTempData((previous: any) => ({
+                                ...previous,
+                                qualifications: previous.qualifications.map(
+                                  (item: Qualification) =>
+                                    item.id === qualification.id
+                                      ? { ...item, field: event.target.value }
+                                      : item,
+                                ),
+                              }))
+                            }
+                            className="input-style"
+                            placeholder="e.g. Electrical"
+                          />
+                        </Field>
+                        <Field label="Institution">
+                          <input
+                            value={qualification.institution}
+                            onChange={(event) =>
+                              setTempData((previous: any) => ({
+                                ...previous,
+                                qualifications: previous.qualifications.map(
+                                  (item: Qualification) =>
+                                    item.id === qualification.id
+                                      ? {
+                                          ...item,
+                                          institution: event.target.value,
+                                        }
+                                      : item,
+                                ),
+                              }))
+                            }
+                            className="input-style"
+                            placeholder="School or training provider"
+                          />
+                        </Field>
+                        <Field label="Completion year">
+                          <input
+                            type="number"
+                            min="1900"
+                            max={new Date().getFullYear()}
+                            value={qualification.year || ""}
+                            onChange={(event) =>
+                              setTempData((previous: any) => ({
+                                ...previous,
+                                qualifications: previous.qualifications.map(
+                                  (item: Qualification) =>
+                                    item.id === qualification.id
+                                      ? {
+                                          ...item,
+                                          year: Number(event.target.value),
+                                        }
+                                      : item,
+                                ),
+                              }))
+                            }
+                            className="input-style"
+                          />
+                        </Field>
+                      </div>
+                    </div>
+                  ),
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTempData((previous: any) => ({
+                      ...previous,
+                      qualifications: [
+                        ...previous.qualifications,
+                        {
+                          id: `q-${Date.now()}`,
+                          degree: "",
+                          institution: "",
+                          year: new Date().getFullYear(),
+                          field: "",
+                        },
+                      ],
+                    }))
+                  }
+                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50"
+                >
+                  + Add another qualification
+                </button>
               </div>
             ) : workerProfile.qualifications.length > 0 ? (
               <div className="space-y-3">
@@ -736,55 +1027,142 @@ export default function WorkerProfile() {
             editing={editing === "experience"}
             onSave={saveEdit}
             onCancel={() => setEditing(null)}
+            error={editing === "experience" ? editError : ""}
           >
             {editing === "experience" ? (
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Role">
-                  <input
-                    value={tempData.title}
-                    onChange={(e) =>
-                      setTempData((p: any) => ({ ...p, title: e.target.value }))
-                    }
-                    className="input-style"
-                  />
-                </Field>
-                <Field label="Company">
-                  <input
-                    value={tempData.company}
-                    onChange={(e) =>
-                      setTempData((p: any) => ({
-                        ...p,
-                        company: e.target.value,
-                      }))
-                    }
-                    className="input-style"
-                  />
-                </Field>
-                <Field label="Duration">
-                  <input
-                    value={tempData.duration}
-                    onChange={(e) =>
-                      setTempData((p: any) => ({
-                        ...p,
-                        duration: e.target.value,
-                      }))
-                    }
-                    placeholder="e.g. 3 years"
-                    className="input-style"
-                  />
-                </Field>
-                <Field label="Description" className="sm:col-span-2">
-                  <textarea
-                    value={tempData.description}
-                    onChange={(e) =>
-                      setTempData((p: any) => ({
-                        ...p,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="input-style resize-none"
-                  />
-                </Field>
+              <div className="space-y-4">
+                {(tempData.experience as Experience[]).map(
+                  (experience, index) => (
+                    <div
+                      key={experience.id}
+                      className="rounded-xl border border-stone-200 bg-stone-50/70 p-4"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <p className="text-sm font-semibold text-stone-800">
+                          Experience {index + 1}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTempData((previous: any) => ({
+                              ...previous,
+                              experience: previous.experience.filter(
+                                (item: Experience) => item.id !== experience.id,
+                              ),
+                            }))
+                          }
+                          aria-label={`Remove experience ${index + 1}`}
+                          className="rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Field label="Role">
+                          <input
+                            value={experience.title}
+                            onChange={(event) =>
+                              setTempData((previous: any) => ({
+                                ...previous,
+                                experience: previous.experience.map(
+                                  (item: Experience) =>
+                                    item.id === experience.id
+                                      ? { ...item, title: event.target.value }
+                                      : item,
+                                ),
+                              }))
+                            }
+                            className="input-style"
+                            placeholder="e.g. Electrician"
+                          />
+                        </Field>
+                        <Field label="Company or client">
+                          <input
+                            value={experience.company}
+                            onChange={(event) =>
+                              setTempData((previous: any) => ({
+                                ...previous,
+                                experience: previous.experience.map(
+                                  (item: Experience) =>
+                                    item.id === experience.id
+                                      ? { ...item, company: event.target.value }
+                                      : item,
+                                ),
+                              }))
+                            }
+                            className="input-style"
+                            placeholder="Company or client name"
+                          />
+                        </Field>
+                        <Field label="Duration">
+                          <input
+                            value={experience.duration}
+                            onChange={(event) =>
+                              setTempData((previous: any) => ({
+                                ...previous,
+                                experience: previous.experience.map(
+                                  (item: Experience) =>
+                                    item.id === experience.id
+                                      ? {
+                                          ...item,
+                                          duration: event.target.value,
+                                        }
+                                      : item,
+                                ),
+                              }))
+                            }
+                            placeholder="e.g. 2021–2024 or 3 years"
+                            className="input-style"
+                          />
+                        </Field>
+                        <Field label="What you did" className="sm:col-span-2">
+                          <textarea
+                            value={experience.description}
+                            onChange={(event) =>
+                              setTempData((previous: any) => ({
+                                ...previous,
+                                experience: previous.experience.map(
+                                  (item: Experience) =>
+                                    item.id === experience.id
+                                      ? {
+                                          ...item,
+                                          description: event.target.value,
+                                        }
+                                      : item,
+                                ),
+                              }))
+                            }
+                            rows={3}
+                            maxLength={800}
+                            placeholder="Describe your responsibilities, tools, or results."
+                            className="input-style resize-y"
+                          />
+                        </Field>
+                      </div>
+                    </div>
+                  ),
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTempData((previous: any) => ({
+                      ...previous,
+                      experience: [
+                        ...previous.experience,
+                        {
+                          id: `e-${Date.now()}`,
+                          title: "",
+                          company: "",
+                          duration: "",
+                          description: "",
+                        },
+                      ],
+                    }))
+                  }
+                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50"
+                >
+                  + Add another role
+                </button>
               </div>
             ) : workerProfile.experience.length > 0 ? (
               <div className="space-y-4">
@@ -828,7 +1206,7 @@ export default function WorkerProfile() {
               <div className="space-y-4">
                 {workerProfile.workHistory.map((wh, i) => (
                   <div
-                    key={i}
+                    key={wh.jobId}
                     className="pb-4 border-b border-stone-100 last:border-0 last:pb-0"
                   >
                     <p className="text-base font-normal text-stone-900 line-clamp-1">
@@ -869,65 +1247,227 @@ export default function WorkerProfile() {
           </div>
 
           {/* Availability */}
-          <div className="min-h-52 rounded-2xl border border-stone-200 bg-white p-5">
-            <h3 className="mb-3 font-sans text-xl font-semibold tracking-tight text-stone-900">
-              Available Dates
+          <div className="rounded-2xl border border-stone-200 bg-white p-5">
+            <h3 className="font-sans text-xl font-semibold tracking-tight text-stone-900">
+              Availability
             </h3>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="date"
-                value={dateInput}
-                onChange={(e) => setDateInput(e.target.value)}
-                className="input-style"
-              />
-              <button
-                onClick={() => {
-                  if (
-                    !dateInput ||
-                    workerProfile.availableDates.includes(dateInput)
-                  )
-                    return
-                  updateWorkerProfile({
-                    availableDates: [
-                      ...workerProfile.availableDates,
-                      dateInput,
-                    ].sort(),
-                  })
-                  showProfileUpdate("Your available dates were updated.")
-                  setDateInput("")
-                }}
-                className="rounded-lg bg-primary px-3 py-2 text-xs font-normal text-white transition-colors hover:bg-primary-dark"
-              >
-                Add
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {workerProfile.availableDates.map((d) => (
+            <p className="mt-1 text-sm leading-relaxed text-stone-500">
+              Add regular weekly hours and optional dates when you can take
+              work. Matching jobs use your weekly hours.
+            </p>
+
+            <div className="mt-4 rounded-xl bg-stone-50 p-3.5">
+              <h4 className="text-sm font-semibold text-stone-800">
+                Weekly hours
+              </h4>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <label className="col-span-2 text-xs font-medium text-stone-600">
+                  Day
+                  <select
+                    value={availabilityDay}
+                    onChange={(event) =>
+                      setAvailabilityDay(event.target.value as Weekday)
+                    }
+                    className="input-style mt-1"
+                  >
+                    {weekdays.map((day) => (
+                      <option key={day.value} value={day.value}>
+                        {day.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs font-medium text-stone-600">
+                  From
+                  <input
+                    type="time"
+                    value={availabilityStart}
+                    onChange={(event) =>
+                      setAvailabilityStart(event.target.value)
+                    }
+                    className="input-style mt-1"
+                  />
+                </label>
+                <label className="text-xs font-medium text-stone-600">
+                  Until
+                  <input
+                    type="time"
+                    value={availabilityEnd}
+                    onChange={(event) => setAvailabilityEnd(event.target.value)}
+                    className="input-style mt-1"
+                  />
+                </label>
+              </div>
+              {availabilityError && (
+                <p role="alert" className="mt-2 text-xs text-red-700">
+                  {availabilityError}
+                </p>
+              )}
+              <div className="mt-3 flex gap-2">
+                {editingAvailabilityId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingAvailabilityId(null)
+                      setAvailabilityError("")
+                      setAvailabilityDay("monday")
+                      setAvailabilityStart("18:00")
+                      setAvailabilityEnd("21:00")
+                    }}
+                    className="rounded-lg border border-stone-300 px-3 py-2.5 text-sm font-semibold text-stone-700 hover:bg-white"
+                  >
+                    Cancel
+                  </button>
+                )}
                 <button
-                  key={d}
-                  onClick={() => {
-                    updateWorkerProfile({
-                      availableDates: workerProfile.availableDates.filter(
-                        (date) => date !== d,
-                      ),
-                    })
-                    showProfileUpdate("Your available dates were updated.")
-                  }}
-                  className="text-sm px-3 py-1.5 bg-teal-50 text-teal rounded-full border border-teal-100 font-mono-data"
-                  title="Remove date"
+                  type="button"
+                  onClick={addWeeklyAvailability}
+                  className="flex-1 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
                 >
-                  {new Date(d).toLocaleDateString("en-NP", {
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {editingAvailabilityId ? "Save changes" : "Add weekly hours"}
                 </button>
-              ))}
+              </div>
             </div>
-            {!workerProfile.availableDates.length && (
-              <p className="mt-2 text-base leading-relaxed text-stone-600">
-                Choose dates when you’re available for work.
+
+            {(workerProfile.weeklyAvailability ?? []).length > 0 ? (
+              <ul
+                className="mt-3 space-y-2"
+                aria-label="Weekly availability schedule"
+              >
+                {(workerProfile.weeklyAvailability ?? []).map((slot) => (
+                  <li
+                    key={slot.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm"
+                  >
+                    <span className="font-medium text-stone-700">
+                      {weekdays.find((day) => day.value === slot.day)?.label}:{" "}
+                      <span className="font-normal text-stone-500">
+                        {slot.startTime}–{slot.endTime}
+                      </span>
+                    </span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingAvailabilityId(slot.id)
+                          setAvailabilityDay(slot.day)
+                          setAvailabilityStart(slot.startTime)
+                          setAvailabilityEnd(slot.endTime)
+                          setAvailabilityError("")
+                        }}
+                        aria-label={`Edit ${slot.day} ${slot.startTime} to ${slot.endTime}`}
+                        className="rounded-md px-2 py-1 text-xs font-semibold text-primary-ink hover:bg-primary-50"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateWorkerProfile({
+                            weeklyAvailability: (
+                              workerProfile.weeklyAvailability ?? []
+                            ).filter((item) => item.id !== slot.id),
+                          })
+                          if (editingAvailabilityId === slot.id)
+                            setEditingAvailabilityId(null)
+                          showProfileUpdate(
+                            "Your weekly availability was updated.",
+                          )
+                        }}
+                        aria-label={`Remove ${slot.day} ${slot.startTime} to ${slot.endTime}`}
+                        className="rounded-md px-2 py-1 text-xs font-semibold text-stone-500 hover:bg-red-50 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 rounded-lg border border-dashed border-stone-300 px-3 py-3 text-sm text-stone-500">
+                No weekly hours saved yet.
               </p>
             )}
+
+            <div className="mt-5 border-t border-stone-100 pt-4">
+              <h4 className="text-sm font-semibold text-stone-800">
+                Specific available dates
+              </h4>
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="date"
+                  min={todayInKathmandu}
+                  value={dateInput}
+                  onChange={(event) => setDateInput(event.target.value)}
+                  aria-label="Add an available date"
+                  className="input-style min-w-0"
+                />
+                <button
+                  type="button"
+                  disabled={
+                    !dateInput ||
+                    dateInput < todayInKathmandu ||
+                    workerProfile.availableDates.includes(dateInput)
+                  }
+                  onClick={() => {
+                    if (
+                      !dateInput ||
+                      dateInput < todayInKathmandu ||
+                      workerProfile.availableDates.includes(dateInput)
+                    )
+                      return
+                    updateWorkerProfile({
+                      availableDates: [
+                        ...workerProfile.availableDates,
+                        dateInput,
+                      ].sort(),
+                    })
+                    showProfileUpdate("Your available dates were updated.")
+                    setDateInput("")
+                  }}
+                  className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Add
+                </button>
+              </div>
+              {workerProfile.availableDates.length ? (
+                <ul
+                  className="mt-3 flex flex-wrap gap-2"
+                  aria-label="Specific available dates"
+                >
+                  {workerProfile.availableDates.map((date) => (
+                    <li key={date}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateWorkerProfile({
+                            availableDates: workerProfile.availableDates.filter(
+                              (item) => item !== date,
+                            ),
+                          })
+                          showProfileUpdate(
+                            "Your available dates were updated.",
+                          )
+                        }}
+                        className="rounded-full border border-primary-100 bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-ink hover:border-primary"
+                        aria-label={`Remove available date ${date}`}
+                      >
+                        {new Date(`${date}T12:00:00`).toLocaleDateString(
+                          "en-NP",
+                          { month: "short", day: "numeric" },
+                        )}{" "}
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-xs text-stone-500">
+                  Use these for one-off dates; weekly hours remain your regular
+                  schedule.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -941,6 +1481,7 @@ function Section({
   editing,
   onSave,
   onCancel,
+  error = "",
   children,
   editable = true,
 }: {
@@ -949,6 +1490,7 @@ function Section({
   editing: boolean
   onSave: () => void
   onCancel: () => void
+  error?: string
   children: React.ReactNode
   editable?: boolean
 }) {
@@ -998,6 +1540,14 @@ function Section({
           </div>
         )}
       </div>
+      {editing && error && (
+        <p
+          role="alert"
+          className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
+          {error}
+        </p>
+      )}
       {children}
     </div>
   )
@@ -1023,12 +1573,19 @@ function Field({
   children: React.ReactNode
   className?: string
 }) {
+  const fieldId = useId()
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ id?: string }>, { id: fieldId })
+    : children
   return (
     <div className={className}>
-      <label className="mb-1.5 block text-base font-medium text-stone-700">
+      <label
+        htmlFor={fieldId}
+        className="mb-1.5 block text-base font-medium text-stone-700"
+      >
         {label}
       </label>
-      {children}
+      {control}
     </div>
   )
 }

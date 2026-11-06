@@ -109,7 +109,7 @@ export default function JobCard({ job, compact = false }: Props) {
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#5E3122"
+                  stroke="#553421"
                   strokeWidth="3"
                   className="w-2.5 h-2.5"
                 >
@@ -123,14 +123,16 @@ export default function JobCard({ job, compact = false }: Props) {
 
       {/* Category + status */}
       <div className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm font-medium text-stone-900">
-        <span>{cat.label}</span>
-        <span aria-hidden="true" className="text-[#5E3122]">
+        <span>
+          {isExternal ? job.externalCategory || "Remote role" : cat.label}
+        </span>
+        <span aria-hidden="true" className="text-[#553421]">
           ·
         </span>
         <span>{job.employmentType || workTypeLabel[job.workType]}</span>
         {isExternal && (
           <>
-            <span aria-hidden="true" className="text-[#5E3122]">
+            <span aria-hidden="true" className="text-[#553421]">
               ·
             </span>
             <span>External Opportunity</span>
@@ -138,7 +140,7 @@ export default function JobCard({ job, compact = false }: Props) {
         )}
         {job.status === "filled" && (
           <>
-            <span aria-hidden="true" className="text-[#5E3122]">
+            <span aria-hidden="true" className="text-[#553421]">
               ·
             </span>
             <span>Filled</span>
@@ -197,7 +199,10 @@ export default function JobCard({ job, compact = false }: Props) {
             <polyline points="12 6 12 12 16 14" />
           </svg>
           <span className="text-sm text-stone-700">
-            {job.duration || job.seniority || "Details on source"}
+            {job.duration ||
+              (job.seniority
+                ? `Seniority: ${job.seniority}`
+                : "Details on source")}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -229,21 +234,39 @@ export default function JobCard({ job, compact = false }: Props) {
       {/* Skills */}
       {!compact && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {job.skillsRequired.slice(0, 3).map((skill) => (
-            <button
-              key={skill}
-              onClick={(event) => {
-                event.stopPropagation()
-                browseSkill(skill)
-              }}
-              className="min-h-8 text-[13px] px-2.5 py-1 bg-stone-100 text-stone-800 rounded-full border border-stone-200 hover:border-primary hover:text-primary-ink"
-            >
-              {skill}
-            </button>
-          ))}
-          {job.skillsRequired.length > 3 && (
+          {(isExternal
+            ? (job.externalCategories ?? []).slice(0, 3)
+            : job.skillsRequired.slice(0, 3)
+          ).map((skill) =>
+            isExternal ? (
+              <span
+                key={skill}
+                className="min-h-8 rounded-full border border-stone-200 bg-stone-100 px-2.5 py-1 text-[13px] text-stone-800"
+              >
+                {skill}
+              </span>
+            ) : (
+              <button
+                key={skill}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  browseSkill(skill)
+                }}
+                className="min-h-8 rounded-full border border-stone-200 bg-stone-100 px-2.5 py-1 text-[13px] text-stone-800 hover:border-primary hover:text-primary-ink"
+              >
+                {skill}
+              </button>
+            ),
+          )}
+          {(isExternal
+            ? (job.externalCategories?.length ?? 0)
+            : job.skillsRequired.length) > 3 && (
             <span className="text-[13px] px-2.5 py-1 bg-stone-100 text-stone-700 rounded-full">
-              +{job.skillsRequired.length - 3} more
+              +
+              {(isExternal
+                ? (job.externalCategories?.length ?? 0)
+                : job.skillsRequired.length) - 3}{" "}
+              more
             </span>
           )}
         </div>
@@ -274,8 +297,8 @@ export default function JobCard({ job, compact = false }: Props) {
           {isExternal ? (
             <span className="text-[13px] text-stone-600 font-mono-data">
               {job.publishedDate
-                ? `Published ${new Date(job.publishedDate).toLocaleDateString("en-NP", { month: "short", day: "numeric" })}`
-                : "Published date not listed"}
+                ? `Updated ${new Date(job.publishedDate).toLocaleDateString("en-NP", { month: "short", day: "numeric" })}`
+                : "Update date not listed"}
             </span>
           ) : (
             <>

@@ -17,6 +17,11 @@ async function fetchAiService(
   path: string,
   options: RequestInit,
 ): Promise<Response> {
+  const timeoutSignal = AbortSignal.timeout(35_000)
+  const requestSignal = options.signal
+    ? AbortSignal.any([options.signal, timeoutSignal])
+    : timeoutSignal
+  const requestOptions = { ...options, signal: requestSignal }
   const configured = (import.meta.env.VITE_SHRAM_AI_API_URL || "").replace(
     /\/$/,
     "",
@@ -28,11 +33,14 @@ async function fetchAiService(
   let lastError: unknown
   for (const url of candidateUrls) {
     try {
-      const response = await fetch(url, options)
+      const response = await fetch(url, requestOptions)
       return response
     } catch (err) {
       lastError = err
     }
+  }
+  if (timeoutSignal.aborted && !options.signal?.aborted) {
+    throw new Error("Shram AI took too long to respond. Please try again.")
   }
   throw lastError instanceof Error
     ? lastError

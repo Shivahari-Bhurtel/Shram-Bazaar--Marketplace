@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, type FormEvent } from "react"
 import { useApp } from "../../store/AppContext"
-import JobCard from "../../components/JobCard"
+import JobListRow from "../../components/JobListRow"
 import { DISTRICTS, ALL_SKILLS } from "../../data/mockData"
 import { searchHimalayasJobs } from "../../services/himalayas"
 import type { JobCategory, WorkType } from "../../types"
@@ -21,6 +21,13 @@ const seniorityForApi: Record<string, string> = {
   manager: "Manager",
 }
 
+const sortForHimalayas = (sort: SortOption) => {
+  if (sort === "newest") return "recent" as const
+  if (sort === "payment-high") return "salaryDesc" as const
+  if (sort === "payment-low") return "salaryAsc" as const
+  return "relevant" as const
+}
+
 export default function JobDiscovery() {
   const { state, setExternalJobs, browseSkill } = useApp()
   const { jobs, externalJobs } = state
@@ -33,7 +40,7 @@ export default function JobDiscovery() {
   const [filterCategory, setFilterCategory] = useState<JobCategory | "">("")
   const [filterWorkType, setFilterWorkType] = useState<WorkType | "">("")
   const [filterEmploymentType, setFilterEmploymentType] = useState("")
-  const [filterCountry, setFilterCountry] = useState("")
+  const [filterCountry, setFilterCountry] = useState("Nepal")
   const [filterSeniority, setFilterSeniority] = useState("")
   const [filterPayMin, setFilterPayMin] = useState("")
   const [filterSkill, setFilterSkill] = useState("")
@@ -89,7 +96,7 @@ export default function JobDiscovery() {
         employmentType: employmentTypeForApi[filterEmploymentType] || "",
         country: filterCountry,
         seniority: seniorityForApi[filterSeniority] || "",
-        sort: sortBy === "newest" ? "recent" : "relevant",
+        sort: sortForHimalayas(sortBy),
         page: 1,
       },
       controller.signal,
@@ -97,7 +104,7 @@ export default function JobDiscovery() {
       .then((result) => {
         setExternalJobs(result.jobs)
         setExternalPage(result.page)
-        setExternalHasMore(result.jobs.length > 0)
+        setExternalHasMore(result.hasMore)
       })
       .catch((error) => {
         if (error.name !== "AbortError") {
@@ -125,7 +132,7 @@ export default function JobDiscovery() {
   ])
 
   const filtered = useMemo(() => {
-    return activeJobs
+    return allJobs
       .filter((job) => {
         if (submittedSearch) {
           const s = submittedSearch.toLowerCase()
@@ -134,7 +141,10 @@ export default function JobDiscovery() {
             !job.providerName.toLowerCase().includes(s) &&
             !job.location.toLowerCase().includes(s) &&
             !job.description.toLowerCase().includes(s) &&
-            !job.skillsRequired.some((sk) => sk.toLowerCase().includes(s))
+            !job.skillsRequired.some((sk) => sk.toLowerCase().includes(s)) &&
+            !job.externalCategories?.some((category) =>
+              category.toLowerCase().includes(s),
+            )
           ) {
             return false
           }
@@ -164,7 +174,10 @@ export default function JobDiscovery() {
             s.toLowerCase().includes(filterSkill.toLowerCase()),
           ) &&
           !job.description.toLowerCase().includes(filterSkill.toLowerCase()) &&
-          !job.title.toLowerCase().includes(filterSkill.toLowerCase())
+          !job.title.toLowerCase().includes(filterSkill.toLowerCase()) &&
+          !job.externalCategories?.some((category) =>
+            category.toLowerCase().includes(filterSkill.toLowerCase()),
+          )
         )
           return false
         if (filterDate && !job.externalSource && job.date !== filterDate)
@@ -173,8 +186,30 @@ export default function JobDiscovery() {
       })
       .sort((a, b) => {
         if (sortBy === "match") return (b.matchScore ?? 0) - (a.matchScore ?? 0)
-        if (sortBy === "payment-high") return b.payment - a.payment
-        if (sortBy === "payment-low") return a.payment - b.payment
+        if (sortBy === "payment-high" || sortBy === "payment-low") {
+          if (a.externalSource !== b.externalSource)
+            return a.externalSource ? 1 : -1
+          if (a.externalSource && b.externalSource) {
+            if (
+              a.externalSalaryCurrency !== b.externalSalaryCurrency ||
+              a.externalSalaryPeriod !== b.externalSalaryPeriod
+            )
+              return 0
+            const aPay =
+              sortBy === "payment-high"
+                ? (a.externalSalaryMax ?? a.externalSalaryMin)
+                : (a.externalSalaryMin ?? a.externalSalaryMax)
+            const bPay =
+              sortBy === "payment-high"
+                ? (b.externalSalaryMax ?? b.externalSalaryMin)
+                : (b.externalSalaryMin ?? b.externalSalaryMax)
+            if (aPay === undefined || bPay === undefined) return 0
+            return sortBy === "payment-high" ? bPay - aPay : aPay - bPay
+          }
+          return sortBy === "payment-high"
+            ? b.payment - a.payment
+            : a.payment - b.payment
+        }
         if (sortBy === "newest") return b.postedDate.localeCompare(a.postedDate)
         if (sortBy === "deadline") return a.deadline.localeCompare(b.deadline)
         return 0
@@ -196,7 +231,7 @@ export default function JobDiscovery() {
     filterCategory,
     filterWorkType,
     filterEmploymentType,
-    filterCountry,
+    filterCountry !== "Nepal" ? filterCountry : "",
     filterSeniority,
     filterPayMin,
     filterSkill,
@@ -210,7 +245,7 @@ export default function JobDiscovery() {
     setFilterCategory("")
     setFilterWorkType("")
     setFilterEmploymentType("")
-    setFilterCountry("")
+    setFilterCountry("Nepal")
     setFilterSeniority("")
     setFilterPayMin("")
     setFilterSkill("")
@@ -237,14 +272,14 @@ export default function JobDiscovery() {
         employmentType: employmentTypeForApi[filterEmploymentType] || "",
         country: filterCountry,
         seniority: seniorityForApi[filterSeniority] || "",
-        sort: sortBy === "newest" ? "recent" : "relevant",
+        sort: sortForHimalayas(sortBy),
         page: nextPage,
       })
       const existingIds = new Set(externalJobs.map((job) => job.id))
       const nextJobs = result.jobs.filter((job) => !existingIds.has(job.id))
       setExternalJobs([...externalJobs, ...nextJobs])
       setExternalPage(nextPage)
-      setExternalHasMore(result.jobs.length > 0 && nextJobs.length > 0)
+      setExternalHasMore(result.hasMore)
       setExternalError("")
     } catch (error) {
       setExternalError(
@@ -258,12 +293,12 @@ export default function JobDiscovery() {
   }
 
   return (
-    <div className="relative isolate w-full max-w-[1800px] bg-cream px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="relative isolate w-full max-w-none bg-cream px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <img
         aria-hidden="true"
         alt=""
         src="/images/worker/nepali-temple-skyline.svg"
-        className="pointer-events-none fixed left-1/2 top-[calc(50%+2rem)] z-0 w-[min(94vw,72rem)] -translate-x-1/2 -translate-y-1/2 opacity-[0.16]"
+        className="pointer-events-none fixed bottom-0 left-1/2 z-0 w-[min(100vw,90rem)] -translate-x-1/2 opacity-[0.2]"
       />
       <div className="relative z-10">
         <div className="mb-6">
@@ -286,14 +321,14 @@ export default function JobDiscovery() {
             onSubmit={submitSearch}
             className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap"
           >
-            <div className="group flex h-14 min-w-0 flex-1 items-center gap-3 rounded-xl border border-stone-300 bg-white px-5 shadow-sm transition-all hover:border-stone-400 focus-within:border-[#8B5E3C] focus-within:ring-4 focus-within:ring-[#8B5E3C]/10 sm:min-w-[24rem]">
+            <div className="group flex h-14 min-w-0 flex-1 items-center gap-3 rounded-xl border border-stone-300 bg-white px-5 shadow-sm transition-all hover:border-stone-400 focus-within:border-[#80502F] focus-within:ring-4 focus-within:ring-[#80502F]/10 sm:min-w-[24rem]">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.8"
                 strokeLinecap="round"
-                className="h-[18px] w-[18px] shrink-0 text-stone-500 transition-colors group-focus-within:text-[#5E3122]"
+                className="h-[18px] w-[18px] shrink-0 text-stone-500 transition-colors group-focus-within:text-[#553421]"
                 aria-hidden="true"
               >
                 <circle cx="11" cy="11" r="8" />
@@ -316,7 +351,7 @@ export default function JobDiscovery() {
                   setSearch("")
                   setSubmittedSearch("")
                 }}
-                className="px-4 py-2.5 border border-stone-200 bg-white text-stone-600 rounded-xl text-sm font-medium hover:bg-stone-50 transition-colors"
+                className="rounded-xl border border-[#E4D3C3] bg-[#F8F3EE] px-4 py-2.5 text-sm font-semibold text-[#70472F] transition-colors hover:bg-[#F0E5DB]"
               >
                 Clear
               </button>
@@ -324,10 +359,10 @@ export default function JobDiscovery() {
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2.5 border rounded-xl text-sm font-medium flex items-center gap-2 transition-colors ${
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
                 activeFiltersCount > 0
-                  ? "bg-primary text-white border-primary"
-                  : "bg-white border-stone-200 text-stone-700 hover:border-stone-300"
+                  ? "border-[#D7BDA8] bg-[#E7D7C8] text-[#70472F]"
+                  : "border-[#E4D3C3] bg-[#F8F3EE] text-[#70472F] hover:bg-[#F0E5DB]"
               }`}
             >
               <svg
@@ -350,7 +385,7 @@ export default function JobDiscovery() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white text-stone-700"
+              className="rounded-xl border border-[#E4D3C3] bg-white px-3 py-2.5 text-sm text-[#454B52] transition-all focus:border-[#986744] focus:ring-2 focus:ring-[#986744]/20"
             >
               <option value="match">Best Match</option>
               <option value="payment-high">Highest Pay</option>
@@ -556,10 +591,26 @@ export default function JobDiscovery() {
             ))}
           </div>
         ) : filtered.length === 0 && activeFiltersCount > 0 ? (
-          <div className="bg-white border border-stone-200 rounded-2xl p-16 text-center">
-            <div className="text-4xl mb-4">🔍</div>
-            <h3 className="font-semibold text-stone-900 mb-2">No jobs found</h3>
-            <p className="text-stone-500 text-sm mb-4">
+          <div className="rounded-2xl border border-stone-200 bg-white px-6 py-14 text-center sm:px-12">
+            <span
+              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-ink"
+              aria-hidden="true"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-6 w-6"
+              >
+                <circle cx="10.8" cy="10.8" r="6.5" />
+                <path d="m15.6 15.6 4.6 4.6" />
+              </svg>
+            </span>
+            <h3 className="mb-2 font-semibold text-stone-900">No jobs found</h3>
+            <p className="mb-4 text-sm text-stone-500">
               Try adjusting your search or removing some filters.
             </p>
             <button
@@ -570,18 +621,18 @@ export default function JobDiscovery() {
             </button>
           </div>
         ) : filtered.length > 0 ? (
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="overflow-hidden rounded-2xl border border-[#DFE4E8] bg-white shadow-[0_8px_28px_-24px_rgba(28,28,28,0.3)]">
             {filtered.map((job) => (
-              <JobCard key={job.id} job={job} />
+              <JobListRow key={job.id} job={job} />
             ))}
           </div>
         ) : null}
-        {!externalLoading && externalHasMore && externalJobs.length > 0 && (
+        {!externalLoading && externalHasMore && (
           <div className="mt-6 text-center">
             <button
               onClick={loadMoreExternal}
               disabled={externalLoadingMore}
-              className="px-5 py-2.5 border border-stone-200 bg-white text-stone-700 text-sm font-medium rounded-xl hover:bg-stone-50 disabled:opacity-60"
+              className="rounded-xl border border-[#E4D3C3] bg-[#F0E5DB] px-5 py-2.5 text-sm font-semibold text-[#70472F] transition-colors hover:bg-[#E7D7C8] disabled:opacity-60"
             >
               {externalLoadingMore ? "Loading…" : "Load more external jobs"}
             </button>

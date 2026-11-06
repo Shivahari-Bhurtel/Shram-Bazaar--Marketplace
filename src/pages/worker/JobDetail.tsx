@@ -194,14 +194,31 @@ export default function JobDetail() {
 
           {/* Requirements */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6">
-            <h2 className="font-semibold text-stone-900 mb-4">Requirements</h2>
+            <h2 className="font-semibold text-stone-900 mb-4">
+              {isExternal ? "Role details" : "Requirements"}
+            </h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
-                  Skills Required
+                  {isExternal ? "Job categories" : "Skills Required"}
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {job.skillsRequired.length > 0 ? (
+                  {isExternal ? (
+                    job.externalCategories?.length ? (
+                      job.externalCategories.map((category) => (
+                        <span
+                          key={category}
+                          className="rounded-full border border-stone-200 bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700"
+                        >
+                          {category}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-sm text-stone-500">
+                        No categories listed.
+                      </p>
+                    )
+                  ) : job.skillsRequired.length > 0 ? (
                     job.skillsRequired.map((skill) => {
                       const workerHasIt = workerProfile?.skills.some(
                         (s) => s.toLowerCase() === skill.toLowerCase(),
@@ -222,7 +239,7 @@ export default function JobDetail() {
                     })
                   ) : (
                     <p className="text-sm text-stone-500">
-                      Skills are listed on the original posting.
+                      No specific skills listed.
                     </p>
                   )}
                 </div>
@@ -233,7 +250,8 @@ export default function JobDetail() {
                     Qualification
                   </h3>
                   <p className="text-sm text-stone-700">
-                    {job.qualificationRequired}
+                    {job.qualificationRequired ||
+                      (isExternal ? "See original listing" : "Not specified")}
                   </p>
                 </div>
                 <div>
@@ -241,7 +259,8 @@ export default function JobDetail() {
                     Experience
                   </h3>
                   <p className="text-sm text-stone-700">
-                    {job.experienceRequired}
+                    {job.experienceRequired ||
+                      (isExternal ? "See original listing" : "Not specified")}
                   </p>
                 </div>
               </div>
@@ -340,7 +359,7 @@ export default function JobDetail() {
                     ...(job.publishedDate
                       ? [
                           {
-                            label: "Published",
+                            label: "Updated",
                             value: new Date(
                               job.publishedDate,
                             ).toLocaleDateString("en-NP", {

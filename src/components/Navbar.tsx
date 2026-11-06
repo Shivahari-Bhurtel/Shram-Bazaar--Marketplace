@@ -67,7 +67,7 @@ export default function Navbar() {
                 aria-hidden="true"
               >
                 <span
-                  className="text-[1.75rem] font-semibold leading-[0.92] text-[#5E3122]"
+                  className="text-[1.75rem] font-semibold leading-[0.92] text-[#553421]"
                   style={{ fontFamily: "'Noto Serif Devanagari', serif" }}
                 >
                   श्रम

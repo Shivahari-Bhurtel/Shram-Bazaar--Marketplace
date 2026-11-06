@@ -28,6 +28,12 @@ export default function App() {
   const isProvider = currentUser?.role === "provider"
   const isWorkerAIChat = isWorker && currentPage === "chat"
   const isWorkerVoiceAssistant = isWorker && currentPage === "voice-assistant"
+  const workerTopSpacing =
+    isWorker && !isWorkerAIChat && !isWorkerVoiceAssistant
+      ? currentPage === "my-applications"
+        ? "lg:pt-0"
+        : "lg:pt-20"
+      : ""
   const showWorkerSidebar =
     isWorker &&
     !isWorkerVoiceAssistant &&
@@ -58,7 +64,7 @@ export default function App() {
       {showWorkerSidebar && <WorkerSidebar />}
       <main
         key={currentPage}
-        className={`page-enter ${showWorkerSidebar ? "lg:ml-60" : ""} ${isWorker && !isWorkerAIChat && !isWorkerVoiceAssistant ? "lg:pt-20" : ""}`}
+        className={`page-enter ${showWorkerSidebar ? "lg:ml-56" : ""} ${workerTopSpacing}`}
       >
         {/* Public pages */}
         {currentPage === "landing" && !isLoggedIn && <Landing />}

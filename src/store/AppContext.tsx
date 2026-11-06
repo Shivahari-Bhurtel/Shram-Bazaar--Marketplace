@@ -9,6 +9,7 @@ import {
 import type {
   Application,
   ApplicationStatus,
+  AvailabilitySlot,
   Job,
   KycDocumentType,
   Notification,
@@ -16,6 +17,7 @@ import type {
   Report,
   User,
   WorkerProfile,
+  Weekday,
 } from "../types"
 
 export type Page = "landing" | "login" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "settings" | "kyc-verification" | "provider-dashboard" | "provider-profile" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "chat" | "voice-assistant"
@@ -115,9 +117,84 @@ function loadData(): PersistedData {
 
 function experienceYears(profile: WorkerProfile) {
   return profile.experience.reduce((total, entry) => {
-    const values = entry.duration.match(/\d+/g)?.map(Number) || []
-    return total + (values.length ? Math.max(...values) : 1)
+    const duration = entry.duration.trim()
+    const dateRange = duration.match(
+      /(19\d{2}|20\d{2})\s*[-–—]\s*(19\d{2}|20\d{2}|present|current)/i,
+    )
+    if (dateRange) {
+      const endYear = /present|current/i.test(dateRange[2])
+        ? new Date().getFullYear()
+        : Number(dateRange[2])
+      return total + Math.max(0, endYear - Number(dateRange[1]))
+    }
+    const years = duration.match(/(\d+(?:\.\d+)?)\s*(?:years?|yrs?)/i)
+    if (years) return total + Number(years[1])
+    const months = duration.match(/(\d+(?:\.\d+)?)\s*(?:months?|mos?)/i)
+    if (months) return total + Number(months[1]) / 12
+    const value = duration.match(/\d+(?:\.\d+)?/)?.[0]
+    return total + (value ? Number(value) : 1)
   }, 0)
+}
+
+const weekdayNames: Weekday[] = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+]
+
+function minutesOfDay(value: string) {
+  const match = value.match(/^(\d{1,2}):(\d{2})$/)
+  if (!match) return null
+  const hours = Number(match[1])
+  const minutes = Number(match[2])
+  return hours <= 23 && minutes <= 59 ? hours * 60 + minutes : null
+}
+
+function availabilityMatch(job: Job, worker: WorkerProfile) {
+  const schedule = worker.weeklyAvailability ?? []
+  if (!schedule.length) {
+    const available =
+      worker.availability === "flexible" || worker.availability === job.workType
+    return {
+      score: available ? 15 : 5,
+      reason: `${worker.availability.replace("-", " ")} availability`,
+    }
+  }
+
+  const date = new Date(`${job.date}T12:00:00`)
+  const day = Number.isNaN(date.getTime()) ? null : weekdayNames[date.getDay()]
+  const jobStart = minutesOfDay(job.startTime)
+  const jobEnd = minutesOfDay(job.endTime)
+  if (!day || jobStart === null || jobEnd === null || jobEnd <= jobStart)
+    return { score: 0, reason: "Add valid job hours to compare your schedule" }
+
+  const daySlots: AvailabilitySlot[] = schedule.filter(
+    (slot) => slot.day === day,
+  )
+  const exact = daySlots.find((slot) => {
+    const start = minutesOfDay(slot.startTime)
+    const end = minutesOfDay(slot.endTime)
+    return start !== null && end !== null && start <= jobStart && end >= jobEnd
+  })
+  if (exact) {
+    return {
+      score: 15,
+      reason: `Matches your availability: ${day}, ${exact.startTime}–${exact.endTime}`,
+    }
+  }
+
+  const partial = daySlots.some((slot) => {
+    const start = minutesOfDay(slot.startTime)
+    const end = minutesOfDay(slot.endTime)
+    return start !== null && end !== null && start < jobEnd && end > jobStart
+  })
+  return partial
+    ? { score: 4, reason: `Partially overlaps your ${day} availability` }
+    : { score: 0, reason: `Outside your saved ${day} availability` }
 }
 
 function computeMatch(job: Job, worker: WorkerProfile) {
@@ -130,10 +207,7 @@ function computeMatch(job: Job, worker: WorkerProfile) {
     ? Math.round((matchingSkills.length / job.skillsRequired.length) * 40)
     : 40
   const locationScore = worker.district === job.district ? 20 : 0
-  const availabilityScore =
-    worker.availability === "flexible" || worker.availability === job.workType
-      ? 15
-      : 5
+  const availability = availabilityMatch(job, worker)
   const availableOnDate =
     worker.availableDates.length === 0 ||
     worker.availableDates.includes(job.date)
@@ -149,7 +223,7 @@ function computeMatch(job: Job, worker: WorkerProfile) {
       100,
       skillsScore +
         locationScore +
-        availabilityScore +
+        availability.score +
         durationScore +
         experienceScore,
     ),
@@ -158,7 +232,7 @@ function computeMatch(job: Job, worker: WorkerProfile) {
       locationScore
         ? `Location matches ${job.district}`
         : `Job is in ${job.district}; your district is ${worker.district}`,
-      `${worker.availability.replace("-", " ")} availability`,
+      availability.reason,
       availableOnDate
         ? "Available for the job date/duration"
         : "Job date is outside saved availability",

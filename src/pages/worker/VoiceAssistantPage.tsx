@@ -1,11 +1,9 @@
-import { useEffect, useState, type CSSProperties } from "react"
+import type { CSSProperties } from "react"
 import { useApp, type Page } from "../../store/AppContext"
+import { useLanguage } from "../../i18n/LanguageContext"
+import { useGeminiLiveVoice } from "../../hooks/useGeminiLiveVoice"
+import type { VoiceStatus } from "../../hooks/useGeminiLiveVoice"
 
-type VoiceState = "idle" | "listening" | "processing" | "speaking" | "finished"
-
-const sampleQuestion = "Can you help me find work near Pokhara?"
-const sampleAnswer =
-  "Of course! I can help you explore local opportunities based on your skills, location and availability."
 const returnPages: Page[] = [
   "worker-dashboard",
   "worker-profile",
@@ -28,24 +26,22 @@ function Waveform({ active = false }: { active?: boolean }) {
   )
 }
 
+const statusText: Record<VoiceStatus, string> = {
+  idle: "Ready when you are",
+  connecting: "Connecting to Shram Bazar AI…",
+  listening: "Listening…",
+  processing: "Thinking…",
+  speaking: "Shram Bazar AI is speaking",
+  disconnected: "Voice session disconnected",
+  error: "Voice assistant needs attention",
+}
+
 export default function VoiceAssistantPage() {
   const { navigate } = useApp()
-  const [voiceState, setVoiceState] = useState<VoiceState>("idle")
-  const [replayActive, setReplayActive] = useState(false)
-
-  useEffect(() => {
-    if (voiceState === "processing") {
-      const timer = window.setTimeout(() => setVoiceState("speaking"), 1500)
-      return () => window.clearTimeout(timer)
-    }
-    if (voiceState === "speaking") {
-      const timer = window.setTimeout(() => {
-        setVoiceState("finished")
-        setReplayActive(false)
-      }, 4200)
-      return () => window.clearTimeout(timer)
-    }
-  }, [voiceState])
+  const { language } = useLanguage()
+  const voice = useGeminiLiveVoice(language)
+  const active = ["listening", "processing", "speaking"].includes(voice.status)
+  const canStart = ["idle", "error", "disconnected"].includes(voice.status)
 
   const goBack = () => {
     let destination: Page = "worker-dashboard"
@@ -62,31 +58,11 @@ export default function VoiceAssistantPage() {
     navigate(destination)
   }
 
-  const startConversation = () => setVoiceState("listening")
-  const stopListening = () => setVoiceState("processing")
-  const stopSpeaking = () => {
-    setVoiceState("finished")
-    setReplayActive(false)
-  }
-  const startNewConversation = () => {
-    setVoiceState("idle")
-    setReplayActive(false)
-  }
-  const replayResponse = () => {
-    setReplayActive(true)
-    setVoiceState("speaking")
-  }
-
-  const statusText: Record<VoiceState, string> = {
-    idle: "Ready when you are",
-    listening: "Listening…",
-    processing: "Thinking…",
-    speaking: "Shram Bazar AI is speaking",
-    finished: "Conversation complete",
-  }
+  const startLabel =
+    voice.status === "disconnected" ? "Reconnect" : "Tap to speak"
 
   return (
-    <div className={`voice-assistant-page voice-state-${voiceState}`}>
+    <div className={`voice-assistant-page voice-state-${voice.status}`}>
       <header className="voice-assistant-header">
         <button
           type="button"
@@ -129,42 +105,36 @@ export default function VoiceAssistantPage() {
             <p className="voice-description">Echo</p>
           </div>
 
-          <div className={`voice-orb-stage voice-orb-stage-${voiceState}`}>
+          <div className={`voice-orb-stage voice-orb-stage-${voice.status}`}>
             <div className="voice-orb-halo voice-orb-halo-one" />
             <div className="voice-orb-halo voice-orb-halo-two" />
             <button
               type="button"
-              onClick={
-                voiceState === "idle"
-                  ? startConversation
-                  : voiceState === "listening"
-                    ? stopListening
-                    : voiceState === "speaking"
-                      ? stopSpeaking
-                      : undefined
-              }
+              onClick={() => {
+                if (canStart) void voice.start()
+                else if (voice.status === "speaking") voice.stopAudio()
+              }}
               disabled={
-                voiceState === "processing" || voiceState === "finished"
+                voice.status === "connecting" || voice.status === "processing"
               }
               aria-label={
-                voiceState === "idle"
-                  ? "Start voice assistant demo"
-                  : voiceState === "listening"
-                    ? "Stop listening"
-                    : voiceState === "speaking"
-                      ? "Stop response"
-                      : statusText[voiceState]
+                canStart
+                  ? startLabel
+                  : voice.status === "speaking"
+                    ? "Stop audio response"
+                    : statusText[voice.status]
               }
               className="voice-orb"
             >
               <span className="voice-orb-inner" />
-              {voiceState === "processing" ? (
+              {voice.status === "connecting" ||
+              voice.status === "processing" ? (
                 <span className="voice-thinking-dots" aria-hidden="true">
                   <i />
                   <i />
                   <i />
                 </span>
-              ) : voiceState === "speaking" ? (
+              ) : voice.status === "speaking" ? (
                 <Waveform active />
               ) : (
                 <svg
@@ -184,23 +154,35 @@ export default function VoiceAssistantPage() {
           </div>
 
           <div className="voice-state-copy" aria-live="polite">
-            <p className="voice-status">{statusText[voiceState]}</p>
+            <p className="voice-status">{statusText[voice.status]}</p>
             <p className="voice-helper">
-              {voiceState === "idle" &&
-                "Ask about jobs, skills, applications or opportunities."}
-              {voiceState === "listening" &&
-                "Demo mode — microphone connection will be added later."}
-              {voiceState === "processing" && "Preparing a sample response."}
-              {voiceState === "speaking" && sampleAnswer}
-              {voiceState === "finished" &&
-                "Your conversation is ready to review below."}
+              {voice.status === "idle" &&
+                "Ask about flexible work, your profile, applications or hiring."}
+              {voice.status === "connecting" &&
+                "Preparing a secure, temporary voice session."}
+              {voice.status === "listening" &&
+                "Speak naturally. English and Nepali are supported."}
+              {voice.status === "processing" &&
+                "Shram Bazar AI is preparing a reply."}
+              {voice.status === "speaking" &&
+                "Listen to the spoken reply or stop playback."}
+              {voice.status === "disconnected" &&
+                "Reconnect to continue your conversation."}
+              {voice.status === "error" &&
+                "Check microphone permission and voice service configuration."}
             </p>
           </div>
 
-          {voiceState === "idle" && (
+          {voice.error && (
+            <div className="voice-error-message" role="alert">
+              {voice.error}
+            </div>
+          )}
+
+          {canStart && (
             <button
               type="button"
-              onClick={startConversation}
+              onClick={() => void voice.start()}
               className="voice-primary-action"
             >
               <svg
@@ -212,48 +194,66 @@ export default function VoiceAssistantPage() {
                 strokeLinejoin="round"
                 aria-hidden="true"
               >
-                <rect x="9" y="3" width="6" height="12" rx="3" />
-                <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8" />
+                {voice.status === "disconnected" ? (
+                  <path d="M20 7v5h-5M4 17v-5h5m-4-1a7 7 0 0 1 12-4l3 3M4 13l3 3a7 7 0 0 0 12-4" />
+                ) : (
+                  <>
+                    <rect x="9" y="3" width="6" height="12" rx="3" />
+                    <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8" />
+                  </>
+                )}
               </svg>
-              Tap to speak
-            </button>
-          )}
-          {voiceState === "listening" && (
-            <button
-              type="button"
-              onClick={stopListening}
-              className="voice-primary-action voice-stop-action"
-            >
-              <span className="voice-stop-square" />
-              Stop listening
-            </button>
-          )}
-          {voiceState === "processing" && (
-            <div className="voice-processing-note">
-              <span className="voice-small-spinner" />
-              Preparing a sample response
-            </div>
-          )}
-          {voiceState === "speaking" && (
-            <button
-              type="button"
-              onClick={stopSpeaking}
-              className="voice-secondary-action"
-            >
-              Stop response
-            </button>
-          )}
-          {voiceState === "finished" && (
-            <button
-              type="button"
-              onClick={startNewConversation}
-              className="voice-primary-action"
-            >
-              Start a new conversation
+              {startLabel}
             </button>
           )}
 
-          {(voiceState === "finished" || replayActive) && (
+          {voice.status === "connecting" && (
+            <div className="voice-connecting-controls">
+              <div className="voice-processing-note">
+                <span className="voice-small-spinner" />
+                Connecting securely…
+              </div>
+              <button
+                type="button"
+                onClick={voice.disconnect}
+                className="voice-secondary-action"
+              >
+                Cancel connection
+              </button>
+            </div>
+          )}
+
+          {active && (
+            <div className="voice-session-controls" aria-label="Voice controls">
+              <button
+                type="button"
+                onClick={voice.toggleMute}
+                className="voice-secondary-action"
+                aria-pressed={voice.muted}
+              >
+                {voice.muted ? "Unmute microphone" : "Mute microphone"}
+              </button>
+              {voice.status === "speaking" && (
+                <button
+                  type="button"
+                  onClick={voice.stopAudio}
+                  className="voice-secondary-action"
+                >
+                  Stop audio
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={voice.disconnect}
+                className="voice-primary-action voice-stop-action"
+              >
+                <span className="voice-stop-square" />
+                Disconnect
+              </button>
+            </div>
+          )}
+
+          {voice.turns.length > 0 && (
             <section
               className="voice-transcript"
               aria-label="Conversation transcript"
@@ -265,9 +265,9 @@ export default function VoiceAssistantPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={startNewConversation}
-                  aria-label="Clear conversation"
-                  title="Clear conversation"
+                  onClick={voice.clearTranscript}
+                  aria-label="Clear conversation transcript"
+                  title="Clear conversation transcript"
                   className="voice-transcript-clear"
                 >
                   <svg
@@ -283,39 +283,22 @@ export default function VoiceAssistantPage() {
                   </svg>
                 </button>
               </div>
-              <article className="voice-transcript-message voice-user-message">
-                <span>You</span>
-                <p>{sampleQuestion}</p>
-                <time>Just now</time>
-              </article>
-              <article className="voice-transcript-message voice-ai-message">
-                <span>Shram Bazar AI</span>
-                <p>{sampleAnswer}</p>
-                <div className="voice-ai-message-footer">
-                  <time>Just now</time>
-                  <button
-                    type="button"
-                    onClick={replayResponse}
-                    aria-label="Replay response"
-                    title="Replay response"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M3 12a9 9 0 1 0 2.64-6.36L3 8" />
-                      <path d="M3 3v5h5" />
-                      <path d="m10 9 5 3-5 3V9Z" />
-                    </svg>
-                    Replay response
-                  </button>
+              {voice.turns.map((turn, index) => (
+                <div key={index}>
+                  {turn.user && (
+                    <article className="voice-transcript-message voice-user-message">
+                      <span>You</span>
+                      <p>{turn.user}</p>
+                    </article>
+                  )}
+                  {turn.assistant && (
+                    <article className="voice-transcript-message voice-ai-message">
+                      <span>Shram Bazar AI</span>
+                      <p>{turn.assistant}</p>
+                    </article>
+                  )}
                 </div>
-              </article>
+              ))}
             </section>
           )}
         </div>
