@@ -6,7 +6,7 @@ import { useDismissOnOutside } from "../hooks/useDismissOnOutside"
 import ConfirmDialog from "../components/ConfirmDialog"
 import ShramaAIMark from "../components/ShramaAIMark"
 
-const MAX_RESUME_BYTES = 10 * 1024 * 1024
+const MAX_RESUME_BYTES = 4 * 1024 * 1024
 const RESUME_TYPES: Record<string, string> = {
   pdf: "application/pdf",
   doc: "application/msword",
@@ -750,7 +750,7 @@ export default function Chat() {
     if (!file.size || file.size > MAX_RESUME_BYTES) {
       setAttachmentError(
         file.size
-          ? "Resume files must be 10 MB or smaller."
+          ? "Resume files must be 4 MB or smaller."
           : "The selected file is empty.",
       )
       return

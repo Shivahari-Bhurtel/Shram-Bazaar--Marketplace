@@ -1,6 +1,7 @@
 import os
 import logging
 import json
+import time
 import zipfile
 import threading
 from collections import defaultdict, deque
@@ -29,7 +30,8 @@ load_dotenv()
 
 app = FastAPI(title="Shram Bazar AI Chat Prototype", version="0.1.0")
 logger = logging.getLogger(__name__)
-MAX_RESUME_BYTES = 10 * 1024 * 1024
+# Leave headroom below Vercel Functions' 4.5 MB request payload limit.
+MAX_RESUME_BYTES = 4 * 1024 * 1024
 MAX_RESUME_TEXT_CHARS = 60_000
 MAX_DOCX_UNPACKED_BYTES = 30 * 1024 * 1024
 MAX_PDF_PAGES = 150
@@ -42,6 +44,11 @@ VOICE_TOKEN_REQUEST_LIMIT = 6
 VOICE_TOKEN_WINDOW_SECONDS = 60
 voice_token_requests: dict[str, deque[float]] = defaultdict(deque)
 voice_token_requests_lock = threading.Lock()
+CHAT_REQUEST_LIMIT = 20
+CHAT_REQUEST_WINDOW_SECONDS = 60
+MAX_CHAT_HISTORY_CHARS = 32_000
+chat_requests: dict[str, deque[float]] = defaultdict(deque)
+chat_requests_lock = threading.Lock()
 
 
 def map_gemini_error(exc: Exception, operation: str) -> HTTPException:
@@ -112,6 +119,13 @@ class ChatRequest(BaseModel):
             raise ValueError("Message cannot be empty.")
         return value
 
+    @field_validator("history")
+    @classmethod
+    def history_must_fit_prompt_budget(cls, history: list[HistoryTurn]) -> list[HistoryTurn]:
+        if sum(len(turn.text) for turn in history) > MAX_CHAT_HISTORY_CHARS:
+            raise ValueError("Conversation history is too large.")
+        return history
+
 
 class ChatResponse(BaseModel):
     answer: str
@@ -163,6 +177,36 @@ def check_voice_token_rate_limit(client_id: str) -> None:
                 status_code=429,
                 detail="Too many voice sessions were requested. Wait a minute and try again.",
                 headers={"Retry-After": str(VOICE_TOKEN_WINDOW_SECONDS)},
+            )
+        bucket.append(now)
+
+
+def check_chat_rate_limit(client_id: str) -> None:
+    """Limit text generation requests to protect provider quota and service capacity."""
+    now = monotonic()
+    cutoff = now - CHAT_REQUEST_WINDOW_SECONDS
+    with chat_requests_lock:
+        if len(chat_requests) >= 1024:
+            for key in list(chat_requests):
+                bucket = chat_requests[key]
+                while bucket and bucket[0] <= cutoff:
+                    bucket.popleft()
+                if not bucket:
+                    del chat_requests[key]
+        if client_id not in chat_requests and len(chat_requests) >= 1024:
+            raise HTTPException(
+                status_code=429,
+                detail="Chat capacity is temporarily limited. Try again shortly.",
+                headers={"Retry-After": str(CHAT_REQUEST_WINDOW_SECONDS)},
+            )
+        bucket = chat_requests[client_id]
+        while bucket and bucket[0] <= cutoff:
+            bucket.popleft()
+        if len(bucket) >= CHAT_REQUEST_LIMIT:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many chat requests. Wait a minute and try again.",
+                headers={"Retry-After": str(CHAT_REQUEST_WINDOW_SECONDS)},
             )
         bucket.append(now)
 
@@ -220,7 +264,7 @@ def extract_resume_text(filename: str, content_type: str, content: bytes) -> str
     if not content:
         raise HTTPException(status_code=422, detail="The selected resume is empty.")
     if len(content) > MAX_RESUME_BYTES:
-        raise HTTPException(status_code=413, detail="Resume files must be 10 MB or smaller.")
+        raise HTTPException(status_code=413, detail="Resume files must be 4 MB or smaller.")
 
     try:
         if extension == ".pdf":
@@ -291,10 +335,13 @@ def health():
 
 
 @app.post("/api/v1/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
+def chat(request: ChatRequest, http_request: Request):
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key or api_key == "PASTE_YOUR_GEMINI_API_KEY_HERE" or api_key.startswith("replace_with_"):
         raise HTTPException(status_code=503, detail="Gemini is not configured. Set GEMINI_API_KEY in ai-service/.env.")
+
+    client_id = http_request.client.host if http_request.client else "unknown"
+    check_chat_rate_limit(client_id)
 
     model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
     context = "\n".join(
@@ -384,11 +431,31 @@ def generate_chat_response(prompt: str, api_key: str, model: str) -> str:
         api_key=api_key,
         http_options=types.HttpOptions(timeout=30000),
     )
-    result = client.models.generate_content(model=model, contents=prompt)
-    answer = (result.text or "").strip()
-    if not answer:
-        raise RuntimeError("Gemini returned an empty response")
-    return answer
+    last_error: Exception | None = None
+    for attempt in range(3):
+        try:
+            result = client.models.generate_content(model=model, contents=prompt)
+            answer = (result.text or "").strip()
+            if not answer:
+                raise RuntimeError("Gemini returned an empty response")
+            return answer
+        except (httpx.TimeoutException, TimeoutError) as exc:
+            last_error = exc
+        except Exception as exc:
+            status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+            reason = getattr(exc, "status", None)
+            if status not in (429, 503, 504) and reason not in (
+                "RESOURCE_EXHAUSTED",
+                "UNAVAILABLE",
+                "DEADLINE_EXCEEDED",
+            ):
+                raise
+            last_error = exc
+        if attempt < 2:
+            time.sleep(0.25 * (2 ** attempt))
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("Gemini returned no response")
 
 
 @app.post("/api/v1/resume-analysis", response_model=ResumeAnalysisResponse)
@@ -412,7 +479,7 @@ async def analyze_resume(
     finally:
         await file.close()
     if len(content) > MAX_RESUME_BYTES:
-        raise HTTPException(status_code=413, detail="Resume files must be 10 MB or smaller.")
+        raise HTTPException(status_code=413, detail="Resume files must be 4 MB or smaller.")
     resume_text = extract_resume_text(file.filename or "", file.content_type or "", content)
 
     api_key = os.getenv("GEMINI_API_KEY")

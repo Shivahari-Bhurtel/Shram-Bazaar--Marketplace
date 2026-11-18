@@ -1,0 +1,45 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "root": ".",
+      "framework": "vite"
+    },
+    "ai": {
+      "root": "ai-service/",
+      "entrypoint": "main:app",
+      "framework": "fastapi"
+    },
+    "backend": {
+      "root": "shrambazar/",
+      "entrypoint": "Dockerfile",
+      "runtime": "container"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/himalayas/(.*)",
+      "destination": { "service": "web" }
+    },
+    {
+      "source": "/api/v1/(.*)",
+      "destination": { "service": "ai" }
+    },
+    {
+      "source": "/health",
+      "destination": { "service": "ai" }
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": { "service": "backend" }
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": { "service": "backend" }
+    },
+    {
+      "source": "/(.*)",
+      "destination": { "service": "web" }
+    }
+  ]
+}
