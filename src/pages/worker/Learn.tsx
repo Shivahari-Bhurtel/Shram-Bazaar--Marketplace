@@ -88,8 +88,7 @@ export default function Learn() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <header className="mb-8 rounded-3xl bg-[#553421] p-5 text-white shadow-sm sm:p-8 lg:p-9">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">Shram Bazaar Learning</p>
-        <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1fr)_14rem] md:items-center lg:gap-10">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_14rem] md:items-center lg:gap-10">
           <div className="max-w-3xl">
             <h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl">Learn skills for safer work</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/75">Short, practical guides for finding work, confirming job details, and staying safe on the job.</p>
