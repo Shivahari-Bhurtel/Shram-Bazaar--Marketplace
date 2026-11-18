@@ -1,0 +1,288 @@
+
+package com.shrambazar.service.application;
+
+import com.shrambazar.dto.application.*;
+import com.shrambazar.entity.*;
+import com.shrambazar.enums.ApplicationStatus;
+import com.shrambazar.enums.JobPostStatus;
+import com.shrambazar.enums.NotificationType;
+import com.shrambazar.repository.*;
+import com.shrambazar.service.CurrentUserService;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.shrambazar.service.notification.NotificationService;
+
+@Service
+public class ApplicationService {
+
+    private final ApplicationRepository applicationRepository;
+    private final JobPostRepository jobPostRepository;
+    private final SeekerSkillRepository seekerSkillRepository;
+    private final CurrentUserService currentUserService;
+    private final NotificationService notificationService;
+
+    private static final Logger log =
+            LoggerFactory.getLogger(ApplicationService.class);
+
+    public ApplicationService(
+            ApplicationRepository applicationRepository,
+            JobPostRepository jobPostRepository,
+            SeekerSkillRepository seekerSkillRepository,
+            CurrentUserService currentUserService,
+            NotificationService notificationService) {
+
+        this.applicationRepository = applicationRepository;
+        this.jobPostRepository = jobPostRepository;
+        this.seekerSkillRepository = seekerSkillRepository;
+        this.currentUserService = currentUserService;
+        this.notificationService = notificationService;
+    }
+
+    // Seeker applies for a job
+    @Transactional
+    public ApplicationResponse applyForJob(Long jobId) {
+
+        SeekerProfile seeker =
+                currentUserService.getCurrentSeekerProfile();
+
+        JobPost job = jobPostRepository.findById(jobId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Job not found"
+                        )
+                );
+
+        if (job.getStatus() != JobPostStatus.OPEN ||
+                job.getEndDate().isBefore(LocalDate.now())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "This job is no longer accepting applications"
+            );
+        }
+
+        // Check whether the seeker has already applied
+        if (applicationRepository.existsForJobAndSeeker(jobId, seeker.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "You have already applied for this job"
+            );
+        }
+
+        // Create new application
+        Application application = new Application();
+
+        application.setJobPost(job);
+        application.setSeekerProfile(seeker);
+        application.setStatus(ApplicationStatus.PENDING);
+
+        Application saved = applicationRepository.save(application);
+
+        notificationService.createNotification(
+                job.getProviderProfile().getUser(),
+                NotificationType.APPLICATION_SUBMITTED,
+                "New job application",
+                seeker.getUser().getFullName()
+                        + " applied for your job: " + job.getTitle(),
+                "APPLICATION",
+                saved.getId()
+        );
+
+        return mapToResponse(saved);
+    }
+
+    // Seeker views all own applications
+    @Transactional(readOnly = true)
+    public List<ApplicationResponse> getMyApplications() {
+
+        SeekerProfile seeker =
+                currentUserService.getCurrentSeekerProfile();
+
+        return applicationRepository
+                .findBySeekerProfileIdOrderByAppliedAtDesc(seeker.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    // Seeker views one of their applications
+    @Transactional(readOnly = true)
+    public ApplicationResponse getMyApplication(Long applicationId) {
+
+        SeekerProfile seeker =
+                currentUserService.getCurrentSeekerProfile();
+
+        Application application =
+                applicationRepository.findByIdAndSeekerProfileId(
+                        applicationId, seeker.getId()
+                ).orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Application not found"
+                        )
+                );
+
+        return mapToResponse(application);
+    }
+
+    // Seeker withdraws a pending application
+    @Transactional
+    public void withdrawApplication(Long applicationId) {
+
+        SeekerProfile seeker =
+                currentUserService.getCurrentSeekerProfile();
+
+        Application application =
+                applicationRepository.findByIdAndSeekerProfileId(
+                        applicationId, seeker.getId()
+                ).orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Application not found"
+                        )
+                );
+
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only pending applications can be withdrawn"
+            );
+        }
+
+        application.setStatus(ApplicationStatus.WITHDRAWN);
+
+        notificationService.createNotification(
+                application.getJobPost().getProviderProfile().getUser(),
+                NotificationType.APPLICATION_WITHDRAWN,
+                "Application withdrawn",
+                application.getSeekerProfile().getUser().getFullName()
+                        + " withdrew their application for "
+                        + application.getJobPost().getTitle(),
+                "APPLICATION",
+                application.getId()
+        );
+    }
+
+    // Provider views applicants for their own job
+    @Transactional(readOnly = true)
+    public List<ApplicantResponse> getJobApplicants(Long jobId) {
+
+        ProviderProfile provider =
+                currentUserService.getCurrentProviderProfile();
+
+        jobPostRepository.findByIdAndProviderProfileId(
+                jobId, provider.getId()
+        ).orElseThrow(() ->
+                new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Job not found"
+                )
+        );
+
+        return applicationRepository
+                .findByJobPostIdOrderByAppliedAtDesc(jobId)
+                .stream()
+                .map(this::mapToApplicantResponse)
+                .toList();
+    }
+
+    // Provider rejects a pending applicant
+    @Transactional
+    public void rejectApplication(Long jobId, Long applicationId) {
+
+        ProviderProfile provider =
+                currentUserService.getCurrentProviderProfile();
+
+        jobPostRepository.findByIdAndProviderProfileId(
+                jobId, provider.getId()
+        ).orElseThrow(() ->
+                new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Job not found"
+                )
+        );
+
+        Application application =
+                applicationRepository.findByIdAndJobPostId(
+                        applicationId, jobId
+                ).orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Application not found"
+                        )
+                );
+
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only pending applications can be rejected"
+            );
+        }
+
+        application.setStatus(ApplicationStatus.NOT_SELECTED);
+
+        notificationService.createNotification(
+                application.getSeekerProfile().getUser(),
+                NotificationType.APPLICATION_REJECTED,
+                "Application update",
+                "Your application for "
+                        + application.getJobPost().getTitle()
+                        + " was not selected.",
+                "APPLICATION",
+                application.getId()
+        );
+    }
+
+    private ApplicationResponse mapToResponse(Application application) {
+
+        JobPost job = application.getJobPost();
+
+        return new ApplicationResponse(
+                application.getId(),
+                job.getId(),
+                job.getTitle(),
+                job.getAddress(),
+                job.getDistrict(),
+                job.getStartDate(),
+                job.getEndDate(),
+                job.getPaymentAmount(),
+                job.getPaymentMethod(),
+                application.getStatus(),
+                application.getAppliedAt()
+        );
+    }
+
+    private ApplicantResponse mapToApplicantResponse(
+            Application application) {
+
+        SeekerProfile profile = application.getSeekerProfile();
+
+        List<String> skills = seekerSkillRepository
+                .findBySeekerProfileId(profile.getId())
+                .stream()
+                .map(seekerSkill -> seekerSkill.getSkill().getName())
+                .toList();
+
+        return new ApplicantResponse(
+                application.getId(),
+                profile.getUser().getId(),
+                profile.getUser().getFullName(),
+                profile.getProfilePictureUrl(),
+                profile.getBio(),
+                skills,
+                application.getStatus(),
+                application.getAppliedAt()
+        );
+    }
+}

@@ -1,0 +1,44 @@
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: shrambazar
+      POSTGRES_USER: shrambazar
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-local-only-shrambazar}
+    ports:
+      - "5432:5432"
+    volumes:
+      - shrambazar_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shrambazar -d shrambazar"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://database:5432/shrambazar
+      DB_USERNAME: shrambazar
+      DB_PASSWORD: ${DB_PASSWORD:-local-only-shrambazar}
+      JWT_SECRET: ${JWT_SECRET:-bG9jYWwtZGV2LW9ubHktc2hyYW1iYXphci1qd3Qtc2VjcmV0LW5vdC1mb3ItcHJvZHVjdGlvbi0yMDI2}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-Shram Bazaar Admin}
+      VERIFICATION_STORAGE_DIR: /data/verification
+      PROFILE_PICTURE_STORAGE_DIR: /data/profile-pictures
+    ports:
+      - "8080:8080"
+    volumes:
+      - shrambazar_verification:/data/verification
+      - shrambazar_profile_pictures:/data/profile-pictures
+    depends_on:
+      database:
+        condition: service_healthy
+
+volumes:
+  shrambazar_database:
+  shrambazar_verification:
+  shrambazar_profile_pictures:
