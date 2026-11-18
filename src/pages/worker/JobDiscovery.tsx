@@ -4,6 +4,7 @@ import JobListRow from "../../components/JobListRow"
 import { DISTRICTS, ALL_SKILLS } from "../../data/mockData"
 import { searchHimalayasJobs } from "../../services/himalayas"
 import type { JobCategory, WorkType } from "../../types"
+import { getConfiguredJobCategories } from "../../utils/categories"
 
 type SortOption = "match" | "payment-high" | "payment-low" | "newest" | "deadline"
 
@@ -38,6 +39,7 @@ export default function JobDiscovery() {
   const filterOptionsRef = useRef<HTMLDivElement>(null)
   const [filterDistrict, setFilterDistrict] = useState("")
   const [filterCategory, setFilterCategory] = useState<JobCategory | "">("")
+  const categoryOptions = useMemo(getConfiguredJobCategories, [])
   const [filterWorkType, setFilterWorkType] = useState<WorkType | "">("")
   const [filterEmploymentType, setFilterEmploymentType] = useState("")
   const [filterCountry, setFilterCountry] = useState("Nepal")
@@ -433,13 +435,11 @@ export default function JobDiscovery() {
                   </label>
                   <select
                     value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value as any)}
+                    onChange={(e) => setFilterCategory(e.target.value)}
                     className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
                   >
                     <option value="">All categories</option>
-                    <option value="qualified">Qualified / Professional</option>
-                    <option value="skill-based">Skill Based</option>
-                    <option value="beginner-friendly">Beginner Friendly</option>
+                    {categoryOptions.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
                   </select>
                 </div>
                 <div>
@@ -448,7 +448,9 @@ export default function JobDiscovery() {
                   </label>
                   <select
                     value={filterWorkType}
-                    onChange={(e) => setFilterWorkType(e.target.value as any)}
+                    onChange={(e) =>
+                      setFilterWorkType(e.target.value as WorkType | "")
+                    }
                     className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
                   >
                     <option value="">All types</option>

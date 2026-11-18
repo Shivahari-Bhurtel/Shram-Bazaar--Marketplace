@@ -99,3 +99,35 @@ def test_gemini_failure_returns_safe_error(monkeypatch):
     )
     assert response.status_code == 502
     assert response.json()["detail"] == "Resume analysis failed. Please try again shortly."
+
+
+def test_provider_unavailable_and_deadline_are_mapped_for_resume(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+
+    def failure(status, reason):
+        def fail(*args, **kwargs):
+            error = RuntimeError("private provider message")
+            error.code = status
+            error.status = reason
+            raise error
+        return fail
+
+    monkeypatch.setattr(main, "generate_resume_analysis", failure(503, "UNAVAILABLE"))
+    unavailable = client.post(
+        "/api/v1/resume-analysis",
+        files={"file": ("resume.docx", make_docx(), DOCX_MIME)},
+        data={"message": "Analyze this resume"},
+    )
+    assert unavailable.status_code == 503
+    assert unavailable.headers["retry-after"] == "10"
+    assert "temporarily unavailable" in unavailable.json()["detail"]
+    assert "private provider message" not in unavailable.text
+
+    monkeypatch.setattr(main, "generate_resume_analysis", failure(504, "DEADLINE_EXCEEDED"))
+    deadline = client.post(
+        "/api/v1/resume-analysis",
+        files={"file": ("resume.docx", make_docx(), DOCX_MIME)},
+        data={"message": "Analyze this resume"},
+    )
+    assert deadline.status_code == 504
+    assert "too long" in deadline.json()["detail"]

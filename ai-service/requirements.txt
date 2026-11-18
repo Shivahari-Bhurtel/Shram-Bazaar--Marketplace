@@ -1,4 +1,7 @@
 fastapi>=0.115,<1.0
+# FastAPI 0.162 currently permits Starlette 1.x, whose TestClient moved away
+# from httpx and hangs against this project's httpx based test suite.
+starlette>=0.46,<1.0
 uvicorn[standard]>=0.30,<1.0
 google-genai>=1.75,<2.0
 python-dotenv>=1.0,<2.0

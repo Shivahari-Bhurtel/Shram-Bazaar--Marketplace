@@ -11,6 +11,13 @@ const returnPages: Page[] = [
   "my-applications",
   "saved-jobs",
   "chat",
+  "shram-ai",
+  "provider-dashboard",
+  "provider-profile",
+  "my-jobs",
+  "create-job",
+  "edit-job",
+  "applicant-management",
 ]
 
 function Waveform({ active = false }: { active?: boolean }) {

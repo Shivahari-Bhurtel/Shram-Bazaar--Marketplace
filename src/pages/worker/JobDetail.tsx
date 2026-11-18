@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useApp } from "../../store/AppContext"
 import { CategoryBadge, VerifiedBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
+import { formatNepalDate } from "../../utils/dates"
 
 export default function JobDetail() {
   const {
@@ -23,6 +24,8 @@ export default function JobDetail() {
   const [showApplyForm, setShowApplyForm] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [applicationError, setApplicationError] = useState("")
+  const [applying, setApplying] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [reportReason, setReportReason] = useState(
     "Incorrect or misleading information",
@@ -50,11 +53,19 @@ export default function JobDetail() {
   const isWorker = currentUser?.role === "worker"
   const isExternal = job.externalSource === "himalayas"
 
-  const handleApply = () => {
-    applyToJob(job.id, coverNote)
-    setShowApplyForm(false)
-    setShowConfirm(false)
-    setSubmitted(true)
+  const handleApply = async () => {
+    setApplying(true)
+    setApplicationError("")
+    try {
+      await applyToJob(job.id, coverNote)
+      setShowApplyForm(false)
+      setShowConfirm(false)
+      setSubmitted(true)
+    } catch (error) {
+      setApplicationError(error instanceof Error ? error.message : "Unable to submit your application. Please try again.")
+    } finally {
+      setApplying(false)
+    }
   }
 
   const spotsLeft = job.workersNeeded - job.workersHired
@@ -270,7 +281,6 @@ export default function JobDetail() {
           {/* Apply form */}
           {isWorker &&
             !isExternal &&
-            workerProfile?.kycStatus === "verified" &&
             showApplyForm &&
             !applied && (
               <div className="bg-white border-2 border-primary rounded-2xl p-6 animate-fade-in">
@@ -278,16 +288,18 @@ export default function JobDetail() {
                   Your Application
                 </h2>
                 <p className="text-stone-500 text-sm mb-4">
-                  Add a short note to stand out. Your full profile will be
-                  shared with the provider.
+                  {import.meta.env.VITE_DEMO_MODE === "true"
+                    ? "Add a short note to stand out. Your full profile will be shared with the provider."
+                    : "Your profile will be shared with the provider. You can add or update your experience and skills in your profile before applying."}
                 </p>
-                <textarea
+                {applicationError && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{applicationError}</p>}
+                {import.meta.env.VITE_DEMO_MODE === "true" && <textarea
                   value={coverNote}
                   onChange={(e) => setCoverNote(e.target.value)}
                   placeholder="e.g. I have 5 years of experience in electrical work and am fully available on the dates you need…"
                   rows={4}
                   className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-                />
+                />}
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={() => setShowApplyForm(false)}
@@ -297,7 +309,7 @@ export default function JobDetail() {
                   </button>
                   <button
                     onClick={() => setShowConfirm(true)}
-                    disabled={!coverNote.trim()}
+                    disabled={import.meta.env.VITE_DEMO_MODE === "true" && !coverNote.trim()}
                     className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Submit Application →
@@ -360,9 +372,7 @@ export default function JobDetail() {
                       ? [
                           {
                             label: "Updated",
-                            value: new Date(
-                              job.publishedDate,
-                            ).toLocaleDateString("en-NP", {
+                            value: formatNepalDate(job.publishedDate, {
                               month: "short",
                               day: "numeric",
                               year: "numeric",
@@ -375,8 +385,8 @@ export default function JobDetail() {
                     {
                       label: "Date",
                       value: job.endDate
-                        ? `${new Date(job.date).toLocaleDateString("en-NP", { month: "short", day: "numeric" })} – ${new Date(job.endDate).toLocaleDateString("en-NP", { month: "short", day: "numeric" })}`
-                        : new Date(job.date).toLocaleDateString("en-NP", {
+                        ? `${formatNepalDate(job.date, { month: "short", day: "numeric" })} – ${formatNepalDate(job.endDate, { month: "short", day: "numeric" })}`
+                        : formatNepalDate(job.date, {
                             weekday: "short",
                             month: "long",
                             day: "numeric",
@@ -398,10 +408,10 @@ export default function JobDetail() {
                     },
                     {
                       label: "Apply By",
-                      value: new Date(job.deadline).toLocaleDateString(
-                        "en-NP",
-                        { month: "short", day: "numeric" },
-                      ),
+                      value: formatNepalDate(job.deadline, {
+                        month: "short",
+                        day: "numeric",
+                      }),
                     },
                   ]
               ).map((item) => (
@@ -432,7 +442,10 @@ export default function JobDetail() {
                 ) : (
                   <button
                     onClick={() => {
-                      if (workerProfile?.kycStatus === "verified") {
+                      if (
+                        import.meta.env.VITE_DEMO_MODE !== "true" ||
+                        workerProfile?.kycStatus === "verified"
+                      ) {
                         setShowApplyForm(true)
                         setShowKycRequirement(false)
                       } else {
@@ -556,9 +569,10 @@ export default function JobDetail() {
                 />
                 <button
                   onClick={() => {
-                    const error = reportJob(job.id, reportReason, reportDetails)
-                    setReportMessage(error ?? "Report submitted. Thank you.")
-                    if (!error) setShowReport(false)
+                    void reportJob(job.id, reportReason, reportDetails).then((error) => {
+                      setReportMessage(error ?? "Report submitted. Thank you.")
+                      if (!error) setShowReport(false)
+                    })
                   }}
                   className="w-full py-2 bg-primary text-white text-xs font-medium rounded-xl hover:bg-primary-dark transition-colors"
                 >
@@ -576,9 +590,9 @@ export default function JobDetail() {
       {showConfirm && (
         <ConfirmDialog
           title="Submit Application?"
-          message={`You're applying to "${job.title}" at ${job.providerName}. Your full profile and cover note will be shared with the provider.`}
+          message={`You're applying to "${job.title}" at ${job.providerName}. Your profile will be shared with the provider.`}
           confirmLabel="Yes, Apply Now"
-          onConfirm={handleApply}
+                  onConfirm={() => { void handleApply() }}
           onCancel={() => setShowConfirm(false)}
         />
       )}

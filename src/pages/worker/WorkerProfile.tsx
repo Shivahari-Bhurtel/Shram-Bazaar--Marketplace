@@ -16,6 +16,8 @@ import type {
   Qualification,
   Weekday,
 } from "../../types"
+import { formatNepalDate, isDateOnlyString, nepalDateString, nepalYear } from "../../utils/dates"
+import { isValidPhoneNumber } from "../../utils/validation"
 
 const presetAvatars = [
   {
@@ -32,7 +34,7 @@ const presetAvatars = [
   },
 ]
 
-const weekdays: { value: Weekday label: string }[] = [
+const weekdays: { value: Weekday; label: string }[] = [
   { value: "sunday", label: "Sunday" },
   { value: "monday", label: "Monday" },
   { value: "tuesday", label: "Tuesday" },
@@ -104,6 +106,9 @@ export default function WorkerProfile() {
       setTempData({
         name: workerProfile.name,
         professionalTitle: workerProfile.professionalTitle ?? "",
+        dateOfBirth: workerProfile.dateOfBirth ?? "",
+        gender: workerProfile.gender ?? "",
+        address: workerProfile.address ?? "",
         phone: workerProfile.phone,
         location: workerProfile.location,
         district: workerProfile.district,
@@ -123,7 +128,7 @@ export default function WorkerProfile() {
                 id: `q-${Date.now()}`,
                 degree: "",
                 institution: "",
-                year: new Date().getFullYear(),
+                year: nepalYear(),
                 field: "",
               },
             ],
@@ -149,15 +154,23 @@ export default function WorkerProfile() {
     if (editing === "basic") {
       const name = String(tempData.name ?? "").trim()
       const phone = String(tempData.phone ?? "").trim()
-      const phoneDigits = phone.replace(/\D/g, "")
       const location = String(tempData.location ?? "").trim()
       const district = String(tempData.district ?? "").trim()
+      const dateOfBirth = String(tempData.dateOfBirth ?? "")
       if (!name || !phone || !location || !district) {
         setEditError("Name, phone, location, and district are required.")
         return
       }
-      if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+      if (!isValidPhoneNumber(phone)) {
         setEditError("Enter a valid phone number with 7 to 15 digits.")
+        return
+      }
+      if (dateOfBirth && !isDateOnlyString(dateOfBirth)) {
+        setEditError("Enter a valid date of birth.")
+        return
+      }
+      if (dateOfBirth && dateOfBirth > nepalDateString()) {
+        setEditError("Date of birth cannot be in the future.")
         return
       }
       if (String(tempData.bio ?? "").length > 600) {
@@ -168,6 +181,9 @@ export default function WorkerProfile() {
         ...tempData,
         name,
         phone,
+        dateOfBirth: dateOfBirth || undefined,
+        gender: tempData.gender || undefined,
+        address: String(tempData.address ?? "").trim(),
         location,
         district,
         professionalTitle: String(tempData.professionalTitle ?? "").trim(),
@@ -186,7 +202,7 @@ export default function WorkerProfile() {
         (item) =>
           !Number.isInteger(Number(item.year)) ||
           Number(item.year) < 1900 ||
-          Number(item.year) > new Date().getFullYear(),
+          Number(item.year) > nepalYear(),
       )
       if (qualifications.some((item) => !item.degree.trim()) || invalidYear) {
         setEditError(
@@ -249,12 +265,7 @@ export default function WorkerProfile() {
       ),
   ).slice(0, 15)
   const kycStatus = workerProfile.kycStatus ?? "not-verified"
-  const todayInKathmandu = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kathmandu",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date())
+  const todayInKathmandu = nepalDateString()
 
   const addWeeklyAvailability = () => {
     if (availabilityEnd <= availabilityStart) {
@@ -327,9 +338,9 @@ export default function WorkerProfile() {
       event.target.value = ""
       return
     }
-    if (file.size > 1_000_000) {
+    if (file.size > 512 * 1024) {
       setPhotoError(true)
-      setPhotoMessage("Choose an image smaller than 1 MB.")
+      setPhotoMessage("Choose an image smaller than 512 KB for browser storage.")
       event.target.value = ""
       return
     }
@@ -634,6 +645,55 @@ export default function WorkerProfile() {
                     className="input-style"
                   />
                 </Field>
+                <Field label="Date of birth">
+                  <input
+                    type="date"
+                    max={nepalDateString()}
+                    value={tempData.dateOfBirth}
+                    onChange={(e) =>
+                      setTempData((p: any) => ({
+                        ...p,
+                        dateOfBirth: e.target.value,
+                      }))
+                    }
+                    className="input-style"
+                  />
+                </Field>
+                <Field label="Gender (optional)">
+                  <select
+                    value={tempData.gender}
+                    onChange={(e) =>
+                      setTempData((p: any) => ({
+                        ...p,
+                        gender: e.target.value,
+                      }))
+                    }
+                    className="input-style"
+                  >
+                    <option value="">Prefer not to say</option>
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                    <option value="non-binary">Non-binary</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
+                </Field>
+                <Field
+                  label="Street, ward, or tole address"
+                  className="sm:col-span-2"
+                >
+                  <input
+                    value={tempData.address}
+                    onChange={(e) =>
+                      setTempData((p: any) => ({
+                        ...p,
+                        address: e.target.value,
+                      }))
+                    }
+                    placeholder="Private; shown only on your account"
+                    autoComplete="street-address"
+                    className="input-style"
+                  />
+                </Field>
                 <Field label="Phone">
                   <input
                     type="tel"
@@ -718,6 +778,20 @@ export default function WorkerProfile() {
                   }
                 />
                 <Info label="Phone" value={workerProfile.phone} />
+                <Info
+                  label="Date of birth"
+                  value={workerProfile.dateOfBirth || "Not added"}
+                />
+                <Info
+                  label="Gender"
+                  value={
+                    workerProfile.gender?.replace(/-/g, " ") || "Not provided"
+                  }
+                />
+                <Info
+                  label="Street address"
+                  value={workerProfile.address || "Not added"}
+                />
                 <Info label="Location" value={workerProfile.location} />
                 <Info label="District" value={workerProfile.district} />
                 <Info
@@ -947,7 +1021,7 @@ export default function WorkerProfile() {
                           <input
                             type="number"
                             min="1900"
-                            max={new Date().getFullYear()}
+                            max={nepalYear()}
                             value={qualification.year || ""}
                             onChange={(event) =>
                               setTempData((previous: any) => ({
@@ -981,7 +1055,7 @@ export default function WorkerProfile() {
                           id: `q-${Date.now()}`,
                           degree: "",
                           institution: "",
-                          year: new Date().getFullYear(),
+                          year: nepalYear(),
                           field: "",
                         },
                       ],
@@ -1452,10 +1526,7 @@ export default function WorkerProfile() {
                         className="rounded-full border border-primary-100 bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-ink hover:border-primary"
                         aria-label={`Remove available date ${date}`}
                       >
-                        {new Date(`${date}T12:00:00`).toLocaleDateString(
-                          "en-NP",
-                          { month: "short", day: "numeric" },
-                        )}{" "}
+                        {formatNepalDate(date, { month: "short", day: "numeric" })}{" "}
                         ×
                       </button>
                     </li>
@@ -1553,7 +1624,7 @@ function Section({
   )
 }
 
-function Info({ label, value }: { label: string value: string | undefined }) {
+function Info({ label, value }: { label: string; value: string | undefined }) {
   return (
     <div>
       <p className="mb-1.5 text-base font-normal text-stone-500">{label}</p>

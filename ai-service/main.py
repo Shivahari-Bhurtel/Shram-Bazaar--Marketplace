@@ -43,6 +43,43 @@ VOICE_TOKEN_WINDOW_SECONDS = 60
 voice_token_requests: dict[str, deque[float]] = defaultdict(deque)
 voice_token_requests_lock = threading.Lock()
 
+
+def map_gemini_error(exc: Exception, operation: str) -> HTTPException:
+    """Map provider failures to stable, actionable API statuses without leaking details."""
+    status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+    reason = getattr(exc, "status", None)
+    provider_message = str(getattr(exc, "message", "")).lower()
+    key_rejected = "api key" in provider_message or "api_key_invalid" in provider_message
+
+    if status in (400, 401, 403) and key_rejected or status in (401, 403):
+        return HTTPException(
+            status_code=401,
+            detail="Gemini rejected the text API key. Check GEMINI_API_KEY in ai-service/.env.",
+        )
+    if status == 429 or reason == "RESOURCE_EXHAUSTED":
+        return HTTPException(
+            status_code=429,
+            detail="Gemini is rate limited. Wait a moment and try again.",
+            headers={"Retry-After": "30"},
+        )
+    if status == 503 or reason == "UNAVAILABLE":
+        return HTTPException(
+            status_code=503,
+            detail="Gemini is temporarily unavailable. Please retry shortly.",
+            headers={"Retry-After": "10"},
+        )
+    if status == 504 or reason == "DEADLINE_EXCEEDED":
+        return HTTPException(
+            status_code=504,
+            detail="Gemini took too long to respond. Please try again shortly.",
+        )
+    detail = (
+        "Resume analysis failed. Please try again shortly."
+        if operation == "resume"
+        else "Gemini could not generate a response. Please try again shortly."
+    )
+    return HTTPException(status_code=502, detail=detail)
+
 origins = [origin.strip() for origin in os.getenv(
     "CORS_ORIGINS", "http://localhost:8443,http://127.0.0.1:8443"
 ).split(",") if origin.strip()]
@@ -284,17 +321,11 @@ def chat(request: ChatRequest):
     except Exception as exc:
         # SDK exceptions carry status codes; classify without logging request/key data.
         status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
-        provider_message = str(getattr(exc, "message", "")).lower()
-        key_rejected = "api key" in provider_message or "api_key_invalid" in provider_message
         logger.error(
             "Gemini chat failed (%s, status=%s, reason=%s)",
             type(exc).__name__, status, getattr(exc, "status", None),
         )
-        if status in (401, 403) or key_rejected:
-            raise HTTPException(status_code=401, detail="Gemini rejected the API key. Check GEMINI_API_KEY in ai-service/.env.") from exc
-        if status == 429:
-            raise HTTPException(status_code=429, detail="Gemini is rate limited. Wait a moment and try again.") from exc
-        raise HTTPException(status_code=502, detail="Gemini could not generate a response. Check the backend logs and API configuration.") from exc
+        raise map_gemini_error(exc, "chat") from exc
 
     return ChatResponse(
         answer=answer,
@@ -397,9 +428,7 @@ async def analyze_resume(
         raise HTTPException(status_code=504, detail="Resume analysis timed out. Please try again.") from exc
     except Exception as exc:
         logger.error("Resume analysis request failed (%s)", type(exc).__name__)
-        if getattr(exc, "code", None) == 429:
-            raise HTTPException(status_code=429, detail="Gemini is rate limited. Wait a moment and try again.") from exc
-        raise HTTPException(status_code=502, detail="Resume analysis failed. Please try again shortly.") from exc
+        raise map_gemini_error(exc, "resume") from exc
 
     return ResumeAnalysisResponse(
         answer=answer,

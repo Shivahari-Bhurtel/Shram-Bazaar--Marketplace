@@ -13,7 +13,7 @@ const RESUME_TYPES: Record<string, string> = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
 
-type MessageAttachment = { name: string extension: string size: number }
+type MessageAttachment = { name: string; extension: string; size: number }
 
 type Message = {
   id: string

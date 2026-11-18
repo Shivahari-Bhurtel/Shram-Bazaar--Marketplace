@@ -32,6 +32,8 @@ export default function Navbar() {
 
   const providerLinks = [
     { label: "Dashboard", page: "provider-dashboard" as const },
+    { label: "AI", page: "shram-ai" as const },
+    { label: "Team & operations", page: "provider-operations" as const },
     { label: "Post a Job", page: "create-job" as const },
     { label: "My Jobs", page: "my-jobs" as const },
     { label: "Organisation", page: "provider-profile" as const },

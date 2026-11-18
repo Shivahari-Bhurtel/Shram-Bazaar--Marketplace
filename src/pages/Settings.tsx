@@ -24,7 +24,11 @@ export default function Settings() {
   })
 
   useEffect(() => {
-    localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences))
+    try {
+      localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences))
+    } catch {
+      // Keep the current preferences usable for this session if storage is unavailable.
+    }
   }, [preferences])
 
   const togglePreference = (key: keyof Preferences) => {

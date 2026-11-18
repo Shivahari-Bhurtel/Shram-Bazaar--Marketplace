@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useApp } from "../store/AppContext"
 import type { Job } from "../types"
+import { formatNepalDate } from "../utils/dates"
 
 const categoryLabels: Record<Job["category"], string> = {
   qualified: "Professional",
@@ -36,8 +37,8 @@ export default function JobListRow({ job }: { job: Job }) {
     ? (job.externalCategories ?? []).slice(0, 3)
     : job.skillsRequired.slice(0, 3)
   const details = [
-    isExternal ? job.employmentType : categoryLabels[job.category],
-    isExternal ? job.seniority : job.workType.replaceAll("-", " "),
+    isExternal ? job.employmentType : categoryLabels[job.category] || job.category,
+    isExternal ? job.seniority : job.workType.replace(/-/g, " "),
     !isExternal && job.duration ? job.duration : "",
   ].filter(Boolean)
 
@@ -167,13 +168,10 @@ export default function JobListRow({ job }: { job: Job }) {
               </span>
               {!isExternal && job.date && (
                 <span>
-                  {new Date(`${job.date}T12:00:00`).toLocaleDateString(
-                    "en-NP",
-                    {
+                  {formatNepalDate(job.date, {
                       month: "short",
                       day: "numeric",
-                    },
-                  )}
+                    })}
                 </span>
               )}
             </div>

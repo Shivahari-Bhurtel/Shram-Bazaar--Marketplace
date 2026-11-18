@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useApp } from "../store/AppContext"
 import type { Job } from "../types"
+import { formatNepalDate } from "../utils/dates"
 
 const categoryConfig = {
   qualified: { label: "Qualified / Professional" },
@@ -34,7 +35,7 @@ export default function JobCard({ job, compact = false }: Props) {
   const isWorker = state.currentUser?.role === "worker"
   const applied = hasApplied(job.id)
   const saved = isSaved(job.id)
-  const cat = categoryConfig[job.category]
+  const cat = categoryConfig[job.category as keyof typeof categoryConfig] || { label: job.category }
   const isExternal = job.externalSource === "himalayas"
 
   const handleSave = (e: React.MouseEvent) => {
@@ -180,7 +181,7 @@ export default function JobCard({ job, compact = false }: Props) {
           </svg>
           <span className="text-sm text-stone-700">
             {job.date
-              ? new Date(job.date).toLocaleDateString("en-NP", {
+              ? formatNepalDate(job.date, {
                   month: "short",
                   day: "numeric",
                 })
@@ -297,7 +298,7 @@ export default function JobCard({ job, compact = false }: Props) {
           {isExternal ? (
             <span className="text-[13px] text-stone-600 font-mono-data">
               {job.publishedDate
-                ? `Updated ${new Date(job.publishedDate).toLocaleDateString("en-NP", { month: "short", day: "numeric" })}`
+                ? `Updated ${formatNepalDate(job.publishedDate, { month: "short", day: "numeric" })}`
                 : "Update date not listed"}
             </span>
           ) : (

@@ -3,6 +3,7 @@ import { useApp } from "../../store/AppContext"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
 import type { ApplicationStatus } from "../../types"
+import { formatNepalDate, nepalDateString } from "../../utils/dates"
 
 type ActionType = {
   applicationId: string
@@ -53,6 +54,10 @@ export default function ApplicantManagement() {
     accepted: apps.filter((a) => a.status === "accepted").length,
     rejected: apps.filter((a) => a.status === "rejected").length,
   }
+  const remainingSpots = Math.max(
+    0,
+    job.workersNeeded - apps.filter((application) => application.status === "accepted").length,
+  )
 
   const handleAction = (
     applicationId: string,
@@ -62,14 +67,9 @@ export default function ApplicantManagement() {
     updateApplicationStatus(applicationId, newStatus, note)
     setPendingAction(null)
     setRejectNote("")
-    if (newStatus === "accepted") {
-      // Increment workersHired
-      const newHired = job.workersHired + 1
-      // (in a real system this would be handled server-side)
-    }
   }
 
-  const tabs: { key: ApplicationStatus | "all" label: string dot?: string }[] =
+  const tabs: { key: ApplicationStatus | "all"; label: string; dot?: string }[] =
     [
       { key: "all", label: `All (${counts.all})` },
       {
@@ -113,7 +113,7 @@ export default function ApplicantManagement() {
               <span>📍 {job.location}</span>
               <span>
                 📅{" "}
-                {new Date(job.date).toLocaleDateString("en-NP", {
+                {formatNepalDate(job.date, {
                   month: "short",
                   day: "numeric",
                 })}
@@ -363,7 +363,7 @@ export default function ApplicantManagement() {
                                     : "bg-stone-50 text-stone-500 border-stone-200"
                                 }`}
                               >
-                                {new Date(d).toLocaleDateString("en-NP", {
+                                {formatNepalDate(d, {
                                   month: "short",
                                   day: "numeric",
                                 })}
@@ -427,7 +427,9 @@ export default function ApplicantManagement() {
                               newStatus: "accepted",
                             })
                           }
-                          className="px-4 py-1.5 bg-green text-white text-sm font-medium rounded-xl hover:bg-green-700 transition-colors"
+                          disabled={remainingSpots === 0}
+                          title={remainingSpots === 0 ? "All requested positions are filled." : undefined}
+                          className="px-4 py-1.5 bg-green text-white text-sm font-medium rounded-xl hover:bg-green-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           ✓ Accept
                         </button>
@@ -460,54 +462,62 @@ export default function ApplicantManagement() {
                           {app.workerName} has been accepted for this job.
                         </span>
                       </div>
-                      <div className="mt-3 grid sm:grid-cols-[8rem_1fr_auto] gap-2">
-                        <select
-                          value={reviewDraft[app.id]?.rating ?? 5}
-                          onChange={(event) =>
-                            setReviewDraft((current) => ({
-                              ...current,
-                              [app.id]: {
-                                rating: Number(event.target.value),
-                                review: current[app.id]?.review ?? "",
-                              },
-                            }))
-                          }
-                          className="input-style"
-                          aria-label="Worker rating"
-                        >
-                          {[5, 4, 3, 2, 1].map((rating) => (
-                            <option key={rating} value={rating}>
-                              {rating} / 5
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          value={reviewDraft[app.id]?.review ?? ""}
-                          onChange={(event) =>
-                            setReviewDraft((current) => ({
-                              ...current,
-                              [app.id]: {
-                                rating: current[app.id]?.rating ?? 5,
-                                review: event.target.value,
-                              },
-                            }))
-                          }
-                          placeholder="Short review of the worker"
-                          className="input-style"
-                        />
-                        <button
-                          onClick={() => {
-                            const draft = reviewDraft[app.id] ?? {
-                              rating: 5,
-                              review: "",
+                      {app.workerReviewDate ? (
+                        <p className="mt-3 text-sm text-stone-600">
+                          Your review ({app.workerReviewRating}/5): {app.workerReview}
+                        </p>
+                      ) : (job.endDate || job.date) > nepalDateString() ? (
+                        <p className="mt-3 text-sm text-stone-500">
+                          You can review this worker after the scheduled work date.
+                        </p>
+                      ) : (
+                        <div className="mt-3 grid sm:grid-cols-[8rem_1fr_auto] gap-2">
+                          <select
+                            value={reviewDraft[app.id]?.rating ?? 5}
+                            onChange={(event) =>
+                              setReviewDraft((current) => ({
+                                ...current,
+                                [app.id]: {
+                                  rating: Number(event.target.value),
+                                  review: current[app.id]?.review ?? "",
+                                },
+                              }))
                             }
-                            reviewWorker(app.id, draft.rating, draft.review)
-                          }}
-                          className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors"
-                        >
-                          Save review
-                        </button>
-                      </div>
+                            className="input-style"
+                            aria-label={`Rating for ${app.workerName}`}
+                          >
+                            {[5, 4, 3, 2, 1].map((rating) => (
+                              <option key={rating} value={rating}>{rating} / 5</option>
+                            ))}
+                          </select>
+                          <input
+                            value={reviewDraft[app.id]?.review ?? ""}
+                            onChange={(event) =>
+                              setReviewDraft((current) => ({
+                                ...current,
+                                [app.id]: {
+                                  rating: current[app.id]?.rating ?? 5,
+                                  review: event.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="Short review of the worker"
+                            maxLength={500}
+                            className="input-style"
+                          />
+                          <button
+                            type="button"
+                            disabled={!reviewDraft[app.id]?.review.trim()}
+                            onClick={() => {
+                              const draft = reviewDraft[app.id] ?? { rating: 5, review: "" }
+                              reviewWorker(app.id, draft.rating, draft.review)
+                            }}
+                            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Save review
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

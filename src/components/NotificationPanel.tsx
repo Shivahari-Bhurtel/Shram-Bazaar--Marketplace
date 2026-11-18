@@ -1,7 +1,7 @@
 import { useApp } from "../store/AppContext"
 import type { Notification } from "../types"
 
-const typeConfig: Record<Notification["type"], { icon: string color: string }> =
+const typeConfig: Record<Notification["type"], { icon: string; color: string }> =
   {
     selection: { icon: "✓", color: "bg-green-100 text-green-700" },
     shortlisted: { icon: "★", color: "bg-amber-100 text-amber-700" },
@@ -10,6 +10,8 @@ const typeConfig: Record<Notification["type"], { icon: string color: string }> =
     "new-job": { icon: "+", color: "bg-primary-100 text-primary-ink" },
     "job-update": { icon: "!", color: "bg-amber-100 text-amber-700" },
     "profile-update": { icon: "✓", color: "bg-amber-100 text-amber-800" },
+    message: { icon: "✉", color: "bg-sky-100 text-sky-800" },
+    announcement: { icon: "i", color: "bg-violet-100 text-violet-800" },
   }
 
 export default function NotificationPanel({

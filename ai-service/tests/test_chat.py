@@ -91,6 +91,18 @@ def test_chat_maps_invalid_key_rate_limit_and_timeout(monkeypatch):
     monkeypatch.setattr(main, "generate_chat_response", raise_status(429))
     limited = client.post("/api/v1/chat", json={"message": "Hello"})
     assert limited.status_code == 429
+    assert limited.headers["retry-after"] == "30"
+
+    monkeypatch.setattr(main, "generate_chat_response", raise_status(503))
+    unavailable = client.post("/api/v1/chat", json={"message": "Hello"})
+    assert unavailable.status_code == 503
+    assert unavailable.headers["retry-after"] == "10"
+    assert "temporarily unavailable" in unavailable.json()["detail"]
+
+    monkeypatch.setattr(main, "generate_chat_response", raise_status(504))
+    provider_timeout = client.post("/api/v1/chat", json={"message": "Hello"})
+    assert provider_timeout.status_code == 504
+    assert "too long" in provider_timeout.json()["detail"]
 
     def timeout(*args, **kwargs):
         raise TimeoutError("timed out")

@@ -1,11 +1,13 @@
-export type UserRole = "worker" | "provider"
-export type JobCategory = "qualified" | "skill-based" | "beginner-friendly"
+export type UserRole = "worker" | "provider" | "admin"
+export type JobCategory = string
 export type WorkType = "full-day" | "half-day" | "hourly" | "multi-day"
 export type ApplicationStatus = "pending" | "shortlisted" | "accepted" | "rejected"
 export type JobStatus = "active" | "filled" | "closed" | "draft"
 export type PaymentType = "per-day" | "per-hour" | "fixed"
-export type KycStatus = "not-verified" | "pending" | "verified"
+export type KycStatus = "not-verified" | "pending" | "verified" | "rejected" | "expired"
 export type KycDocumentType = "national-id" | "citizenship" | "passport" | "driving-licence"
+export type ProviderVerificationStatus = "not-submitted" | "pending" | "verified" | "rejected"
+export type ProviderType = "individual" | "business" | "organization"
 
 export interface Qualification {
   id: string
@@ -49,6 +51,9 @@ export interface WorkerProfile {
   photo: string
   phone: string
   email: string
+  dateOfBirth?: string
+  gender?: "female" | "male" | "non-binary" | "prefer-not-to-say"
+  address?: string
   location: string
   district: string
   skills: string[]
@@ -63,16 +68,26 @@ export interface WorkerProfile {
   totalJobs: number
   verified: boolean
   kycStatus?: KycStatus
+  phoneVerified?: boolean
+  emailVerified?: boolean
   kycDocumentType?: KycDocumentType
   kycDocumentNumber?: string
   kycDocumentFileName?: string
   kycDocumentData?: string
+  kycDocumentExpiryDate?: string
+  kycSelfieData?: string
+  kycSelfieFileName?: string
   kycSubmittedDate?: string
   kycVerifiedDate?: string
+  kycReviewNote?: string
+  kycRequestId?: string
+  kycDocumentId?: string
 }
 
 export interface ProviderProfile {
   id: string
+  providerType?: ProviderType
+  dateOfBirth?: string
   orgName: string
   logo: string
   contactName: string
@@ -88,6 +103,14 @@ export interface ProviderProfile {
   totalHires: number
   rating: number
   reviewCount: number
+  website?: string
+  socialLinks?: string
+  operatingHours?: string
+  yearsOperating?: number
+  verificationStatus?: ProviderVerificationStatus
+  verificationDocumentName?: string
+  verificationDocumentData?: string
+  verificationReviewNote?: string
 }
 
 export interface Job {
@@ -153,12 +176,20 @@ export interface Application {
   status: ApplicationStatus
   coverNote: string
   providerNote?: string
+  providerRating?: number
+  providerReview?: string
+  providerReviewDate?: string
+  engagementId?: string
+  engagementStatus?: string
+  workerReviewRating?: number
+  workerReview?: string
+  workerReviewDate?: string
 }
 
 export interface Notification {
   id: string
   userId: string
-  type: "application" | "selection" | "new-job" | "job-update" | "profile-update" | "rejection" | "shortlisted"
+  type: "application" | "selection" | "new-job" | "job-update" | "profile-update" | "rejection" | "shortlisted" | "message" | "announcement"
   title: string
   message: string
   date: string
@@ -174,7 +205,8 @@ export interface Report {
   reason: string
   details: string
   date: string
-  status: "submitted"
+  status: "submitted" | "reviewing" | "resolved" | "dismissed"
+  adminNote?: string
 }
 
 export interface User {
@@ -183,4 +215,6 @@ export interface User {
   email: string
   name: string
   profileId: string
+  accountStatus?: "active" | "suspended"
+  backendAuth?: boolean
 }

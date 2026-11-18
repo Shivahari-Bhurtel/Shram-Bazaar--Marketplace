@@ -1,0 +1,240 @@
+import type { Application, Job, ProviderProfile, User, WorkerProfile } from "../types"
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "")
+const AUTH_KEY = "shram-bazar-api-session-v1"
+
+export type BackendRole = "JOB_SEEKER" | "JOB_PROVIDER" | "ADMIN"
+export interface BackendAuth {
+  accessToken: string
+  tokenType: string
+  userId: number
+  fullName: string
+  email: string
+  role: BackendRole
+}
+
+export interface ApiJob {
+  id: number
+  providerName: string
+  businessName?: string
+  title: string
+  description: string
+  responsibilities?: string
+  address: string
+  municipality?: string
+  district?: string
+  province?: string
+  startDate: string
+  endDate: string
+  startTime: string
+  endTime: string
+  durationDescription?: string
+  paymentAmount: number
+  paymentMethod: "CASH" | "BANK_TRANSFER" | "DIGITAL_WALLET" | "OTHER"
+  requiredExperienceMonths?: number
+  numberOfWorkersRequired: number
+  requiredSkills: string[]
+  status: "DRAFT" | "OPEN" | "CLOSED" | "CANCELLED" | "COMPLETED" | "REMOVED"
+  createdAt?: string
+  publishedAt?: string
+}
+
+export interface ApiApplication {
+  applicationId: number
+  jobId: number
+  jobTitle: string
+  jobAddress: string
+  district?: string
+  startDate: string
+  endDate: string
+  paymentAmount: number
+  paymentMethod: ApiJob["paymentMethod"]
+  status: "PENDING" | "SELECTED" | "NOT_SELECTED" | "WITHDRAWN" | "CANCELLED"
+  appliedAt: string
+}
+
+export function getBackendAuth(): BackendAuth | null {
+  try {
+    const raw = sessionStorage.getItem(AUTH_KEY)
+    if (!raw) return null
+    const value = JSON.parse(raw) as BackendAuth
+    return value?.accessToken && Number.isFinite(value.userId) ? value : null
+  } catch {
+    return null
+  }
+}
+
+export function setBackendAuth(auth: BackendAuth | null) {
+  try {
+    if (auth) sessionStorage.setItem(AUTH_KEY, JSON.stringify(auth))
+    else sessionStorage.removeItem(AUTH_KEY)
+  } catch {
+    throw new Error("This browser could not store the sign-in session. Enable session storage and try again.")
+  }
+}
+
+export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const auth = getBackendAuth()
+  const headers = new Headers(init.headers)
+  if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type"))
+    headers.set("Content-Type", "application/json")
+  if (auth?.accessToken) headers.set("Authorization", `Bearer ${auth.accessToken}`)
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, { ...init, headers })
+  } catch {
+    throw new Error("Cannot reach Shram Bazar server. Start the backend and check the API URL.")
+  }
+  if (response.status === 401 && auth) {
+    setBackendAuth(null)
+    window.dispatchEvent(new Event("shram-bazar:session-expired"))
+  }
+  if (!response.ok) {
+    let message = `Request failed (${response.status})`
+    try {
+      const body = await response.json()
+      if (typeof body.message === "string") message = body.message
+      else if (typeof body.detail === "string") message = body.detail
+      else if (typeof body.error === "string") message = body.error
+    } catch {
+      // Keep the status based message for non-JSON errors.
+    }
+    throw new Error(message)
+  }
+  if (response.status === 204) return undefined as T
+  return (await response.json()) as T
+}
+
+export async function apiFileRequest(path: string): Promise<Blob> {
+  const auth = getBackendAuth()
+  const headers = new Headers()
+  if (auth?.accessToken) headers.set("Authorization", `Bearer ${auth.accessToken}`)
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, { headers })
+  } catch {
+    throw new Error("Cannot reach Shram Bazar server. Start the backend and check the API URL.")
+  }
+  if (response.status === 401 && auth) {
+    setBackendAuth(null)
+    window.dispatchEvent(new Event("shram-bazar:session-expired"))
+  }
+  if (!response.ok) throw new Error(`Document request failed (${response.status})`)
+  return response.blob()
+}
+
+export function apiRoleToUserRole(role: BackendRole): User["role"] {
+  if (role === "JOB_SEEKER") return "worker"
+  if (role === "JOB_PROVIDER") return "provider"
+  return "admin"
+}
+
+export function mapApiJob(job: ApiJob, providerId?: string): Job {
+  const paymentType = job.paymentMethod === "OTHER" ? "fixed" : "per-day"
+  const date = job.startDate || ""
+  const status = job.status === "OPEN" ? "active" : job.status === "CLOSED" ? "closed" : job.status === "CANCELLED" ? "closed" : job.status === "DRAFT" ? "draft" : "filled"
+  return {
+    id: String(job.id),
+    providerId: providerId || "api-provider",
+    providerName: job.businessName || job.providerName || "Provider",
+    providerLogo: "",
+    providerVerified: false,
+    title: job.title || "Untitled job",
+    description: [job.description, job.responsibilities].filter(Boolean).join("\n\n"),
+    category: job.requiredSkills?.length ? "skill-based" : "beginner-friendly",
+    skillsRequired: job.requiredSkills || [],
+    qualificationRequired: "",
+    experienceRequired: job.requiredExperienceMonths ? `${job.requiredExperienceMonths} months` : "",
+    workType: job.startDate && job.endDate && job.startDate !== job.endDate ? "multi-day" : "full-day",
+    workersNeeded: job.numberOfWorkersRequired || 1,
+    workersHired: 0,
+    date,
+    endDate: job.endDate,
+    startTime: (job.startTime || "").slice(0, 5),
+    endTime: (job.endTime || "").slice(0, 5),
+    duration: job.durationDescription || "",
+    location: [job.address, job.municipality, job.district].filter(Boolean).join(", "),
+    district: job.district || "",
+    payment: Number(job.paymentAmount) || 0,
+    paymentType,
+    status,
+    postedDate: (job.publishedAt || job.createdAt || "").slice(0, 10),
+    deadline: "",
+    applicantCount: 0,
+  }
+}
+
+export function mapApiApplication(app: ApiApplication, user: User, profile?: WorkerProfile): Application {
+  const status: Application["status"] = app.status === "SELECTED" ? "accepted" : app.status === "NOT_SELECTED" || app.status === "CANCELLED" ? "rejected" : app.status === "WITHDRAWN" ? "rejected" : "pending"
+  return {
+    id: String(app.applicationId),
+    jobId: String(app.jobId),
+    workerId: user.role === "worker" ? user.profileId : "",
+    workerName: user.name,
+    workerPhoto: profile?.photo || "",
+    workerLocation: profile?.location || app.jobAddress || "",
+    workerSkills: profile?.skills || [],
+    workerRating: profile?.rating || 0,
+    workerTotalJobs: profile?.totalJobs || 0,
+    jobTitle: app.jobTitle,
+    providerName: "",
+    providerId: "",
+    appliedDate: (app.appliedAt || "").slice(0, 10),
+    status,
+    engagementId: undefined,
+    engagementStatus: undefined,
+    coverNote: "",
+  }
+}
+
+export function mapSeekerProfile(value: any, user: User): WorkerProfile {
+  const address = value.address || ""
+  const district = address.split(",").at(-1)?.trim() || ""
+  return {
+    id: user.profileId,
+    name: value.fullName || user.name,
+    photo: value.profilePictureUrl || "",
+    phone: value.phoneNumber || "",
+    email: value.email || user.email,
+    dateOfBirth: value.dateOfBirth || undefined,
+    address,
+    location: address,
+    district,
+    skills: [],
+    qualifications: [],
+    experience: [],
+    availableDates: [],
+    availability: "flexible",
+    bio: value.bio || "",
+    workHistory: [],
+    rating: 0,
+    totalJobs: 0,
+    verified: Boolean(value.verified),
+    kycStatus: value.verified ? "verified" : "not-verified",
+  }
+}
+
+export function mapProviderProfile(value: any, user: User): ProviderProfile {
+  const businessName = value.businessName || value.fullName || user.name
+  const address = value.businessLocation || value.address || ""
+  return {
+    id: user.profileId,
+    providerType: value.hasBusiness ? "business" : "individual",
+    dateOfBirth: value.dateOfBirth || undefined,
+    orgName: businessName,
+    logo: value.profilePictureUrl || "",
+    contactName: value.fullName || user.name,
+    email: value.email || user.email,
+    phone: value.phoneNumber || "",
+    location: address,
+    district: value.address?.split(",").at(-1)?.trim() || "",
+    industry: "Other",
+    description: value.businessDescription || "",
+    verified: Boolean(value.verified),
+    pan: "",
+    totalHires: 0,
+    rating: 0,
+    reviewCount: 0,
+    website: value.businessWebsite || "",
+  }
+}

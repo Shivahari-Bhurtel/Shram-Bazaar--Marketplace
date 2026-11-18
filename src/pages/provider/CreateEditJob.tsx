@@ -2,6 +2,9 @@ import { useState } from "react"
 import { useApp } from "../../store/AppContext"
 import { ALL_SKILLS, DISTRICTS } from "../../data/mockData"
 import type { Job, JobCategory, WorkType, PaymentType } from "../../types"
+import { formatNepalDate, isDateOnlyString, nepalDateString } from "../../utils/dates"
+import { isValidTime } from "../../utils/validation"
+import { getConfiguredJobCategories } from "../../utils/categories"
 
 interface Props {
   editJobId?: string | null
@@ -37,6 +40,8 @@ export default function CreateEditJob({ editJobId }: Props) {
   const [skillInput, setSkillInput] = useState("")
   const [step, setStep] = useState(1)
   const [submitted, setSubmitted] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [jobCategories] = useState(getConfiguredJobCategories)
 
   const filteredSkills = ALL_SKILLS.filter(
     (s) =>
@@ -53,13 +58,70 @@ export default function CreateEditJob({ editJobId }: Props) {
     }))
   }
 
-  const handleSubmit = () => {
-    if (existingJob) {
-      updateJob(existingJob.id, form)
-    } else {
-      postJob(form as any)
+  const handleSubmit = async () => {
+    if (!validateStep(3)) return
+    try {
+      if (existingJob) {
+        await updateJob(existingJob.id, form)
+      } else {
+        await postJob(form)
+      }
+      setSubmitted(true)
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Unable to save this job.")
     }
-    setSubmitted(true)
+  }
+
+  const validateStep = (stepToValidate: number) => {
+    let message = ""
+    if (stepToValidate === 1) {
+      if (!form.title.trim()) message = "Enter a job title."
+      else if (!form.description.trim())
+        message = "Add a description of the work."
+      else if (
+        !Number.isInteger(form.workersNeeded) ||
+        form.workersNeeded < 1 ||
+        form.workersNeeded > 100
+      )
+        message = "Enter a whole number of workers between 1 and 100."
+      else if (existingJob && form.workersNeeded < existingJob.workersHired)
+        message = `This job already has ${existingJob.workersHired} accepted workers. Keep the requested positions at ${existingJob.workersHired} or more.`
+    } else if (stepToValidate === 2) {
+      if (!form.location.trim()) message = "Enter the work location."
+      else if (!form.district) message = "Select the work district."
+    } else {
+      const today = nepalDateString()
+      if (!isDateOnlyString(form.date)) message = "Choose a valid start date."
+      else if (!existingJob && form.date < today)
+        message = "Choose today or a future start date."
+      else if (form.workType === "multi-day" && !isDateOnlyString(form.endDate))
+        message = "Choose a valid end date for multi-day work."
+      else if (form.endDate && !isDateOnlyString(form.endDate))
+        message = "Choose a valid end date."
+      else if (form.endDate && form.endDate < form.date)
+        message = "The end date must be on or after the start date."
+      else if (form.deadline && !isDateOnlyString(form.deadline))
+        message = "Choose a valid application deadline."
+      else if (form.deadline && !existingJob && form.deadline < today)
+        message = "Choose today or a future application deadline."
+      else if (form.deadline && form.deadline > form.date)
+        message =
+          "The application deadline must be on or before the start date."
+      else if (!isValidTime(form.startTime))
+        message = "Choose a valid start time."
+      else if (!isValidTime(form.endTime))
+        message = "Choose a valid end time."
+      else if (form.workType !== "multi-day" && form.endTime <= form.startTime)
+        message = "The end time must be later than the start time."
+      else if (!Number.isFinite(form.payment) || form.payment <= 0)
+        message = "Enter a payment amount greater than zero."
+    }
+    setFormError(message)
+    return !message
+  }
+
+  const continueToNextStep = () => {
+    if (validateStep(step)) setStep((current) => current + 1)
   }
 
   if (submitted) {
@@ -156,6 +218,14 @@ export default function CreateEditJob({ editJobId }: Props) {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl p-6 md:p-8">
+        {formError && (
+          <p
+            role="alert"
+            className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
+            {formError}
+          </p>
+        )}
         {/* Step 1: Job Basics */}
         {step === 1 && (
           <div className="space-y-5 animate-fade-in">
@@ -168,11 +238,13 @@ export default function CreateEditJob({ editJobId }: Props) {
               </label>
               <input
                 value={form.title}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setFormError("")
                   setForm((p) => ({ ...p, title: e.target.value }))
-                }
+                }}
                 placeholder="e.g. Electrician for Office Renovation"
                 className="input-style"
+                maxLength={100}
               />
             </div>
             <div>
@@ -180,23 +252,7 @@ export default function CreateEditJob({ editJobId }: Props) {
                 Job Category *
               </label>
               <div className="grid grid-cols-3 gap-3">
-                {[
-                  {
-                    value: "qualified",
-                    label: "Qualified / Professional",
-                    desc: "Requires formal qualification or licence",
-                  },
-                  {
-                    value: "skill-based",
-                    label: "Skill Based",
-                    desc: "Requires specific skill or trade",
-                  },
-                  {
-                    value: "beginner-friendly",
-                    label: "Beginner Friendly",
-                    desc: "No prior experience needed",
-                  },
-                ].map((cat) => (
+                {jobCategories.map((cat) => (
                   <button
                     key={cat.value}
                     type="button"
@@ -228,12 +284,14 @@ export default function CreateEditJob({ editJobId }: Props) {
               </label>
               <textarea
                 value={form.description}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setFormError("")
                   setForm((p) => ({ ...p, description: e.target.value }))
-                }
+                }}
                 placeholder="Describe the role, responsibilities, and what you expect from workers. The more detail, the better the match."
                 rows={5}
                 className="input-style resize-none"
+                maxLength={4000}
               />
             </div>
             <div>
@@ -242,15 +300,17 @@ export default function CreateEditJob({ editJobId }: Props) {
               </label>
               <input
                 type="number"
-                min="1"
+                min={Math.max(1, existingJob?.workersHired || 1)}
                 max="100"
+                step="1"
                 value={form.workersNeeded}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setFormError("")
                   setForm((p) => ({
                     ...p,
                     workersNeeded: Number(e.target.value),
                   }))
-                }
+                }}
                 className="input-style w-32"
               />
             </div>
@@ -344,11 +404,13 @@ export default function CreateEditJob({ editJobId }: Props) {
               </label>
               <input
                 value={form.location}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setFormError("")
                   setForm((p) => ({ ...p, location: e.target.value }))
-                }
+                }}
                 placeholder="e.g. Durbar Marg, Kathmandu"
                 className="input-style"
+                maxLength={120}
               />
             </div>
             <div>
@@ -357,9 +419,10 @@ export default function CreateEditJob({ editJobId }: Props) {
               </label>
               <select
                 value={form.district}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setFormError("")
                   setForm((p) => ({ ...p, district: e.target.value }))
-                }
+                }}
                 className="input-style"
               >
                 <option value="">Select district</option>
@@ -415,50 +478,56 @@ export default function CreateEditJob({ editJobId }: Props) {
                 <input
                   type="date"
                   value={form.date}
-                  onChange={(e) =>
+                  min={!existingJob ? nepalDateString() : undefined}
+                  onChange={(e) => {
+                    setFormError("")
                     setForm((p) => ({ ...p, date: e.target.value }))
-                  }
+                  }}
                   className="input-style"
                 />
               </div>
               {form.workType === "multi-day" && (
                 <div>
                   <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                    End Date
+                    End Date {form.workType === "multi-day" && "*"}
                   </label>
                   <input
                     type="date"
                     value={form.endDate}
-                    onChange={(e) =>
+                    min={form.date || undefined}
+                    onChange={(e) => {
+                      setFormError("")
                       setForm((p) => ({ ...p, endDate: e.target.value }))
-                    }
+                    }}
                     className="input-style"
                   />
                 </div>
               )}
               <div>
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                  Start Time
+                  Start Time *
                 </label>
                 <input
                   type="time"
                   value={form.startTime}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setFormError("")
                     setForm((p) => ({ ...p, startTime: e.target.value }))
-                  }
+                  }}
                   className="input-style"
                 />
               </div>
               <div>
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                  End Time
+                  End Time *
                 </label>
                 <input
                   type="time"
                   value={form.endTime}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setFormError("")
                     setForm((p) => ({ ...p, endTime: e.target.value }))
-                  }
+                  }}
                   className="input-style"
                 />
               </div>
@@ -482,9 +551,11 @@ export default function CreateEditJob({ editJobId }: Props) {
                 <input
                   type="date"
                   value={form.deadline}
-                  onChange={(e) =>
+                  max={form.date || undefined}
+                  onChange={(e) => {
+                    setFormError("")
                     setForm((p) => ({ ...p, deadline: e.target.value }))
-                  }
+                  }}
                   className="input-style"
                 />
               </div>
@@ -496,10 +567,13 @@ export default function CreateEditJob({ editJobId }: Props) {
                 </label>
                 <input
                   type="number"
+                  min="1"
+                  step="1"
                   value={form.payment || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setFormError("")
                     setForm((p) => ({ ...p, payment: Number(e.target.value) }))
-                  }
+                  }}
                   placeholder="e.g. 1500"
                   className="input-style"
                 />
@@ -537,7 +611,7 @@ export default function CreateEditJob({ editJobId }: Props) {
                 {form.district && <span>{form.district}</span>}
                 {form.date && (
                   <span>
-                    {new Date(form.date).toLocaleDateString("en-NP", {
+                    {formatNepalDate(form.date, {
                       month: "short",
                       day: "numeric",
                     })}
@@ -560,7 +634,7 @@ export default function CreateEditJob({ editJobId }: Props) {
             onClick={() =>
               step === 1
                 ? navigate("provider-dashboard")
-                : setStep((s) => s - 1)
+                : (setFormError(""), setStep((s) => s - 1))
             }
             className="px-5 py-2.5 border border-stone-200 rounded-xl text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
           >
@@ -568,8 +642,7 @@ export default function CreateEditJob({ editJobId }: Props) {
           </button>
           {step < 3 ? (
             <button
-              onClick={() => setStep((s) => s + 1)}
-              disabled={step === 1 && (!form.title || !form.description)}
+              onClick={continueToNextStep}
               className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Continue →
@@ -577,7 +650,6 @@ export default function CreateEditJob({ editJobId }: Props) {
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={!form.date || !form.payment || !form.location}
               className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {existingJob ? "Save Changes" : "Post Job →"}

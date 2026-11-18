@@ -368,7 +368,7 @@ export default function Landing() {
     x: number
     scrollLeft: number
   } | null>(null)
-  const touchStart = useRef<{ x: number y: number } | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     const section = journeySectionRef.current
@@ -1374,7 +1374,7 @@ function conciseLocation(location: string) {
   return cleanLocation
 }
 
-function FeaturedOpportunityCard({ job, index }: { job: Job index: number }) {
+function FeaturedOpportunityCard({ job, index }: { job: Job; index: number }) {
   const colors = providerTileColors[index % providerTileColors.length]
   const location = conciseLocation(job.location)
   const reveal = useScrollReveal<HTMLElement>((index % 4) * 70)
@@ -1454,7 +1454,7 @@ function FeaturedOpportunityCard({ job, index }: { job: Job index: number }) {
   )
 }
 
-function CompanyLogo({ job, className }: { job: Job className: string }) {
+function CompanyLogo({ job, className }: { job: Job; className: string }) {
   const [imageFailed, setImageFailed] = useState(false)
   const initials = job.providerName
     .trim()
@@ -1510,7 +1510,7 @@ function JourneyStepCard({
   styleDelay,
   ariaHidden,
 }: {
-  step: { title: string detail: string points: string[] }
+  step: { title: string; detail: string; points: string[] }
   index: number
   audience: JourneyAudience
   styleDelay: number

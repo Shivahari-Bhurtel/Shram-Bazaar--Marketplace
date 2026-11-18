@@ -19,8 +19,6 @@ const translations: Record<string, string> = {
   "Shrama AI assistant": "श्रम AI सहायक",
   "Powered by Gemini": "Gemini AI द्वारा सञ्चालित",
   "Try asking": "यी सोध्नुहोस्",
-  "Find work": "काम खोज्नुहोस्",
-  "My applications": "मेरा आवेदन",
   "Profile tips": "प्रोफाइल सुझाव",
   "Close Shrama AI": "श्रम AI बन्द गर्नुहोस्",
   "Open Shrama AI": "श्रम AI खोल्नुहोस्",
@@ -1096,12 +1094,20 @@ function translateDocument(language: Language) {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() =>
-    localStorage.getItem(LANGUAGE_KEY) === "ne" ? "ne" : "en",
-  )
+  const [language, setLanguageState] = useState<Language>(() => {
+    try {
+      return localStorage.getItem(LANGUAGE_KEY) === "ne" ? "ne" : "en"
+    } catch {
+      return "en"
+    }
+  })
 
   const setLanguage = (nextLanguage: Language) => {
-    localStorage.setItem(LANGUAGE_KEY, nextLanguage)
+    try {
+      localStorage.setItem(LANGUAGE_KEY, nextLanguage)
+    } catch {
+      // Apply language for the current session when browser storage is unavailable.
+    }
     setLanguageState(nextLanguage)
   }
 
@@ -1121,10 +1127,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         field.setCustomValidity("यो विवरण भर्नुहोस्।")
       else if (field.validity.typeMismatch)
         field.setCustomValidity("सही ढाँचामा विवरण लेख्नुहोस्।")
-      else if (field.validity.tooShort)
-        field.setCustomValidity(`कम्तीमा ${field.minLength} अक्षर लेख्नुहोस्।`)
-      else if (field.validity.rangeUnderflow)
-        field.setCustomValidity(`कम्तीमा ${field.min} राख्नुहोस्।`)
+      else if (field.validity.tooShort) {
+        const minLength =
+          field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement
+            ? field.minLength
+            : 0
+        field.setCustomValidity(`कम्तीमा ${minLength} अक्षर लेख्नुहोस्।`)
+      } else if (field.validity.rangeUnderflow) {
+        const min = field instanceof HTMLInputElement ? field.min : ""
+        field.setCustomValidity(`कम्तीमा ${min} राख्नुहोस्।`)
+      }
       else field.setCustomValidity("यो विवरण जाँच गर्नुहोस्।")
     }
     const clearValidation = (event: Event) => {

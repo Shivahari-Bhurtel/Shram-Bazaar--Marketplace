@@ -1,5 +1,6 @@
 import { useApp } from "../../store/AppContext"
 import { JobStatusBadge, VerifiedBadge } from "../../components/StatusBadge"
+import { formatNepalDate } from "../../utils/dates"
 
 export default function ProviderDashboard() {
   const { state, navigate, myJobs, jobApplications } = useApp()
@@ -194,7 +195,7 @@ export default function ProviderDashboard() {
                           <span>📍 {job.district}</span>
                           <span>
                             📅{" "}
-                            {new Date(job.date).toLocaleDateString("en-NP", {
+                            {formatNepalDate(job.date, {
                               month: "short",
                               day: "numeric",
                             })}
@@ -273,6 +274,11 @@ export default function ProviderDashboard() {
                 {
                   label: "View All Jobs",
                   page: "my-jobs" as const,
+                  style: "bg-stone-100 text-stone-700 hover:bg-stone-200",
+                },
+                {
+                  label: "Team & Operations",
+                  page: "provider-operations" as const,
                   style: "bg-stone-100 text-stone-700 hover:bg-stone-200",
                 },
                 {

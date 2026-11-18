@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useApp } from "../store/AppContext"
 import { ALL_SKILLS, DISTRICTS } from "../data/mockData"
 import { LanguageSwitch } from "../i18n/LanguageContext"
+import { nepalDateString } from "../utils/dates"
 
 type AuthMode = "login" | "worker-signup" | "provider-signup"
 
@@ -10,19 +11,24 @@ interface Props {
 }
 
 export default function AuthPage({ mode }: Props) {
-  const { navigate, login, signupWorker, signupProvider } = useApp()
+  const { navigate, login, signupWorker, signupProvider, loginAsAdmin } =
+    useApp()
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     name: "",
     phone: "",
+    dateOfBirth: "",
+    gender: "",
+    address: "",
     district: "",
     location: "",
     orgName: "",
     pan: "",
     industry: "",
     contactName: "",
+    providerType: "individual" as "individual" | "business" | "organization",
     skills: [] as string[],
   })
   const [skillInput, setSkillInput] = useState("")
@@ -44,32 +50,42 @@ export default function AuthPage({ mode }: Props) {
     "Education",
     "Finance & Banking",
     "NGO / INGO",
+    "Household / individual hiring",
     "Other",
   ]
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     if (isLogin) {
-      const result = login(formData.email, formData.password)
+      setLoading(true)
+      const result = await login(formData.email, formData.password)
       if (result) setError(result)
-    } else if (isProvider && step < 2) {
+      setLoading(false)
+    } else if (step < 2) {
       setStep((s) => s + 1)
     } else {
-      const result = isWorker
+      const resultPromise = isWorker
         ? signupWorker({
             email: formData.email,
             password: formData.password,
             name: formData.name.trim(),
-            phone: "",
-            district: "",
-            location: "",
-            skills: [],
+            phone: formData.phone.trim(),
+            dateOfBirth: formData.dateOfBirth,
+            gender: (formData.gender ||
+              undefined) as "female" | "male" | "non-binary" | "prefer-not-to-say" | undefined,
+            address: formData.address.trim(),
+            district: formData.district,
+            location: formData.location,
+            skills: formData.skills,
           })
         : signupProvider({
             email: formData.email,
             password: formData.password,
             contactName: formData.contactName,
+            providerType: formData.providerType,
+            dateOfBirth: formData.dateOfBirth,
+            address: formData.location,
             phone: formData.phone,
             orgName: formData.orgName,
             pan: formData.pan,
@@ -77,7 +93,10 @@ export default function AuthPage({ mode }: Props) {
             district: formData.district,
             location: formData.location,
           })
+      setLoading(true)
+      const result = await resultPromise
       if (result) setError(result)
+      setLoading(false)
     }
   }
 
@@ -261,7 +280,7 @@ export default function AuthPage({ mode }: Props) {
                   {isWorker
                     ? step === 1
                       ? "Add your full name, email address, and password to get started."
-                      : "Step 2 of 2 · Location and skills. This helps us match you with relevant work nearby."
+                      : "Step 2 of 2 · Contact, location, and skills. This helps us match you with relevant work nearby."
                     : `Step ${step} of 2 — ${
                         step === 1 ? "Contact information" : "Business details"
                       }`}
@@ -270,9 +289,25 @@ export default function AuthPage({ mode }: Props) {
             </div>
 
             {error && (
-              <div className="mb-5 rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-ink">
+              <div
+                role="alert"
+                className="mb-5 rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-ink"
+              >
                 {error}
               </div>
+            )}
+
+            {!isLogin && step === 2 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setError("")
+                  setStep(1)
+                }}
+                className="mb-3 text-sm font-medium text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
+              >
+                ← Back to account details
+              </button>
             )}
 
             <form onSubmit={handleSubmit} className="auth-form space-y-4">
@@ -355,6 +390,66 @@ export default function AuthPage({ mode }: Props) {
               {/* Worker signup step 2 */}
               {isWorker && step === 2 && (
                 <>
+                  <Field label="Date of birth">
+                    <input
+                      type="date"
+                      value={formData.dateOfBirth}
+                      max={nepalDateString()}
+                      onChange={(e) =>
+                        setFormData((p) => ({
+                          ...p,
+                          dateOfBirth: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="Gender (optional)">
+                    <select
+                      value={formData.gender}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, gender: e.target.value }))
+                      }
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                    >
+                      <option value="">Prefer not to say</option>
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
+                      <option value="non-binary">Non-binary</option>
+                      <option value="prefer-not-to-say">
+                        Prefer not to say
+                      </option>
+                    </select>
+                  </Field>
+                  <Field label="Street, ward, or tole address">
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, address: e.target.value }))
+                      }
+                      placeholder="Optional; not shown to employers"
+                      autoComplete="street-address"
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                    />
+                  </Field>
+                  <Field label="Phone number">
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        setError("")
+                        setFormData((p) => ({ ...p, phone: e.target.value }))
+                      }}
+                      placeholder="+977 98XXXXXXXX"
+                      autoComplete="tel"
+                      pattern="[+]?[0-9\s\(\)\x2d]{7,20}"
+                      maxLength={20}
+                      required
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                    />
+                  </Field>
                   <Field label="Your district">
                     <select
                       value={formData.district}
@@ -433,7 +528,7 @@ export default function AuthPage({ mode }: Props) {
               {/* Provider signup step 1 */}
               {isProvider && step === 1 && (
                 <>
-                  <Field label="Contact person name">
+                  <Field label="Your name or contact person">
                     <input
                       type="text"
                       value={formData.contactName}
@@ -464,10 +559,14 @@ export default function AuthPage({ mode }: Props) {
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        setError("")
                         setFormData((p) => ({ ...p, phone: e.target.value }))
-                      }
+                      }}
                       placeholder="+977-01XXXXXXX"
+                      autoComplete="tel"
+                      pattern="[+]?[0-9\s\(\)\x2d]{7,20}"
+                      maxLength={20}
                       className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                       required
                     />
@@ -491,19 +590,41 @@ export default function AuthPage({ mode }: Props) {
               {/* Provider signup step 2 */}
               {isProvider && step === 2 && (
                 <>
-                  <Field label="Organisation name">
+                  <Field label="Date of birth">
+                    <input
+                      type="date"
+                      value={formData.dateOfBirth}
+                      max={nepalDateString()}
+                      onChange={(e) => setFormData((p) => ({ ...p, dateOfBirth: e.target.value }))}
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    />
+                  </Field>
+                  <Field label="Provider type">
+                    <select
+                      value={formData.providerType}
+                      onChange={(e) => setFormData((p) => ({ ...p, providerType: e.target.value as typeof p.providerType }))}
+                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      required
+                    >
+                      <option value="individual">Individual / household</option>
+                      <option value="business">Business</option>
+                      <option value="organization">Organization</option>
+                    </select>
+                  </Field>
+                  <Field label={formData.providerType === "individual" ? "Display name" : formData.providerType === "business" ? "Business name" : "Organization name"}>
                     <input
                       type="text"
                       value={formData.orgName}
                       onChange={(e) =>
                         setFormData((p) => ({ ...p, orgName: e.target.value }))
                       }
-                      placeholder="e.g. HimTech Solutions Pvt. Ltd."
+                      placeholder={formData.providerType === "individual" ? "e.g. Maya Gurung" : "e.g. HimTech Solutions Pvt. Ltd."}
                       className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                       required
                     />
                   </Field>
-                  <Field label="PAN number" hint="Required for verification">
+                  <Field label={formData.providerType === "individual" ? "PAN number (optional)" : "PAN number"} hint={formData.providerType === "individual" ? "Not required for individuals or households hiring workers." : "Required for business or organization verification."}>
                     <input
                       type="text"
                       value={formData.pan}
@@ -511,8 +632,11 @@ export default function AuthPage({ mode }: Props) {
                         setFormData((p) => ({ ...p, pan: e.target.value }))
                       }
                       placeholder="9-digit PAN"
+                      inputMode="numeric"
+                      pattern="[0-9]{9}"
+                      maxLength={9}
                       className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                      required
+                      required={formData.providerType !== "individual"}
                     />
                   </Field>
                   <Field label="Industry">
@@ -571,7 +695,7 @@ export default function AuthPage({ mode }: Props) {
               >
                 {isLogin ? (
                   "Sign In"
-                ) : isProvider && step < 2 ? (
+                ) : step < 2 ? (
                   <>
                     Continue <span aria-hidden="true">→</span>
                   </>
@@ -582,6 +706,16 @@ export default function AuthPage({ mode }: Props) {
                 )}
               </button>
             </form>
+
+            {isLogin && import.meta.env.VITE_DEMO_MODE === "true" && import.meta.env.DEV && (
+              <button
+                type="button"
+                onClick={loginAsAdmin}
+                className="mt-3 w-full rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:bg-stone-50"
+              >
+                Open local admin preview
+              </button>
+            )}
 
             {/* Footer links */}
             {isLogin ? (

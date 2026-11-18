@@ -2,21 +2,26 @@ import { useState } from "react"
 import { useApp } from "../../store/AppContext"
 import { VerifiedBadge } from "../../components/StatusBadge"
 import { DISTRICTS } from "../../data/mockData"
+import { isValidNepalPan, isValidPhoneNumber } from "../../utils/validation"
 
 export default function ProviderProfile() {
-  const { state, updateProviderProfile } = useApp()
+  const { state, updateProviderProfile, submitProviderVerification } = useApp()
   const { providerProfile } = state
   const [editing, setEditing] = useState(false)
   const [tempData, setTempData] = useState<any>({})
   const [saved, setSaved] = useState(false)
+  const [profileError, setProfileError] = useState("")
+  const [verificationMessage, setVerificationMessage] = useState("")
 
   if (!providerProfile) return null
 
   const startEdit = () => {
     setEditing(true)
     setSaved(false)
+    setProfileError("")
     setTempData({
       orgName: providerProfile.orgName,
+      providerType: providerProfile.providerType || "business",
       contactName: providerProfile.contactName,
       phone: providerProfile.phone,
       location: providerProfile.location,
@@ -24,11 +29,64 @@ export default function ProviderProfile() {
       industry: providerProfile.industry,
       description: providerProfile.description,
       pan: providerProfile.pan,
+      website: providerProfile.website || "",
+      socialLinks: providerProfile.socialLinks || "",
+      operatingHours: providerProfile.operatingHours || "",
+      yearsOperating: providerProfile.yearsOperating || "",
     })
   }
 
   const saveEdit = () => {
-    updateProviderProfile(tempData)
+    const orgName = String(tempData.orgName ?? "").trim()
+    const contactName = String(tempData.contactName ?? "").trim()
+    const phone = String(tempData.phone ?? "").trim()
+    const location = String(tempData.location ?? "").trim()
+    const district = String(tempData.district ?? "").trim()
+    const industry = String(tempData.industry ?? "").trim()
+    const pan = String(tempData.pan ?? "").trim()
+    const providerType = tempData.providerType || providerProfile.providerType || "business"
+    const description = String(tempData.description ?? "").trim()
+
+    if (
+      !orgName ||
+      !contactName ||
+      !phone ||
+      !location ||
+      !district ||
+      !industry ||
+      (providerType !== "individual" && !pan)
+    ) {
+      setProfileError(
+        "Complete all required organisation details before saving.",
+      )
+      return
+    }
+    if (!isValidPhoneNumber(phone)) {
+      setProfileError("Enter a valid phone number with 7 to 15 digits.")
+      return
+    }
+    if (pan && !isValidNepalPan(pan)) {
+      setProfileError("Enter a valid 9-digit PAN number, or leave it blank for an individual account.")
+      return
+    }
+    if (description.length > 1000) {
+      setProfileError("Keep the description under 1,000 characters.")
+      return
+    }
+
+    updateProviderProfile({
+      ...tempData,
+      providerType,
+      orgName,
+      contactName,
+      phone,
+      location,
+      district,
+      industry,
+      pan,
+      description,
+    })
+    setProfileError("")
     setEditing(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -45,6 +103,7 @@ export default function ProviderProfile() {
     "Education",
     "Finance & Banking",
     "NGO / INGO",
+    "Household / individual hiring",
     "Other",
   ]
 
@@ -121,7 +180,10 @@ export default function ProviderProfile() {
               ) : (
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setEditing(false)}
+                    onClick={() => {
+                      setProfileError("")
+                      setEditing(false)
+                    }}
                     className="text-xs text-stone-500 hover:text-stone-700"
                   >
                     Cancel
@@ -136,14 +198,35 @@ export default function ProviderProfile() {
               )}
             </div>
 
+            {editing && profileError && (
+              <p
+                role="alert"
+                className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+              >
+                {profileError}
+              </p>
+            )}
+
             {editing ? (
               <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-stone-600 block mb-1">Provider type</label>
+                  <select value={tempData.providerType || "business"} onChange={(event) => { setProfileError(""); setTempData((current: any) => ({ ...current, providerType: event.target.value })) }} className="input-style">
+                    <option value="individual">Individual / household</option>
+                    <option value="business">Business</option>
+                    <option value="organization">Organization</option>
+                  </select>
+                </div>
                 {[
-                  { label: "Organisation Name", key: "orgName", type: "text" },
+                  { label: tempData.providerType === "individual" ? "Display name" : "Organisation Name", key: "orgName", type: "text" },
                   { label: "Contact Person", key: "contactName", type: "text" },
                   { label: "Phone", key: "phone", type: "tel" },
                   { label: "Location", key: "location", type: "text" },
-                  { label: "PAN Number", key: "pan", type: "text" },
+                  { label: tempData.providerType === "individual" ? "PAN Number (optional)" : "PAN Number", key: "pan", type: "text" },
+                  { label: "Website (optional)", key: "website", type: "url" },
+                  { label: "Social links (optional)", key: "socialLinks", type: "text" },
+                  { label: "Operating hours (optional)", key: "operatingHours", type: "text" },
+                  { label: "Years operating (optional)", key: "yearsOperating", type: "number" },
                 ].map((f) => (
                   <div key={f.key}>
                     <label className="text-xs font-medium text-stone-600 block mb-1">
@@ -152,11 +235,29 @@ export default function ProviderProfile() {
                     <input
                       type={f.type}
                       value={tempData[f.key] ?? ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        setProfileError("")
                         setTempData((p: any) => ({
                           ...p,
-                          [f.key]: e.target.value,
+                          [f.key]: f.key === "yearsOperating" ? Number(e.target.value) : e.target.value,
                         }))
+                      }}
+                      inputMode={f.key === "pan" ? "numeric" : undefined}
+                      pattern={
+                        f.key === "phone"
+                          ? "[+]?[0-9\\s\\(\\)\\x2d]{7,20}"
+                          : f.key === "pan"
+                            ? "[0-9]{9}"
+                            : undefined
+                      }
+                      maxLength={
+                        f.key === "phone"
+                          ? 20
+                          : f.key === "pan"
+                            ? 9
+                            : f.key === "orgName" || f.key === "contactName"
+                              ? 120
+                              : undefined
                       }
                       className="input-style"
                     />
@@ -168,12 +269,13 @@ export default function ProviderProfile() {
                   </label>
                   <select
                     value={tempData.district}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setProfileError("")
                       setTempData((p: any) => ({
                         ...p,
                         district: e.target.value,
                       }))
-                    }
+                    }}
                     className="input-style"
                   >
                     {DISTRICTS.map((d) => (
@@ -189,12 +291,13 @@ export default function ProviderProfile() {
                   </label>
                   <select
                     value={tempData.industry}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      setProfileError("")
                       setTempData((p: any) => ({
                         ...p,
                         industry: e.target.value,
                       }))
-                    }
+                    }}
                     className="input-style"
                   >
                     {industries.map((i) => (
@@ -211,12 +314,14 @@ export default function ProviderProfile() {
                   <textarea
                     value={tempData.description}
                     rows={4}
-                    onChange={(e) =>
+                    maxLength={1000}
+                    onChange={(e) => {
+                      setProfileError("")
                       setTempData((p: any) => ({
                         ...p,
                         description: e.target.value,
                       }))
-                    }
+                    }}
                     className="input-style resize-none"
                   />
                 </div>
@@ -234,7 +339,12 @@ export default function ProviderProfile() {
                   { label: "Location", value: providerProfile.location },
                   { label: "District", value: providerProfile.district },
                   { label: "Industry", value: providerProfile.industry },
-                  { label: "PAN Number", value: providerProfile.pan },
+                  { label: "Provider type", value: providerProfile.providerType || "Business" },
+                  { label: "PAN Number", value: providerProfile.pan || "Not provided" },
+                  { label: "Website", value: providerProfile.website || "Not added" },
+                  { label: "Social links", value: providerProfile.socialLinks || "Not added" },
+                  { label: "Operating hours", value: providerProfile.operatingHours || "Not added" },
+                  { label: "Years operating", value: providerProfile.yearsOperating ? String(providerProfile.yearsOperating) : "Not added" },
                 ].map((item) => (
                   <div key={item.label}>
                     <p className="text-xs text-stone-400 uppercase tracking-wider font-mono-data mb-0.5">
@@ -296,7 +406,7 @@ export default function ProviderProfile() {
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                   <span className="font-semibold text-amber-800">
-                    Verification Pending
+                    {providerProfile.verificationStatus === "pending" ? "Verification Pending" : providerProfile.verificationStatus === "rejected" ? "Update Required" : "Not Verified"}
                   </span>
                 </>
               )}
@@ -304,20 +414,44 @@ export default function ProviderProfile() {
             <p className="text-xs leading-relaxed text-stone-600">
               {providerProfile.verified
                 ? `Verified on ${providerProfile.verifiedDate}. Your Verified badge increases worker trust and application rates.`
-                : "Submit your PAN number and business registration documents to get verified. Workers trust verified providers more."}
+                : providerProfile.verificationStatus === "pending"
+                  ? `Your ${providerProfile.verificationDocumentName || "verification document"} is awaiting admin review.`
+                  : providerProfile.verificationStatus === "rejected"
+                    ? providerProfile.verificationReviewNote || "Your document was not accepted. Submit an updated document for review."
+                    : (providerProfile.providerType || "business") === "individual"
+                      ? "Submit a current government identity document. An administrator must review it before your provider badge is verified."
+                      : "Submit a business registration document or PAN certificate. An administrator must review it before your provider badge is verified."}
             </p>
-            {!providerProfile.verified && (
-              <button
-                onClick={() =>
-                  updateProviderProfile({
-                    verified: true,
-                    verifiedDate: new Date().toISOString().split("T")[0],
-                  })
-                }
-                className="mt-3 w-full py-2 bg-amber-600 text-white text-xs font-medium rounded-xl hover:bg-amber-700 transition-colors"
-              >
-                Submit PAN Verification
-              </button>
+            {!providerProfile.verified && providerProfile.verificationStatus !== "pending" && (
+              <div className="mt-3 space-y-2">
+                <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-file">{(providerProfile.providerType || "business") === "individual" ? "Identity document (citizenship, national ID, or passport; PDF, PNG, JPG; max 1 MB)" : "Business registration or PAN document (PDF, PNG, JPG; max 1 MB for browser storage)"}</label>
+                <input id="provider-verification-file" type="file" accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-stone-700" onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ""
+                  if (!file) return
+                  const extension = file.name.split(".").pop()?.toLowerCase()
+                  const supportedType = file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg"
+                  const supportedExtension = extension === "pdf" || extension === "png" || extension === "jpg" || extension === "jpeg"
+                  if (!supportedType && !supportedExtension) {
+                    setVerificationMessage("Choose a PDF, PNG or JPG verification document.")
+                    return
+                  }
+                  if (!file.size || file.size > 1 * 1024 * 1024) {
+                    setVerificationMessage("The document must be between 1 byte and 1 MB in this browser prototype.")
+                    return
+                  }
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    if (typeof reader.result === "string") {
+                      submitProviderVerification(file.name, reader.result)
+                      setVerificationMessage("Document submitted for administrator review.")
+                    } else setVerificationMessage("Could not read that document. Please select it again.")
+                  }
+                  reader.onerror = () => setVerificationMessage("Could not read that document. Please select it again.")
+                  reader.readAsDataURL(file)
+                }} />
+                {verificationMessage && <p role="status" className="text-xs text-stone-700">{verificationMessage}</p>}
+              </div>
             )}
           </div>
 

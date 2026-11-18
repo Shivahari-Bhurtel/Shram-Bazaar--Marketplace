@@ -1,6 +1,8 @@
 import { useState, type FormEvent, type ChangeEvent } from "react"
 import { useApp } from "../../store/AppContext"
 import type { KycDocumentType } from "../../types"
+import { nepalDateString } from "../../utils/dates"
+import { isValidPhoneNumber } from "../../utils/validation"
 
 const documentHelp: Record<KycDocumentType, string> = {
   "national-id": "Enter the number shown on your Nepal National ID.",
@@ -13,77 +15,193 @@ export default function KycVerification() {
   const { state, navigate, updateWorkerProfile, submitKyc } = useApp()
   const profile = state.workerProfile
   const [phone, setPhone] = useState(profile?.phone ?? "")
-  const [phoneMessage, setPhoneMessage] = useState("")
+  const [contactMessage, setContactMessage] = useState("")
+  const [codes, setCodes] = useState<Partial<Record<"phone" | "email", {
+    value: string
+    recipient: string
+    expiresAt: number
+  }>>>({})
+  const [codeInputs, setCodeInputs] =
+    useState<Partial<Record<"phone" | "email", string>>>({})
   const [form, setForm] = useState({
     documentType: "national-id" as KycDocumentType,
     documentNumber: "",
     fileName: "",
     documentData: "",
+    documentExpiryDate: "",
+    selfieFileName: "",
+    selfieData: "",
   })
   const [formMessage, setFormMessage] = useState("")
+  const [readingFile, setReadingFile] = useState(false)
 
   if (!profile) return null
 
   const status = profile.kycStatus ?? "not-verified"
+  const contactsVerified = !!profile.phoneVerified && !!profile.emailVerified
   const maskedNumber = profile.kycDocumentNumber
     ? `••••${profile.kycDocumentNumber.slice(-4)}`
     : ""
 
-  const savePhone = () => {
+  const sendCode = (method: "phone" | "email") => {
     const normalizedPhone = phone.trim()
-    if (!/^[+]?[0-9\s()-]{7,20}$/.test(normalizedPhone)) {
-      setPhoneMessage(
-        "Enter a valid phone number, including your country code if needed.",
+    if (method === "phone" && !isValidPhoneNumber(normalizedPhone)) {
+      setContactMessage("Enter a valid phone number before requesting a code.")
+      return
+    }
+    if (
+      method === "email" &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)
+    ) {
+      setContactMessage(
+        "Add a valid email address to your account before requesting a code.",
       )
       return
     }
-    updateWorkerProfile({ phone: normalizedPhone })
-    setPhoneMessage(
-      "Phone number saved. SMS verification is not connected yet, so this number is not verified.",
+    if (method === "phone") updateWorkerProfile({ phone: normalizedPhone })
+    const random = new Uint32Array(1)
+    crypto.getRandomValues(random)
+    const code = String(100000 + (random[0] % 900000))
+    setCodes((current) => ({
+      ...current,
+      [method]: {
+        value: code,
+        recipient: method === "phone" ? normalizedPhone : profile.email,
+        expiresAt: Date.now() + 5 * 60 * 1000,
+      },
+    }))
+    setCodeInputs((current) => ({ ...current, [method]: "" }))
+    setContactMessage(
+      `Demo code generated for ${method}. No SMS or email was sent.`,
     )
   }
 
-  const requestPhoneCode = () => {
-    const normalizedPhone = phone.trim()
-    if (!/^[+]?[0-9\s()-]{7,20}$/.test(normalizedPhone)) {
-      setPhoneMessage("Enter a valid phone number before requesting a code.")
+  const verifyCode = (method: "phone" | "email") => {
+    const pending = codes[method]
+    if (!pending) {
+      setContactMessage("Request a new demo code first.")
       return
     }
-    updateWorkerProfile({ phone: normalizedPhone })
-    setPhoneMessage(
-      "SMS delivery is not connected yet. No code was sent, and this number is not verified.",
+    if (Date.now() > pending.expiresAt) {
+      setCodes((current) => ({ ...current, [method]: undefined }))
+      setContactMessage("That code expired. Request a new demo code.")
+      return
+    }
+    const currentRecipient = method === "phone" ? phone.trim() : profile.email
+    if (currentRecipient !== pending.recipient) {
+      setCodes((current) => ({ ...current, [method]: undefined }))
+      setContactMessage(
+        "The contact changed. Generate a new code for the updated contact.",
+      )
+      return
+    }
+    if ((codeInputs[method] ?? "").trim() !== pending.value) {
+      setContactMessage(
+        "That code does not match. Check the demo code and try again.",
+      )
+      return
+    }
+    updateWorkerProfile(
+      method === "phone" ? { phoneVerified: true } : { emailVerified: true },
+    )
+    setCodes((current) => ({ ...current, [method]: undefined }))
+    setContactMessage(
+      `${
+        method === "phone" ? "Phone number" : "Email address"
+      } verified in this demo.`,
     )
   }
 
-  const handleDocumentFile = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentFile = (
+    event: ChangeEvent<HTMLInputElement>,
+    kind: "document" | "selfie" = "document",
+  ) => {
     const file = event.target.files?.[0]
     if (!file) return
-    if (!["image/jpeg", "image/png", "application/pdf"].includes(file.type)) {
-      setFormMessage("Choose a JPG, PNG, or PDF identity document.")
+    const clearSelectedFile = () =>
+      setForm((current) =>
+        kind === "document"
+          ? { ...current, fileName: "", documentData: "" }
+          : { ...current, selfieFileName: "", selfieData: "" },
+      )
+    const acceptedTypes =
+      kind === "document"
+        ? ["image/jpeg", "image/png", "application/pdf"]
+        : ["image/jpeg", "image/png"]
+    const extension = file.name.split(".").pop()?.toLowerCase()
+    const supportedExtension = kind === "document"
+      ? ["jpg", "jpeg", "png", "pdf"].includes(extension || "")
+      : ["jpg", "jpeg", "png"].includes(extension || "")
+    if (!acceptedTypes.includes(file.type) && !supportedExtension) {
+      clearSelectedFile()
+      setFormMessage(
+        kind === "document"
+          ? "Choose a JPG, PNG, or PDF identity document."
+          : "Choose a JPG or PNG selfie image.",
+      )
       event.target.value = ""
       return
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setFormMessage("Choose a file smaller than 2 MB.")
+    if (file.size === 0) {
+      clearSelectedFile()
+      setFormMessage("The selected file is empty. Choose another file.")
       event.target.value = ""
       return
     }
+    const maxSize = kind === "document" ? 1 * 1024 * 1024 : 512 * 1024
+    if (file.size > maxSize) {
+      clearSelectedFile()
+      setFormMessage(kind === "document" ? "Choose an identity document smaller than 1 MB for browser storage." : "Choose a selfie image smaller than 512 KB for browser storage.")
+      event.target.value = ""
+      return
+    }
+    clearSelectedFile()
+    setReadingFile(true)
     const reader = new FileReader()
     reader.onload = () => {
-      setForm((current) => ({
-        ...current,
-        fileName: file.name,
-        documentData: String(reader.result),
-      }))
+      setReadingFile(false)
+      if (typeof reader.result !== "string") {
+        clearSelectedFile()
+        setFormMessage("The file could not be read. Choose another file.")
+        event.target.value = ""
+        return
+      }
+      setForm((current) =>
+        kind === "document"
+          ? {
+              ...current,
+              fileName: file.name,
+              documentData: String(reader.result),
+            }
+          : {
+              ...current,
+              selfieFileName: file.name,
+              selfieData: String(reader.result),
+            },
+      )
       setFormMessage("")
     }
-    reader.readAsDataURL(file)
+    reader.onerror = () => {
+      setReadingFile(false)
+      clearSelectedFile()
+      setFormMessage("The file could not be read. Choose another file.")
+      event.target.value = ""
+    }
+    try {
+      reader.readAsDataURL(file)
+    } catch {
+      setReadingFile(false)
+      clearSelectedFile()
+      setFormMessage("The file could not be read. Choose another file.")
+      event.target.value = ""
+    }
   }
 
-  const submitDocument = (event: FormEvent<HTMLFormElement>) => {
+  const submitDocument = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const error = submitKyc(form)
-    setFormMessage(error ?? "Your identity document was submitted for review.")
+    const result = await error
+    setFormMessage(result ?? "Your identity document was submitted for review.")
   }
 
   return (
@@ -144,8 +262,12 @@ export default function KycVerification() {
           </span>
           <div>
             <p className="text-sm font-bold text-stone-900">Phone number</p>
-            <p className="text-xs font-medium text-amber-700">
-              Verification service not connected
+            <p
+              className={`text-xs font-medium ${
+                profile.phoneVerified ? "text-teal" : "text-stone-500"
+              }`}
+            >
+              {profile.phoneVerified ? "Verified" : "Not verified"}
             </p>
           </div>
         </div>
@@ -191,7 +313,9 @@ export default function KycVerification() {
                 ? "Verified"
                 : status === "pending"
                   ? "In review"
-                  : "Not submitted"}
+                  : status === "expired"
+                    ? "Expired"
+                    : "Not submitted"}
             </p>
           </div>
         </div>
@@ -200,55 +324,122 @@ export default function KycVerification() {
       <section className="mb-6 rounded-2xl border border-stone-200 bg-white p-5 sm:p-6">
         <div className="mb-5">
           <h2 className="font-display text-xl font-bold text-stone-900">
-            Phone number
+            Contact verification
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-stone-500">
-            Use a number you can access. A one-time SMS code is required to
-            verify it.
+            Verify the phone and email saved to your account with a one-time
+            code.
           </p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="flex-1">
-            <span className="mb-1.5 block text-sm font-semibold text-stone-700">
-              Mobile number
-            </span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              autoComplete="tel"
-              placeholder="+977 98XXXXXXXX"
-              className="input-style"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={savePhone}
-            className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:border-primary hover:text-primary-ink"
-          >
-            Save number
-          </button>
-          <button
-            type="button"
-            onClick={requestPhoneCode}
-            className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
-          >
-            Send verification code
-          </button>
+        <div className="grid gap-4 md:grid-cols-2">
+          {(["phone", "email"] as const).map((method) => {
+            const verified =
+              method === "phone" ? profile.phoneVerified : profile.emailVerified
+            const value = method === "phone" ? phone : profile.email
+            return (
+              <div
+                key={method}
+                className="rounded-xl border border-stone-200 p-4"
+              >
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <p className="text-sm font-bold capitalize text-stone-900">
+                    {method === "phone" ? "Phone number" : "Email address"}
+                  </p>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      verified
+                        ? "bg-teal-50 text-teal"
+                        : "bg-stone-100 text-stone-600"
+                    }`}
+                  >
+                    {verified ? "Verified" : "Not verified"}
+                  </span>
+                </div>
+                {method === "phone" ? (
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    autoComplete="tel"
+                    placeholder="+977 98XXXXXXXX"
+                    className="input-style"
+                    aria-label="Mobile number"
+                  />
+                ) : (
+                  <input
+                    type="email"
+                    value={value}
+                    readOnly
+                    className="input-style bg-stone-50"
+                    aria-label="Account email"
+                  />
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => sendCode(method)}
+                    className="rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+                  >
+                    Generate demo code
+                  </button>
+                  {verified && (
+                    <span className="self-center text-xs text-teal">
+                      Contact confirmed
+                    </span>
+                  )}
+                </div>
+                {codes[method] && (
+                  <div className="mt-3 space-y-2 rounded-lg bg-amber-50 p-3">
+                    <p className="text-xs text-amber-900">
+                      Demo code (valid for 5 minutes):{" "}
+                      <strong className="font-mono">
+                        {codes[method]?.value}
+                      </strong>
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={codeInputs[method] ?? ""}
+                        onChange={(event) =>
+                          setCodeInputs((current) => ({
+                            ...current,
+                            [method]: event.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 6),
+                          }))
+                        }
+                        placeholder="6-digit code"
+                        className="input-style min-w-0"
+                        aria-label={`${method} verification code`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => verifyCode(method)}
+                        className="rounded-xl border border-amber-300 px-3 text-sm font-semibold text-amber-900"
+                      >
+                        Verify
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
         <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
           <p className="text-sm font-semibold text-amber-900">
-            SMS verification is not connected yet
+            Local demo only
           </p>
           <p className="mt-1 text-xs leading-relaxed text-amber-800">
-            This preview cannot send or validate one-time codes. Your phone
-            number will remain unverified until an SMS verification service is
-            connected.
+            Codes are generated and shown on this page; no SMS or email is sent.
+            A trusted server and delivery provider are needed for real contact
+            verification.
           </p>
         </div>
-        {phoneMessage && (
+        {contactMessage && (
           <p role="status" className="mt-3 text-sm font-medium text-stone-600">
-            {phoneMessage}
+            {contactMessage}
           </p>
         )}
       </section>
@@ -277,7 +468,9 @@ export default function KycVerification() {
               ? "Verified"
               : status === "pending"
                 ? "In review"
-                : "Not verified"}
+                : status === "expired"
+                  ? "Expired · resubmit"
+                  : "Not verified"}
           </span>
         </div>
 
@@ -310,82 +503,156 @@ export default function KycVerification() {
             )}
           </div>
         ) : (
-          <form onSubmit={submitDocument} className="grid gap-4 sm:grid-cols-2">
-            <label>
-              <span className="mb-1.5 block text-sm font-semibold text-stone-700">
-                Document type
-              </span>
-              <select
-                value={form.documentType}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    documentType: event.target.value as KycDocumentType,
-                  }))
-                }
-                className="input-style"
-              >
-                <option value="national-id">Nepal National ID</option>
-                <option value="citizenship">Citizenship certificate</option>
-                <option value="passport">Passport</option>
-                <option value="driving-licence">Driving licence</option>
-              </select>
-            </label>
-            <label>
-              <span className="mb-1.5 block text-sm font-semibold text-stone-700">
-                Document number
-              </span>
-              <input
-                value={form.documentNumber}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    documentNumber: event.target.value,
-                  }))
-                }
-                minLength={4}
-                maxLength={40}
-                placeholder="Enter the number on your document"
-                className="input-style"
-                required
-              />
-              <span className="mt-1 block text-xs text-stone-500">
-                {documentHelp[form.documentType]}
-              </span>
-            </label>
-            <label className="sm:col-span-2">
-              <span className="mb-1.5 block text-sm font-semibold text-stone-700">
-                Upload document
-              </span>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,application/pdf"
-                onChange={handleDocumentFile}
-                className="input-style"
-              />
-              <span className="mt-1 block text-xs text-stone-500">
-                JPG, PNG, or PDF · Maximum 2 MB · Ensure the full document is
-                readable.
-              </span>
-            </label>
-            <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-stone-500">
-                {form.fileName
-                  ? `Selected: ${form.fileName}`
-                  : "No document selected."}
-              </p>
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
-              >
-                Submit for review
-              </button>
-            </div>
-          </form>
+          <>
+            {status === "expired" && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-900">
+                  Your identity document has expired
+                </p>
+                <p className="mt-1 text-sm text-amber-800">
+                  Submit a current document to restore your verified status and
+                  apply for work.
+                </p>
+              </div>
+            )}
+            {status === "rejected" && profile.kycReviewNote && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                <p className="text-sm font-semibold text-red-900">
+                  An update is needed
+                </p>
+                <p className="mt-1 text-sm text-red-800">
+                  {profile.kycReviewNote}
+                </p>
+              </div>
+            )}
+            <form
+              onSubmit={submitDocument}
+              className="grid gap-4 sm:grid-cols-2"
+            >
+              <label>
+                <span className="mb-1.5 block text-sm font-semibold text-stone-700">
+                  Document type
+                </span>
+                <select
+                  value={form.documentType}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      documentType: event.target.value as KycDocumentType,
+                    }))
+                  }
+                  className="input-style"
+                >
+                  <option value="national-id">Nepal National ID</option>
+                  <option value="citizenship">Citizenship certificate</option>
+                  <option value="passport">Passport</option>
+                  <option value="driving-licence">Driving licence</option>
+                </select>
+              </label>
+              <label>
+                <span className="mb-1.5 block text-sm font-semibold text-stone-700">
+                  Document number
+                </span>
+                <input
+                  value={form.documentNumber}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      documentNumber: event.target.value,
+                    }))
+                  }
+                  minLength={4}
+                  maxLength={40}
+                  placeholder="Enter the number on your document"
+                  className="input-style"
+                  required
+                />
+                <span className="mt-1 block text-xs text-stone-500">
+                  {documentHelp[form.documentType]}
+                </span>
+              </label>
+              <label>
+                <span className="mb-1.5 block text-sm font-semibold text-stone-700">
+                  Document expiry date (if shown)
+                </span>
+                <input
+                  type="date"
+                  min={nepalDateString()}
+                  value={form.documentExpiryDate}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      documentExpiryDate: event.target.value,
+                    }))
+                  }
+                  className="input-style"
+                />
+                <span className="mt-1 block text-xs text-stone-500">
+                  Leave blank for documents without an expiry date.
+                </span>
+              </label>
+              <label className="sm:col-span-2">
+                <span className="mb-1.5 block text-sm font-semibold text-stone-700">
+                  Upload document
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  onChange={handleDocumentFile}
+                  disabled={readingFile}
+                  className="input-style"
+                />
+                <span className="mt-1 block text-xs text-stone-500">
+                  JPG, PNG, or PDF · Maximum 1 MB in this browser prototype · Ensure the full document is
+                  readable.
+                </span>
+              </label>
+              <label className="sm:col-span-2">
+                <span className="mb-1.5 block text-sm font-semibold text-stone-700">
+                  Selfie for identity confirmation (optional)
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  capture="user"
+                  onChange={(event) => handleDocumentFile(event, "selfie")}
+                  disabled={readingFile}
+                  className="input-style"
+                />
+                <span className="mt-1 block text-xs text-stone-500">
+                  JPG or PNG · Maximum 512 KB in this browser prototype · Add this only if requested for
+                  review.
+                </span>
+              </label>
+              <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-stone-500">
+                  {form.fileName
+                    ? `Selected: ${form.fileName}`
+                    : "No document selected."}
+                  {form.selfieFileName
+                    ? ` · Selfie: ${form.selfieFileName}`
+                    : ""}
+                </p>
+                <button
+                  type="submit"
+                  disabled={!contactsVerified || readingFile}
+                  className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {readingFile ? "Reading file…" : "Submit for review"}
+                </button>
+              </div>
+              {!contactsVerified && (
+                <p className="text-xs text-amber-800 sm:col-span-2">
+                  Verify both your phone and email above to submit your identity
+                  document.
+                </p>
+              )}
+            </form>
+          </>
         )}
         {formMessage && (
           <p
-            role="status"
+            role={formMessage.includes("submitted") ? "status" : "alert"}
             className={`mt-4 text-sm font-medium ${
               formMessage.includes("submitted")
                 ? "text-teal"

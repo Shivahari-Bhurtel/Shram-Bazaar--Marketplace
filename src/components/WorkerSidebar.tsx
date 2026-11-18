@@ -3,8 +3,8 @@ import { useApp } from "../store/AppContext"
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside"
 import NotificationPanel from "./NotificationPanel"
 
-type WorkerPage = "worker-dashboard" | "worker-profile" | "job-discovery" | "my-applications" | "saved-jobs" | "chat" | "voice-assistant" | "settings"
-type IconName = "home" | "search" | "applications" | "saved" | "ai" | "echo"
+type WorkerPage = "worker-dashboard" | "worker-profile" | "job-discovery" | "my-applications" | "saved-jobs" | "learn" | "chat" | "shram-ai" | "voice-assistant" | "settings"
+type IconName = "home" | "search" | "applications" | "saved" | "ai" | "echo" | "learn"
 
 function WorkspaceIcon({ name }: { name: IconName }) {
   if (name === "ai")
@@ -53,15 +53,22 @@ function WorkspaceIcon({ name }: { name: IconName }) {
         </>
       )}
       {name === "saved" && <path d="M6 3.5h12V21l-6-3.8L6 21V3.5Z" />}
+      {name === "learn" && (
+        <>
+          <path d="M3 5.5c3.2-.9 6.2-.5 9 1.3v13c-2.8-1.8-5.8-2.2-9-1.3v-13Z" />
+          <path d="M21 5.5c-3.2-.9-6.2-.5-9 1.3v13c2.8-1.8 5.8-2.2 9-1.3v-13Z" />
+        </>
+      )}
     </svg>
   )
 }
 
-const links: { label: string page: WorkerPage icon: IconName }[] = [
+const links: { label: string; page: WorkerPage; icon: IconName }[] = [
   { label: "Home", page: "worker-dashboard", icon: "home" },
   { label: "Find work", page: "job-discovery", icon: "search" },
-  { label: "AI", page: "chat", icon: "ai" },
-  { label: "Echo", page: "voice-assistant", icon: "echo" },
+  { label: "Learn", page: "learn", icon: "learn" },
+  { label: "AI", page: "shram-ai", icon: "ai" },
+  { label: "Voice AI", page: "voice-assistant", icon: "echo" },
 ]
 
 export default function WorkerSidebar() {
@@ -105,7 +112,7 @@ export default function WorkerSidebar() {
     setNotificationsOpen(false)
     navigate(page)
   }
-  const accountLinks: { label: string page: WorkerPage icon?: IconName }[] = [
+  const accountLinks: { label: string; page: WorkerPage; icon?: IconName }[] = [
     { label: "My profile", page: "worker-profile" },
     { label: "My applications", page: "my-applications", icon: "applications" },
     { label: "Saved jobs", page: "saved-jobs", icon: "saved" },

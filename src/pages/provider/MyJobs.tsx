@@ -3,16 +3,23 @@ import { useApp } from "../../store/AppContext"
 import { JobStatusBadge, CategoryBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
 import type { JobStatus } from "../../types"
+import { daysUntilNepalDate, formatNepalDate, isDateOnlyString, nepalDateString } from "../../utils/dates"
+
+function shiftDate(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
 
 export default function MyJobs() {
-  const { myJobs, jobApplications, navigate, deleteJob, updateJob } = useApp()
+  const { myJobs, jobApplications, navigate, deleteJob, updateJob, postJob } = useApp()
   const [activeTab, setActiveTab] = useState<JobStatus | "all">("all")
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   const filtered =
     activeTab === "all" ? myJobs : myJobs.filter((j) => j.status === activeTab)
 
-  const tabs: { key: JobStatus | "all" label: string }[] = [
+  const tabs: { key: JobStatus | "all"; label: string }[] = [
     { key: "all", label: `All (${myJobs.length})` },
     {
       key: "active",
@@ -90,7 +97,7 @@ export default function MyJobs() {
             const acceptedCount = apps.filter(
               (a) => a.status === "accepted",
             ).length
-            const spotsLeft = job.workersNeeded - job.workersHired
+            const spotsLeft = Math.max(0, job.workersNeeded - job.workersHired)
 
             return (
               <div
@@ -112,12 +119,12 @@ export default function MyJobs() {
                       </span>
                       <span className="text-xs text-stone-500">
                         📅{" "}
-                        {new Date(job.date).toLocaleDateString("en-NP", {
+                        {formatNepalDate(job.date, {
                           month: "short",
                           day: "numeric",
                         })}
                         {job.endDate &&
-                          ` – ${new Date(job.endDate).toLocaleDateString("en-NP", { month: "short", day: "numeric" })}`}
+                          ` – ${formatNepalDate(job.endDate, { month: "short", day: "numeric" })}`}
                       </span>
                       <span className="text-xs font-semibold text-stone-800 font-mono-data">
                         NPR {job.payment.toLocaleString()}/
@@ -166,6 +173,28 @@ export default function MyJobs() {
                         </button>
                       </>
                     )}
+                    <button type="button" onClick={() => {
+                      const today = nepalDateString()
+                      const startDate = isDateOnlyString(job.date) && job.date > today ? job.date : shiftDate(today, 1)
+                      const durationDays = job.endDate && isDateOnlyString(job.endDate) && isDateOnlyString(job.date)
+                        ? Math.max(0, Math.round((Date.parse(`${job.endDate}T00:00:00Z`) - Date.parse(`${job.date}T00:00:00Z`)) / 86_400_000))
+                        : 0
+                      const endDate = job.workType === "multi-day"
+                        ? shiftDate(startDate, job.endDate && isDateOnlyString(job.endDate) ? durationDays : 0)
+                        : job.endDate && isDateOnlyString(job.endDate) ? shiftDate(startDate, durationDays) : undefined
+                      const deadline = job.deadline && job.deadline >= today && job.deadline <= startDate ? job.deadline : today
+                      postJob({
+                        title: `${job.title} (copy)`, description: job.description,
+                        category: job.category, skillsRequired: job.skillsRequired,
+                        qualificationRequired: job.qualificationRequired,
+                        experienceRequired: job.experienceRequired,
+                        workType: job.workType, workersNeeded: job.workersNeeded,
+                        date: startDate, endDate, startTime: job.startTime,
+                        endTime: job.endTime, duration: job.duration, location: job.location,
+                        district: job.district, payment: job.payment, paymentType: job.paymentType,
+                        deadline,
+                      })
+                    }} className="rounded-lg border border-stone-200 px-2.5 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50" title="Duplicate with a future work date">Duplicate</button>
                     <button
                       onClick={() => setConfirmDelete(job.id)}
                       className="p-2 text-stone-400 hover:text-primary-ink hover:bg-primary-50 rounded-lg transition-colors"
@@ -240,10 +269,7 @@ export default function MyJobs() {
                 {/* Deadline warning */}
                 {job.status === "active" &&
                   (() => {
-                    const deadlineDays = Math.ceil(
-                      (new Date(job.deadline).getTime() - Date.now()) /
-                        (1000 * 60 * 60 * 24),
-                    )
+                    const deadlineDays = daysUntilNepalDate(job.deadline)
                     return deadlineDays <= 3 && deadlineDays > 0 ? (
                       <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-700">
                         <svg
@@ -270,9 +296,9 @@ export default function MyJobs() {
 
       {confirmDelete && (
         <ConfirmDialog
-          title="Delete this job?"
-          message="This will permanently delete the job posting and all associated applications. This cannot be undone."
-          confirmLabel="Delete Job"
+          title="Cancel this job?"
+          message="This will cancel the job posting. Applicants will remain in the system, and this action cannot be undone."
+          confirmLabel="Cancel Job"
           danger
           onConfirm={() => {
             deleteJob(confirmDelete)

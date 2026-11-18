@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react"
 import { useApp } from "../../store/AppContext"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
-import type { Application, ApplicationStatus, Job } from "../../types"
+import type { Application, ApplicationStatus, Job, WorkType } from "../../types"
+import { formatNepalDate, nepalDateString } from "../../utils/dates"
 
 type StatusFilter = ApplicationStatus | "all"
 
@@ -26,10 +27,7 @@ const statusLabel: Record<ApplicationStatus, string> = {
 }
 
 function formatDate(date: string) {
-  const parsed = new Date(`${date}T00:00:00`)
-  return Number.isNaN(parsed.getTime())
-    ? date
-    : parsed.toLocaleDateString("en-NP", { day: "2-digit", month: "short" })
+  return formatNepalDate(date, { day: "2-digit", month: "short" })
 }
 
 function StatusIcon({ name }: { name: (typeof statusCards)[number]["icon"] }) {
@@ -53,6 +51,14 @@ function ApplicationRow({
   job?: Job
   navigate: (page: "job-detail", jobId?: string) => void
 }) {
+  const { reviewProvider, respondToSelection, updateEngagementWork } = useApp()
+  const [providerRating, setProviderRating] = useState(5)
+  const [providerReview, setProviderReview] = useState("")
+  const [reviewMessage, setReviewMessage] = useState("")
+  const completed = application.engagementStatus === "COMPLETED" || (
+    import.meta.env.VITE_DEMO_MODE === "true" &&
+    !!job && (job.endDate || job.date) <= nepalDateString()
+  )
   return (
     <article className="rounded-xl border border-[#E8E2DC] bg-white p-4 transition-colors hover:border-[#CDB9A7] sm:p-5">
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-center">
@@ -74,7 +80,7 @@ function ApplicationRow({
             </button>
             <p className="mt-0.5 truncate text-sm text-stone-500">{application.providerName}</p>
             <p className="mt-1 truncate text-xs text-stone-500">
-              {job?.employmentType || job?.workType.replaceAll("-", " ") || "Job details"}
+              {job?.employmentType || job?.workType?.replace(/-/g, " ") || "Job details"}
               {job?.location ? ` · ${job.location.split(",").slice(-1)[0].trim()}` : ""}
             </p>
           </div>
@@ -110,6 +116,28 @@ function ApplicationRow({
           )}
         </div>
       )}
+      {application.engagementStatus === "AWAITING_RESPONSE" && (
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EBE6] pt-3">
+          <p className="mr-auto text-sm text-stone-600">The provider selected you. Confirm or decline this work.</p>
+          <button type="button" onClick={() => respondToSelection(application.id, false)} className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-stone-700">Decline</button>
+          <button type="button" onClick={() => respondToSelection(application.id, true)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white">Confirm work</button>
+        </div>
+      )}
+      {application.engagementStatus === "CONFIRMED" && job && (job.endDate || job.date) <= nepalDateString() && (
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EBE6] pt-3">
+          <p className="mr-auto text-sm text-stone-600">Confirm when the scheduled work is complete.</p>
+          <button type="button" onClick={() => updateEngagementWork(application.id, "confirm-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Confirm work complete</button>
+        </div>
+      )}
+      {application.engagementStatus === "IN_PROGRESS" && (
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EBE6] pt-3">
+          <p className="mr-auto text-sm text-stone-600">The provider started this work. Confirm completion after the scheduled work date.</p>
+          {job && (job.endDate || job.date) <= nepalDateString() && <button type="button" onClick={() => updateEngagementWork(application.id, "confirm-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Confirm work complete</button>}
+        </div>
+      )}
+      {application.status === "accepted" && <div className="mt-4 border-t border-[#F0EBE6] pt-3">
+        {application.providerReviewDate ? <p className="text-sm text-stone-600"><strong className="text-stone-800">Your provider review ({application.providerRating}/5):</strong> {application.providerReview || "Review submitted"}</p> : completed ? <div className="grid gap-3 sm:grid-cols-[10rem_1fr_auto] sm:items-end"><label className="text-xs font-semibold text-stone-600">Rate provider<select value={providerRating} onChange={(event) => setProviderRating(Number(event.target.value))} className="input-style mt-1 w-full">{[5,4,3,2,1].map((value) => <option key={value} value={value}>{value} stars</option>)}</select></label><label className="text-xs font-semibold text-stone-600">Feedback<textarea value={providerReview} onChange={(event) => setProviderReview(event.target.value)} maxLength={500} rows={2} placeholder="Share respectful feedback about the work experience" className="input-style mt-1 w-full" /></label><button type="button" disabled={!providerReview.trim()} onClick={() => { void reviewProvider(application.id, providerRating, providerReview).then((error) => setReviewMessage(error || "Review submitted.")) }} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Submit review</button>{reviewMessage && <p role="status" className="text-xs text-stone-600">{reviewMessage}</p>}</div> : <p className="text-xs text-stone-500">You can review this provider after the scheduled work date.</p>}
+      </div>}
     </article>
   )
 }
@@ -129,7 +157,7 @@ export default function MyApplications() {
     accepted: myApplications.filter((application) => application.status === "accepted").length,
     rejected: myApplications.filter((application) => application.status === "rejected").length,
   }
-  const workTypes = [...new Set(myApplications.map((application) => jobsById.get(application.jobId)?.workType).filter((value): value is string => !!value))]
+  const workTypes = [...new Set(myApplications.map((application) => jobsById.get(application.jobId)?.workType).filter((value): value is WorkType => !!value))]
   const filtered = myApplications
     .filter((application) => activeTab === "all" || application.status === activeTab)
     .filter((application) => {
@@ -199,7 +227,7 @@ export default function MyApplications() {
             <span className="sr-only">Filter by job type</span>
             <select value={workType} onChange={(event) => setWorkType(event.target.value)} className="min-w-0 flex-1 border-0 bg-transparent text-sm text-stone-700 outline-none">
               <option value="all">All job types</option>
-              {workTypes.map((type) => <option key={type} value={type}>{type.replaceAll("-", " ")}</option>)}
+              {workTypes.map((type) => <option key={type} value={type}>{type.replace(/-/g, " ")}</option>)}
             </select>
           </label>
         </div>

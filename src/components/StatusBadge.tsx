@@ -32,7 +32,7 @@ const applicationConfig: Record<ApplicationStatus, {
   },
 }
 
-const jobConfig: Record<JobStatus, { label: string bg: string text: string }> =
+const jobConfig: Record<JobStatus, { label: string; bg: string; text: string }> =
   {
     active: { label: "Active", bg: "bg-green-100", text: "text-green-700" },
     filled: { label: "Filled", bg: "bg-teal-100", text: "text-teal" },

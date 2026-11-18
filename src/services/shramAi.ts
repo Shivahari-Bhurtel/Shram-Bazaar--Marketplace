@@ -1,4 +1,4 @@
-export type ChatTurn = { role: "user" | "assistant" text: string }
+export type ChatTurn = { role: "user" | "assistant"; text: string }
 
 export type ChatResponse = {
   answer: string

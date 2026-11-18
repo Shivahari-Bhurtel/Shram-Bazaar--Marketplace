@@ -1,24 +1,37 @@
+import { lazy, Suspense } from "react"
 import { useApp } from "./store/AppContext"
 import Navbar from "./components/Navbar"
-import Landing from "./pages/Landing"
-import AuthPage from "./pages/AuthPage"
-import WorkerDashboard from "./pages/worker/WorkerDashboard"
-import WorkerProfile from "./pages/worker/WorkerProfile"
-import JobDiscovery from "./pages/worker/JobDiscovery"
-import JobDetail from "./pages/worker/JobDetail"
-import MyApplications from "./pages/worker/MyApplications"
-import SavedJobs from "./pages/worker/SavedJobs"
-import ProviderDashboard from "./pages/provider/ProviderDashboard"
-import ProviderProfile from "./pages/provider/ProviderProfile"
-import CreateEditJob from "./pages/provider/CreateEditJob"
-import MyJobs from "./pages/provider/MyJobs"
-import ApplicantManagement from "./pages/provider/ApplicantManagement"
-import Chat from "./pages/Chat"
-import Settings from "./pages/Settings"
-import KycVerification from "./pages/worker/KycVerification"
+const Landing = lazy(() => import("./pages/Landing"))
+const AuthPage = lazy(() => import("./pages/AuthPage"))
+const WorkerDashboard = lazy(() => import("./pages/worker/WorkerDashboard"))
+const WorkerProfile = lazy(() => import("./pages/worker/WorkerProfile"))
+const JobDiscovery = lazy(() => import("./pages/worker/JobDiscovery"))
+const JobDetail = lazy(() => import("./pages/worker/JobDetail"))
+const MyApplications = lazy(() => import("./pages/worker/MyApplications"))
+const SavedJobs = lazy(() => import("./pages/worker/SavedJobs"))
+const ProviderDashboard = lazy(
+  () => import("./pages/provider/ProviderDashboard"),
+)
+const ProviderProfile = lazy(() => import("./pages/provider/ProviderProfile"))
+const CreateEditJob = lazy(() => import("./pages/provider/CreateEditJob"))
+const MyJobs = lazy(() => import("./pages/provider/MyJobs"))
+const ApplicantManagement = lazy(
+  () => import("./pages/provider/ApplicantManagement"),
+)
+const ProviderOperations = lazy(
+  () => import("./pages/provider/ProviderOperations"),
+)
+const Chat = lazy(() => import("./pages/Chat"))
+const Settings = lazy(() => import("./pages/Settings"))
+const KycVerification = lazy(() => import("./pages/worker/KycVerification"))
 import { LanguageSwitch } from "./i18n/LanguageContext"
 import WorkerSidebar from "./components/WorkerSidebar"
-import VoiceAssistantPage from "./pages/worker/VoiceAssistantPage"
+const VoiceAssistantPage = lazy(
+  () => import("./pages/worker/VoiceAssistantPage"),
+)
+const Learn = lazy(() => import("./pages/worker/Learn"))
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"))
+const AIWorkspace = lazy(() => import("./pages/AIWorkspace"))
 
 export default function App() {
   const { state } = useApp()
@@ -26,17 +39,21 @@ export default function App() {
   const isLoggedIn = !!currentUser
   const isWorker = currentUser?.role === "worker"
   const isProvider = currentUser?.role === "provider"
+  const isAdmin = currentUser?.role === "admin"
   const isWorkerAIChat = isWorker && currentPage === "chat"
-  const isWorkerVoiceAssistant = isWorker && currentPage === "voice-assistant"
+  const isVoiceAssistant =
+    (isWorker || isProvider) && currentPage === "voice-assistant"
   const workerTopSpacing =
-    isWorker && !isWorkerAIChat && !isWorkerVoiceAssistant
+    isWorker && !isWorkerAIChat && !isVoiceAssistant
       ? currentPage === "my-applications"
         ? "lg:pt-0"
-        : "lg:pt-20"
+        : currentPage === "shram-ai"
+          ? "lg:pt-14"
+          : "lg:pt-20"
       : ""
   const showWorkerSidebar =
     isWorker &&
-    !isWorkerVoiceAssistant &&
+    !isVoiceAssistant &&
     !isWorkerAIChat &&
     !["landing", "login", "worker-signup", "provider-signup"].includes(
       currentPage,
@@ -52,65 +69,103 @@ export default function App() {
     <div
       className={`min-h-screen bg-cream ${isWorker ? "worker-interface" : ""}`}
     >
+      {state.storageWarning && (
+        <div
+          role="alert"
+          className="fixed bottom-4 left-1/2 z-[100] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-lg"
+        >
+          {state.storageWarning}
+        </div>
+      )}
       {!isLoggedIn && !isAuthPage && <LanguageSwitch />}
-      {isWorker && !isWorkerVoiceAssistant && (isWorkerAIChat ? <LanguageSwitch /> : <div className="hidden lg:block"><LanguageSwitch /></div>)}
-      {isWorker && !isWorkerVoiceAssistant && !isWorkerAIChat && (
+      {isWorker &&
+        !isVoiceAssistant &&
+        (isWorkerAIChat ? (
+          <LanguageSwitch />
+        ) : (
+          <div className="hidden lg:block">
+            <LanguageSwitch />
+          </div>
+        ))}
+      {isWorker && !isVoiceAssistant && !isWorkerAIChat && (
         <div className="lg:hidden">
           <Navbar />
         </div>
       )}
-      {isLoggedIn && !isWorker && <Navbar />}
+      {isLoggedIn && !isWorker && !isAdmin && !isVoiceAssistant && <Navbar />}
       {!isLoggedIn && !isPublicPage && <Navbar />}
       {showWorkerSidebar && <WorkerSidebar />}
       <main
         key={currentPage}
-        className={`page-enter ${showWorkerSidebar ? "lg:ml-56" : ""} ${workerTopSpacing}`}
+        className={`page-enter ${
+          showWorkerSidebar ? "lg:ml-56" : ""
+        } ${workerTopSpacing}`}
       >
-        {/* Public pages */}
-        {currentPage === "landing" && !isLoggedIn && <Landing />}
-        {currentPage === "login" && <AuthPage mode="login" />}
-        {currentPage === "worker-signup" && <AuthPage mode="worker-signup" />}
-        {currentPage === "provider-signup" && (
-          <AuthPage mode="provider-signup" />
-        )}
+        <Suspense
+          fallback={
+            <div className="flex min-h-[50vh] items-center justify-center text-sm font-medium text-stone-500">
+              Loading page…
+            </div>
+          }
+        >
+          {/* Public pages */}
+          {currentPage === "landing" && !isLoggedIn && <Landing />}
+          {currentPage === "login" && <AuthPage mode="login" />}
+          {currentPage === "worker-signup" && <AuthPage mode="worker-signup" />}
+          {currentPage === "provider-signup" && (
+            <AuthPage mode="provider-signup" />
+          )}
 
-        {/* Worker pages */}
-        {isWorker && currentPage === "worker-dashboard" && <WorkerDashboard />}
-        {isWorker && currentPage === "worker-profile" && <WorkerProfile />}
-        {isWorker && currentPage === "kyc-verification" && <KycVerification />}
-        {currentPage === "job-discovery" && <JobDiscovery />}
-        {(isWorker || isProvider) && currentPage === "job-detail" && (
-          <JobDetail />
-        )}
-        {isWorker && currentPage === "my-applications" && <MyApplications />}
-        {isWorker && currentPage === "saved-jobs" && <SavedJobs />}
-        {(isWorker || isProvider) && currentPage === "chat" && <Chat />}
-        {isWorker && currentPage === "voice-assistant" && (
-          <VoiceAssistantPage />
-        )}
-        {isLoggedIn && currentPage === "settings" && <Settings />}
+          {/* Worker pages */}
+          {isWorker && currentPage === "worker-dashboard" && (
+            <WorkerDashboard />
+          )}
+          {isWorker && currentPage === "worker-profile" && <WorkerProfile />}
+          {isWorker && currentPage === "kyc-verification" && (
+            <KycVerification />
+          )}
+          {currentPage === "job-discovery" && <JobDiscovery />}
+          {(isWorker || isProvider) && currentPage === "job-detail" && (
+            <JobDetail />
+          )}
+          {isWorker && currentPage === "my-applications" && <MyApplications />}
+          {isWorker && currentPage === "saved-jobs" && <SavedJobs />}
+          {isWorker && currentPage === "learn" && <Learn />}
+          {(isWorker || isProvider) && currentPage === "shram-ai" && (
+            <AIWorkspace />
+          )}
+          {(isWorker || isProvider) && currentPage === "chat" && <Chat />}
+          {(isWorker || isProvider) && currentPage === "voice-assistant" && (
+            <VoiceAssistantPage />
+          )}
+          {isLoggedIn && currentPage === "settings" && <Settings />}
 
-        {/* Provider pages */}
-        {isProvider && currentPage === "provider-dashboard" && (
-          <ProviderDashboard />
-        )}
-        {isProvider && currentPage === "provider-profile" && (
-          <ProviderProfile />
-        )}
-        {isProvider && currentPage === "create-job" && (
-          <CreateEditJob editJobId={null} />
-        )}
-        {isProvider && currentPage === "edit-job" && (
-          <CreateEditJob editJobId={currentJobId} />
-        )}
-        {isProvider && currentPage === "my-jobs" && <MyJobs />}
-        {isProvider && currentPage === "applicant-management" && (
-          <ApplicantManagement />
-        )}
+          {/* Provider pages */}
+          {isProvider && currentPage === "provider-dashboard" && (
+            <ProviderDashboard />
+          )}
+          {isProvider && currentPage === "provider-profile" && (
+            <ProviderProfile />
+          )}
+          {isProvider && currentPage === "provider-operations" && (
+            <ProviderOperations />
+          )}
+          {isProvider && currentPage === "create-job" && (
+            <CreateEditJob editJobId={null} />
+          )}
+          {isProvider && currentPage === "edit-job" && (
+            <CreateEditJob editJobId={currentJobId} />
+          )}
+          {isProvider && currentPage === "my-jobs" && <MyJobs />}
+          {isProvider && currentPage === "applicant-management" && (
+            <ApplicantManagement />
+          )}
+          {isAdmin && currentPage === "admin-dashboard" && <AdminDashboard />}
 
-        {/* Redirect: logged-in worker landing -> dashboard */}
-        {isWorker && currentPage === "landing" && <WorkerDashboard />}
-        {isProvider && currentPage === "landing" && <ProviderDashboard />}
+          {/* Redirect: logged-in worker landing -> dashboard */}
+          {isWorker && currentPage === "landing" && <WorkerDashboard />}
+          {isProvider && currentPage === "landing" && <ProviderDashboard />}
+        </Suspense>
       </main>
     </div>
   )
