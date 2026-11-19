@@ -9,7 +9,8 @@ import {
   type ReactElement,
 } from "react"
 import { useApp } from "../../store/AppContext"
-import { ALL_SKILLS, DISTRICTS } from "../../data/mockData"
+import { DISTRICTS } from "../../data/mockData"
+import { useSkillCatalog } from "../../hooks/useSkillCatalog"
 import type {
   AvailabilitySlot,
   Experience,
@@ -18,6 +19,8 @@ import type {
 } from "../../types"
 import { formatNepalDate, isDateOnlyString, nepalDateString, nepalYear } from "../../utils/dates"
 import { isValidPhoneNumber } from "../../utils/validation"
+import { getConfiguredJobCategories } from "../../utils/categories"
+import { getCurrentCoordinates } from "../../utils/geolocation"
 
 const presetAvatars = [
   {
@@ -45,21 +48,27 @@ const weekdays: { value: Weekday; label: string }[] = [
 ]
 
 export default function WorkerProfile() {
+  const skillCatalog = useSkillCatalog()
   const { state, updateWorkerProfile, notifyProfileUpdated, navigate } =
     useApp()
   const { workerProfile } = state
+  const preferredCategoryOptions = getConfiguredJobCategories()
   const [editing, setEditing] = useState<string | null>(null)
   const [tempData, setTempData] = useState<any>({})
   const [skillInput, setSkillInput] = useState("")
   const [dateInput, setDateInput] = useState("")
+  const [dateEndInput, setDateEndInput] = useState("")
   const [saved, setSaved] = useState(false)
   const [editError, setEditError] = useState("")
+  const [locationMessage, setLocationMessage] = useState("")
   const [photoMessage, setPhotoMessage] = useState("")
   const [photoError, setPhotoError] = useState(false)
   const [photoChoicesOpen, setPhotoChoicesOpen] = useState(false)
   const [availabilityDay, setAvailabilityDay] = useState<Weekday>("monday")
   const [availabilityStart, setAvailabilityStart] = useState("18:00")
   const [availabilityEnd, setAvailabilityEnd] = useState("21:00")
+  const [dateAvailabilityStart, setDateAvailabilityStart] = useState("09:00")
+  const [dateAvailabilityEnd, setDateAvailabilityEnd] = useState("17:00")
   const [editingAvailabilityId, setEditingAvailabilityId] =
     useState<string | null>(null)
   const [availabilityError, setAvailabilityError] = useState("")
@@ -112,6 +121,9 @@ export default function WorkerProfile() {
         phone: workerProfile.phone,
         location: workerProfile.location,
         district: workerProfile.district,
+        latitude: workerProfile.latitude,
+        longitude: workerProfile.longitude,
+        preferredTravelDistanceKm: workerProfile.preferredTravelDistanceKm ?? 10,
         bio: workerProfile.bio,
         availability: workerProfile.availability,
       })
@@ -126,6 +138,7 @@ export default function WorkerProfile() {
           : [
               {
                 id: `q-${Date.now()}`,
+                credentialType: "education",
                 degree: "",
                 institution: "",
                 year: nepalYear(),
@@ -177,6 +190,11 @@ export default function WorkerProfile() {
         setEditError("Keep your bio under 600 characters.")
         return
       }
+      const preferredTravelDistanceKm = Number(tempData.preferredTravelDistanceKm)
+      if (!Number.isFinite(preferredTravelDistanceKm) || preferredTravelDistanceKm < 0 || preferredTravelDistanceKm > 500) {
+        setEditError("Travel distance must be between 0 and 500 km.")
+        return
+      }
       updateWorkerProfile({
         ...tempData,
         name,
@@ -186,6 +204,7 @@ export default function WorkerProfile() {
         address: String(tempData.address ?? "").trim(),
         location,
         district,
+        preferredTravelDistanceKm,
         professionalTitle: String(tempData.professionalTitle ?? "").trim(),
         bio: String(tempData.bio ?? "").trim(),
       })
@@ -204,9 +223,10 @@ export default function WorkerProfile() {
           Number(item.year) < 1900 ||
           Number(item.year) > nepalYear(),
       )
-      if (qualifications.some((item) => !item.degree.trim()) || invalidYear) {
+      const invalidDates = qualifications.some((item) => !isDateOnlyString(item.startDate || `${item.year}-01-01`) || (!item.currentlyStudying && item.endDate && !isDateOnlyString(item.endDate)) || (item.endDate && item.startDate && item.endDate < item.startDate))
+      if (qualifications.some((item) => !item.degree.trim()) || invalidYear || invalidDates) {
         setEditError(
-          "Add a qualification name and a valid completion year for each entry.",
+          "Add a qualification name and valid start and completion dates for each entry.",
         )
         return
       }
@@ -224,6 +244,10 @@ export default function WorkerProfile() {
       )
       if (experience.some((item) => !item.title.trim())) {
         setEditError("Add a role title for each work experience entry.")
+        return
+      }
+      if (experience.some((item) => !isDateOnlyString(item.startDate || "") || (!item.currentlyWorking && !isDateOnlyString(item.endDate || "")) || (item.endDate && item.startDate && item.endDate < item.startDate))) {
+        setEditError("Add valid start and end dates. Mark the role as current to leave its end date blank.")
         return
       }
       updateWorkerProfile({ experience })
@@ -257,7 +281,7 @@ export default function WorkerProfile() {
     })
   }
 
-  const filteredSkills = ALL_SKILLS.filter(
+  const filteredSkills = skillCatalog.filter(
     (s) =>
       s.toLowerCase().includes(skillInput.toLowerCase()) &&
       !(tempData.skills ?? []).some(
@@ -286,7 +310,7 @@ export default function WorkerProfile() {
         0,
       )
     const overlaps = slots.some((slot) => {
-      if (slot.id === editingAvailabilityId || slot.day !== availabilityDay)
+      if (slot.date || slot.id === editingAvailabilityId || slot.day !== availabilityDay)
         return false
       const existingStart = slot.startTime
         .split(":")
@@ -326,6 +350,41 @@ export default function WorkerProfile() {
     showProfileUpdate(
       `Weekly hours ${editingAvailabilityId ? "updated" : "added"}.`,
     )
+  }
+
+  const addDateAvailability = () => {
+    const endDate = dateEndInput || dateInput
+    if (!dateInput || dateInput < todayInKathmandu || endDate < dateInput) {
+      setAvailabilityError("Choose a valid date range starting today or later.")
+      return
+    }
+    if (dateAvailabilityEnd <= dateAvailabilityStart) {
+      setAvailabilityError("End time must be later than start time.")
+      return
+    }
+    const slots = workerProfile.weeklyAvailability ?? []
+    const overlaps = slots.some((slot) => {
+      if (!slot.date || endDate < slot.date || dateInput > (slot.endDate || slot.date)) return false
+      return dateAvailabilityStart < slot.endTime && dateAvailabilityEnd > slot.startTime
+    })
+    if (overlaps) {
+      setAvailabilityError("This overlaps another available time on that date.")
+      return
+    }
+    const date = new Date(`${dateInput}T12:00:00`)
+    const day = weekdays[date.getDay()]?.value || "monday"
+    updateWorkerProfile({ weeklyAvailability: [...slots, {
+      id: `availability-${Date.now()}`,
+      day,
+      date: dateInput,
+      endDate: endDate === dateInput ? undefined : endDate,
+      startTime: dateAvailabilityStart,
+      endTime: dateAvailabilityEnd,
+    }] })
+    showProfileUpdate("Date and time availability saved.")
+    setDateInput("")
+    setDateEndInput("")
+    setAvailabilityError("")
   }
 
   const handleProfilePhoto = (event: ChangeEvent<HTMLInputElement>) => {
@@ -736,6 +795,17 @@ export default function WorkerProfile() {
                     ))}
                   </select>
                 </Field>
+                <Field label="Maximum travel distance (km)">
+                  <input type="number" min="0" max="500" value={tempData.preferredTravelDistanceKm} onChange={(e) => setTempData((p: any) => ({ ...p, preferredTravelDistanceKm: e.target.value }))} className="input-style" />
+                </Field>
+                <div className="sm:col-span-2 rounded-xl border border-stone-200 bg-stone-50 p-3">
+                  <p className="text-sm font-semibold text-stone-800">Distance-based job matching</p>
+                  <p className="mt-1 text-xs text-stone-600">Share your approximate device location to compare job distance with your travel limit. This is optional and only requested when you tap the button.</p>
+                  <button type="button" onClick={() => { setLocationMessage("Getting location…"); void getCurrentCoordinates().then((coordinates) => { setTempData((previous: any) => ({ ...previous, ...coordinates })); setLocationMessage("Location added. Save your profile to use it for matching.") }).catch((error: unknown) => setLocationMessage(error instanceof Error ? error.message : "Could not get location.")) }} className="mt-3 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100">Use current location</button>
+                  {Number.isFinite(tempData.latitude) && Number.isFinite(tempData.longitude) && <button type="button" onClick={() => { setTempData((previous: any) => ({ ...previous, latitude: undefined, longitude: undefined })); setLocationMessage("Location removed. Save your profile to apply the change.") }} className="ml-2 mt-3 rounded-lg px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Clear location</button>}
+                  {locationMessage && <p role="status" className="mt-2 text-xs text-stone-600">{locationMessage}</p>}
+                  {Number.isFinite(tempData.latitude) && Number.isFinite(tempData.longitude) && <p className="mt-1 text-xs text-teal-800">Location coordinates are set for matching.</p>}
+                </div>
                 <Field label="Availability">
                   <select
                     value={tempData.availability}
@@ -873,7 +943,7 @@ export default function WorkerProfile() {
                     </button>
                   ))}
                   {skillInput.trim() &&
-                    !ALL_SKILLS.some(
+                    !skillCatalog.some(
                       (skill) =>
                         skill.toLowerCase() === skillInput.trim().toLowerCase(),
                     ) &&
@@ -921,9 +991,23 @@ export default function WorkerProfile() {
             )}
           </Section>
 
+          <section className="rounded-2xl border border-stone-200 bg-white p-5">
+            <h3 className="font-sans text-xl font-semibold tracking-tight text-stone-900">Preferred work categories</h3>
+            <p className="mt-1 text-sm text-stone-500">Choose the kinds of work you want. These preferences improve your recommendations.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {preferredCategoryOptions.map((category) => {
+                const selected = (workerProfile.preferredCategories || []).includes(category.value)
+                return <label key={category.value} className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2 text-sm ${selected ? "border-primary bg-primary-50 text-primary-ink" : "border-stone-200 text-stone-700 hover:bg-stone-50"}`}>
+                  <input type="checkbox" checked={selected} onChange={(event) => updateWorkerProfile({ preferredCategories: event.target.checked ? [...new Set([...(workerProfile.preferredCategories || []), category.value])] : (workerProfile.preferredCategories || []).filter((value) => value !== category.value) })} />
+                  {category.label}
+                </label>
+              })}
+            </div>
+          </section>
+
           {/* Qualifications */}
           <Section
-            title="Qualifications"
+            title="Education, certificates & training"
             onEdit={() => startEdit("qualifications")}
             editing={editing === "qualifications"}
             onSave={saveEdit}
@@ -960,7 +1044,18 @@ export default function WorkerProfile() {
                         </button>
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <Field label="Qualification">
+                        <Field label="Credential type">
+                          <select
+                            value={qualification.credentialType || "education"}
+                            onChange={(event) => setTempData((previous: any) => ({ ...previous, qualifications: previous.qualifications.map((item: Qualification) => item.id === qualification.id ? { ...item, credentialType: event.target.value as Qualification["credentialType"] } : item) }))}
+                            className="input-style"
+                          >
+                            <option value="education">Education</option>
+                            <option value="certificate">Certificate</option>
+                            <option value="training">Training</option>
+                          </select>
+                        </Field>
+                        <Field label={qualification.credentialType === "certificate" ? "Certificate name" : qualification.credentialType === "training" ? "Training program" : "Qualification"}>
                           <input
                             value={qualification.degree}
                             onChange={(event) =>
@@ -1040,6 +1135,13 @@ export default function WorkerProfile() {
                             className="input-style"
                           />
                         </Field>
+                        <Field label="Start date">
+                          <input type="date" max={nepalDateString()} value={qualification.startDate || `${qualification.year}-01-01`} onChange={(event) => setTempData((previous: any) => ({ ...previous, qualifications: previous.qualifications.map((item: Qualification) => item.id === qualification.id ? { ...item, startDate: event.target.value } : item) }))} className="input-style" />
+                        </Field>
+                        {!qualification.currentlyStudying && <Field label="Completion date">
+                          <input type="date" min={qualification.startDate || `${qualification.year}-01-01`} max={nepalDateString()} value={qualification.endDate || `${qualification.year}-12-31`} onChange={(event) => setTempData((previous: any) => ({ ...previous, qualifications: previous.qualifications.map((item: Qualification) => item.id === qualification.id ? { ...item, endDate: event.target.value, year: Number(event.target.value.slice(0, 4)) || item.year } : item) }))} className="input-style" />
+                        </Field>}
+                        <label className="flex items-center gap-2 text-sm font-medium text-stone-700"><input type="checkbox" checked={Boolean(qualification.currentlyStudying)} onChange={(event) => setTempData((previous: any) => ({ ...previous, qualifications: previous.qualifications.map((item: Qualification) => item.id === qualification.id ? { ...item, currentlyStudying: event.target.checked, endDate: event.target.checked ? undefined : item.endDate } : item) }))} />Currently studying</label>
                       </div>
                     </div>
                   ),
@@ -1053,6 +1155,7 @@ export default function WorkerProfile() {
                         ...previous.qualifications,
                         {
                           id: `q-${Date.now()}`,
+                          credentialType: "education",
                           degree: "",
                           institution: "",
                           year: nepalYear(),
@@ -1071,6 +1174,7 @@ export default function WorkerProfile() {
                 {workerProfile.qualifications.map((q) => (
                   <div key={q.id} className="flex gap-3">
                     <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary-ink">{(q.credentialType || "education").replace(/^./, (letter) => letter.toUpperCase())}</p>
                       <p className="font-medium text-stone-900">{q.degree}</p>
                       <p className="text-base text-stone-600">{q.field}</p>
                       <p className="text-sm text-stone-400">
@@ -1189,6 +1293,13 @@ export default function WorkerProfile() {
                             className="input-style"
                           />
                         </Field>
+                        <Field label="Start date">
+                          <input type="date" max={nepalDateString()} value={experience.startDate || ""} onChange={(event) => setTempData((previous: any) => ({ ...previous, experience: previous.experience.map((item: Experience) => item.id === experience.id ? { ...item, startDate: event.target.value } : item) }))} className="input-style" />
+                        </Field>
+                        {!experience.currentlyWorking && <Field label="End date">
+                          <input type="date" min={experience.startDate || undefined} max={nepalDateString()} value={experience.endDate || ""} onChange={(event) => setTempData((previous: any) => ({ ...previous, experience: previous.experience.map((item: Experience) => item.id === experience.id ? { ...item, endDate: event.target.value } : item) }))} className="input-style" />
+                        </Field>}
+                        <label className="flex items-center gap-2 text-sm font-medium text-stone-700"><input type="checkbox" checked={Boolean(experience.currentlyWorking)} onChange={(event) => setTempData((previous: any) => ({ ...previous, experience: previous.experience.map((item: Experience) => item.id === experience.id ? { ...item, currentlyWorking: event.target.checked, endDate: event.target.checked ? undefined : item.endDate } : item) }))} />I currently work here</label>
                         <Field label="What you did" className="sm:col-span-2">
                           <textarea
                             value={experience.description}
@@ -1229,6 +1340,9 @@ export default function WorkerProfile() {
                           company: "",
                           duration: "",
                           description: "",
+                          startDate: "",
+                          endDate: "",
+                          currentlyWorking: false,
                         },
                       ],
                     }))
@@ -1287,7 +1401,10 @@ export default function WorkerProfile() {
                       {wh.jobTitle}
                     </p>
                     <p className="text-sm text-stone-500">{wh.providerName}</p>
-                    <p className="text-sm text-stone-400 mt-0.5">{wh.date}</p>
+                    <p className="text-sm text-stone-400 mt-0.5">{wh.startDate && wh.endDate ? `${wh.startDate} – ${wh.endDate}` : wh.date}</p>
+                    {wh.location && <p className="text-xs text-stone-500 mt-1">{wh.location}</p>}
+                    {wh.description && <p className="mt-1 text-xs leading-relaxed text-stone-600">{wh.description}</p>}
+                    {wh.completedAt && <p className="mt-1 text-xs text-stone-400">Completed {new Date(wh.completedAt).toLocaleString()}</p>}
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center gap-0.5">
                         {Array.from({ length: 5 }, (_, i) => (
@@ -1301,15 +1418,14 @@ export default function WorkerProfile() {
                           </span>
                         ))}
                       </div>
-                      <span className="text-sm font-mono-data text-stone-600">
-                        NPR {wh.payment.toLocaleString()}
-                      </span>
+                      {wh.payment !== undefined && <span className="text-sm font-mono-data text-stone-600">NPR {wh.payment.toLocaleString()}</span>}
                     </div>
                     {wh.review && (
                       <p className="text-sm text-stone-500 italic mt-1.5 leading-relaxed">
                         "{wh.review}"
                       </p>
                     )}
+                    {wh.reviewedAt && <p className="mt-1 text-[11px] text-stone-400">Reviewed {new Date(wh.reviewedAt).toLocaleDateString()}</p>}
                   </div>
                 ))}
               </div>
@@ -1408,7 +1524,7 @@ export default function WorkerProfile() {
                 className="mt-3 space-y-2"
                 aria-label="Weekly availability schedule"
               >
-                {(workerProfile.weeklyAvailability ?? []).map((slot) => (
+                {(workerProfile.weeklyAvailability ?? []).filter((slot) => !slot.date).map((slot) => (
                   <li
                     key={slot.id}
                     className="flex items-center justify-between gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm"
@@ -1465,45 +1581,46 @@ export default function WorkerProfile() {
 
             <div className="mt-5 border-t border-stone-100 pt-4">
               <h4 className="text-sm font-semibold text-stone-800">
-                Specific available dates
+                Specific available dates or ranges
               </h4>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
                 <input
                   type="date"
                   min={todayInKathmandu}
                   value={dateInput}
                   onChange={(event) => setDateInput(event.target.value)}
-                  aria-label="Add an available date"
+                  aria-label="Available from date"
                   className="input-style min-w-0"
                 />
+                <input type="date" min={dateInput || todayInKathmandu} value={dateEndInput} onChange={(event) => setDateEndInput(event.target.value)} aria-label="Available through date (optional)" className="input-style min-w-0" />
+                <label className="text-xs font-medium text-stone-600">From
+                  <input type="time" value={dateAvailabilityStart} onChange={(event) => setDateAvailabilityStart(event.target.value)} className="input-style mt-1" />
+                </label>
+                <label className="text-xs font-medium text-stone-600">Until
+                  <input type="time" value={dateAvailabilityEnd} onChange={(event) => setDateAvailabilityEnd(event.target.value)} className="input-style mt-1" />
+                </label>
                 <button
                   type="button"
                   disabled={
                     !dateInput ||
                     dateInput < todayInKathmandu ||
-                    workerProfile.availableDates.includes(dateInput)
+                    (dateEndInput && dateEndInput < dateInput) ||
+                    dateAvailabilityEnd <= dateAvailabilityStart
                   }
                   onClick={() => {
-                    if (
-                      !dateInput ||
-                      dateInput < todayInKathmandu ||
-                      workerProfile.availableDates.includes(dateInput)
-                    )
-                      return
-                    updateWorkerProfile({
-                      availableDates: [
-                        ...workerProfile.availableDates,
-                        dateInput,
-                      ].sort(),
-                    })
-                    showProfileUpdate("Your available dates were updated.")
-                    setDateInput("")
+                    if (!dateInput || dateInput < todayInKathmandu || (dateEndInput && dateEndInput < dateInput) || dateAvailabilityEnd <= dateAvailabilityStart) return
+                    addDateAvailability()
+                    updateWorkerProfile({ availableDates: [...new Set([...workerProfile.availableDates, dateInput])].sort() })
                   }}
                   className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Add
+                  Add time
                 </button>
               </div>
+              {availabilityError && <p role="alert" className="mt-2 text-xs text-red-700">{availabilityError}</p>}
+              {(workerProfile.weeklyAvailability ?? []).filter((slot) => slot.date).length > 0 && <ul className="mt-3 space-y-2" aria-label="Date-specific available hours">
+                {(workerProfile.weeklyAvailability ?? []).filter((slot) => slot.date).map((slot) => <li key={slot.id} className="flex items-center justify-between gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm"><span>{formatNepalDate(slot.date!, { month: "short", day: "numeric" })}{slot.endDate && slot.endDate !== slot.date ? ` – ${formatNepalDate(slot.endDate, { month: "short", day: "numeric" })}` : ""} · {slot.startTime}–{slot.endTime}</span><button type="button" onClick={() => updateWorkerProfile({ weeklyAvailability: (workerProfile.weeklyAvailability ?? []).filter((item) => item.id !== slot.id) })} aria-label={`Remove availability from ${slot.date} to ${slot.endDate || slot.date}`} className="rounded-md px-2 py-1 text-xs font-semibold text-stone-500 hover:bg-red-50 hover:text-red-700">Remove</button></li>)}
+              </ul>}
               {workerProfile.availableDates.length ? (
                 <ul
                   className="mt-3 flex flex-wrap gap-2"
@@ -1518,6 +1635,7 @@ export default function WorkerProfile() {
                             availableDates: workerProfile.availableDates.filter(
                               (item) => item !== date,
                             ),
+                            weeklyAvailability: (workerProfile.weeklyAvailability ?? []).filter((slot) => slot.date !== date),
                           })
                           showProfileUpdate(
                             "Your available dates were updated.",
@@ -1534,8 +1652,7 @@ export default function WorkerProfile() {
                 </ul>
               ) : (
                 <p className="mt-2 text-xs text-stone-500">
-                  Use these for one-off dates; weekly hours remain your regular
-                  schedule.
+                  Add exact dates with their start and end times. Weekly hours stay separate.
                 </p>
               )}
             </div>

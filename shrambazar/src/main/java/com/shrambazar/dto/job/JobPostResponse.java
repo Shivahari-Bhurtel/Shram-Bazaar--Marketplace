@@ -17,6 +17,8 @@ public record JobPostResponse(
         String businessName,
 
         String title,
+        String category,
+        String qualificationRequired,
         String description,
         String responsibilities,
 
@@ -24,6 +26,8 @@ public record JobPostResponse(
         String municipality,
         String district,
         String province,
+        Double latitude,
+        Double longitude,
 
         LocalDate startDate,
         LocalDate endDate,

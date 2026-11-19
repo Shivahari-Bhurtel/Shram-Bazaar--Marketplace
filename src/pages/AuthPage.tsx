@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { useApp } from "../store/AppContext"
-import { ALL_SKILLS, DISTRICTS } from "../data/mockData"
+import { DISTRICTS } from "../data/mockData"
+import { useSkillCatalog } from "../hooks/useSkillCatalog"
 import { LanguageSwitch } from "../i18n/LanguageContext"
 import { nepalDateString } from "../utils/dates"
 
-type AuthMode = "login" | "worker-signup" | "provider-signup"
+type AuthMode = "login" | "register-choice" | "worker-signup" | "provider-signup"
 
 interface Props {
   mode: AuthMode
@@ -17,6 +18,7 @@ export default function AuthPage({ mode }: Props) {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
     name: "",
     phone: "",
     dateOfBirth: "",
@@ -27,6 +29,8 @@ export default function AuthPage({ mode }: Props) {
     orgName: "",
     pan: "",
     industry: "",
+    businessDescription: "",
+    businessWebsite: "",
     contactName: "",
     providerType: "individual" as "individual" | "business" | "organization",
     skills: [] as string[],
@@ -34,25 +38,34 @@ export default function AuthPage({ mode }: Props) {
   const [skillInput, setSkillInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const skillCatalog = useSkillCatalog()
 
   const isLogin = mode === "login"
+  const isRegisterChoice = mode === "register-choice"
   const isWorker = mode === "worker-signup"
   const isProvider = mode === "provider-signup"
 
-  const industries = [
-    "Information Technology",
-    "Hospitality & Tourism",
-    "Healthcare",
-    "Construction",
-    "Events & Entertainment",
-    "Retail",
-    "Manufacturing",
-    "Education",
-    "Finance & Banking",
-    "NGO / INGO",
-    "Household / individual hiring",
-    "Other",
-  ]
+  if (isRegisterChoice) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-cream px-4 py-12">
+        <section className="w-full max-w-xl rounded-3xl bg-white p-7 shadow-sm sm:p-10" aria-labelledby="register-choice-title">
+          <button type="button" onClick={() => navigate("landing")} className="mb-8 text-sm font-medium text-stone-600 hover:text-stone-900">← Back to homepage</button>
+          <h1 id="register-choice-title" className="font-display text-3xl font-bold text-stone-900">Create your account</h1>
+          <p className="mt-2 text-sm text-stone-600">Choose how you want to use Shram Bazzar.</p>
+          <div className="mt-7 grid gap-4 sm:grid-cols-2">
+            <button type="button" onClick={() => navigate("worker-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
+              <span className="block text-lg font-bold text-stone-900">I’m looking for work</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Create a worker profile, find suitable jobs, and manage applications.</span>
+            </button>
+            <button type="button" onClick={() => navigate("provider-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
+              <span className="block text-lg font-bold text-stone-900">I want to hire</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Register as a provider and find workers for your jobs.</span>
+            </button>
+          </div>
+          <p className="mt-7 text-center text-sm text-stone-600">Already have an account? <button type="button" onClick={() => navigate("login")} className="font-semibold text-primary-ink hover:underline">Sign in</button></p>
+        </section>
+      </main>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,6 +76,14 @@ export default function AuthPage({ mode }: Props) {
       if (result) setError(result)
       setLoading(false)
     } else if (step < 2) {
+      if (formData.password.length < 8) {
+        setError("Use a password with at least 8 characters.")
+        return
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError("Passwords do not match.")
+        return
+      }
       setStep((s) => s + 1)
     } else {
       const resultPromise = isWorker
@@ -85,11 +106,13 @@ export default function AuthPage({ mode }: Props) {
             contactName: formData.contactName,
             providerType: formData.providerType,
             dateOfBirth: formData.dateOfBirth,
-            address: formData.location,
+            address: formData.address,
             phone: formData.phone,
-            orgName: formData.orgName,
+            orgName: formData.orgName || formData.contactName,
             pan: formData.pan,
-            industry: formData.industry,
+            industry: "Other",
+            description: formData.businessDescription,
+            website: formData.businessWebsite,
             district: formData.district,
             location: formData.location,
           })
@@ -109,7 +132,7 @@ export default function AuthPage({ mode }: Props) {
     }))
   }
 
-  const filteredSkills = ALL_SKILLS.filter(
+  const filteredSkills = skillCatalog.filter(
     (s) =>
       s.toLowerCase().includes(skillInput.toLowerCase()) &&
       !formData.skills.includes(s),
@@ -255,7 +278,7 @@ export default function AuthPage({ mode }: Props) {
                   Sign In
                 </button>
                 <button
-                  onClick={() => navigate("worker-signup")}
+                  onClick={() => navigate("register-choice")}
                   className="flex-1 rounded-lg py-2.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
                 >
                   Register
@@ -327,16 +350,19 @@ export default function AuthPage({ mode }: Props) {
                     />
                   </Field>
                   <Field label="Password">
+                    <div className="relative">
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={(e) =>
                         setFormData((p) => ({ ...p, password: e.target.value }))
                       }
                       placeholder="••••••••"
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      className="w-full px-4 py-2.5 pr-12 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                       required
                     />
+                    <PasswordVisibilityButton visible={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+                    </div>
                   </Field>
                 </>
               )}
@@ -371,18 +397,36 @@ export default function AuthPage({ mode }: Props) {
                     />
                   </Field>
                   <Field label="Password">
+                    <div className="relative">
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={(e) =>
                         setFormData((p) => ({ ...p, password: e.target.value }))
                       }
                       placeholder="At least 8 characters"
-                      className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      className="w-full px-4 py-3 pr-12 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                       autoComplete="new-password"
                       minLength={8}
                       required
                     />
+                    <PasswordVisibilityButton visible={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+                    </div>
+                  </Field>
+                  <Field label="Confirm password">
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData((p) => ({ ...p, confirmPassword: e.target.value }))}
+                        placeholder="Re-enter your password"
+                        className="w-full px-4 py-2.5 pr-12 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                        autoComplete="new-password"
+                        minLength={8}
+                        required
+                      />
+                      <PasswordVisibilityButton visible={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+                    </div>
                   </Field>
                 </>
               )}
@@ -572,17 +616,26 @@ export default function AuthPage({ mode }: Props) {
                     />
                   </Field>
                   <Field label="Password">
+                    <div className="relative">
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={(e) =>
                         setFormData((p) => ({ ...p, password: e.target.value }))
                       }
                       placeholder="At least 8 characters"
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      className="w-full px-4 py-2.5 pr-12 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                       minLength={8}
                       required
                     />
+                    <PasswordVisibilityButton visible={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+                    </div>
+                  </Field>
+                  <Field label="Confirm password">
+                    <div className="relative">
+                      <input type={showPassword ? "text" : "password"} value={formData.confirmPassword} onChange={(e) => setFormData((p) => ({ ...p, confirmPassword: e.target.value }))} placeholder="Re-enter your password" className="w-full px-4 py-2.5 pr-12 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" autoComplete="new-password" minLength={8} required />
+                      <PasswordVisibilityButton visible={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+                    </div>
                   </Field>
                 </>
               )}
@@ -600,60 +653,16 @@ export default function AuthPage({ mode }: Props) {
                       required
                     />
                   </Field>
-                  <Field label="Provider type">
+                  <Field label="Do you have a business or organization?">
                     <select
                       value={formData.providerType}
-                      onChange={(e) => setFormData((p) => ({ ...p, providerType: e.target.value as typeof p.providerType }))}
+                      onChange={(e) => setFormData((p) => ({ ...p, providerType: e.target.value as typeof p.providerType, orgName: e.target.value === "individual" ? "" : p.orgName }))}
                       className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                       required
                     >
-                      <option value="individual">Individual / household</option>
+                      <option value="individual">No — personal or household hiring</option>
                       <option value="business">Business</option>
                       <option value="organization">Organization</option>
-                    </select>
-                  </Field>
-                  <Field label={formData.providerType === "individual" ? "Display name" : formData.providerType === "business" ? "Business name" : "Organization name"}>
-                    <input
-                      type="text"
-                      value={formData.orgName}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, orgName: e.target.value }))
-                      }
-                      placeholder={formData.providerType === "individual" ? "e.g. Maya Gurung" : "e.g. HimTech Solutions Pvt. Ltd."}
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                      required
-                    />
-                  </Field>
-                  <Field label={formData.providerType === "individual" ? "PAN number (optional)" : "PAN number"} hint={formData.providerType === "individual" ? "Not required for individuals or households hiring workers." : "Required for business or organization verification."}>
-                    <input
-                      type="text"
-                      value={formData.pan}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, pan: e.target.value }))
-                      }
-                      placeholder="9-digit PAN"
-                      inputMode="numeric"
-                      pattern="[0-9]{9}"
-                      maxLength={9}
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                      required={formData.providerType !== "individual"}
-                    />
-                  </Field>
-                  <Field label="Industry">
-                    <select
-                      value={formData.industry}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, industry: e.target.value }))
-                      }
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                      required
-                    >
-                      <option value="">Select industry</option>
-                      {industries.map((i) => (
-                        <option key={i} value={i}>
-                          {i}
-                        </option>
-                      ))}
                     </select>
                   </Field>
                   <Field label="District">
@@ -673,18 +682,32 @@ export default function AuthPage({ mode }: Props) {
                       ))}
                     </select>
                   </Field>
-                  <Field label="Organisation address">
+                  <Field label="Street, ward, or tole address">
                     <input
                       type="text"
-                      value={formData.location}
+                      value={formData.address}
                       onChange={(e) =>
-                        setFormData((p) => ({ ...p, location: e.target.value }))
+                        setFormData((p) => ({ ...p, address: e.target.value }))
                       }
-                      placeholder="e.g. New Baneshwor, Kathmandu"
+                      placeholder="e.g. Shiva Chowk"
                       className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                       required
                     />
                   </Field>
+                  {formData.providerType !== "individual" && <>
+                    <Field label={formData.providerType === "business" ? "Business name" : "Organization name"}>
+                      <input type="text" value={formData.orgName} onChange={(e) => setFormData((p) => ({ ...p, orgName: e.target.value }))} placeholder="e.g. HimTech Solutions Pvt. Ltd." className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
+                    </Field>
+                    <Field label="Business or organization address">
+                      <input type="text" value={formData.location} onChange={(e) => setFormData((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. New Baneshwor" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
+                    </Field>
+                    <Field label="Business description">
+                      <textarea value={formData.businessDescription} onChange={(e) => setFormData((p) => ({ ...p, businessDescription: e.target.value }))} rows={3} maxLength={1000} placeholder="What does your organization do?" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" />
+                    </Field>
+                    <Field label="Website (optional)">
+                      <input type="url" value={formData.businessWebsite} onChange={(e) => setFormData((p) => ({ ...p, businessWebsite: e.target.value }))} placeholder="https://example.com" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" />
+                    </Field>
+                  </>}
                 </>
               )}
 
@@ -702,7 +725,7 @@ export default function AuthPage({ mode }: Props) {
                 ) : isWorker ? (
                   "Create my account"
                 ) : (
-                  "Register Organisation"
+                  "Create provider account"
                 )}
               </button>
             </form>
@@ -722,7 +745,7 @@ export default function AuthPage({ mode }: Props) {
               <div className="mt-6 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-stone-600">
                 <span>Don’t have an account?</span>
                 <button
-                  onClick={() => navigate("worker-signup")}
+                  onClick={() => navigate("register-choice")}
                   className="font-semibold text-[#5A2A27] hover:underline"
                 >
                   Register as Worker
@@ -777,6 +800,18 @@ export default function AuthPage({ mode }: Props) {
         </div>
       </div>
     </div>
+  )
+}
+
+function PasswordVisibilityButton({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" onClick={onToggle} aria-label={visible ? "Hide password" : "Show password"} aria-pressed={visible} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+      {visible ? (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="M3 3l18 18" /><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" /><path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9 7 9 7a15.7 15.7 0 0 1-3.1 3.8M6.2 6.2C4.1 7.6 3 10 3 12c0 0 3.5 7 9 7 1 0 1.9-.2 2.8-.6" /></svg>
+      ) : (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+      )}
+    </button>
   )
 }
 

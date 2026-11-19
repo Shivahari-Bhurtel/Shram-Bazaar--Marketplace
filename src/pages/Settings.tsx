@@ -92,6 +92,26 @@ export default function Settings() {
         </div>
       </section>
 
+      <section className="mb-6 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <div className="border-b border-stone-100 px-5 py-4 sm:px-6">
+          <h2 className="text-base font-bold text-stone-900">My reports</h2>
+          <p className="mt-1 text-sm text-stone-500">Check the latest status of reports you submitted.</p>
+        </div>
+        <div className="divide-y divide-stone-100 px-5 sm:px-6">
+          {state.myReports.length ? state.myReports.map((report) => (
+            <article key={report.id} className="py-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h3 className="text-sm font-semibold text-stone-800">{report.reportedUserName ? `Account: ${report.reportedUserName}` : report.jobId ? "Job listing report" : "Safety report"}</h3>
+                <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold capitalize text-stone-700">{report.status === "submitted" ? "Pending" : report.status === "reviewing" ? "Under review" : report.status === "dismissed" ? "Rejected" : "Resolved"}</span>
+              </div>
+              <p className="mt-1 text-xs text-stone-500">{report.reason.replace(/_/g, " ")} · {report.date}</p>
+              <p className="mt-2 text-sm leading-relaxed text-stone-600">{report.details}</p>
+              {report.adminNote && <p className="mt-2 text-xs text-stone-500">Admin update: {report.adminNote}</p>}
+            </article>
+          )) : <p className="py-5 text-sm text-stone-500">You haven’t submitted any reports.</p>}
+        </div>
+      </section>
+
       <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
         <div className="border-b border-stone-100 px-5 py-4 sm:px-6">
           <h2 className="text-base font-bold text-stone-900">Notifications</h2>

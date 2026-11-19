@@ -42,7 +42,7 @@ export default function ProviderOperations() {
     const job = jobs.find((item) => item.id === application.jobId)
     return !!job && (job.endDate || job.date) <= nepalDateString()
   }
-  const contacted = applications.filter((application) => application.status === "accepted" || application.status === "shortlisted")
+  const contacted = applications.filter((application) => application.status === "accepted")
   const selectedJob = jobs.find((job) => job.id === jobId) || jobs[0]
   useEffect(() => {
     if (import.meta.env.VITE_DEMO_MODE === "true" || tab !== "discover" || !provider) return

@@ -14,6 +14,9 @@ public record SeekerProfileResponse(
         String bio,
         String address,
         Integer preferredTravelDistanceKm,
+        Double latitude,
+        Double longitude,
+        java.util.List<String> preferredCategories,
         boolean verified
 
 ) {

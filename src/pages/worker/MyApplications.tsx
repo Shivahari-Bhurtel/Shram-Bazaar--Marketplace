@@ -3,6 +3,7 @@ import { useApp } from "../../store/AppContext"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
 import type { Application, ApplicationStatus, Job, WorkType } from "../../types"
 import { formatNepalDate, nepalDateString } from "../../utils/dates"
+import { apiRequest } from "../../services/backendApi"
 
 type StatusFilter = ApplicationStatus | "all"
 
@@ -10,24 +11,28 @@ const statusCards: {
   key: StatusFilter
   label: string
   className: string
-  icon: "all" | "applied" | "shortlisted" | "accepted" | "rejected"
+  icon: "all" | "applied" | "accepted" | "rejected"
 }[] = [
   { key: "all", label: "All applications", className: "brown", icon: "all" },
   { key: "pending", label: "Applied", className: "blue", icon: "applied" },
-  { key: "shortlisted", label: "Shortlisted", className: "amber", icon: "shortlisted" },
   { key: "accepted", label: "Accepted", className: "green", icon: "accepted" },
+  { key: "declined", label: "Declined", className: "gray", icon: "rejected" },
   { key: "rejected", label: "Not selected", className: "gray", icon: "rejected" },
 ]
 
-const statusLabel: Record<ApplicationStatus, string> = {
-  pending: "Applied",
-  shortlisted: "Shortlisted",
-  accepted: "Accepted",
-  rejected: "Not selected",
-}
-
 function formatDate(date: string) {
   return formatNepalDate(date, { day: "2-digit", month: "short" })
+}
+
+function scheduledWorkHasEnded(job?: Job) {
+  if (!job) return false
+  const date = job.endDate || job.date
+  if (!date) return false
+  if (job.endTime && /^\d{2}:\d{2}$/.test(job.endTime)) {
+    const scheduledEnd = new Date(`${date}T${job.endTime}:00+05:45`)
+    return !Number.isNaN(scheduledEnd.getTime()) && scheduledEnd <= new Date()
+  }
+  return date <= nepalDateString()
 }
 
 function StatusIcon({ name }: { name: (typeof statusCards)[number]["icon"] }) {
@@ -35,7 +40,6 @@ function StatusIcon({ name }: { name: (typeof statusCards)[number]["icon"] }) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
       {name === "all" && <><path d="M5 5h14v14H5z" /><path d="M8 9h8M8 12h8M8 15h5" /></>}
       {name === "applied" && <><path d="m4 11 16-7-6 16-3-7-7-2Z" /><path d="m11 13 4-4" /></>}
-      {name === "shortlisted" && <><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" /><circle cx="12" cy="12" r="2.5" /></>}
       {name === "accepted" && <path d="m5 12 4 4L19 6" />}
       {name === "rejected" && <><path d="m6 6 12 12M18 6 6 18" /></>}
     </svg>
@@ -55,9 +59,12 @@ function ApplicationRow({
   const [providerRating, setProviderRating] = useState(5)
   const [providerReview, setProviderReview] = useState("")
   const [reviewMessage, setReviewMessage] = useState("")
+  const [providerContact, setProviderContact] = useState<{ providerName: string; phoneNumber: string } | null>(null)
+  const [contactError, setContactError] = useState("")
+  const [contactLoading, setContactLoading] = useState(false)
   const completed = application.engagementStatus === "COMPLETED" || (
     import.meta.env.VITE_DEMO_MODE === "true" &&
-    !!job && (job.endDate || job.date) <= nepalDateString()
+    scheduledWorkHasEnded(job)
   )
   return (
     <article className="rounded-xl border border-[#E8E2DC] bg-white p-4 transition-colors hover:border-[#CDB9A7] sm:p-5">
@@ -107,13 +114,9 @@ function ApplicationRow({
         </div>
       </div>
 
-      {(application.providerNote || application.coverNote) && (
+      {application.providerNote && (
         <div className="mt-4 border-t border-[#F0EBE6] pt-3">
-          {application.providerNote ? (
-            <p className="text-sm leading-relaxed text-stone-600"><span className="font-semibold text-stone-800">Employer update: </span>{application.providerNote}</p>
-          ) : (
-            <p className="line-clamp-2 text-sm leading-relaxed text-stone-500"><span className="font-medium text-stone-700">Your note: </span>{application.coverNote}</p>
-          )}
+          <p className="text-sm leading-relaxed text-stone-600"><span className="font-semibold text-stone-800">Employer update: </span>{application.providerNote}</p>
         </div>
       )}
       {application.engagementStatus === "AWAITING_RESPONSE" && (
@@ -123,7 +126,23 @@ function ApplicationRow({
           <button type="button" onClick={() => respondToSelection(application.id, true)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white">Confirm work</button>
         </div>
       )}
-      {application.engagementStatus === "CONFIRMED" && job && (job.endDate || job.date) <= nepalDateString() && (
+      {["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(application.engagementStatus || "") && application.engagementId && (
+        <div className="mt-4 border-t border-[#F0EBE6] pt-3">
+          {providerContact ? (
+            <p className="text-sm text-stone-700">Provider contact: <a className="font-semibold text-primary-ink underline" href={`tel:${providerContact.phoneNumber}`}>{providerContact.phoneNumber}</a>{providerContact.providerName ? ` · ${providerContact.providerName}` : ""}</p>
+          ) : (
+            <button type="button" disabled={contactLoading} onClick={() => {
+              setContactLoading(true); setContactError("")
+              void apiRequest<{ providerName: string; phoneNumber: string }>(`/api/seeker/engagements/${application.engagementId}/provider-contact`)
+                .then((contact) => setProviderContact(contact))
+                .catch((error: unknown) => setContactError(error instanceof Error ? error.message : "Provider contact is unavailable."))
+                .finally(() => setContactLoading(false))
+            }} className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-stone-700 disabled:opacity-50">{contactLoading ? "Loading contact…" : "View provider contact"}</button>
+          )}
+          {contactError && <p role="alert" className="mt-2 text-xs text-red-700">{contactError}</p>}
+        </div>
+      )}
+      {application.engagementStatus === "CONFIRMED" && scheduledWorkHasEnded(job) && !application.seekerCompletionConfirmed && (
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EBE6] pt-3">
           <p className="mr-auto text-sm text-stone-600">Confirm when the scheduled work is complete.</p>
           <button type="button" onClick={() => updateEngagementWork(application.id, "confirm-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Confirm work complete</button>
@@ -131,8 +150,8 @@ function ApplicationRow({
       )}
       {application.engagementStatus === "IN_PROGRESS" && (
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EBE6] pt-3">
-          <p className="mr-auto text-sm text-stone-600">The provider started this work. Confirm completion after the scheduled work date.</p>
-          {job && (job.endDate || job.date) <= nepalDateString() && <button type="button" onClick={() => updateEngagementWork(application.id, "confirm-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Confirm work complete</button>}
+          <p className="mr-auto text-sm text-stone-600">{application.seekerCompletionConfirmed ? "You confirmed completion. Waiting for the provider to confirm." : application.providerCompletionConfirmed ? "The provider marked this work complete. Confirm if the work is finished." : "The provider started this work. Confirm completion after the scheduled work ends."}</p>
+          {!application.seekerCompletionConfirmed && scheduledWorkHasEnded(job) && <button type="button" onClick={() => updateEngagementWork(application.id, "confirm-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Confirm work complete</button>}
         </div>
       )}
       {application.status === "accepted" && <div className="mt-4 border-t border-[#F0EBE6] pt-3">
@@ -153,8 +172,8 @@ export default function MyApplications() {
   const counts = {
     all: myApplications.length,
     pending: myApplications.filter((application) => application.status === "pending").length,
-    shortlisted: myApplications.filter((application) => application.status === "shortlisted").length,
     accepted: myApplications.filter((application) => application.status === "accepted").length,
+    declined: myApplications.filter((application) => application.status === "declined").length,
     rejected: myApplications.filter((application) => application.status === "rejected").length,
   }
   const workTypes = [...new Set(myApplications.map((application) => jobsById.get(application.jobId)?.workType).filter((value): value is WorkType => !!value))]
@@ -170,9 +189,7 @@ export default function MyApplications() {
       return sortOrder === "newest" ? difference : -difference
     })
 
-  const nextStep = counts.shortlisted
-    ? `${counts.shortlisted} application${counts.shortlisted === 1 ? " is" : "s are"} shortlisted. Keep an eye out for employer messages.`
-    : counts.pending
+  const nextStep = counts.pending
       ? `${counts.pending} application${counts.pending === 1 ? " is" : "s are"} awaiting an update. You can continue exploring suitable roles.`
       : counts.accepted
         ? "You have accepted work. Review job details for schedule and next steps."
@@ -188,7 +205,7 @@ export default function MyApplications() {
       </header>
 
       {myApplications.length ? (
-        <section className="mb-7 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5" aria-label="Application totals">
+        <section className="mb-7 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4" aria-label="Application totals">
           {statusCards.map((card) => {
             const selected = activeTab === card.key
             return (
@@ -266,11 +283,11 @@ export default function MyApplications() {
               <p className="mt-4 text-sm font-semibold text-stone-800">Status overview</p>
               <div className="mt-3 space-y-3">
                 {statusCards.slice(1).map((card) => {
-                  const count = counts[card.key as ApplicationStatus]
+                  const count = counts[card.key]
                   const ratio = counts.all ? (count / counts.all) * 100 : 0
                   return (
                     <div key={card.key}>
-                      <div className="mb-1 flex items-center justify-between text-xs"><span className="text-stone-600">{statusLabel[card.key as ApplicationStatus]}</span><span className="font-semibold text-stone-800">{count}</span></div>
+                      <div className="mb-1 flex items-center justify-between text-xs"><span className="text-stone-600">{card.label}</span><span className="font-semibold text-stone-800">{count}</span></div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-stone-100"><div className={`h-full rounded-full application-bar-${card.className}`} style={{ width: `${ratio}%` }} /></div>
                     </div>
                   )

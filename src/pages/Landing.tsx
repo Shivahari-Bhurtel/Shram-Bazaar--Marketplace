@@ -94,7 +94,7 @@ const journeySteps: Record<JourneyAudience, {
       detail: "Compare applicants’ skills and work history for the role.",
       points: [
         "Read profiles and experience",
-        "Shortlist suitable applicants",
+        "Select a suitable applicant",
         "Contact people to discuss next steps",
       ],
     },
@@ -262,19 +262,16 @@ function useScrollReveal<T extends HTMLElement>(delay = 0) {
 function WorkCategoryCard({
   category,
   index,
-  onSelect,
 }: {
   category: typeof workCategories[number]
   index: number
-  onSelect: () => void
 }) {
   const isDark = [0, 2, 5, 7].includes(index)
 
   return (
-    <button
-      onClick={onSelect}
-      aria-label={`Find work in ${category.label}`}
-      className={`group relative flex aspect-[0.9] flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-7 text-center transition-transform duration-200 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#553421] sm:px-4 ${
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none relative flex aspect-[0.9] select-none flex-col items-center justify-center overflow-hidden rounded-2xl px-3 py-7 text-center sm:px-4 ${
         isDark ? "bg-[#553421] text-[#FFF1DF]" : "bg-[#FFF0DD] text-[#553421]"
       }`}
     >
@@ -307,7 +304,7 @@ function WorkCategoryCard({
       >
         {category.label}
       </span>
-    </button>
+    </div>
   )
 }
 
@@ -322,24 +319,17 @@ const workCategoryHotspots = [
   { left: "79.1%", top: "49.8%" },
 ]
 
-function FindWorkArtwork({ onSelect }: { onSelect: (index: number) => void }) {
+function FindWorkArtwork() {
   return (
     <div className="relative mx-auto hidden w-full max-w-[1120px] xl:block">
       <img
         src={`${import.meta.env.BASE_URL}images/landing/find-your-right-work.svg`}
         alt=""
         aria-hidden="true"
-        className="block h-auto w-full"
+        className="pointer-events-none block h-auto w-full select-none"
       />
       {workCategories.map((category, index) => (
-        <button
-          key={category.label}
-          type="button"
-          onClick={() => onSelect(index)}
-          aria-label={`Find work in ${category.label}`}
-          className="absolute h-[33.5%] w-[16.9%] cursor-pointer rounded-xl focus-visible:outline-4 focus-visible:outline-offset-[-4px] focus-visible:outline-white"
-          style={{ ...workCategoryHotspots[index] }}
-        />
+        <span key={category.label} aria-hidden="true" className="pointer-events-none absolute h-[33.5%] w-[16.9%] select-none" style={{ ...workCategoryHotspots[index] }} />
       ))}
     </div>
   )
@@ -356,7 +346,7 @@ export default function Landing() {
   const [journeyVisible, setJourneyVisible] = useState(false)
   const [journeyTransitionEnabled, setJourneyTransitionEnabled] = useState(true)
   const [heroSlide, setHeroSlide] = useState<"image" | "video">("image")
-  const [heroAudioMuted, setHeroAudioMuted] = useState(false)
+  const [heroAudioMuted, setHeroAudioMuted] = useState(true)
   const heroVideoRef = useRef<HTMLVideoElement>(null)
   const heroAudioRef = useRef<HTMLAudioElement>(null)
   const workerMenuRef = useRef<HTMLDivElement>(null)
@@ -453,7 +443,7 @@ export default function Landing() {
     if (!audio) return
     audio.pause()
     audio.currentTime = 0
-    audio.volume = 1
+    audio.volume = 0
     return () => audio.pause()
   }, [])
 
@@ -573,7 +563,7 @@ export default function Landing() {
                   <button
                     onClick={() => {
                       setOpenMenu(null)
-                      navigate("worker-signup")
+                    navigate("register-choice")
                     }}
                     className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 hover:bg-stone-50 hover:text-primary-ink"
                   >
@@ -623,7 +613,7 @@ export default function Landing() {
               Login
             </button>
             <button
-              onClick={() => navigate("worker-signup")}
+              onClick={() => navigate("register-choice")}
               className="shrink-0 whitespace-nowrap text-base font-bold tracking-tight text-primary-ink transition-colors hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             >
               Sign up
@@ -874,12 +864,11 @@ export default function Landing() {
                   key={category.label}
                   category={category}
                   index={index}
-                  onSelect={() => navigate("worker-signup")}
                 />
               ))}
             </div>
           </div>
-          <FindWorkArtwork onSelect={() => navigate("worker-signup")} />
+          <FindWorkArtwork />
         </div>
       </section>
 

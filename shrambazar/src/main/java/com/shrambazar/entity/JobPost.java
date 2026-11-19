@@ -25,6 +25,12 @@ public class JobPost {
     @Column(nullable = false, length = 150)
     private String title;
 
+    @Column(length = 80)
+    private String category;
+
+    @Column(length = 255)
+    private String qualificationRequired;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
@@ -42,6 +48,9 @@ public class JobPost {
 
     @Column(length = 100)
     private String province;
+
+    private Double latitude;
+    private Double longitude;
 
     @Column(nullable = false)
     private LocalDate startDate;
@@ -120,6 +129,15 @@ public class JobPost {
     public void setTitle(String title) {
         this.title = title;
     }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public String getQualificationRequired() { return qualificationRequired; }
+    public void setQualificationRequired(String qualificationRequired) { this.qualificationRequired = qualificationRequired; }
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 
     public String getDescription() {
         return description;
