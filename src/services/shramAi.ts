@@ -13,7 +13,7 @@ export type ResumeAnalysisResponse = {
 
 export type ChatLanguage = "en" | "ne"
 
-async function fetchAiService(
+export async function fetchAiService(
   path: string,
   options: RequestInit,
 ): Promise<Response> {

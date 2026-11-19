@@ -1,9 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { useApp } from "../../store/AppContext"
 import JobCard from "../../components/JobCard"
+import ShowcaseJobRow from "../../components/ShowcaseJobRow"
+import ShowcaseJobDetailsModal from "../../components/ShowcaseJobDetailsModal"
 import type { Job } from "../../types"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
 import { searchHimalayasJobs } from "../../services/himalayas"
+import { searchShowcaseJobs, type ShowcaseJob } from "../../services/showcaseJobs"
 
 function SidebarIcon({
   name,
@@ -57,9 +60,14 @@ function recommendedScore(job: Job, skills: string[]) {
 }
 
 export default function WorkerDashboard() {
-  const { state, navigate, myApplications, browseSkill } = useApp()
+  const { state, navigate, myApplications } = useApp()
   const { workerProfile, jobs, externalJobs } = state
   const [search, setSearch] = useState("")
+  const [submittedSearch, setSubmittedSearch] = useState("")
+  const [showcaseSearchJobs, setShowcaseSearchJobs] = useState<ShowcaseJob[]>([])
+  const [showcaseSearchLoading, setShowcaseSearchLoading] = useState(false)
+  const [showcaseSearchError, setShowcaseSearchError] = useState("")
+  const [selectedShowcaseJob, setSelectedShowcaseJob] = useState<ShowcaseJob | null>(null)
   const [recommendedTab, setRecommendedTab] =
     useState<"best" | "recent" | "saved">("best")
   const [recommendedExternalJobs, setRecommendedExternalJobs] = useState<Job[]>(
@@ -84,6 +92,25 @@ export default function WorkerDashboard() {
       })
     return () => controller.abort()
   }, [workerProfile?.id])
+
+  useEffect(() => {
+    if (!submittedSearch) {
+      setShowcaseSearchJobs([])
+      setShowcaseSearchLoading(false)
+      setShowcaseSearchError("")
+      return
+    }
+    const controller = new AbortController()
+    setShowcaseSearchLoading(true)
+    setShowcaseSearchError("")
+    searchShowcaseJobs({ keyword: submittedSearch }, controller.signal)
+      .then(setShowcaseSearchJobs)
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name !== "AbortError") setShowcaseSearchError(`Imported listings could not be loaded: ${error.message}`)
+      })
+      .finally(() => { if (!controller.signal.aborted) setShowcaseSearchLoading(false) })
+    return () => controller.abort()
+  }, [submittedSearch])
 
   if (!workerProfile) return null
 
@@ -120,7 +147,8 @@ export default function WorkerDashboard() {
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault()
-    browseSkill(search.trim())
+    const query = search.trim()
+    setSubmittedSearch(query)
   }
 
   return (
@@ -144,7 +172,7 @@ export default function WorkerDashboard() {
               </div>
               <form
                 onSubmit={submitSearch}
-                className="flex min-h-[3.5rem] w-full max-w-[31rem] items-center gap-2 rounded-xl border border-white/70 bg-white p-1.5 shadow-md focus-within:ring-2 focus-within:ring-white/40 sm:min-h-[3.75rem]"
+                className="flex min-h-[3.5rem] w-full max-w-[31rem] items-center gap-2 rounded-xl border border-[#E8E2D5] bg-white p-1.5 shadow-md focus-within:ring-2 focus-within:ring-white/40 sm:min-h-[3.75rem]"
               >
                 <SidebarIcon
                   name="search"
@@ -167,6 +195,14 @@ export default function WorkerDashboard() {
             </div>
           </header>
 
+          {submittedSearch && <section className="mb-8 scroll-mt-6" aria-live="polite" aria-label="Matching jobs">
+            {showcaseSearchError && <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{showcaseSearchError}</p>}
+            {showcaseSearchJobs.length > 0 ? <div className="overflow-hidden rounded-xl border border-[#E8E2D5] bg-white">
+              <div className="border-b border-stone-100 px-4 py-3"><h2 className="text-sm font-bold text-stone-900">Nepal job dataset</h2><p className="mt-0.5 text-xs text-stone-500">Historical source listings · availability is unverified</p></div>
+              {showcaseSearchJobs.map((job) => <ShowcaseJobRow key={`showcase-${job.id}`} job={job} onOpen={setSelectedShowcaseJob} />)}
+            </div> : showcaseSearchLoading ? <div role="status" className="rounded-xl border border-stone-200 bg-white px-5 py-6 text-sm text-stone-600"><span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-primary align-[-2px]" />Searching dataset listings…</div> : <div className="rounded-xl border border-stone-200 bg-white px-5 py-8 text-center"><p className="font-semibold text-stone-900">No matching dataset listings found</p><p className="mt-1 text-sm text-stone-500">Try another job title, skill, or town.</p></div>}
+          </section>}
+
           <section className="mb-8">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
@@ -177,7 +213,7 @@ export default function WorkerDashboard() {
               <button
                 type="button"
                 onClick={() => navigate("job-discovery")}
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#E4D3C3] bg-[#F0E5DB] px-3 py-2 text-sm font-semibold text-[#70472F] transition-colors hover:bg-[#E7D7C8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#E8E2D5] bg-[#EFECE6] px-3 py-2 text-sm font-semibold text-[#70472F] transition-colors hover:bg-[#EAE3D5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
                 aria-label="Open job discovery filters"
               >
                 <svg
@@ -218,8 +254,8 @@ export default function WorkerDashboard() {
                   onClick={() => setRecommendedTab(tab)}
                   className={`-mb-px shrink-0 rounded-t-lg border-b-2 px-3 pb-3 pt-2 text-sm font-semibold transition-colors ${
                     recommendedTab === tab
-                      ? "border-[#70472F] bg-[#F0E5DB] text-[#70472F]"
-                      : "border-transparent bg-[#F8F3EE] text-stone-600 hover:bg-[#F0E5DB] hover:text-[#70472F]"
+                      ? "border-[#70472F] bg-[#EAE3D5] text-[#70472F]"
+                      : "border-transparent bg-[#FAF8F5] text-stone-600 hover:bg-[#EFECE6] hover:text-[#70472F]"
                   }`}
                 >
                   {label}
@@ -232,7 +268,7 @@ export default function WorkerDashboard() {
               ))}
             </div>
             {recommendedJobs.length > 0 ? (
-              <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+              <div className="overflow-hidden rounded-xl border border-[#E8E2D5] bg-white">
                 {recommendedJobs.map((job) => (
                   <RecommendedJobRow key={job.id} job={job} />
                 ))}
@@ -403,6 +439,7 @@ export default function WorkerDashboard() {
           </section>
         </main>
       </div>
+      {selectedShowcaseJob && <ShowcaseJobDetailsModal job={selectedShowcaseJob} onClose={() => setSelectedShowcaseJob(null)} />}
     </div>
   )
 }

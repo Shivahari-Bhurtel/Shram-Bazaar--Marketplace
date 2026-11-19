@@ -120,7 +120,7 @@ export default function WorkerSidebar() {
 
   return (
     <aside
-      className="worker-workspace-rail fixed inset-y-0 left-0 z-30 hidden w-56 border-r border-[#EBE7E2] bg-[#F8F3EE] lg:flex"
+      className="worker-workspace-rail fixed inset-y-0 left-0 z-30 hidden w-56 border-r border-[#E8E2D5] bg-[#D4C8AE] lg:flex"
       aria-label="Worker workspace"
     >
       <div className="flex h-full w-full flex-col px-3 py-4">
@@ -136,7 +136,7 @@ export default function WorkerSidebar() {
           >
             श्रम
           </span>
-          <span className="font-script text-[1.8rem] font-semibold text-black">
+          <span className="font-script text-[1.8rem] font-semibold text-[#261C14]">
             Bazaar
           </span>
         </button>

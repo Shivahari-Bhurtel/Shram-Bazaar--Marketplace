@@ -669,7 +669,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (active) setStorageWarning("")
       } catch (error) {
-        if (active) setStorageWarning(error instanceof Error ? `Server sync: ${error.message}` : "The server could not be reached.")
+        if (active) {
+          const message = error instanceof Error ? error.message : "The server could not be reached."
+          setStorageWarning(
+            message.includes("404") || message.includes("route not found")
+              ? "Server sync unavailable: the Java API is not deployed or reachable. Check the Vercel backend service and database."
+              : `Server sync unavailable: ${message}`,
+          )
+        }
       }
     }
     void syncBackend()

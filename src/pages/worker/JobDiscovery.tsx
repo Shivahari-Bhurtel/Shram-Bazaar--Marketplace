@@ -1,646 +1,120 @@
-import { useState, useMemo, useEffect, useRef, type FormEvent } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import JobDiscoveryMap, { type ShowcaseAreaMarker } from "../../components/worker/JobDiscoveryMap"
+import ShowcaseJobRow from "../../components/ShowcaseJobRow"
+import ShowcaseJobDetailsModal from "../../components/ShowcaseJobDetailsModal"
 import { useApp } from "../../store/AppContext"
-import JobListRow from "../../components/JobListRow"
-import { DISTRICTS, ALL_SKILLS } from "../../data/mockData"
-import { searchHimalayasJobs } from "../../services/himalayas"
-import type { JobCategory, WorkType } from "../../types"
-import { getConfiguredJobCategories } from "../../utils/categories"
-
-type SortOption = "match" | "payment-high" | "payment-low" | "newest" | "deadline"
-
-const employmentTypeForApi: Record<string, string> = {
-  "full-time": "Full Time",
-  "part-time": "Part Time",
-  contract: "Contractor",
-  freelance: "Contractor",
-}
-
-const seniorityForApi: Record<string, string> = {
-  "entry-level": "Entry-level",
-  "mid-level": "Mid-level",
-  "senior-level": "Senior",
-  manager: "Manager",
-}
-
-const sortForHimalayas = (sort: SortOption) => {
-  if (sort === "newest") return "recent" as const
-  if (sort === "payment-high") return "salaryDesc" as const
-  if (sort === "payment-low") return "salaryAsc" as const
-  return "relevant" as const
-}
+import { searchShowcaseJobs, type ShowcaseJob } from "../../services/showcaseJobs"
 
 export default function JobDiscovery() {
-  const { state, setExternalJobs, browseSkill } = useApp()
-  const { jobs, externalJobs } = state
-
-  const [search, setSearch] = useState(state.discoverySkill)
-  const [submittedSearch, setSubmittedSearch] = useState(state.discoverySkill)
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const filterOptionsRef = useRef<HTMLDivElement>(null)
-  const [filterDistrict, setFilterDistrict] = useState("")
-  const [filterCategory, setFilterCategory] = useState<JobCategory | "">("")
-  const categoryOptions = useMemo(getConfiguredJobCategories, [])
-  const [filterWorkType, setFilterWorkType] = useState<WorkType | "">("")
-  const [filterEmploymentType, setFilterEmploymentType] = useState("")
-  const [filterCountry, setFilterCountry] = useState("Nepal")
-  const [filterSeniority, setFilterSeniority] = useState("")
-  const [filterPayMin, setFilterPayMin] = useState("")
-  const [filterSkill, setFilterSkill] = useState("")
-  const [filterDate, setFilterDate] = useState("")
-  const [sortBy, setSortBy] = useState<SortOption>("match")
+  const { state, navigate } = useApp()
+  const [search, setSearch] = useState(() => state.discoverySkill || "")
+  const [district, setDistrict] = useState("All Nepal")
+  const [locationSearch, setLocationSearch] = useState("")
+  const [category, setCategory] = useState("All jobs")
+  const [jobTypeFilter, setJobTypeFilter] = useState("")
+  const [sourceFilter, setSourceFilter] = useState("")
+  const [minSalaryFilter, setMinSalaryFilter] = useState("")
+  const [maxSalaryFilter, setMaxSalaryFilter] = useState("")
   const [showFilters, setShowFilters] = useState(false)
-  const [externalLoading, setExternalLoading] = useState(true)
-  const [externalLoadingMore, setExternalLoadingMore] = useState(false)
-  const [externalError, setExternalError] = useState("")
-  const [externalPage, setExternalPage] = useState(1)
-  const [externalHasMore, setExternalHasMore] = useState(true)
-  const [externalRetry, setExternalRetry] = useState(0)
-
-  useEffect(() => {
-    searchInputRef.current?.focus({ preventScroll: true })
-  }, [])
-
-  useEffect(() => {
-    const closeOnOutsideClick = (event: PointerEvent) => {
-      if (!filterOptionsRef.current?.contains(event.target as Node))
-        setShowFilters(false)
-    }
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setShowFilters(false)
-    }
-
-    document.addEventListener("pointerdown", closeOnOutsideClick)
-    document.addEventListener("keydown", closeOnEscape)
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsideClick)
-      document.removeEventListener("keydown", closeOnEscape)
-    }
-  }, [])
-
-  const activeJobs = useMemo(
-    () => jobs.filter((j) => j.status === "active" || j.status === "filled"),
-    [jobs],
-  )
-  const allJobs = useMemo(
-    () => [...activeJobs, ...externalJobs],
-    [activeJobs, externalJobs],
-  )
+  const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null)
+  const [searchCurrentArea, setSearchCurrentArea] = useState(false)
+  const [selectedShowcaseJob, setSelectedShowcaseJob] = useState<ShowcaseJob | null>(null)
+  const [showcaseJobs, setShowcaseJobs] = useState<ShowcaseJob[]>([])
+  const [showcaseLoading, setShowcaseLoading] = useState(true)
+  const [showcaseError, setShowcaseError] = useState("")
+  const closeShowcaseDetails = useCallback(() => setSelectedShowcaseJob(null), [])
 
   useEffect(() => {
     const controller = new AbortController()
-    setExternalLoading(true)
-    setExternalError("")
-    setExternalJobs([])
-
-    searchHimalayasJobs(
-      {
-        q: submittedSearch,
-        employmentType: employmentTypeForApi[filterEmploymentType] || "",
-        country: filterCountry,
-        seniority: seniorityForApi[filterSeniority] || "",
-        sort: sortForHimalayas(sortBy),
-        page: 1,
-      },
-      controller.signal,
-    )
-      .then((result) => {
-        setExternalJobs(result.jobs)
-        setExternalPage(result.page)
-        setExternalHasMore(result.hasMore)
+    searchShowcaseJobs({}, controller.signal)
+      .then(setShowcaseJobs)
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name !== "AbortError") setShowcaseError(`Dataset listings are unavailable: ${error.message}`)
       })
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          setExternalError(
-            error instanceof Error
-              ? error.message
-              : "External jobs could not be loaded.",
-          )
-          setExternalHasMore(false)
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setExternalLoading(false)
-      })
-
+      .finally(() => { if (!controller.signal.aborted) setShowcaseLoading(false) })
     return () => controller.abort()
-  }, [
-    submittedSearch,
-    filterEmploymentType,
-    filterCountry,
-    filterSeniority,
-    sortBy,
-    externalRetry,
-    setExternalJobs,
-  ])
+  }, [])
 
-  const filtered = useMemo(() => {
-    return allJobs
-      .filter((job) => {
-        if (submittedSearch) {
-          const s = submittedSearch.toLowerCase()
-          if (
-            !job.title.toLowerCase().includes(s) &&
-            !job.providerName.toLowerCase().includes(s) &&
-            !job.location.toLowerCase().includes(s) &&
-            !job.description.toLowerCase().includes(s) &&
-            !job.skillsRequired.some((sk) => sk.toLowerCase().includes(s)) &&
-            !job.externalCategories?.some((category) =>
-              category.toLowerCase().includes(s),
-            )
-          ) {
-            return false
-          }
-        }
-        if (
-          filterDistrict &&
-          !job.externalSource &&
-          job.district !== filterDistrict
-        )
-          return false
-        if (filterCategory && job.category !== filterCategory) return false
-        if (
-          filterWorkType &&
-          !job.externalSource &&
-          job.workType !== filterWorkType
-        )
-          return false
-        if (
-          filterPayMin &&
-          !job.externalSource &&
-          job.payment < Number(filterPayMin)
-        )
-          return false
-        if (
-          filterSkill &&
-          !job.skillsRequired.some((s) =>
-            s.toLowerCase().includes(filterSkill.toLowerCase()),
-          ) &&
-          !job.description.toLowerCase().includes(filterSkill.toLowerCase()) &&
-          !job.title.toLowerCase().includes(filterSkill.toLowerCase()) &&
-          !job.externalCategories?.some((category) =>
-            category.toLowerCase().includes(filterSkill.toLowerCase()),
-          )
-        )
-          return false
-        if (filterDate && !job.externalSource && job.date !== filterDate)
-          return false
-        return true
-      })
-      .sort((a, b) => {
-        if (sortBy === "match") return (b.matchScore ?? 0) - (a.matchScore ?? 0)
-        if (sortBy === "payment-high" || sortBy === "payment-low") {
-          if (a.externalSource !== b.externalSource)
-            return a.externalSource ? 1 : -1
-          if (a.externalSource && b.externalSource) {
-            if (
-              a.externalSalaryCurrency !== b.externalSalaryCurrency ||
-              a.externalSalaryPeriod !== b.externalSalaryPeriod
-            )
-              return 0
-            const aPay =
-              sortBy === "payment-high"
-                ? (a.externalSalaryMax ?? a.externalSalaryMin)
-                : (a.externalSalaryMin ?? a.externalSalaryMax)
-            const bPay =
-              sortBy === "payment-high"
-                ? (b.externalSalaryMax ?? b.externalSalaryMin)
-                : (b.externalSalaryMin ?? b.externalSalaryMax)
-            if (aPay === undefined || bPay === undefined) return 0
-            return sortBy === "payment-high" ? bPay - aPay : aPay - bPay
-          }
-          return sortBy === "payment-high"
-            ? b.payment - a.payment
-            : a.payment - b.payment
-        }
-        if (sortBy === "newest") return b.postedDate.localeCompare(a.postedDate)
-        if (sortBy === "deadline") return a.deadline.localeCompare(b.deadline)
-        return 0
-      })
-  }, [
-    allJobs,
-    submittedSearch,
-    filterDistrict,
-    filterCategory,
-    filterWorkType,
-    filterPayMin,
-    filterSkill,
-    filterDate,
-    sortBy,
-  ])
+  const filteredShowcaseJobs = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    const place = locationSearch.trim().toLowerCase()
+    const [south, west, north, east] = mapBounds ?? [0, 0, 0, 0]
+    return showcaseJobs.filter((job) => {
+      const searchable = [job.title, job.company, job.location, job.category, job.experience, job.jobLevel, job.source, ...job.skills, ...job.jobTypes].filter(Boolean).join(" ").toLowerCase()
+      const matchesQuery = !query || searchable.includes(query)
+      const matchesPlace = !place || `${job.location || ""} ${job.mapArea || ""}`.toLowerCase().includes(place)
+      const matchesDistrict = district === "All Nepal" || `${job.location || ""} ${job.mapArea || ""}`.toLowerCase().includes(district.toLowerCase())
+      const matchesCategory = category === "All jobs" || (job.category || "").toLowerCase().includes(category.toLowerCase()) || searchable.includes(category.toLowerCase())
+      const matchesJobType = !jobTypeFilter || job.jobTypes.some((type) => type.toLowerCase().includes(jobTypeFilter.toLowerCase()))
+      const matchesSource = !sourceFilter || job.source.toLowerCase() === sourceFilter.toLowerCase()
+      const low = job.salaryMin ?? job.salaryMax
+      const high = job.salaryMax ?? job.salaryMin
+      const matchesMinSalary = !minSalaryFilter || (high != null && high >= Number(minSalaryFilter))
+      const matchesMaxSalary = !maxSalaryFilter || (low != null && low <= Number(maxSalaryFilter))
+      const matchesBounds = !searchCurrentArea || (job.mapLatitude != null && job.mapLongitude != null && job.mapLatitude >= south && job.mapLatitude <= north && job.mapLongitude >= west && job.mapLongitude <= east)
+      return matchesQuery && matchesPlace && matchesDistrict && matchesCategory && matchesJobType && matchesSource && matchesMinSalary && matchesMaxSalary && matchesBounds
+    })
+  }, [showcaseJobs, search, locationSearch, district, category, jobTypeFilter, sourceFilter, minSalaryFilter, maxSalaryFilter, mapBounds, searchCurrentArea])
 
-  const activeFiltersCount = [
-    filterDistrict,
-    filterCategory,
-    filterWorkType,
-    filterEmploymentType,
-    filterCountry !== "Nepal" ? filterCountry : "",
-    filterSeniority,
-    filterPayMin,
-    filterSkill,
-    filterDate,
-    submittedSearch,
-  ].filter(Boolean).length
-
-  const clearFilters = () => {
-    browseSkill("")
-    setFilterDistrict("")
-    setFilterCategory("")
-    setFilterWorkType("")
-    setFilterEmploymentType("")
-    setFilterCountry("Nepal")
-    setFilterSeniority("")
-    setFilterPayMin("")
-    setFilterSkill("")
-    setFilterDate("")
-    setSearch("")
-    setSubmittedSearch("")
-  }
-
-  const submitSearch = (event: FormEvent) => {
-    event.preventDefault()
-    const query = search.trim()
-    browseSkill(query)
-    setSearch(query)
-    setSubmittedSearch(query)
-  }
-
-  const loadMoreExternal = async () => {
-    if (externalLoadingMore || !externalHasMore) return
-    setExternalLoadingMore(true)
-    try {
-      const nextPage = externalPage + 1
-      const result = await searchHimalayasJobs({
-        q: submittedSearch,
-        employmentType: employmentTypeForApi[filterEmploymentType] || "",
-        country: filterCountry,
-        seniority: seniorityForApi[filterSeniority] || "",
-        sort: sortForHimalayas(sortBy),
-        page: nextPage,
-      })
-      const existingIds = new Set(externalJobs.map((job) => job.id))
-      const nextJobs = result.jobs.filter((job) => !existingIds.has(job.id))
-      setExternalJobs([...externalJobs, ...nextJobs])
-      setExternalPage(nextPage)
-      setExternalHasMore(result.hasMore)
-      setExternalError("")
-    } catch (error) {
-      setExternalError(
-        error instanceof Error
-          ? error.message
-          : "More external jobs could not be loaded.",
-      )
-    } finally {
-      setExternalLoadingMore(false)
+  const showcaseAreas = useMemo<ShowcaseAreaMarker[]>(() => {
+    const grouped = new Map<string, ShowcaseAreaMarker>()
+    for (const job of filteredShowcaseJobs) {
+      if (!job.mapArea || job.mapLatitude == null || job.mapLongitude == null) continue
+      const current = grouped.get(job.mapArea)
+      if (current) current.count++
+      else grouped.set(job.mapArea, { name: job.mapArea, count: 1, latitude: job.mapLatitude, longitude: job.mapLongitude })
     }
-  }
+    return [...grouped.values()].sort((a, b) => b.count - a.count)
+  }, [filteredShowcaseJobs])
+
+  const updateMapBounds = useCallback((bounds: [number, number, number, number]) => setMapBounds(bounds), [])
+
+  const categories = useMemo(() => [...new Set(showcaseJobs.map((job) => job.category).filter((value): value is string => Boolean(value)))].slice(0, 8), [showcaseJobs])
 
   return (
-    <div className="relative isolate w-full max-w-none bg-cream px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <img
-        aria-hidden="true"
-        alt=""
-        src="/images/worker/nepali-temple-skyline.svg"
-        className="pointer-events-none fixed bottom-0 left-1/2 z-0 w-[min(100vw,90rem)] -translate-x-1/2 opacity-[0.2]"
-      />
-      <div className="relative z-10">
-        <div className="mb-6">
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-sans text-[1.85rem] font-semibold leading-none tracking-[-0.035em] text-stone-900 sm:text-3xl">
-              Discover Jobs
-            </h1>
-            <img
-              src="/images/worker/detective.png"
-              alt=""
-              aria-hidden="true"
-              className="h-[4.5rem] w-[3.375rem] shrink-0 object-contain"
-            />
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-white lg:flex-row">
+      <aside className="job-discovery-sidebar z-10 flex max-h-[58dvh] w-full shrink-0 flex-col border-b border-stone-200 bg-white lg:max-h-none lg:w-[390px] lg:border-b-0 lg:border-r xl:w-[420px]" aria-label="Find and filter jobs">
+        <div className="border-b border-stone-100 px-4 pb-4 pt-3">
+          <button type="button" onClick={() => navigate("worker-dashboard")} className="mb-2 inline-flex items-center gap-2 rounded-lg px-1 py-1.5 text-sm font-semibold text-stone-600 transition-colors hover:text-primary-ink" aria-label="Back to worker dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>
+            Back to main page
+          </button>
+          <div className="mt-4 flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><h1 className="font-heading text-xl font-bold text-stone-900">Discover jobs</h1><img src="/images/worker/detective.png" alt="" aria-hidden="true" className="h-10 w-10 shrink-0 object-contain" /></div><span className="shrink-0 text-xs text-stone-500">Nepal</span></div>
+          <label className="job-discovery-search mt-3 flex items-center gap-3 rounded-2xl border border-stone-200 px-4 py-3 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Job title, company, or keywords…" aria-label="Search jobs" className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />
+          </label>
+          <div className="job-discovery-filters mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Filter by industry">
+            {["All jobs", ...categories].map((item) => <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${category === item ? "bg-[#80502F] text-white shadow-sm" : "bg-stone-100 text-stone-700 hover:-translate-y-0.5 hover:bg-stone-200"}`}>{item}</button>)}
           </div>
+          <button type="button" onClick={() => setShowFilters((value) => !value)} aria-expanded={showFilters} className="mt-3 flex items-center gap-2 rounded-lg py-1 text-sm font-semibold text-stone-700 hover:text-[#80502F]">☷ More filters <span className="text-xs text-stone-400">{showFilters ? "−" : "+"}</span></button>
+          {showFilters && <div className="mt-2 grid grid-cols-2 gap-2"><label className="text-xs font-medium text-stone-500">Area<select value={district} onChange={(event) => setDistrict(event.target.value)} aria-label="Filter by area" className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-800"><option>All Nepal</option><option>Kathmandu</option><option>Lalitpur</option><option>Bhaktapur</option><option>Pokhara</option><option>Chitwan</option><option>Biratnagar</option><option>Dhangadhi</option></select></label><label className="text-xs font-medium text-stone-500">Map place<input type="search" value={locationSearch} onChange={(event) => setLocationSearch(event.target.value)} placeholder="Town or address" aria-label="Search job locations" className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm text-stone-800" /></label><label className="text-xs font-medium text-stone-500">Job type<select value={jobTypeFilter} onChange={(event) => setJobTypeFilter(event.target.value)} aria-label="Filter by job type" className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-800"><option value="">All types</option><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Internship</option><option>Traineeship</option></select></label><label className="text-xs font-medium text-stone-500">Source<select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} aria-label="Filter by source" className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-800"><option value="">All sources</option><option value="merojob">MeroJob</option><option value="jobsnepal">JobsNepal</option></select></label><label className="text-xs font-medium text-stone-500">Minimum salary<input type="number" min="0" value={minSalaryFilter} onChange={(event) => setMinSalaryFilter(event.target.value)} placeholder="NPR" className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm text-stone-800" /></label><label className="text-xs font-medium text-stone-500">Maximum salary<input type="number" min="0" value={maxSalaryFilter} onChange={(event) => setMaxSalaryFilter(event.target.value)} placeholder="NPR" className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm text-stone-800" /></label></div>}
+          <p className="mt-3 text-sm text-stone-600"><strong className="text-stone-900">{filteredShowcaseJobs.length}</strong> jobs found</p>
         </div>
-
-        <div ref={filterOptionsRef}>
-          {/* Search bar */}
-          <form
-            onSubmit={submitSearch}
-            className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap"
-          >
-            <div className="group flex h-14 min-w-0 flex-1 items-center gap-3 rounded-xl border border-stone-300 bg-white px-5 shadow-sm transition-all hover:border-stone-400 focus-within:border-[#80502F] focus-within:ring-4 focus-within:ring-[#80502F]/10 sm:min-w-[24rem]">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                className="h-[18px] w-[18px] shrink-0 text-stone-500 transition-colors group-focus-within:text-[#553421]"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                type="search"
-                value={search}
-                ref={searchInputRef}
-                aria-label="Search jobs by title, skill, or keyword"
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search jobs by title, skill, or keyword"
-                className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-stone-900 outline-none placeholder:text-stone-500 focus:ring-0"
-              />
-            </div>
-            {submittedSearch && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("")
-                  setSubmittedSearch("")
-                }}
-                className="rounded-xl border border-[#E4D3C3] bg-[#F8F3EE] px-4 py-2.5 text-sm font-semibold text-[#70472F] transition-colors hover:bg-[#F0E5DB]"
-              >
-                Clear
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
-                activeFiltersCount > 0
-                  ? "border-[#D7BDA8] bg-[#E7D7C8] text-[#70472F]"
-                  : "border-[#E4D3C3] bg-[#F8F3EE] text-[#70472F] hover:bg-[#F0E5DB]"
-              }`}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="w-4 h-4"
-              >
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-              </svg>
-              Filters
-              {activeFiltersCount > 0 && (
-                <span className="w-5 h-5 bg-white text-primary-ink rounded-full text-xs font-bold flex items-center justify-center">
-                  {activeFiltersCount}
-                </span>
-              )}
-            </button>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="rounded-xl border border-[#E4D3C3] bg-white px-3 py-2.5 text-sm text-[#454B52] transition-all focus:border-[#986744] focus:ring-2 focus:ring-[#986744]/20"
-            >
-              <option value="match">Best Match</option>
-              <option value="payment-high">Highest Pay</option>
-              <option value="payment-low">Lowest Pay</option>
-              <option value="newest">Newest</option>
-              <option value="deadline">Deadline Soon</option>
-            </select>
-          </form>
-
-          {/* Filters panel */}
-          {showFilters && (
-            <div className="bg-white border border-stone-200 rounded-2xl p-5 mb-5 animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-stone-900">Filters</h3>
-                {activeFiltersCount > 0 && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs text-primary-ink hover:underline"
-                  >
-                    Clear all
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    District
-                  </label>
-                  <select
-                    value={filterDistrict}
-                    onChange={(e) => setFilterDistrict(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  >
-                    <option value="">All districts</option>
-                    {DISTRICTS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    Category
-                  </label>
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  >
-                    <option value="">All categories</option>
-                    {categoryOptions.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    Work Type
-                  </label>
-                  <select
-                    value={filterWorkType}
-                    onChange={(e) =>
-                      setFilterWorkType(e.target.value as WorkType | "")
-                    }
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  >
-                    <option value="">All types</option>
-                    <option value="full-day">Full Day</option>
-                    <option value="half-day">Half Day</option>
-                    <option value="multi-day">Multi-Day</option>
-                    <option value="hourly">Hourly</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    Employment type
-                  </label>
-                  <select
-                    value={filterEmploymentType}
-                    onChange={(e) => setFilterEmploymentType(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  >
-                    <option value="">All employment types</option>
-                    <option value="full-time">Full-time</option>
-                    <option value="part-time">Part-time</option>
-                    <option value="contract">Contract</option>
-                    <option value="freelance">Freelance</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    value={filterCountry}
-                    onChange={(e) => setFilterCountry(e.target.value)}
-                    placeholder="e.g. Nepal"
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    Seniority
-                  </label>
-                  <select
-                    value={filterSeniority}
-                    onChange={(e) => setFilterSeniority(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  >
-                    <option value="">All seniority levels</option>
-                    <option value="entry-level">Entry level</option>
-                    <option value="mid-level">Mid level</option>
-                    <option value="senior-level">Senior level</option>
-                    <option value="manager">Manager</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    Min Pay (NPR/day)
-                  </label>
-                  <input
-                    type="number"
-                    value={filterPayMin}
-                    onChange={(e) => setFilterPayMin(e.target.value)}
-                    placeholder="e.g. 1000"
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    Skill
-                  </label>
-                  <input
-                    type="text"
-                    value={filterSkill}
-                    onChange={(e) => setFilterSkill(e.target.value)}
-                    placeholder="e.g. Electrical"
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-stone-600 mb-1 block">
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    value={filterDate}
-                    onChange={(e) => setFilterDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm bg-white"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+        <div className="job-discovery-results flex-1 space-y-3 overflow-y-auto bg-[#F8F6F2] p-3">
+          {showcaseLoading && <p role="status" className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs text-stone-600">Loading Nepal job dataset…</p>}
+          {showcaseError && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">{showcaseError}</p>}
+          {filteredShowcaseJobs.length > 0 && <section className="overflow-hidden rounded-xl border border-stone-200 bg-white"><div className="border-b border-stone-100 px-4 py-3"><h2 className="text-sm font-bold text-stone-900">Nepal job dataset</h2><p className="mt-0.5 text-xs text-stone-500">Historical source listings · availability is unverified</p></div>{filteredShowcaseJobs.map((job) => <ShowcaseJobRow key={`dataset-${job.id}`} job={job} onOpen={setSelectedShowcaseJob} />)}</section>}
+          {filteredShowcaseJobs.length === 0 && !showcaseLoading && !showcaseError && <div className="rounded-xl border border-dashed border-stone-300 bg-white p-7 text-center"><p className="font-semibold text-stone-800">No dataset listings match</p><p className="mt-1 text-sm text-stone-500">Try another keyword, industry, or location.</p></div>}
         </div>
+      </aside>
+      <section aria-label="Job map" className="relative min-h-0 flex-1 bg-[#E8E6DF]">
+        <JobDiscoveryMap onBoundsChange={updateMapBounds} fitToJobs={!searchCurrentArea && !showcaseLoading} focusArea={locationSearch || (district === "All Nepal" ? undefined : district)} searchCurrentArea={searchCurrentArea} showcaseAreas={showcaseAreas} onSelectShowcaseArea={(area) => { setLocationSearch(area.name); setSearchCurrentArea(false) }} />
+        <div className="pointer-events-none absolute left-4 top-5 z-[500] flex flex-wrap gap-2 rounded-xl border border-white/70 bg-white/90 p-2.5 text-[11px] font-semibold text-stone-700 shadow-md backdrop-blur" aria-label="Map marker legend">
+          <span className="inline-flex items-center gap-2"><i className="job-map-marker-legend">J</i>Job listing areas</span>
+        </div>
+        <div className="pointer-events-none absolute left-1/2 top-5 z-[500] w-[min(92%,560px)] -translate-x-1/2">
+          <label className="job-map-location-search pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-5 py-3.5 shadow-[0_12px_36px_-18px_rgba(40,29,20,.55)] backdrop-blur">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+            <input type="search" value={locationSearch} onChange={(event) => { setLocationSearch(event.target.value); setSearchCurrentArea(false) }} placeholder="Search city, address or place" aria-label="Search map location" className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />
+          </label>
+          <div className="mt-3 flex justify-center"><button type="button" onClick={() => setSearchCurrentArea(true)} className="job-map-area-button pointer-events-auto rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-800 shadow-lg hover:-translate-y-0.5 hover:bg-[#FFFDF9]">Search this area</button></div>
+        </div>
+        <div className="absolute bottom-5 left-4 z-[500] rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-stone-700 shadow-md">{showcaseAreas.length} mapped areas · {filteredShowcaseJobs.length} dataset listings</div>
+        {searchCurrentArea && <button type="button" onClick={() => setSearchCurrentArea(false)} className="absolute bottom-5 right-4 z-[500] rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-stone-700 shadow-md">Clear map area search</button>}
+      </section>
 
-        {externalLoading && (
-          <div className="mb-5 flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-500">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-primary" />
-            Loading current Himalayas opportunities…
-          </div>
-        )}
-        {externalError && (
-          <div className="mb-5 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span>
-                External jobs are temporarily unavailable. Shram Bazzar jobs are
-                still shown below.
-              </span>
-              <button
-                onClick={() => setExternalRetry((value) => value + 1)}
-                className="font-semibold underline underline-offset-2"
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Results */}
-        {externalLoading && filtered.length === 0 ? (
-          <div
-            className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
-            aria-label="Loading jobs"
-          >
-            {Array.from({ length: 6 }, (_, index) => (
-              <div
-                key={index}
-                className="animate-pulse rounded-2xl border border-stone-200 bg-white p-5"
-              >
-                <div className="flex gap-3">
-                  <div className="h-11 w-11 rounded-xl bg-stone-100" />
-                  <div className="flex-1 space-y-2 pt-1">
-                    <div className="h-3 w-3/4 rounded bg-stone-100" />
-                    <div className="h-3 w-1/2 rounded bg-stone-100" />
-                  </div>
-                </div>
-                <div className="mt-5 h-3 w-2/3 rounded bg-stone-100" />
-                <div className="mt-3 h-3 w-full rounded bg-stone-100" />
-                <div className="mt-2 h-3 w-5/6 rounded bg-stone-100" />
-                <div className="mt-6 h-9 rounded-lg bg-stone-100" />
-              </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 && activeFiltersCount > 0 ? (
-          <div className="rounded-2xl border border-stone-200 bg-white px-6 py-14 text-center sm:px-12">
-            <span
-              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-ink"
-              aria-hidden="true"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6"
-              >
-                <circle cx="10.8" cy="10.8" r="6.5" />
-                <path d="m15.6 15.6 4.6 4.6" />
-              </svg>
-            </span>
-            <h3 className="mb-2 font-semibold text-stone-900">No jobs found</h3>
-            <p className="mb-4 text-sm text-stone-500">
-              Try adjusting your search or removing some filters.
-            </p>
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors"
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : filtered.length > 0 ? (
-          <div className="overflow-hidden rounded-2xl border border-[#DFE4E8] bg-white shadow-[0_8px_28px_-24px_rgba(28,28,28,0.3)]">
-            {filtered.map((job) => (
-              <JobListRow key={job.id} job={job} />
-            ))}
-          </div>
-        ) : null}
-        {!externalLoading && externalHasMore && (
-          <div className="mt-6 text-center">
-            <button
-              onClick={loadMoreExternal}
-              disabled={externalLoadingMore}
-              className="rounded-xl border border-[#E4D3C3] bg-[#F0E5DB] px-5 py-2.5 text-sm font-semibold text-[#70472F] transition-colors hover:bg-[#E7D7C8] disabled:opacity-60"
-            >
-              {externalLoadingMore ? "Loading…" : "Load more external jobs"}
-            </button>
-          </div>
-        )}
-      </div>
+      {selectedShowcaseJob && <ShowcaseJobDetailsModal job={selectedShowcaseJob} onClose={closeShowcaseDetails} />}
     </div>
   )
 }

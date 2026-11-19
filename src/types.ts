@@ -143,7 +143,7 @@ export interface Job {
   applicantCount: number
   matchScore?: number
   matchReasons?: string[]
-  externalSource?: "himalayas"
+  externalSource?: "himalayas" | "freeapi"
   externalUrl?: string
   externalCategory?: string
   externalCategories?: string[]

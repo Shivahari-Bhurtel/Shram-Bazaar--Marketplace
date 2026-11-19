@@ -90,7 +90,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/jobs",
-                                "/api/jobs/**"
+                                "/api/jobs/**",
+                                "/api/health"
                         ).permitAll()
 
                         .requestMatchers(
@@ -146,8 +147,13 @@ public class SecurityConfig {
                 List.of(
                         "http://localhost:8443",
                         "http://localhost:8444",
-                        "http://127.0.0.1:8444"
+                        "http://127.0.0.1:8443",
+                        "http://127.0.0.1:8444",
+                        "https://enhance-shram-bazar-mvp.vercel.app"
                 )
+        );
+        configuration.setAllowedOriginPatterns(
+                List.of("https://*.vercel.app")
         );
 
         configuration.setAllowedMethods(

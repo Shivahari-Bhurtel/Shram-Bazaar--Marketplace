@@ -4,19 +4,24 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "bash ./run-local.sh",
+    "dev:vite": "vite",
+    "generate:showcase": "python3 scripts/build-showcase-data.py",
     "ai": "python -m uvicorn main:app --app-dir ai-service --reload --host 0.0.0.0 --port 8000",
     "build": "vite build",
     "preview": "vite preview",
     "format": "oxfmt"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
     "lottie-web": "^5.13.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

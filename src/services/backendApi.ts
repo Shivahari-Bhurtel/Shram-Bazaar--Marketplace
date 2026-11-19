@@ -91,6 +91,8 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
   if (!response.ok) {
     let message = `Request failed (${response.status})`
+    if (response.status === 404)
+      message = "Backend service route not found. The Java API or its Vercel container deployment may not be running."
     try {
       const body = await response.json()
       if (typeof body.message === "string") message = body.message

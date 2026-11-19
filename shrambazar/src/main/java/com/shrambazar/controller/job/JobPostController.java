@@ -3,7 +3,9 @@ package com.shrambazar.controller.job;
 
 import com.shrambazar.dto.job.JobPostRequest;
 import com.shrambazar.dto.job.JobPostResponse;
+import com.shrambazar.dto.job.ShowcaseJobResponse;
 import com.shrambazar.service.job.JobPostService;
+import com.shrambazar.service.job.ShowcaseJobService;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -21,9 +23,11 @@ import java.util.List;
 public class JobPostController {
 
     private final JobPostService jobPostService;
+    private final ShowcaseJobService showcaseJobService;
 
-    public JobPostController(JobPostService jobPostService) {
+    public JobPostController(JobPostService jobPostService, ShowcaseJobService showcaseJobService) {
         this.jobPostService = jobPostService;
+        this.showcaseJobService = showcaseJobService;
     }
 
     // Provider creates a job
@@ -93,6 +97,19 @@ public class JobPostController {
                         workDate
                 )
         );
+    }
+
+    // Public job details
+    @GetMapping("/jobs/showcase")
+    public ResponseEntity<List<ShowcaseJobResponse>> searchShowcaseJobs(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String jobType,
+            @RequestParam(required = false) BigDecimal minSalary,
+            @RequestParam(required = false) BigDecimal maxSalary,
+            @RequestParam(required = false) String source) {
+        return ResponseEntity.ok(showcaseJobService.search(keyword, location, category, jobType, minSalary, maxSalary, source));
     }
 
     // Public job details

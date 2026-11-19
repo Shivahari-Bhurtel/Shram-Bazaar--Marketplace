@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react"
+import { useEffect, useRef, type CSSProperties } from "react"
 import { useApp, type Page } from "../../store/AppContext"
 import { useLanguage } from "../../i18n/LanguageContext"
 import { useGeminiLiveVoice } from "../../hooks/useGeminiLiveVoice"
@@ -49,6 +49,33 @@ export default function VoiceAssistantPage() {
   const voice = useGeminiLiveVoice(language)
   const active = ["listening", "processing", "speaking"].includes(voice.status)
   const canStart = ["idle", "error", "disconnected"].includes(voice.status)
+  const introRef = useRef<HTMLDivElement>(null)
+  const transcriptRef = useRef<HTMLElement>(null)
+  const transcriptScrollRef = useRef<HTMLDivElement>(null)
+  const sessionActive = active || voice.status === "connecting" || voice.turns.length > 0
+
+  useEffect(() => {
+    if (!sessionActive) return
+    const frame = window.requestAnimationFrame(() => {
+      introRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [sessionActive])
+
+  useEffect(() => {
+    const transcript = transcriptScrollRef.current
+    if (!transcript) return
+    const frame = window.requestAnimationFrame(() => {
+      transcript.scrollTo({
+        top: transcript.scrollHeight,
+        behavior: "smooth",
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [voice.turns])
 
   const goBack = () => {
     let destination: Page = "worker-dashboard"
@@ -69,7 +96,7 @@ export default function VoiceAssistantPage() {
     voice.status === "disconnected" ? "Reconnect" : "Tap to speak"
 
   return (
-    <div className={`voice-assistant-page voice-state-${voice.status}`}>
+    <div className={`voice-assistant-page voice-state-${voice.status}${sessionActive ? " voice-session-active" : ""}`}>
       <header className="voice-assistant-header">
         <button
           type="button"
@@ -103,12 +130,8 @@ export default function VoiceAssistantPage() {
         aria-label="Shram Bazar voice assistant"
       >
         <div className="voice-content">
-          <div className="voice-intro">
-            <p className="voice-eyebrow">YOUR WORK COMPANION</p>
-            <h1>
-              Work, skills and opportunities.
-              <br className="hidden sm:block" /> Just say the word.
-            </h1>
+          <div ref={introRef} className="voice-intro">
+            <h1>YOUR WORK COMPANION</h1>
             <p className="voice-description">Echo</p>
           </div>
 
@@ -163,8 +186,6 @@ export default function VoiceAssistantPage() {
           <div className="voice-state-copy" aria-live="polite">
             <p className="voice-status">{statusText[voice.status]}</p>
             <p className="voice-helper">
-              {voice.status === "idle" &&
-                "Ask about flexible work, your profile, applications or hiring."}
               {voice.status === "connecting" &&
                 "Preparing a secure, temporary voice session."}
               {voice.status === "listening" &&
@@ -260,15 +281,15 @@ export default function VoiceAssistantPage() {
             </div>
           )}
 
-          {voice.turns.length > 0 && (
+          {sessionActive && (
             <section
+              ref={transcriptRef}
               className="voice-transcript"
               aria-label="Conversation transcript"
             >
               <div className="voice-transcript-heading">
                 <div>
-                  <p className="voice-eyebrow">TRANSCRIPT</p>
-                  <h2>Your conversation</h2>
+                  <h2>Stream</h2>
                 </div>
                 <button
                   type="button"
@@ -290,22 +311,37 @@ export default function VoiceAssistantPage() {
                   </svg>
                 </button>
               </div>
-              {voice.turns.map((turn, index) => (
-                <div key={index}>
-                  {turn.user && (
-                    <article className="voice-transcript-message voice-user-message">
-                      <span>You</span>
-                      <p>{turn.user}</p>
-                    </article>
-                  )}
-                  {turn.assistant && (
-                    <article className="voice-transcript-message voice-ai-message">
-                      <span>Shram Bazar AI</span>
-                      <p>{turn.assistant}</p>
-                    </article>
-                  )}
-                </div>
-              ))}
+              <div ref={transcriptScrollRef} className="voice-transcript-scroll">
+                {voice.turns.length === 0 && (
+                  <div className="voice-transcript-empty">
+                    <span className="voice-transcript-empty-wave" aria-hidden="true">
+                      <i /><i /><i /><i /><i />
+                    </span>
+                    <p>Start speaking to begin the conversation.</p>
+                  </div>
+                )}
+                {voice.turns.map((turn, index) => (
+                  <div className="voice-transcript-turn" key={index}>
+                    {turn.user && (
+                      <article className="voice-transcript-message voice-user-message">
+                        <span>You</span>
+                        <p>{turn.user}</p>
+                      </article>
+                    )}
+                    {turn.assistant && (
+                      <article className="voice-transcript-message voice-ai-message">
+                        <div className="voice-ai-message-heading">
+                          <span className="voice-ai-speaker" aria-label="Echo">
+                            <i /><i /><i /><i />
+                          </span>
+                          <span>Echo</span>
+                        </div>
+                        <p>{turn.assistant}</p>
+                      </article>
+                    )}
+                  </div>
+                ))}
+              </div>
             </section>
           )}
         </div>

@@ -1,163 +1,143 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useApp } from "../../store/AppContext"
+import { cleaningAssessment, householdCleaningCourse } from "../../data/householdCleaningCourse"
 
-const lessons = [
-  {
-    id: "workplace-safety",
-    category: "Safety",
-    title: "Stay safe on every job",
-    time: "5 min",
-    summary: "Simple steps to reduce risk before and during a shift.",
-    points: [
-      "Before starting, ask who supervises the work and where the first-aid kit and exits are.",
-      "Use the protective equipment required for the task. Do not operate unfamiliar tools without instruction.",
-      "Pause work and tell the supervisor if equipment, weather, or a work area feels unsafe.",
-    ],
-  },
-  {
-    id: "confirm-the-job",
-    category: "Know your work",
-    title: "Confirm the job before you accept",
-    time: "4 min",
-    summary: "Make sure the pay, hours, location, and duties are clear.",
-    points: [
-      "Confirm the exact tasks, start and end times, work address, and the person you will meet.",
-      "Agree on the payment amount, payment method, and when payment will be made before the shift begins.",
-      "Keep communication and agreed changes in the app so you can refer back to them.",
-    ],
-  },
-  {
-    id: "avoid-scams",
-    category: "Trust",
-    title: "Spot suspicious job requests",
-    time: "4 min",
-    summary: "Recognize common warning signs and report a listing.",
-    points: [
-      "Be cautious if someone asks you to pay a fee, share a password, or send a one-time code to get work.",
-      "Check that the employer, job duties, location, and pay details are consistent and specific.",
-      "Do not continue if a request feels unsafe. Use the report option on the job listing and keep the messages.",
-    ],
-  },
-  {
-    id: "strong-profile",
-    category: "Get noticed",
-    title: "Build a profile employers can understand",
-    time: "6 min",
-    summary: "Show your skills, experience, and availability clearly.",
-    points: [
-      "List the skills you can demonstrate and describe the kinds of tasks you have completed.",
-      "Add accurate availability so suggested jobs fit your schedule.",
-      "Use a clear profile photo and keep your contact details current. Never include identity document numbers in your public bio.",
-    ],
-  },
-]
+type LearningProgress = { completed: string[]; lastLesson: string; assessmentScore?: number }
+const STORAGE_KEY = "shram-bazar-cleaning-learning-v1"
+
+function loadProgress(workerId: string): LearningProgress {
+  try {
+    const saved = JSON.parse(localStorage.getItem(`${STORAGE_KEY}:${workerId}`) || "{}") as Partial<LearningProgress>
+    return {
+      completed: Array.isArray(saved.completed) ? saved.completed.filter((id): id is string => typeof id === "string") : [],
+      lastLesson: typeof saved.lastLesson === "string" ? saved.lastLesson : householdCleaningCourse.lessons[0].id,
+      assessmentScore: typeof saved.assessmentScore === "number" ? saved.assessmentScore : undefined,
+    }
+  } catch {
+    return { completed: [], lastLesson: householdCleaningCourse.lessons[0].id }
+  }
+}
 
 export default function Learn() {
-  const { state } = useApp()
-  const workerId = state.workerProfile?.id
-  const storageKey = workerId ? `shram-bazar-learn-progress:${workerId}` : ""
-  const [completed, setCompleted] = useState<string[]>([])
-  const [selected, setSelected] = useState<string | null>(null)
+  const { state, updateWorkerProfile, notifyProfileUpdated, browseSkill } = useApp()
+  const worker = state.workerProfile
+  const [progress, setProgress] = useState<LearningProgress>(() => loadProgress(worker?.id || "demo-worker"))
+  const [selectedId, setSelectedId] = useState(progress.lastLesson)
+  const [view, setView] = useState<"course" | "lesson" | "assessment">("course")
+  const [answers, setAnswers] = useState<number[]>(Array(cleaningAssessment.length).fill(-1))
+  const [videoUnavailable, setVideoUnavailable] = useState(false)
+  const [submittedScore, setSubmittedScore] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!storageKey) return
-    try {
-      const saved: unknown = JSON.parse(localStorage.getItem(storageKey) || "[]")
-      setCompleted(Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : [])
-    } catch {
-      setCompleted([])
-    }
-  }, [storageKey])
+    setProgress(loadProgress(worker?.id || "demo-worker"))
+  }, [worker?.id])
 
-  const toggleComplete = (id: string) => {
-    const next = completed.includes(id)
-      ? completed.filter((item) => item !== id)
-      : [...completed, id]
-    setCompleted(next)
-    if (storageKey) {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(next))
-      } catch {
-        // Keep lesson progress available for this session if storage is unavailable.
-      }
-    }
+  const lesson = householdCleaningCourse.lessons.find((item) => item.id === selectedId) || householdCleaningCourse.lessons[0]
+  const completed = useMemo(() => new Set(progress.completed), [progress.completed])
+  const percent = Math.round((completed.size / householdCleaningCourse.lessons.length) * 100)
+  const passed = (progress.assessmentScore ?? submittedScore ?? 0) >= 4
+
+  const save = (next: LearningProgress) => {
+    setProgress(next)
+    try { localStorage.setItem(`${STORAGE_KEY}:${worker?.id || "demo-worker"}`, JSON.stringify(next)) } catch { /* Progress remains available for this visit. */ }
   }
+  const openLesson = (id: string) => {
+    setSelectedId(id)
+    setVideoUnavailable(false)
+    save({ ...progress, lastLesson: id })
+    setView("lesson")
+  }
+  const markComplete = () => {
+    const nextCompleted = [...new Set([...progress.completed, lesson.id])]
+    save({ ...progress, completed: nextCompleted, lastLesson: lesson.id })
+  }
+  const goToLesson = (index: number) => openLesson(householdCleaningCourse.lessons[index].id)
 
-  const progress = Math.round((completed.length / lessons.length) * 100)
+  if (!worker) return null
+  const selectedIndex = householdCleaningCourse.lessons.findIndex((item) => item.id === lesson.id)
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <header className="mb-8 rounded-3xl bg-[#553421] p-5 text-white shadow-sm sm:p-8 lg:p-9">
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_14rem] md:items-center lg:gap-10">
-          <div className="max-w-3xl">
-            <h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl">Learn skills for safer work</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/75">Short, practical guides for finding work, confirming job details, and staying safe on the job.</p>
-          </div>
-          <div className="w-full rounded-2xl bg-white/10 p-4 sm:p-5">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 text-sm">
-              <span className="leading-5">Progress</span>
-              <span className="justify-self-end rounded-full bg-white/10 px-2.5 py-1 font-semibold leading-none tabular-nums">{completed.length}/{lessons.length}</span>
-              <div
-                className="col-span-2 h-2 w-full overflow-hidden rounded-full bg-white/20"
-                role="progressbar"
-                aria-label="Learning guide completion"
-                aria-valuemin={0}
-                aria-valuemax={lessons.length}
-                aria-valuenow={completed.length}
-              >
-              <div className="h-full rounded-full bg-amber-300 transition-all" style={{ width: `${progress}%` }} />
+    <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-7">
+          <p className="text-sm font-semibold text-[#80502F]">Shram Bazar Learn</p>
+          <h1 className="mt-1 font-display text-3xl font-bold text-stone-900">My learning</h1>
+          <p className="mt-2 text-sm text-stone-600">Build practical skills at your own pace{worker.name ? `, ${worker.name.split(" ")[0]}` : ""}.</p>
+        </header>
+
+        <section className="overflow-hidden rounded-2xl border border-[#E7DED2] bg-white shadow-sm">
+          <div className="grid gap-0 md:grid-cols-[1fr_1.4fr]">
+            <div className="flex min-h-56 items-center justify-center bg-gradient-to-br from-[#5C3825] to-[#9B6944] p-8 text-white">
+              <div className="max-w-xs">
+                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">Household Services</span>
+                <div className="mt-7 text-5xl" aria-hidden="true">⌂</div>
+                <p className="mt-2 text-sm text-white/80">Free learning resources · English</p>
               </div>
-              <p className="col-span-2 mt-0 text-xs leading-4 text-white/70">Saved on this device</p>
+            </div>
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-wrap gap-2 text-xs font-semibold text-stone-600"><span className="rounded-full bg-stone-100 px-3 py-1">Beginner</span><span className="rounded-full bg-stone-100 px-3 py-1">10 lessons</span><span className="rounded-full bg-stone-100 px-3 py-1">Household Cleaning</span></div>
+              <h2 className="mt-4 text-2xl font-bold text-stone-900">{householdCleaningCourse.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-stone-600">{householdCleaningCourse.description}</p>
+              <p className="mt-3 text-xs text-stone-500">Instructor: {householdCleaningCourse.instructor}</p>
+              <div className="mt-5">
+                <div className="flex justify-between text-sm"><span className="font-semibold text-stone-800">Your progress</span><span className="text-stone-600">{completed.size} of 10 · {percent}%</span></div>
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-[#80502F] transition-all" style={{ width: `${percent}%` }} /></div>
+              </div>
+              <button type="button" onClick={() => openLesson(progress.lastLesson)} className="mt-5 rounded-xl bg-[#80502F] px-5 py-3 text-sm font-semibold text-white hover:bg-[#653D25]">{completed.size ? "Continue learning" : "Start learning"}</button>
             </div>
           </div>
-        </div>
-      </header>
+        </section>
 
-      <div className="mb-5 flex min-h-14 flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-display text-xl font-bold text-stone-900">Practical guides</h2>
-          <p className="mt-1 text-sm text-stone-500">Open a guide to read it, then mark it complete.</p>
-        </div>
-        {completed.length === lessons.length && <span className="mb-0.5 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal">All guides complete</span>}
-      </div>
+        {view === "course" && <>
+        {progress.assessmentScore !== undefined && <section className={`mt-6 rounded-2xl border p-5 ${passed ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}><h2 className="font-bold text-stone-900">Assessment result: {progress.assessmentScore}/5 · {passed ? "Passed" : "Try again when ready"}</h2>{passed && <><p className="mt-1 text-sm font-semibold text-green-900">Shram Bazar learning completion badge</p><p className="text-xs text-green-800">Course completion recognition only; not an officially accredited professional qualification.</p><div className="mt-3 flex flex-wrap gap-2">{!worker.skills.some((skill) => skill.toLowerCase() === "household cleaning") && <button type="button" onClick={() => { updateWorkerProfile({ skills: [...worker.skills, "Household Cleaning"] }); notifyProfileUpdated("Household Cleaning was added to your skills.") }} className="rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-green-900 shadow-sm">Add Household Cleaning to my skills</button>}<button type="button" onClick={() => browseSkill("cleaning")} className="rounded-lg border border-green-800 px-4 py-2.5 text-sm font-semibold text-green-900">Explore related jobs</button></div></>}</section>}
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+          <section className="rounded-2xl border border-stone-200 bg-white p-6">
+            <h2 className="text-lg font-bold text-stone-900">Course introduction</h2>
+            <p className="mt-2 text-sm leading-relaxed text-stone-600">A beginner-friendly course covering bedroom preparation, bathroom cleaning, kitchen hygiene, laundry and everyday housekeeping practices.</p>
+            <h3 className="mt-5 text-sm font-bold text-stone-900">What you will learn</h3>
+            <ul className="mt-2 space-y-2 text-sm text-stone-600">{householdCleaningCourse.objectives.map((objective) => <li key={objective} className="flex gap-2"><span className="text-[#80502F]">✓</span>{objective}</li>)}</ul>
+            <button type="button" onClick={() => openLesson(progress.lastLesson)} className="mt-5 w-full rounded-xl bg-[#80502F] px-4 py-3 text-sm font-semibold text-white hover:bg-[#653D25]">Continue learning</button>
+          </section>
+          <section className="rounded-2xl border border-stone-200 bg-white p-6">
+            <div className="flex items-center justify-between"><h2 className="text-lg font-bold text-stone-900">Course lessons</h2><span className="text-sm text-stone-500">{completed.size}/10 complete</span></div>
+            <ol className="mt-4 divide-y divide-stone-100">{householdCleaningCourse.lessons.map((item, index) => <li key={item.id}><button type="button" onClick={() => openLesson(item.id)} className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left hover:bg-stone-50"><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${completed.has(item.id) ? "bg-green-100 text-green-800" : "bg-stone-100 text-stone-600"}`}>{completed.has(item.id) ? "✓" : index + 1}</span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-stone-800">{item.title}</span><span className="text-xs text-stone-500">{completed.has(item.id) ? "Completed" : "Video lesson"}</span></span><span aria-hidden="true" className="text-stone-400">›</span></button></li>)}</ol>
+            {completed.size === 10 && <button type="button" onClick={() => { setAnswers(Array(cleaningAssessment.length).fill(-1)); setSubmittedScore(null); setView("assessment") }} className="mt-4 w-full rounded-xl border border-[#80502F] px-4 py-3 text-sm font-semibold text-[#80502F] hover:bg-[#FBF7F2]">Take final assessment</button>}
+          </section>
+        </div></>}
 
-      <div className="grid items-stretch gap-4 md:grid-cols-2 lg:gap-5">
-        {lessons.map((lesson, index) => {
-          const isOpen = selected === lesson.id
-          const isComplete = completed.includes(lesson.id)
-          return (
-            <article key={lesson.id} className={`flex h-full flex-col overflow-hidden rounded-2xl border bg-white transition-shadow ${isOpen ? "border-primary/40 shadow-md" : "border-stone-200 shadow-sm"}`}>
-              <button type="button" onClick={() => setSelected(isOpen ? null : lesson.id)} aria-expanded={isOpen} className="flex w-full flex-1 flex-col p-5 text-left sm:p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-primary-ink">{lesson.category}</span>
-                  {isComplete && <span className="text-xs font-semibold text-teal">✓ Complete</span>}
-                </div>
-                <h3 className="mt-4 font-display text-xl font-bold text-stone-900">{index + 1}. {lesson.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-stone-600">{lesson.summary}</p>
-                <div className="mt-auto flex w-full items-center justify-between gap-3 pt-5 text-xs text-stone-500">
-                  <span>{lesson.time} read</span><span>{isOpen ? "Close guide ↑" : "Read guide ↓"}</span>
-                </div>
-              </button>
-              {isOpen && (
-                <div className="border-t border-stone-100 px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
-                  <ol className="space-y-3">
-                    {lesson.points.map((point, pointIndex) => (
-                      <li key={point} className="flex gap-3 text-sm leading-relaxed text-stone-700">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xs font-bold text-stone-600">{pointIndex + 1}</span>
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ol>
-                  <button type="button" onClick={() => toggleComplete(lesson.id)} className={`mt-5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${isComplete ? "border border-stone-200 text-stone-700 hover:bg-stone-50" : "bg-primary text-white hover:bg-primary-dark"}`}>
-                    {isComplete ? "Mark as not complete" : "Mark guide complete"}
-                  </button>
-                </div>
-              )}
-            </article>
-          )
-        })}
+        {view === "lesson" && <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+            <div className="relative aspect-video bg-stone-950">
+              {!videoUnavailable ? <iframe key={lesson.videoId} title={lesson.title} src={`https://www.youtube-nocookie.com/embed/${lesson.videoId}`} className="absolute inset-0 h-full w-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen onError={() => setVideoUnavailable(true)} /> : <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white"><p className="font-semibold">This video cannot be embedded right now.</p><p className="mt-1 text-sm text-white/70">You can try watching it on YouTube.</p></div>}
+            </div>
+            <p className="bg-stone-50 px-4 py-2 text-xs text-stone-600">If playback is unavailable, use “Watch on YouTube” below. The lesson will not be marked complete until you choose the completion button.</p>
+            <div className="p-5 sm:p-7">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#80502F]">Lesson {selectedIndex + 1} of 10</p>
+              <h2 className="mt-1 text-2xl font-bold text-stone-900">{lesson.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-stone-600">{lesson.description}</p>
+              <a href={`https://www.youtube.com/watch?v=${lesson.videoId}`} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-[#80502F] underline underline-offset-4">Watch on YouTube</a>
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-5">
+                <button type="button" disabled={selectedIndex === 0} onClick={() => goToLesson(selectedIndex - 1)} className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 disabled:opacity-40">Previous lesson</button>
+                <button type="button" onClick={markComplete} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${completed.has(lesson.id) ? "bg-green-100 text-green-800" : "bg-[#80502F] text-white hover:bg-[#653D25]"}`}>{completed.has(lesson.id) ? "Lesson completed ✓" : "Mark as completed"}</button>
+                <button type="button" disabled={selectedIndex === 9} onClick={() => goToLesson(selectedIndex + 1)} className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 disabled:opacity-40">Next lesson</button>
+              </div>
+              <button type="button" onClick={() => setView("course")} className="mt-4 text-sm font-semibold text-stone-500 hover:text-stone-800">Back to course</button>
+            </div>
+          </div>
+          <aside className="rounded-2xl border border-stone-200 bg-white p-4">
+            <h3 className="px-2 text-sm font-bold text-stone-900">Lessons <span className="font-normal text-stone-500">· {completed.size}/10</span></h3>
+            <ol className="mt-2">{householdCleaningCourse.lessons.map((item, index) => <li key={item.id}><button type="button" aria-current={item.id === lesson.id ? "step" : undefined} onClick={() => openLesson(item.id)} className={`flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left ${item.id === lesson.id ? "bg-[#F7F1EB]" : "hover:bg-stone-50"}`}><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${completed.has(item.id) ? "bg-green-100 text-green-800" : "bg-stone-100 text-stone-600"}`}>{completed.has(item.id) ? "✓" : index + 1}</span><span className={`text-sm ${item.id === lesson.id ? "font-semibold text-[#653D25]" : "text-stone-700"}`}>{item.title}</span></button></li>)}</ol>
+          </aside>
+        </section>}
+
+        {view === "assessment" && <section className="mt-6 rounded-2xl border border-stone-200 bg-white p-6 sm:p-8">
+          <button type="button" onClick={() => setView("course")} className="text-sm font-semibold text-[#80502F]">← Course overview</button>
+          <h2 className="mt-3 text-2xl font-bold text-stone-900">Final assessment</h2>
+          <p className="mt-1 text-sm text-stone-600">Answer five questions. You need at least 4 correct answers to pass.</p>
+          <div className="mt-5 space-y-5">{cleaningAssessment.map((question, questionIndex) => <fieldset key={question.question} className="rounded-xl border border-stone-200 p-4"><legend className="px-1 text-sm font-semibold text-stone-900">{questionIndex + 1}. {question.question}</legend><div className="mt-2 space-y-2">{question.options.map((option, optionIndex) => <label key={option} className="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-2 text-sm text-stone-700 hover:bg-stone-50"><input type="radio" name={`q-${questionIndex}`} checked={answers[questionIndex] === optionIndex} onChange={() => setAnswers((current) => current.map((answer, index) => index === questionIndex ? optionIndex : answer))} className="mt-0.5 accent-[#80502F]" />{option}</label>)}</div></fieldset>)}</div>
+          {submittedScore === null ? <button type="button" disabled={answers.some((answer) => answer < 0)} onClick={() => { const score = cleaningAssessment.reduce((total, item, index) => total + (answers[index] === item.answer ? 1 : 0), 0); setSubmittedScore(score); save({ ...progress, assessmentScore: score }) }} className="mt-6 rounded-xl bg-[#80502F] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Submit assessment</button> : <div className={`mt-6 rounded-xl p-5 ${submittedScore >= 4 ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-950"}`}><h3 className="text-lg font-bold">Score: {submittedScore}/5 · {submittedScore >= 4 ? "Passed" : "Not passed yet"}</h3><p className="mt-1 text-sm">Correct answers: {submittedScore} of 5.</p>{submittedScore >= 4 ? <><p className="mt-3 font-semibold">Shram Bazar learning completion badge</p><p className="text-xs">This recognizes course completion and is not an officially accredited professional qualification.</p>{!worker.skills.some((skill) => skill.toLowerCase() === "household cleaning") && <button type="button" onClick={() => { updateWorkerProfile({ skills: [...worker.skills, "Household Cleaning"] }); notifyProfileUpdated("Household Cleaning was added to your skills.") }} className="mt-4 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-green-900 shadow-sm">Add Household Cleaning to my skills</button>}<button type="button" onClick={() => browseSkill("cleaning")} className="ml-0 mt-3 block rounded-lg border border-green-800 px-4 py-2.5 text-sm font-semibold text-green-900 sm:ml-2 sm:inline-block">Explore related jobs</button></> : <button type="button" onClick={() => { setSubmittedScore(null); setAnswers(Array(cleaningAssessment.length).fill(-1)) }} className="mt-4 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-amber-950">Try again</button>}</div>}
+        </section>}
       </div>
-      <p className="mt-6 text-xs leading-relaxed text-stone-500">These guides are general information. Always follow the job site’s safety instructions and local requirements.</p>
-    </main>
+    </div>
   )
 }

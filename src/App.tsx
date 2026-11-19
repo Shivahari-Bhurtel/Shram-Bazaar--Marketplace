@@ -41,10 +41,13 @@ export default function App() {
   const isProvider = currentUser?.role === "provider"
   const isAdmin = currentUser?.role === "admin"
   const isWorkerAIChat = isWorker && currentPage === "chat"
+  const isFullScreenJobDiscovery = isWorker && currentPage === "job-discovery"
   const isVoiceAssistant =
     (isWorker || isProvider) && currentPage === "voice-assistant"
+  const useWorkerPageBackground =
+    isWorker && !isWorkerAIChat && !isVoiceAssistant && !isFullScreenJobDiscovery && currentPage !== "shram-ai"
   const workerTopSpacing =
-    isWorker && !isWorkerAIChat && !isVoiceAssistant
+    isWorker && !isWorkerAIChat && !isVoiceAssistant && !isFullScreenJobDiscovery
       ? currentPage === "my-applications"
         ? "lg:pt-0"
         : currentPage === "shram-ai"
@@ -55,6 +58,7 @@ export default function App() {
     isWorker &&
     !isVoiceAssistant &&
     !isWorkerAIChat &&
+    !isFullScreenJobDiscovery &&
     !["landing", "login", "worker-signup", "provider-signup"].includes(
       currentPage,
     )
@@ -67,7 +71,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen bg-cream ${isWorker ? "worker-interface" : ""}`}
+      className={`min-h-screen bg-cream ${isWorker ? "worker-interface" : ""} ${useWorkerPageBackground ? "worker-content-background" : ""}`}
     >
       {state.storageWarning && (
         <div
@@ -77,17 +81,18 @@ export default function App() {
           {state.storageWarning}
         </div>
       )}
-      {!isLoggedIn && !isAuthPage && <LanguageSwitch />}
-      {isWorker &&
-        !isVoiceAssistant &&
-        (isWorkerAIChat ? (
+      {!isLoggedIn && !isAuthPage && !isFullScreenJobDiscovery && <LanguageSwitch />}
+      {isWorker && !isVoiceAssistant &&
+        (isFullScreenJobDiscovery ? (
+          <LanguageSwitch />
+        ) : isWorkerAIChat ? (
           <LanguageSwitch />
         ) : (
           <div className="hidden lg:block">
             <LanguageSwitch />
           </div>
         ))}
-      {isWorker && !isVoiceAssistant && !isWorkerAIChat && (
+      {isWorker && !isVoiceAssistant && !isWorkerAIChat && !isFullScreenJobDiscovery && (
         <div className="lg:hidden">
           <Navbar />
         </div>
@@ -97,7 +102,7 @@ export default function App() {
       {showWorkerSidebar && <WorkerSidebar />}
       <main
         key={currentPage}
-        className={`page-enter ${
+        className={`${isFullScreenJobDiscovery ? "h-[100dvh] w-full overflow-hidden" : "page-enter"} ${
           showWorkerSidebar ? "lg:ml-56" : ""
         } ${workerTopSpacing}`}
       >

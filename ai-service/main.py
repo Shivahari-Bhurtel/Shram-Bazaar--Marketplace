@@ -334,6 +334,64 @@ def health():
     return {"status": "ok", "service": "shram-bazar-ai-chat", "mode": "ai-chat-prototype"}
 
 
+@app.get("/api/v1/health")
+def ai_v1_health():
+    return {"status": "ok", "service": "shram-bazar-ai-chat", "mode": "ai-chat-prototype"}
+
+
+FREEAPI_BASE_URL = "https://nepal-api-production.up.railway.app/api/v1"
+
+
+@app.get("/api/v1/freeapi/jobs/search")
+def search_freeapi_jobs(category: str = "", location: str = "", type: str = ""):
+    params = {key: value for key, value in {
+        "category": category,
+        "location": location,
+        "type": type,
+    }.items() if value}
+    try:
+        response = httpx.get(
+            f"{FREEAPI_BASE_URL}/jobs/search",
+            params=params,
+            timeout=15,
+            follow_redirects=True,
+        )
+    except (httpx.TimeoutException, TimeoutError):
+        raise HTTPException(
+            status_code=503,
+            detail="Freeapi job search is temporarily slow. Local and Himalayas jobs remain available.",
+            headers={"Retry-After": "30"},
+        )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=503,
+            detail="Freeapi job search is temporarily unavailable.",
+            headers={"Retry-After": "30"},
+        )
+
+    if response.status_code >= 500:
+        raise HTTPException(
+            status_code=503,
+            detail="Freeapi job search is temporarily unavailable.",
+            headers={"Retry-After": "30"},
+        )
+    if response.status_code >= 400:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail="Freeapi could not complete the job search.",
+        )
+    try:
+        payload = response.json()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Freeapi returned an invalid job search response.",
+        ) from exc
+    data = payload.get("data", payload)
+    jobs = data.get("jobs", []) if isinstance(data, dict) else []
+    return {"jobs": jobs if isinstance(jobs, list) else []}
+
+
 @app.post("/api/v1/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, http_request: Request):
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
