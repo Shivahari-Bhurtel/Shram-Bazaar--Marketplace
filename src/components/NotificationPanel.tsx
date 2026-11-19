@@ -4,7 +4,6 @@ import type { Notification } from "../types"
 const typeConfig: Record<Notification["type"], { icon: string; color: string }> =
   {
     selection: { icon: "✓", color: "bg-green-100 text-green-700" },
-    shortlisted: { icon: "★", color: "bg-amber-100 text-amber-700" },
     rejection: { icon: "✗", color: "bg-stone-100 text-stone-600" },
     application: { icon: "↑", color: "bg-teal-100 text-teal" },
     "new-job": { icon: "+", color: "bg-primary-100 text-primary-ink" },
@@ -21,10 +20,41 @@ export default function NotificationPanel({
   onClose: () => void
   placement?: "navbar" | "sidebar" | "floating"
 }) {
-  const { state, markNotificationRead, markAllNotificationsRead } = useApp()
+  const { state, markNotificationRead, markAllNotificationsRead, navigate } = useApp()
   const myNotifs = state.notifications
-    .filter((n) => n.userId === state.currentUser?.id && !n.read)
-    .sort((a, b) => b.date.localeCompare(a.date))
+    .filter((n) => n.userId === state.currentUser?.id)
+    .sort((a, b) => (b.createdAt || b.date).localeCompare(a.createdAt || a.date))
+    .slice(0, 6)
+
+  const openNotification = (notif: Notification) => {
+    void markNotificationRead(notif.id)
+    onClose()
+    if (state.currentUser?.role === "worker" && (notif.engagementId || notif.applicationId || notif.type === "selection" || notif.type === "rejection")) {
+      navigate("my-applications")
+    } else if (notif.jobId && state.currentUser?.role === "worker") {
+      navigate("job-detail", notif.jobId)
+    } else if (state.currentUser?.role === "worker") {
+      navigate("my-applications")
+    } else if (state.currentUser?.role === "provider" && notif.engagementId && notif.title.toLowerCase().includes("declined") && notif.jobId) {
+      navigate("applicant-management", notif.jobId)
+    } else if (state.currentUser?.role === "provider" && notif.engagementId) {
+      try {
+        sessionStorage.setItem(
+          "shram-provider-operations-tab",
+          notif.title.toLowerCase().includes("review") ? "reviews" : "workers",
+        )
+      } catch { /* Navigation still works if session storage is disabled. */ }
+      navigate("provider-operations")
+    } else if (notif.jobId && state.currentUser?.role === "provider") {
+      navigate("applicant-management", notif.jobId)
+    } else if (state.currentUser?.role === "provider" && notif.applicationId) {
+      navigate("provider-dashboard")
+    } else if (state.currentUser?.role === "provider") {
+      navigate("provider-dashboard")
+    } else {
+      navigate("admin-dashboard")
+    }
+  }
 
   return (
     <>
@@ -63,7 +93,8 @@ export default function NotificationPanel({
               return (
                 <button
                   key={notif.id}
-                  onClick={() => markNotificationRead(notif.id)}
+                  type="button"
+                  onClick={() => openNotification(notif)}
                   className={`w-full text-left px-4 py-3 border-b border-stone-50 hover:bg-stone-50 transition-colors flex gap-3 ${
                     !notif.read ? "bg-primary-50/30" : ""
                   }`}
@@ -90,7 +121,7 @@ export default function NotificationPanel({
                       {notif.message}
                     </p>
                     <p className="text-[10px] text-stone-400 mt-1 font-mono-data">
-                      {notif.date}
+                      {notif.date}{notif.read ? " · Read" : " · New"}
                     </p>
                   </div>
                 </button>

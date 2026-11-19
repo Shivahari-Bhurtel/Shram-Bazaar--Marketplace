@@ -18,12 +18,16 @@ export interface ApiJob {
   providerName: string
   businessName?: string
   title: string
+  category?: string
+  qualificationRequired?: string
   description: string
   responsibilities?: string
   address: string
   municipality?: string
   district?: string
   province?: string
+  latitude?: number
+  longitude?: number
   startDate: string
   endDate: string
   startTime: string
@@ -143,9 +147,9 @@ export function mapApiJob(job: ApiJob, providerId?: string): Job {
     providerVerified: false,
     title: job.title || "Untitled job",
     description: [job.description, job.responsibilities].filter(Boolean).join("\n\n"),
-    category: job.requiredSkills?.length ? "skill-based" : "beginner-friendly",
+    category: job.category || (job.requiredSkills?.length ? "skill-based" : "beginner-friendly"),
     skillsRequired: job.requiredSkills || [],
-    qualificationRequired: "",
+    qualificationRequired: job.qualificationRequired || "",
     experienceRequired: job.requiredExperienceMonths ? `${job.requiredExperienceMonths} months` : "",
     workType: job.startDate && job.endDate && job.startDate !== job.endDate ? "multi-day" : "full-day",
     workersNeeded: job.numberOfWorkersRequired || 1,
@@ -157,6 +161,8 @@ export function mapApiJob(job: ApiJob, providerId?: string): Job {
     duration: job.durationDescription || "",
     location: [job.address, job.municipality, job.district].filter(Boolean).join(", "),
     district: job.district || "",
+    latitude: job.latitude,
+    longitude: job.longitude,
     payment: Number(job.paymentAmount) || 0,
     paymentType,
     status,
@@ -199,6 +205,10 @@ export function mapSeekerProfile(value: any, user: User): WorkerProfile {
     phone: value.phoneNumber || "",
     email: value.email || user.email,
     dateOfBirth: value.dateOfBirth || undefined,
+    latitude: value.latitude,
+    longitude: value.longitude,
+    preferredTravelDistanceKm: value.preferredTravelDistanceKm ?? 10,
+    preferredCategories: value.preferredCategories || [],
     address,
     location: address,
     district,

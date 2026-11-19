@@ -12,12 +12,6 @@ const applicationConfig: Record<ApplicationStatus, {
     text: "text-stone-600",
     dot: "bg-stone-400",
   },
-  shortlisted: {
-    label: "Shortlisted",
-    bg: "bg-amber-100",
-    text: "text-amber-700",
-    dot: "bg-amber",
-  },
   accepted: {
     label: "Accepted",
     bg: "bg-green-100",
@@ -29,6 +23,12 @@ const applicationConfig: Record<ApplicationStatus, {
     bg: "bg-stone-100",
     text: "text-stone-500",
     dot: "bg-stone-400",
+  },
+  declined: {
+    label: "Declined",
+    bg: "bg-amber-100",
+    text: "text-amber-800",
+    dot: "bg-amber",
   },
 }
 

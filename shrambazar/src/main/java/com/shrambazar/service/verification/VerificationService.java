@@ -386,7 +386,9 @@ public class VerificationService {
                 documentType == VerificationDocumentType.OTHER ||
                         (requestType == VerificationType.IDENTITY &&
                                 (documentType == VerificationDocumentType.NID_FRONT ||
-                                        documentType == VerificationDocumentType.NID_BACK)) ||
+                                        documentType == VerificationDocumentType.NID_BACK ||
+                                        documentType == VerificationDocumentType.CITIZENSHIP_FRONT ||
+                                        documentType == VerificationDocumentType.CITIZENSHIP_BACK)) ||
                         (requestType == VerificationType.BUSINESS &&
                                 documentType ==
                                         VerificationDocumentType.BUSINESS_REGISTRATION);
@@ -406,12 +408,12 @@ public class VerificationService {
         if (request.getType() == VerificationType.IDENTITY) {
 
             boolean front = documents.stream().anyMatch(d ->
-                    d.getDocumentType() ==
-                            VerificationDocumentType.NID_FRONT);
+                    d.getDocumentType() == VerificationDocumentType.NID_FRONT ||
+                            d.getDocumentType() == VerificationDocumentType.CITIZENSHIP_FRONT);
 
             boolean back = documents.stream().anyMatch(d ->
-                    d.getDocumentType() ==
-                            VerificationDocumentType.NID_BACK);
+                    d.getDocumentType() == VerificationDocumentType.NID_BACK ||
+                            d.getDocumentType() == VerificationDocumentType.CITIZENSHIP_BACK);
 
             return front && back;
         }

@@ -18,6 +18,7 @@ export default function ApplicantManagement() {
     jobApplications,
     updateApplicationStatus,
     reviewWorker,
+    reportUser,
   } = useApp()
   const job = state.jobs.find((j) => j.id === state.currentJobId)
   const [activeTab, setActiveTab] = useState<ApplicationStatus | "all">("all")
@@ -28,6 +29,10 @@ export default function ApplicantManagement() {
     rating: number
     review: string
   }>>({})
+  const [reportingWorkerId, setReportingWorkerId] = useState<string | null>(null)
+  const [reportReason, setReportReason] = useState("FAKE_ACCOUNT")
+  const [reportDetails, setReportDetails] = useState("")
+  const [reportMessage, setReportMessage] = useState("")
 
   if (!job) {
     return (
@@ -50,8 +55,8 @@ export default function ApplicantManagement() {
   const counts = {
     all: apps.length,
     pending: apps.filter((a) => a.status === "pending").length,
-    shortlisted: apps.filter((a) => a.status === "shortlisted").length,
     accepted: apps.filter((a) => a.status === "accepted").length,
+    declined: apps.filter((a) => a.status === "declined").length,
     rejected: apps.filter((a) => a.status === "rejected").length,
   }
   const remainingSpots = Math.max(
@@ -77,8 +82,8 @@ export default function ApplicantManagement() {
         label: `Applied (${counts.pending})`,
         dot: counts.pending > 0 ? "bg-amber" : undefined,
       },
-      { key: "shortlisted", label: `Shortlisted (${counts.shortlisted})` },
       { key: "accepted", label: `Accepted (${counts.accepted})` },
+      { key: "declined", label: `Declined (${counts.declined})` },
       { key: "rejected", label: `Not Selected (${counts.rejected})` },
     ]
 
@@ -266,18 +271,6 @@ export default function ApplicantManagement() {
                         )}
                       </div>
 
-                      {/* Cover note */}
-                      <div className="mt-3 bg-stone-50 rounded-xl p-3">
-                        <p className="text-xs text-stone-400 mb-1">
-                          Cover note:
-                        </p>
-                        <p
-                          className={`text-sm text-stone-700 italic leading-relaxed ${!isExpanded && "line-clamp-2"}`}
-                        >
-                          "{app.coverNote}"
-                        </p>
-                      </div>
-
                       {/* Provider note */}
                       {app.providerNote && (
                         <p className="text-xs text-stone-500 mt-2">
@@ -306,17 +299,21 @@ export default function ApplicantManagement() {
                     <div className="mt-4 pt-4 border-t border-stone-100 animate-fade-in">
                       <div className="grid sm:grid-cols-2 gap-6">
                         <div>
+                          <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Contact information</h4>
+                          <p className="text-sm text-stone-700">{app.workerPhone || workerFull.phone || "Phone not provided"}</p>
+                          <p className="text-sm text-stone-700">{app.workerEmail || workerFull.email || "Email not provided"}</p>
                           <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
                             Qualifications
                           </h4>
                           {workerFull.qualifications.length > 0 ? (
                             workerFull.qualifications.map((q) => (
                               <div key={q.id} className="text-sm">
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary-ink">{(q.credentialType || "education").replace(/^./, (letter) => letter.toUpperCase())}</p>
                                 <p className="font-medium text-stone-800">
                                   {q.degree}
                                 </p>
                                 <p className="text-stone-500 text-xs">
-                                  {q.institution} · {q.year}
+                                  {[q.institution, q.field, q.startDate && q.endDate ? `${q.startDate} – ${q.endDate}` : q.currentlyStudying ? `${q.startDate || ""} – Currently studying` : q.year].filter(Boolean).join(" · ")}
                                 </p>
                               </div>
                             ))
@@ -338,6 +335,7 @@ export default function ApplicantManagement() {
                                 <p className="text-stone-500 text-xs">
                                   {ex.company} · {ex.duration}
                                 </p>
+                                {ex.description && <p className="mt-1 text-xs leading-relaxed text-stone-600">{ex.description}</p>}
                               </div>
                             ))
                           ) : (
@@ -371,12 +369,14 @@ export default function ApplicantManagement() {
                               </span>
                             ))}
                           </div>
+                          <div className="mt-2 space-y-1">{workerFull.weeklyAvailability?.map((slot) => <p key={slot.id} className="text-xs text-stone-600">{slot.date ? `${slot.date}${slot.endDate && slot.endDate !== slot.date ? ` – ${slot.endDate}` : ""}` : slot.day} · {slot.startTime}–{slot.endTime}</p>)}</div>
+                          {workerFull.preferredTravelDistanceKm !== undefined && <p className="mt-2 text-xs text-stone-500">Preferred travel distance: {workerFull.preferredTravelDistanceKm} km</p>}
 
                           <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mt-4 mb-2">
                             Work History
                           </h4>
                           {workerFull.workHistory.length > 0 ? (
-                            workerFull.workHistory.slice(0, 2).map((wh, i) => (
+                            workerFull.workHistory.map((wh, i) => (
                               <div key={i} className="text-sm mb-2">
                                 <div className="flex items-center gap-1.5">
                                   <div className="flex items-center gap-0.5">
@@ -397,11 +397,17 @@ export default function ApplicantManagement() {
                                     {wh.jobTitle}
                                   </span>
                                 </div>
+                                {wh.providerName && <p className="mt-1 text-[11px] text-stone-500">Provider: {wh.providerName}</p>}
+                                {(wh.startDate || wh.endDate) && <p className="mt-1 text-[11px] text-stone-500">{wh.startDate || "Start date unavailable"} – {wh.endDate || "End date unavailable"}</p>}
+                                {wh.description && <p className="mt-1 text-xs leading-relaxed text-stone-600">{wh.description}</p>}
                                 {wh.review && (
                                   <p className="text-xs text-stone-500 italic mt-0.5">
                                     "{wh.review}"
                                   </p>
                                 )}
+                                {wh.location && <p className="mt-1 text-[11px] text-stone-500">{wh.location}</p>}
+                                {wh.completedAt && <p className="mt-1 text-[11px] text-stone-400">Completed {new Date(wh.completedAt).toLocaleString()}</p>}
+                                {wh.reviewedAt && <p className="mt-1 text-[11px] text-stone-400">Reviewed {new Date(wh.reviewedAt).toLocaleDateString()}</p>}
                               </div>
                             ))
                           ) : (
@@ -411,12 +417,23 @@ export default function ApplicantManagement() {
                           )}
                         </div>
                       </div>
+                      <div className="mt-4 border-t border-stone-100 pt-3">
+                        {reportingWorkerId === app.id ? (
+                          <div className="grid gap-2 sm:grid-cols-[12rem_1fr_auto]">
+                            <select value={reportReason} onChange={(event) => setReportReason(event.target.value)} className="input-style" aria-label="Report reason">
+                              <option value="SUSPICIOUS_JOB">Suspicious activity</option><option value="FAKE_ACCOUNT">Fake account</option><option value="MISCONDUCT">Misconduct</option><option value="HARASSMENT">Harassment</option><option value="PAYMENT_ISSUE">Payment issue</option><option value="OTHER">Other</option>
+                            </select>
+                            <input value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} maxLength={2000} placeholder="Briefly explain the concern" className="input-style" aria-label="Report description" />
+                            <button type="button" disabled={!reportDetails.trim()} onClick={() => { void reportUser(app.workerId, reportReason, reportDetails).then((error) => { setReportMessage(error || "Report submitted for review."); if (!error) { setReportingWorkerId(null); setReportDetails("") } }) }} className="rounded-xl bg-red-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">Submit report</button>
+                          </div>
+                        ) : <button type="button" onClick={() => { setReportMessage(""); setReportingWorkerId(app.id) }} className="text-xs font-semibold text-red-700 hover:underline">Report this worker</button>}
+                        {reportMessage && <p role="status" className="mt-2 text-xs text-stone-600">{reportMessage}</p>}
+                      </div>
                     </div>
                   )}
 
                   {/* Action buttons */}
                   {(app.status === "pending" ||
-                    app.status === "shortlisted" ||
                     app.status === "accepted") && (
                     <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stone-100">
                       {app.status !== "accepted" && (
@@ -432,14 +449,6 @@ export default function ApplicantManagement() {
                           className="px-4 py-1.5 bg-green text-white text-sm font-medium rounded-xl hover:bg-green-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           ✓ Accept
-                        </button>
-                      )}
-                      {app.status === "pending" && (
-                        <button
-                          onClick={() => handleAction(app.id, "shortlisted")}
-                          className="px-4 py-1.5 bg-amber-100 text-amber-800 text-sm font-medium rounded-xl hover:bg-amber-200 transition-colors"
-                        >
-                          ★ Shortlist
                         </button>
                       )}
                       <button
@@ -507,7 +516,6 @@ export default function ApplicantManagement() {
                           />
                           <button
                             type="button"
-                            disabled={!reviewDraft[app.id]?.review.trim()}
                             onClick={() => {
                               const draft = reviewDraft[app.id] ?? { rating: 5, review: "" }
                               reviewWorker(app.id, draft.rating, draft.review)

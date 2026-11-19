@@ -27,6 +27,13 @@ public class SeekerProfile {
 
     private Integer preferredTravelDistanceKm;
 
+    private Double latitude;
+    private Double longitude;
+    @ElementCollection
+    @CollectionTable(name = "seeker_preferred_categories", joinColumns = @JoinColumn(name = "seeker_profile_id"))
+    @Column(name = "category", nullable = false, length = 80)
+    private java.util.Set<String> preferredCategories = new java.util.LinkedHashSet<>();
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -95,6 +102,13 @@ public class SeekerProfile {
     public void setPreferredTravelDistanceKm(Integer preferredTravelDistanceKm) {
         this.preferredTravelDistanceKm = preferredTravelDistanceKm;
     }
+
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
+    public java.util.Set<String> getPreferredCategories() { return preferredCategories; }
+    public void setPreferredCategories(java.util.Set<String> preferredCategories) { this.preferredCategories = preferredCategories; }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
