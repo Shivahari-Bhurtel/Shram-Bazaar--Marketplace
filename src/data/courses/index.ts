@@ -49,6 +49,7 @@ for (const sourceFile of Object.values(finalCourseFiles)) {
   const sourceCategory = source.category === "Painting and Finishing" ? "Painting" : source.category
   const existing = [...coursesById.values()].find((course) => course.category === sourceCategory)
   if (!existing) continue
+  const firstLesson = source.modules[0]?.lessons[0]
   const course: LearnCourse = {
     id: existing.id,
     title: source.title,
@@ -58,7 +59,7 @@ for (const sourceFile of Object.values(finalCourseFiles)) {
     shortDescription: source.description,
     description: source.description,
     ...(source.durationHours == null ? {} : { durationHours: source.durationHours }),
-    thumbnail: source.thumbnail ?? source.modules[0]?.lessons[0]?.thumbnailUrl ?? existing.thumbnail,
+    thumbnail: source.thumbnail ?? firstLesson?.thumbnailUrl ?? (firstLesson?.videoId ? `https://img.youtube.com/vi/${firstLesson.videoId}/hqdefault.jpg` : existing.thumbnail),
     accent: source.accent ?? existing.accent,
     skills: source.skills ?? [],
     objectives: source.learningOutcomes ?? source.objectives ?? [],
