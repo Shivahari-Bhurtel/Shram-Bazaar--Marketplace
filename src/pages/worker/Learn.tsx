@@ -278,7 +278,7 @@ export default function Learn() {
             </section>
 
             <section id="explore-courses" className="mt-10 scroll-mt-24" aria-labelledby="explore-heading">
-              <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[.12em] text-[#D86C3A]">Practical skills for work</p><h2 id="explore-heading" className="mt-1 text-lg font-bold text-slate-900">Explore courses</h2><p className="mt-1 text-xs text-slate-600">Short, self-paced introductions across five vocational skill areas.</p></div>
+              <div className="mb-4"><h2 id="explore-heading" className="text-lg font-bold text-slate-900">Explore courses</h2><p className="mt-1 text-xs text-slate-600">Short, self-paced introductions across five vocational skill areas.</p></div>
               <div className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Filter courses by skill category">
                 {["All skills", ...learningCategories].map((category) => <button key={category} type="button" onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`min-h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition ${activeCategory === category ? "border-blue-700 bg-blue-700 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-800"}`}>{category}</button>)}
               </div>
