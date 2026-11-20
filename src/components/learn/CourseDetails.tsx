@@ -15,25 +15,55 @@ type Props = {
 export default function CourseDetails({ course, progress, isEnrolled, onStart, onSelectLesson, onPlayGame }: Props) {
   const metric = getCourseProgress(course, progress)
   const isCraneCourse = course.id === "crane-operation-basics"
-  const courseMetadata = <div className="flex flex-wrap gap-2"><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{course.category}</span><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{course.level}</span>{course.durationHours != null && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{course.durationHours} hours</span>}<span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{metric.totalLessons} lessons</span><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{course.modules.length} modules</span></div>
+  const courseMetadata = (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${isCraneCourse ? "bg-[#F3E9DF] text-[#4E342E]" : "bg-blue-50 text-blue-800"}`}>{course.category}</span>
+      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">{course.level}</span>
+      {course.durationHours != null && <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">{course.durationHours} hours</span>}
+      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">{metric.totalLessons} lessons</span>
+      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">{course.modules.length} modules</span>
+    </div>
+  )
 
   return (
     <section>
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <img src={course.thumbnail} alt="" className={`${course.id === "crane-operation-basics" ? "aspect-video max-h-[260px]" : "aspect-[2.7/1] max-h-[360px]"} w-full bg-slate-100 object-cover`} />
-        <div className="p-5 sm:p-8">
+      <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white ${isCraneCourse ? "shadow-sm" : ""}`}>
+        <img src={course.thumbnail} alt="" className={`${isCraneCourse ? "aspect-video max-h-[260px] object-contain bg-[#E9E8E5]" : "aspect-[2.7/1] max-h-[360px] object-cover bg-slate-100"} w-full`} />
+        <div className={isCraneCourse ? "p-4 sm:p-6 lg:p-8" : "p-5 sm:p-8"}>
           {!isCraneCourse && courseMetadata}
-          <div className="mt-4 grid gap-7 lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div><h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{course.title}</h1>{isCraneCourse && <div className="mt-3">{courseMetadata}</div>}<p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">{course.description}</p>{course.safetyNotice && !isCraneCourse && <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950"><strong className="font-semibold">Safety notice: </strong>{course.safetyNotice}</p>}
-              <h2 className="mt-7 text-lg font-bold text-slate-900">What you will learn</h2><ul className="mt-3 grid gap-2 sm:grid-cols-2">{course.objectives.map((objective) => <li key={objective} className="flex gap-2 text-sm leading-relaxed text-slate-700"><span className="font-bold text-blue-700">✓</span><span>{objective}</span></li>)}</ul>
-              <h2 className="mb-3 mt-8 text-lg font-bold text-slate-900">Course curriculum</h2><ModuleAccordion modules={course.modules} courseId={course.id} progress={progress} currentLessonId={progress.currentLessons[course.id]} onSelectLesson={onSelectLesson} />
+          <div className={`mt-5 grid items-start gap-8 ${isCraneCourse ? "lg:grid-cols-[minmax(0,1fr)_300px]" : "lg:grid-cols-[minmax(0,1fr)_280px]"}`}>
+            <div className="min-w-0">
+              <header className={isCraneCourse ? "border-b border-slate-100 pb-5" : ""}>
+                <h1 className={`${isCraneCourse ? "text-3xl leading-tight sm:text-4xl" : "text-2xl sm:text-3xl"} font-bold tracking-tight text-slate-950`}>{course.title}</h1>
+                {isCraneCourse && <div className="mt-3">{courseMetadata}</div>}
+                <p className={`${isCraneCourse ? "mt-4 text-[15px] leading-7" : "mt-3 text-sm leading-relaxed"} max-w-3xl text-slate-600`}>{course.description}</p>
+                {course.safetyNotice && !isCraneCourse && <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950"><strong className="font-semibold">Safety notice: </strong>{course.safetyNotice}</p>}
+              </header>
+
+              <section className="mt-7" aria-labelledby="course-objectives-heading">
+                <h2 id="course-objectives-heading" className="text-xl font-bold text-slate-900">What you will learn</h2>
+                <ul className={`mt-3 grid sm:grid-cols-2 ${isCraneCourse ? "gap-2.5" : "gap-2"}`}>
+                  {course.objectives.map((objective) => <li key={objective} className={`flex items-start gap-2.5 text-sm text-slate-700 ${isCraneCourse ? "rounded-xl border border-[#EFE6DA] bg-[#FCFAF7] px-3.5 py-3 leading-6" : "leading-relaxed"}`}><span className="mt-0.5 font-bold text-[#80502F]">✓</span><span>{objective}</span></li>)}
+                </ul>
+              </section>
+
+              <section className="mt-8" aria-labelledby="course-curriculum-heading">
+                <h2 id="course-curriculum-heading" className="mb-3 text-xl font-bold text-slate-900">Course curriculum</h2>
+                <ModuleAccordion modules={course.modules} courseId={course.id} progress={progress} currentLessonId={progress.currentLessons[course.id]} onSelectLesson={onSelectLesson} />
+              </section>
             </div>
-            <aside className="h-fit rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 lg:sticky lg:top-24">
-              {course.optionalGame && onPlayGame && <button type="button" onClick={onPlayGame} className="mb-4 min-h-10 w-full rounded-lg bg-[#4E342E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Play Interactive Game</button>}
-              <p className="text-sm font-semibold text-slate-900">Your course progress</p><div className="mt-3"><CourseProgress completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} /></div>
-              <div className="mt-5 flex flex-wrap gap-2">{course.skills.map((skill) => <span key={skill} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">{skill}</span>)}</div>
-              <button type="button" onClick={onStart} className="mt-6 min-h-11 w-full rounded-lg bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800">{metric.isComplete ? "Review lessons" : isEnrolled ? "Continue learning" : "Start learning"}</button>
-              <p className="mt-3 text-center text-xs text-slate-500">Self-paced · progress saves on this device</p>
+            <aside className={`h-fit rounded-2xl border p-4 sm:p-5 lg:sticky lg:top-24 ${isCraneCourse ? "border-[#E8DDCF] bg-[#FCFAF7]" : "border-slate-200 bg-slate-50"}`}>
+              {course.optionalGame && onPlayGame && <button type="button" onClick={onPlayGame} className="mb-4 min-h-11 w-full rounded-xl bg-[#4E342E] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Play Interactive Game</button>}
+              <div className="border-t border-slate-200/80 pt-4">
+                <p className="text-sm font-semibold text-slate-900">Your course progress</p>
+                <div className="mt-3"><CourseProgress completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} /></div>
+              </div>
+              <div className="mt-5 border-t border-slate-200/80 pt-4">
+                <p className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Skills covered</p>
+                <div className="flex flex-wrap gap-2">{course.skills.map((skill) => <span key={skill} className="rounded-full border border-[#E5D9C9] bg-white px-2.5 py-1.5 text-xs font-medium text-[#5B4032]">{skill}</span>)}</div>
+              </div>
+              <button type="button" onClick={onStart} className={`mt-5 min-h-11 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition ${isCraneCourse ? "bg-[#4E342E] hover:bg-[#3D2924]" : "bg-blue-700 hover:bg-blue-800"}`}>{metric.isComplete ? "Review lessons" : isEnrolled ? "Continue learning" : "Start learning"}</button>
+              <p className="mt-3 text-center text-xs leading-5 text-slate-500">Self-paced · progress saves on this device</p>
             </aside>
           </div>
         </div>
