@@ -46,7 +46,8 @@ const finalCourseFiles = import.meta.glob<FinalCourseSource>("./final/*.json", {
 const coursesById = new Map(Object.values(mockCourseFiles).map((course) => [course.id, course]))
 for (const sourceFile of Object.values(finalCourseFiles)) {
   const source = sourceFile.course
-  const existing = [...coursesById.values()].find((course) => course.category === source.category)
+  const sourceCategory = source.category === "Painting and Finishing" ? "Painting" : source.category
+  const existing = [...coursesById.values()].find((course) => course.category === sourceCategory)
   if (!existing) continue
   const course: LearnCourse = {
     id: existing.id,

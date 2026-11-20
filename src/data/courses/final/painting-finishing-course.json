@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "1.0",
+  "course": {
+    "id": "painting-and-finishing-basics",
+    "title": "Painting & Finishing Basics",
+    "category": "Painting and Finishing",
+    "level": "Beginner",
+    "language": "English",
+    "isFree": true,
+    "provider": "Shram Bazaar AI",
+    "contentSource": "Curated YouTube videos",
+    "description": "A beginner course introducing painting and finishing work through five selected YouTube lessons. It covers the general learning journey from understanding the task and preparing surfaces to selecting tools, applying coatings, and checking the finished result. Lesson descriptions are curator-written topic guides and must be checked against the actual videos before publication.",
+    "learningOutcomes": [
+      "Understand the general stages of painting and finishing work",
+      "Recognize the importance of surface preparation",
+      "Become familiar with common tools, materials, and application methods",
+      "Identify basic quality checks and finishing considerations",
+      "Apply appropriate workshop safety awareness"
+    ],
+    "skills": [
+      "Painting fundamentals",
+      "Surface preparation awareness",
+      "Painting tool and material awareness",
+      "Coating application awareness",
+      "Finish inspection",
+      "Workplace safety"
+    ],
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Introduction to Painting and Finishing",
+        "description": "An introductory lesson in painting and finishing. Use the video to understand the scope of the work, the stages involved, and the importance of planning before starting a painting or finishing task.",
+        "lessons": [
+          {
+            "id": "lesson-1",
+            "title": "Introduction to Painting and Finishing",
+            "youtubeUrl": "https://youtu.be/oNagIA8sKY0",
+            "videoId": "oNagIA8sKY0",
+            "embedUrl": "https://www.youtube.com/embed/oNagIA8sKY0",
+            "thumbnailUrl": "https://img.youtube.com/vi/oNagIA8sKY0/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "An introductory lesson in painting and finishing. Use the video to understand the scope of the work, the stages involved, and the importance of planning before starting a painting or finishing task.",
+            "learningObjectives": [
+              "Describe the main stages of a painting and finishing task",
+              "Understand why planning and surface assessment matter",
+              "Recognize the difference between preparation, application and finishing"
+            ],
+            "order": 1,
+            "metadataStatus": "curator_inferred_not_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Preparing Surfaces for Painting",
+        "description": "Learn about preparing a surface before applying paint or finish. Focus on identifying surface condition, cleaning, repairing imperfections, and choosing suitable preparation methods as demonstrated in the video.",
+        "lessons": [
+          {
+            "id": "lesson-2",
+            "title": "Preparing Surfaces for Painting",
+            "youtubeUrl": "https://youtu.be/mNT3cpBa5HY",
+            "videoId": "mNT3cpBa5HY",
+            "embedUrl": "https://www.youtube.com/embed/mNT3cpBa5HY",
+            "thumbnailUrl": "https://img.youtube.com/vi/mNT3cpBa5HY/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Learn about preparing a surface before applying paint or finish. Focus on identifying surface condition, cleaning, repairing imperfections, and choosing suitable preparation methods as demonstrated in the video.",
+            "learningObjectives": [
+              "Identify common surface preparation steps",
+              "Recognize imperfections that may affect the finish",
+              "Understand why preparation depends on the surface and coating"
+            ],
+            "order": 2,
+            "metadataStatus": "curator_inferred_not_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Painting Tools, Materials and Application",
+        "description": "Become familiar with painting and finishing tools and materials. Identify the equipment shown, understand its general purpose, and note how material selection affects the final result.",
+        "lessons": [
+          {
+            "id": "lesson-3",
+            "title": "Painting Tools, Materials and Application",
+            "youtubeUrl": "https://youtu.be/-v-KAOgFlVU",
+            "videoId": "-v-KAOgFlVU",
+            "embedUrl": "https://www.youtube.com/embed/-v-KAOgFlVU",
+            "thumbnailUrl": "https://img.youtube.com/vi/-v-KAOgFlVU/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Become familiar with painting and finishing tools and materials. Identify the equipment shown, understand its general purpose, and note how material selection affects the final result.",
+            "learningObjectives": [
+              "Identify common painting tools and materials",
+              "Explain the general purpose of tools shown in the lesson",
+              "Recognize the importance of selecting compatible materials"
+            ],
+            "order": 3,
+            "metadataStatus": "curator_inferred_not_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Applying Paint and Achieving an Even Finish",
+        "description": "Explore paint application and finishing practices. Observe the method demonstrated, including application sequence, coverage, consistency, and avoiding common surface defects.",
+        "lessons": [
+          {
+            "id": "lesson-4",
+            "title": "Applying Paint and Achieving an Even Finish",
+            "youtubeUrl": "https://youtu.be/dH-7rg2E8_I",
+            "videoId": "dH-7rg2E8_I",
+            "embedUrl": "https://www.youtube.com/embed/dH-7rg2E8_I",
+            "thumbnailUrl": "https://img.youtube.com/vi/dH-7rg2E8_I/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Explore paint application and finishing practices. Observe the method demonstrated, including application sequence, coverage, consistency, and avoiding common surface defects.",
+            "learningObjectives": [
+              "Recognize the application method demonstrated",
+              "Understand the importance of even coverage and suitable drying conditions",
+              "Identify common application defects to watch for"
+            ],
+            "order": 4,
+            "metadataStatus": "curator_inferred_not_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Finishing Techniques, Inspection and Care",
+        "description": "Review finishing quality and care. Learn to inspect the completed surface, identify visible defects, and understand basic care and maintenance considerations.",
+        "lessons": [
+          {
+            "id": "lesson-5",
+            "title": "Finishing Techniques, Inspection and Care",
+            "youtubeUrl": "https://youtu.be/7a0qDvTQDLc",
+            "videoId": "7a0qDvTQDLc",
+            "embedUrl": "https://www.youtube.com/embed/7a0qDvTQDLc",
+            "thumbnailUrl": "https://img.youtube.com/vi/7a0qDvTQDLc/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Review finishing quality and care. Learn to inspect the completed surface, identify visible defects, and understand basic care and maintenance considerations.",
+            "learningObjectives": [
+              "Identify basic indicators of a quality finish",
+              "Recognize defects that may require correction",
+              "Understand basic care and maintenance of finished surfaces"
+            ],
+            "order": 5,
+            "metadataStatus": "curator_inferred_not_verified"
+          }
+        ]
+      }
+    ],
+    "totalLessons": 5,
+    "completion": {
+      "requiresAllLessons": true,
+      "requiresQuiz": true,
+      "passingScorePercent": 70,
+      "certificate": {
+        "enabled": true,
+        "type": "certificate-of-completion",
+        "issuer": "Shram Bazaar AI",
+        "disclaimer": "This certificate confirms completion of introductory online learning only. It is not a trade licence, accredited qualification, or authorization to perform professional painting work."
+      }
+    },
+    "safetyNotice": "Painting and finishing may involve solvents, fumes, dust, ladders, sharp tools, and flammable materials. Ensure suitable ventilation, follow product labels and safety data, use appropriate PPE, keep ignition sources away from flammable products, and seek qualified supervision for hazardous work at height or with specialist coatings.",
+    "metadataNotes": [
+      "Video IDs and supplied URLs are preserved exactly. Embed and thumbnail URLs are generated from the video IDs.",
+      "Exact YouTube titles, descriptions, channel names, and durations could not be reliably retrieved for these five links in this session. The lesson titles, descriptions, and learning objectives are curator-created curriculum labels, not verified video metadata.",
+      "Review each video and update the lesson title, description, and duration if the actual content differs.",
+      "A public metadata viewer can return title, description, duration, channel and tags when available; availability varies by video."
+    ],
+    "metadataStatus": "curator_inferred_not_verified"
+  }
+}

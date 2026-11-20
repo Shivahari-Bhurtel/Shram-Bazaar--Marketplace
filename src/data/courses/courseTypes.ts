@@ -4,6 +4,7 @@ export type CourseCategory =
   | "Carpentry"
   | "Motorcycle Maintenance"
   | "Painting"
+  | "Painting and Finishing"
 
 export type CourseLesson = {
   id: string
