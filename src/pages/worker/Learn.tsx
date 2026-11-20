@@ -56,19 +56,19 @@ function LearnSidebarItem({ label, icon, active = false, onClick }: { label: str
   }
 
   return (
-    <button type="button" onClick={onClick} aria-current={active ? "page" : undefined} className={`flex min-h-[64px] w-full items-center gap-4 border-l-[5px] px-5 text-left text-[17px] leading-snug transition-colors ${active ? "border-[#4E342E] bg-[#4E342E] font-medium text-white" : "border-transparent text-[#4E342E] hover:bg-[#F2E4D4]"}`}>
-      <svg viewBox="0 0 24 24" className={`h-7 w-7 shrink-0 ${active ? "text-white" : "text-[#5B4032]"}`} aria-hidden="true">{iconPaths[icon]}</svg>
+    <button type="button" onClick={onClick} aria-current={active ? "page" : undefined} className={`flex min-h-14 w-full items-center gap-3 border-l-4 px-4 text-left text-[15px] leading-snug transition-colors ${active ? "border-[#4E342E] bg-[#4E342E] font-medium text-white" : "border-transparent text-[#4E342E] hover:bg-[#F2E4D4]"}`}>
+      <svg viewBox="0 0 24 24" className={`h-6 w-6 shrink-0 ${active ? "text-white" : "text-[#5B4032]"}`} aria-hidden="true">{iconPaths[icon]}</svg>
       <span>{label}</span>
     </button>
   )
 }
 
 function LearnSidebarHeading({ children }: { children: React.ReactNode }) {
-  return <p className="px-7 pb-3 pt-8 text-[20px] font-bold text-[#735B49]">{children}</p>
+  return <p className="px-5 pb-2 pt-6 text-base font-bold text-[#735B49]">{children}</p>
 }
 
 function LearnSidebarCourse({ title, active, onClick }: { title: string; active: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} aria-pressed={active} className={`w-full border-l-[5px] px-7 py-3 text-left text-[16px] leading-snug transition-colors ${active ? "border-[#4E342E] bg-[#F2E4D4] font-semibold text-[#4E342E]" : "border-transparent text-[#4E342E] hover:bg-[#F2E4D4]"}`}>{title}</button>
+  return <button type="button" onClick={onClick} aria-pressed={active} className={`w-full border-l-4 py-2.5 pl-12 pr-3 text-left text-[13px] leading-5 transition-colors ${active ? "border-[#4E342E] bg-[#F2E4D4] font-semibold text-[#4E342E]" : "border-transparent text-[#4E342E] hover:bg-[#F2E4D4]"}`}>{title}</button>
 }
 
 function EmptyState({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) {
@@ -252,8 +252,8 @@ export default function Learn() {
 
             <LearnSidebarItem label="Certifications" icon="certificate" onClick={() => setSection("certificates")} />
 
-            <div className="flex items-center gap-3 px-7 pb-3 pt-8 text-[20px] font-bold text-[#735B49]">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3.5 2.7 8.5 2.7 12 0v-5M22 9v6" /></svg>
+            <div className="flex items-center gap-2.5 px-5 pb-2 pt-6 text-base font-bold text-[#735B49]">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px] shrink-0" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3.5 2.7 8.5 2.7 12 0v-5M22 9v6" /></svg>
               <span>Our courses</span>
             </div>
             <div className="space-y-0.5">
