@@ -9,9 +9,10 @@ type Props = {
   isEnrolled: boolean
   onStart: () => void
   onSelectLesson: (lessonId: string) => void
+  onPlayGame?: () => void
 }
 
-export default function CourseDetails({ course, progress, isEnrolled, onStart, onSelectLesson }: Props) {
+export default function CourseDetails({ course, progress, isEnrolled, onStart, onSelectLesson, onPlayGame }: Props) {
   const metric = getCourseProgress(course, progress)
 
   return (
@@ -23,7 +24,7 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
           <div className="mt-4 grid gap-7 lg:grid-cols-[minmax(0,1fr)_280px]">
             <div><h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{course.title}</h1><p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">{course.description}</p>{course.safetyNotice && <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950"><strong className="font-semibold">Safety notice: </strong>{course.safetyNotice}</p>}
               <h2 className="mt-7 text-lg font-bold text-slate-900">What you will learn</h2><ul className="mt-3 grid gap-2 sm:grid-cols-2">{course.objectives.map((objective) => <li key={objective} className="flex gap-2 text-sm leading-relaxed text-slate-700"><span className="font-bold text-blue-700">✓</span><span>{objective}</span></li>)}</ul>
-              {course.optionalGame && <div className="mt-6 rounded-xl border border-[#E5D9C9] bg-[#FBF5EF] p-4"><h2 className="font-semibold text-[#4E342E]">Optional activity: {course.optionalGame.title}</h2><p className="mt-1 text-sm leading-relaxed text-[#735B49]">{course.optionalGameNotice || "This activity is optional and is not part of course completion."}</p></div>}
+              {course.optionalGame && <div className="mt-6 rounded-xl border border-[#E5D9C9] bg-[#FBF5EF] p-4"><h2 className="font-semibold text-[#4E342E]">Practical module: {course.optionalGame.moduleTitle ?? course.optionalGame.title}</h2><p className="mt-1 text-sm leading-relaxed text-[#735B49]">{course.optionalGameNotice || "This activity is optional and is not part of course completion."}</p>{onPlayGame && <button type="button" onClick={onPlayGame} className="mt-4 min-h-10 rounded-lg bg-[#4E342E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Play Interactive Game</button>}</div>}
               <h2 className="mb-3 mt-8 text-lg font-bold text-slate-900">Course curriculum</h2><ModuleAccordion modules={course.modules} courseId={course.id} progress={progress} currentLessonId={progress.currentLessons[course.id]} onSelectLesson={onSelectLesson} />
             </div>
             <aside className="h-fit rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 lg:sticky lg:top-24">

@@ -18,7 +18,9 @@ type FinalCourseSource = {
     safetyNotice?: string
     certificateEligible?: boolean
     optionalGame?: {
+      id: string
       title: string
+      moduleTitle?: string
       repositoryUrl: string
       gameType: string
       entryRoute: string

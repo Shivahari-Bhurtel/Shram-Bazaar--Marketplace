@@ -9,9 +9,10 @@ type Props = {
   enrolled: boolean
   onView: (course: LearnCourse) => void
   onContinue?: (course: LearnCourse) => void
+  onPlayGame?: (course: LearnCourse) => void
 }
 
-export default function CourseCard({ course, completed, total, percent, enrolled, onView, onContinue }: Props) {
+export default function CourseCard({ course, completed, total, percent, enrolled, onView, onContinue, onPlayGame }: Props) {
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/60">
       <button type="button" className="relative block w-full overflow-hidden bg-slate-100 text-left" onClick={() => onView(course)} aria-label={`View ${course.title}`}>
@@ -32,6 +33,7 @@ export default function CourseCard({ course, completed, total, percent, enrolled
           <button type="button" onClick={() => enrolled && onContinue ? onContinue(course) : onView(course)} className="inline-flex min-h-9 w-full items-center justify-center rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
             {enrolled ? completed === total && total > 0 ? "Review course" : completed > 0 ? "Continue learning" : "Start learning" : "View course"}
           </button>
+          {course.optionalGame && onPlayGame && <button type="button" onClick={() => onPlayGame(course)} className="mt-2 inline-flex min-h-8 w-full items-center justify-center rounded-lg border border-[#D8C4B1] px-3 py-1.5 text-xs font-semibold text-[#4E342E] transition hover:bg-[#FBF5EF]">Play Interactive Game</button>}
         </div>
       </div>
     </article>

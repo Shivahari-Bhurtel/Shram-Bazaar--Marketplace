@@ -5,6 +5,7 @@ import CertificateCard from "../../components/learn/CertificateCard"
 import CourseDetails from "../../components/learn/CourseDetails"
 import LearningPlayer from "../../components/learn/LearningPlayer"
 import GraduationHatAnimation from "../../components/learn/GraduationHatAnimation"
+import ShramGamePlayer from "../../components/academy/ShramGamePlayer"
 import {
   getCourseLessons,
   getCourseProgress,
@@ -23,7 +24,7 @@ import {
 
 type LearnSection = "overview" | "my-learning" | "certificates"
 type LearningFilter = "all" | "in-progress" | "completed"
-type LearnView = "dashboard" | "details" | "player"
+type LearnView = "dashboard" | "details" | "player" | "game"
 
 const sectionLabels: Record<LearnSection, string> = {
   overview: "Overview",
@@ -137,6 +138,22 @@ export default function Learn() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  const openCourseGame = (course: LearnCourse) => {
+    if (!course.optionalGame) return
+    setActiveCourseId(course.id)
+    setView("game")
+    setMobileNavOpen(false)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const backToAcademyCourses = () => {
+    setView("dashboard")
+    setSection("overview")
+    setSearch("")
+    setActiveCategory(activeCourse?.category ?? "All skills")
+    window.requestAnimationFrame(() => document.getElementById("explore-courses")?.scrollIntoView({ behavior: "smooth", block: "start" }))
+  }
+
   const startLesson = (course: LearnCourse, requestedLessonId?: string) => {
     const nextProgress = enrollInCourse(progress, course)
     const lessons = getCourseLessons(course)
@@ -207,11 +224,11 @@ export default function Learn() {
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
             </label>
           ) : (
-            <div className="hidden min-w-0 flex-1 md:block"><p className="truncate text-sm font-semibold text-slate-800">{view === "player" ? activeLesson?.title : activeCourse?.title}</p><p className="text-xs text-slate-500">{view === "player" ? activeCourse?.title : "Course overview"}</p></div>
+            <div className="hidden min-w-0 flex-1 md:block"><p className="truncate text-sm font-semibold text-slate-800">{view === "player" ? activeLesson?.title : view === "game" ? activeCourse?.optionalGame?.title : activeCourse?.title}</p><p className="text-xs text-slate-500">{view === "player" ? activeCourse?.title : view === "game" ? "Optional practical module" : "Course overview"}</p></div>
           )}
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            {view !== "dashboard" && <button type="button" onClick={() => view === "player" ? setView("details") : setView("dashboard")} className="hidden min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex">
+            {view !== "dashboard" && <button type="button" onClick={() => view === "player" ? setView("details") : view === "game" ? backToAcademyCourses() : setView("dashboard")} className="hidden min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7" /></svg>
               {view === "player" ? "Course overview" : "All courses"}
             </button>}
@@ -261,7 +278,7 @@ export default function Learn() {
               <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 id="continue-learning-heading" className="text-lg font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
               {inProgressCourses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
-                return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
+                return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} onPlayGame={openCourseGame} />
               })}</div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5D9C9] bg-white">
                 <div className="flex aspect-[16/9] w-full items-center justify-center bg-[#F2D8C9]" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" className="h-16 w-16 text-[#80502F]"><path d="M8 10.5c6.5-2 13-.5 16 2v25c-3-2.5-9.5-4-16-2v-25Zm32 0c-6.5-2-13-.5-16 2v25c3-2.5 9.5-4 16-2v-25Z" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" /><path d="M14 18c2-.3 4.3 0 6 1m14-1c-2-.3-4.3 0-6 1M14 24c2-.3 4.3 0 6 1m14-1c-2-.3-4.3 0-6 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></div>
                 <div className="flex flex-1 flex-col p-4 sm:p-5"><h3 className="text-lg font-semibold leading-snug text-slate-900">Your learning journey starts here</h3><p className="mt-2 text-sm leading-relaxed text-slate-600">Choose a practical course to build your first skill and track lessons as you go.</p></div>
@@ -272,7 +289,7 @@ export default function Learn() {
               <div className="mb-4"><h2 id="recommended-heading" className="text-lg font-bold text-slate-900">Recommended courses</h2><p className="mt-1 text-xs text-slate-600">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
               <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{recommendedCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
-                return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} />
+                return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} onPlayGame={openCourseGame} />
               })}</div>
             </section>
 
@@ -283,7 +300,7 @@ export default function Learn() {
               </div>
               {filteredCourses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{filteredCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
-                return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} />
+                return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} onPlayGame={openCourseGame} />
               })}</div> : <EmptyState title="No matching courses" description="Try another search or choose a different skill category." actionLabel="Clear filters" onAction={() => { setSearch(""); setActiveCategory("All skills") }} />}
             </section>
           </>}
@@ -298,7 +315,7 @@ export default function Learn() {
               const courses = sourceCourses.filter(matchesCourseSearch)
               return courses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{courses.map((course) => {
                 const metric = getCourseProgress(course, progress)
-                return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
+                return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} onPlayGame={openCourseGame} />
               })}</div> : <EmptyState title={normalizedSearch ? "No matching courses" : learningFilter === "completed" ? "No completed courses yet" : learningFilter === "in-progress" ? "Nothing in progress" : "No courses enrolled yet"} description={normalizedSearch ? "Try a different course or skill search." : learningFilter === "completed" ? "Finish every lesson in a course to see it here." : "Start a course when you are ready. Your enrolled courses and lesson progress will be saved on this device."} actionLabel={normalizedSearch ? "Clear search" : "Explore courses"} onAction={normalizedSearch ? () => setSearch("") : () => { setSection("overview"); goToExplore() }} />
             })()}
           </section>}
@@ -314,6 +331,15 @@ export default function Learn() {
             isEnrolled={progress.enrolledCourseIds.includes(activeCourse.id)}
             onStart={() => startLesson(activeCourse)}
             onSelectLesson={(lessonId) => startLesson(activeCourse, lessonId)}
+            onPlayGame={() => openCourseGame(activeCourse)}
+          />}
+
+          {view === "game" && activeCourse?.optionalGame && <ShramGamePlayer
+            gameId={activeCourse.optionalGame.id}
+            title={activeCourse.optionalGame.title}
+            courseName={activeCourse.title}
+            embedUrl="/games/crane-sim/index.html"
+            onBack={backToAcademyCourses}
           />}
 
           {view === "player" && activeCourse && activeLesson && <LearningPlayer

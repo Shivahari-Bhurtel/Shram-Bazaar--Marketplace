@@ -17,15 +17,17 @@
     "safetyNotice": "This is an introductory educational course, not professional crane operator training or certification. Actual crane operation requires appropriate training, authorization, supervision and compliance with applicable safety regulations.",
     "certificateEligible": false,
     "optionalGame": {
-      "title": "Interactive Construction Game",
+      "id": "crane-sim",
+      "title": "Crane & Structural Alignment Challenge",
+      "moduleTitle": "Crane Operation & Structural Alignment",
       "repositoryUrl": "https://github.com/zanecosmo/pipe-game",
-      "gameType": "pipe-puzzle",
-      "entryRoute": "/learn/games/crane-operation",
+      "gameType": "tower-alignment",
+      "entryRoute": "/games/crane-sim/index.html",
       "optional": true,
       "requiredForCourseCompletion": false,
       "completionTracking": false
     },
-    "optionalGameNotice": "The supplied game is a pipe-connecting puzzle, not a crane simulator. It is not available in the portal yet because the source repository has no license granting permission to copy or redistribute it.",
+    "optionalGameNotice": "This arcade game practices timing and visual alignment. It is not crane operator training, simulation or certification.",
     "modules": [
       {
         "id": "crane-slings",
