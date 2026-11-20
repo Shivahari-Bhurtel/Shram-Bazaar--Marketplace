@@ -74,15 +74,19 @@ function LearnSidebarItem({ label, icon, active = false, onClick }: { label: str
   }
 
   return (
-    <button type="button" onClick={onClick} aria-current={active ? "page" : undefined} className={`flex min-h-[64px] w-full items-center gap-4 border-l-[5px] px-5 text-left text-[17px] leading-snug text-[#222] transition-colors ${active ? "border-[#4A4A4A] bg-[#E8E8E8] font-medium" : "border-transparent hover:bg-[#F2F2F2]"}`}>
-      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 text-[#414141]" aria-hidden="true">{iconPaths[icon]}</svg>
+    <button type="button" onClick={onClick} aria-current={active ? "page" : undefined} className={`flex min-h-[64px] w-full items-center gap-4 border-l-[5px] px-5 text-left text-[17px] leading-snug transition-colors ${active ? "border-[#4E342E] bg-[#4E342E] font-medium text-white" : "border-transparent text-[#4E342E] hover:bg-[#F2E4D4]"}`}>
+      <svg viewBox="0 0 24 24" className={`h-7 w-7 shrink-0 ${active ? "text-white" : "text-[#5B4032]"}`} aria-hidden="true">{iconPaths[icon]}</svg>
       <span>{label}</span>
     </button>
   )
 }
 
 function LearnSidebarHeading({ children }: { children: React.ReactNode }) {
-  return <p className="px-7 pb-3 pt-8 text-[17px] font-normal text-[#686868]">{children}</p>
+  return <p className="px-7 pb-3 pt-8 text-[17px] font-normal text-[#735B49]">{children}</p>
+}
+
+function LearnSidebarCourse({ title, active, onClick }: { title: string; active: boolean; onClick: () => void }) {
+  return <button type="button" onClick={onClick} aria-pressed={active} className={`w-full border-l-[5px] px-7 py-3 text-left text-[16px] leading-snug transition-colors ${active ? "border-[#4E342E] bg-[#F2E4D4] font-semibold text-[#4E342E]" : "border-transparent text-[#4E342E] hover:bg-[#F2E4D4]"}`}>{title}</button>
 }
 
 function EmptyState({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) {
@@ -196,6 +200,13 @@ export default function Learn() {
     window.requestAnimationFrame(() => document.getElementById("explore-courses")?.scrollIntoView({ behavior: "smooth", block: "start" }))
   }
 
+  const goToCourseCategory = (category: string) => {
+    setSection("overview")
+    setSearch("")
+    setActiveCategory(category)
+    window.requestAnimationFrame(() => document.getElementById("explore-courses")?.scrollIntoView({ behavior: "smooth", block: "start" }))
+  }
+
   const learnerInitials = learnerName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()
   return (
     <div className="learn-portal min-h-screen bg-[#FAF8F5] text-slate-900">
@@ -221,7 +232,7 @@ export default function Learn() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7" /></svg>
               {view === "player" ? "Course overview" : "All courses"}
             </button>}
-            {state.workerProfile?.photo ? <img src={state.workerProfile.photo} alt={`${learnerName} profile`} className="h-10 w-10 rounded-full object-cover" /> : <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4E342E] text-sm font-bold text-white" aria-label={learnerName}>{learnerInitials || "L"}</span>}
+            {state.workerProfile?.photo ? <img src={state.workerProfile.photo} alt={`${learnerName} profile`} className="h-12 w-12 rounded-full object-cover" /> : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#4E342E] text-base font-bold text-white" aria-label={learnerName}>{learnerInitials || "L"}</span>}
           </div>
         </div>
         {view === "dashboard" && <div className="px-4 pb-3 md:hidden"><label className="relative block"><span className="sr-only">Search courses</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m15.6 15.6 4.6 4.6" /></svg><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-12 w-full rounded-lg border border-slate-200 bg-slate-50 pl-11 pr-4 text-base outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" /></label></div>}
@@ -230,7 +241,7 @@ export default function Learn() {
       {storageWarning && <div role="status" className="mx-auto mt-4 max-w-[1480px] px-4 sm:px-6 lg:px-8"><p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{storageWarning}</p></div>}
 
       <div className="mx-auto grid max-w-[1480px] lg:grid-cols-[minmax(190px,19%)_minmax(0,1fr)]">
-        {view === "dashboard" && <aside aria-label="Main navigation" className="hidden min-h-screen border-r border-[#E0E0E0] bg-white pb-8 pt-2 lg:block">
+        {view === "dashboard" && <aside aria-label="Main navigation" className="hidden min-h-screen border-r border-[#D7BFA4] bg-[#E9D6BC] pb-8 pt-2 lg:block">
           <nav>
             <LearnSidebarItem label="Home" icon="home" active onClick={() => navigate("worker-dashboard")} />
             <LearnSidebarItem label="My Career Journey" icon="journey" onClick={() => setSection("my-learning")} />
@@ -239,25 +250,11 @@ export default function Learn() {
             <LearnSidebarItem label="My Library" icon="library" onClick={() => setSection("overview")} />
             <LearnSidebarItem label="Content" icon="content" onClick={goToExplore} />
 
-            <LearnSidebarHeading>Apply</LearnSidebarHeading>
-            <LearnSidebarItem label="Hands-On Tech" icon="tech" onClick={goToExplore} />
             <LearnSidebarItem label="Certifications" icon="certificate" onClick={() => setSection("certificates")} />
 
-            <LearnSidebarHeading>Trending topics</LearnSidebarHeading>
-            <div className="space-y-0.5 px-7">
-              <p className="py-3 text-[17px] leading-snug text-[#222]">Leadership and Management</p>
-              <p className="py-3 text-[17px] leading-snug text-[#222]">Artificial Intelligence</p>
-              <p className="py-3 text-[17px] leading-snug text-[#222]">Cybersecurity</p>
-            </div>
-
-            <LearnSidebarHeading>Featured This Week</LearnSidebarHeading>
-            <div className="space-y-0.5 px-7">
-              <p className="py-3 text-[17px] leading-snug text-[#222]">AI Productivity</p>
-              <p className="py-3 text-[17px] leading-snug text-[#222]">Human Skills</p>
-              <p className="py-3 text-[17px] leading-snug text-[#222]">Data Analysis</p>
-            </div>
-            <div className="mt-5 border-t border-[#E7E7E7] pt-2">
-              <LearnSidebarItem label="Help" icon="help" onClick={() => navigate("worker-dashboard")} />
+            <LearnSidebarHeading>Our courses</LearnSidebarHeading>
+            <div className="space-y-0.5">
+              {learningCourses.map((course) => <LearnSidebarCourse key={course.id} title={course.title} active={activeCategory === course.category} onClick={() => goToCourseCategory(course.category)} />)}
             </div>
           </nav>
         </aside>}

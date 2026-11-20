@@ -35,7 +35,7 @@ export default function CertificateCard({ course, learnerName, completedAt }: Pr
   }
 
   return (
-    <article className="flex flex-col justify-between gap-5 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center">
+    <article className="learn-certificate flex flex-col justify-between gap-5 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center">
       <div className="flex items-start gap-4">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-6 w-6"><path d="M6 3.75h8l4 4v12.5H6z" /><path d="M14 3.75v4h4M9 12h6M9 15h4" /><circle cx="16.5" cy="17" r="2.5" /><path d="m15.3 19.2-.5 2 1.7-.9 1.7.9-.5-2" /></svg>
