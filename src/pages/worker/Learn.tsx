@@ -175,7 +175,7 @@ export default function Learn() {
 
   const learnerInitials = learnerName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-slate-900">
+    <div className="learn-portal min-h-screen bg-[#FAF8F5] text-slate-900">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[52px] max-w-[1480px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <button type="button" onClick={() => navigate("worker-dashboard")} className="flex shrink-0 items-center gap-2 text-left" aria-label="Return to Shram Bazaar dashboard">
@@ -228,8 +228,8 @@ export default function Learn() {
 
           {view === "dashboard" && section === "overview" && <>
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-              <div><p className="text-xs font-semibold text-[#D86C3A]">Shram Bazaar Learn</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-1 max-w-2xl text-xs leading-4 text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
-              <button type="button" onClick={goToExplore} className="min-h-8 rounded-md bg-[#4E342E] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#3D2924]">Explore courses</button>
+              <div><p className="text-sm font-semibold text-[#D86C3A]">Shram Bazaar Learn</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
+              <button type="button" onClick={goToExplore} className="min-h-10 rounded-md bg-[#4E342E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Explore courses</button>
             </div>
 
             <section aria-label="Learning overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
