@@ -257,7 +257,7 @@ export default function Learn() {
 
           {view === "dashboard" && section === "overview" && <>
             <div className="mb-5 flex min-h-[168px] items-center justify-between gap-4 overflow-hidden rounded-2xl bg-[#4E342E] px-5 py-6 text-white shadow-sm sm:min-h-[192px] sm:px-8">
-              <div className="max-w-3xl"><h1 className="text-3xl font-bold tracking-tight text-white">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-[#F3E8DE]">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
+              <div className="max-w-3xl"><h1 className="text-3xl font-bold tracking-tight text-white">Build skills. Boost your profile.</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-[#F3E8DE]">Take a short course today, {learnerName.split(" ")[0]}, and make your profile stronger.</p></div>
               <GraduationHatAnimation />
             </div>
 
