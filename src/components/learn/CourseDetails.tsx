@@ -18,7 +18,7 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
   return (
     <section>
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <img src={course.thumbnail} alt="" className={`${course.id === "crane-operation-basics" ? "aspect-video max-h-[420px]" : "aspect-[2.7/1] max-h-[360px]"} w-full bg-slate-100 object-cover`} />
+        <img src={course.thumbnail} alt="" className={`${course.id === "crane-operation-basics" ? "aspect-video max-h-[260px]" : "aspect-[2.7/1] max-h-[360px]"} w-full bg-slate-100 object-cover`} />
         <div className="p-5 sm:p-8">
           <div className="flex flex-wrap gap-2"><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">{course.category}</span><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{course.level}</span>{course.durationHours != null && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{course.durationHours} hours</span>}<span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{metric.totalLessons} lessons</span><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{course.modules.length} modules</span></div>
           <div className="mt-4 grid gap-7 lg:grid-cols-[minmax(0,1fr)_280px]">
