@@ -9,12 +9,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATASET = ROOT / "shrambazar" / "src" / "main" / "resources" / "data" / "jobs.json"
-CATEGORIES = {
-    "Construction & Skilled Trades",
-    "Delivery & Logistics",
-    "Hospitality & Service",
-    "Retail & Sales",
+CATEGORY_COUNTS = {
+    "Construction & Skilled Trades": 26,
+    "Delivery & Logistics": 26,
+    "Hospitality & Service": 26,
+    "Retail & Sales": 25,
+    "Agriculture & Local Production": 9,
+    "Technical & Repair Work": 7,
+    "Cleaning & Maintenance": 6,
+    "Office Support & General Work": 5,
 }
+CATEGORIES = set(CATEGORY_COUNTS)
 FIELDS = {
     "id", "title", "category", "company", "description", "location", "address", "city",
     "latitude", "longitude", "salary_min", "salary_max", "salary_type", "job_type",
@@ -38,8 +43,8 @@ def main():
         print(f"Dataset could not be read: {error}", file=sys.stderr)
         return 1
     errors = []
-    if not isinstance(jobs, list) or len(jobs) != 80:
-        errors.append("Expected a JSON array with exactly 80 jobs.")
+    if not isinstance(jobs, list) or len(jobs) != 130:
+        errors.append("Expected a JSON array with exactly 130 jobs.")
         jobs = jobs if isinstance(jobs, list) else []
 
     ids = [job.get("id") for job in jobs if isinstance(job, dict)]
@@ -86,8 +91,8 @@ def main():
         if job.get("is_demo") is not True or job.get("location_accuracy") != "approximate":
             errors.append(f"{path} must remain clearly marked as a simulated job with approximate location.")
 
-    if counts != Counter({category: 20 for category in CATEGORIES}):
-        errors.append("Each of the four categories must contain exactly 20 listings.")
+    if counts != Counter(CATEGORY_COUNTS):
+        errors.append("Job category counts do not match the 130-job dataset.")
 
     if errors:
         print("Job dataset validation failed:", file=sys.stderr)

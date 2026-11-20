@@ -16,19 +16,19 @@ import static org.mockito.Mockito.*;
 
 class ShowcaseJobServiceTest {
     @Test
-    void suppliedDatasetReplacesShowcaseRowsWithEightyExactListings() throws Exception {
+    void suppliedDatasetReplacesShowcaseRowsWithOneHundredThirtyExactListings() throws Exception {
         ShowcaseJobRepository repository = mock(ShowcaseJobRepository.class);
         ShowcaseJobService service = new ShowcaseJobService(repository);
         Path dataset = Path.of("src/main/resources/data/jobs.json");
 
         var result = service.replaceWithDemoJson(Files.newInputStream(dataset));
 
-        assertEquals(80, result.recordsRead());
+        assertEquals(130, result.recordsRead());
         verify(repository).deleteAllInBatch();
         verify(repository).saveAll(argThat(jobs -> {
             java.util.List<ShowcaseJob> imported = new java.util.ArrayList<>();
             jobs.forEach(imported::add);
-            if (imported.size() != 80) return false;
+            if (imported.size() != 130) return false;
             ShowcaseJob first = imported.get(0);
             return "job-001".equals(first.getDatasetId())
                     && first.getDescription().length() > 100

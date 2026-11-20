@@ -65,7 +65,7 @@ export async function loadDemoJobs(signal?: AbortSignal): Promise<DemoJob[]> {
 
 function validateDemoJobs(value: unknown): DemoJob[] {
   if (!Array.isArray(value)) throw new Error("The jobs service returned an invalid response.")
-  if (value.length !== 80) throw new Error(`Expected all 80 supplied job listings, but received ${value.length}. Restart the local API to reload the supplied dataset.`)
+  if (value.length !== 130) throw new Error(`Expected all 130 supplied job listings, but received ${value.length}. Restart the local API to reload the supplied dataset.`)
   if (!value.every(isDemoJob)) throw new Error("Some job records are incomplete. The supplied dataset could not be fully loaded.")
   const jobs = value as DemoJob[]
   if (new Set(jobs.map((job) => job.id)).size !== jobs.length) throw new Error("The jobs service returned duplicate listing IDs.")

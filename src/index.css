@@ -1503,6 +1503,22 @@ body {
 .job-detail-modal { font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif; }
 .job-detail-modal .job-detail-title,
 .job-detail-modal .job-detail-section-title { font-family: 'Outfit', 'Noto Sans Devanagari', system-ui, sans-serif; }
+.job-detail-modal .job-detail-category {
+  font-family: var(--font-script);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+}
+.job-discovery .job-detail-modal .job-detail-title,
+.job-discovery .job-detail-modal .job-detail-section-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
 .job-detail-modal {
   animation: jobDetailModalIn 180ms ease-out both;
 }
@@ -1519,29 +1535,35 @@ body {
 }
 .job-map-preview {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-width: 180px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #302b27;
   font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
 }
-.job-map-preview-category {
-  margin: 0;
-  color: #80502f;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
+.job-map-preview:focus-visible { outline: 2px solid #80502F; outline-offset: 3px; }
 .job-map-preview strong { font-size: 13px; line-height: 1.35; }
 .job-map-preview span { color: #706a64; font-size: 11px; }
-.job-map-preview button {
+.job-map-preview .job-map-preview-meta { color: #706a64; }
+.job-map-preview .job-map-preview-salary { margin-top: 8px; color: #302b27; font-size: 12px; font-weight: 700; }
+.job-map-preview .job-map-preview-link {
   justify-self: start;
-  margin-top: 3px;
+  margin-top: 2px;
   color: #553421;
   font-size: 12px;
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+.job-map-preview-popup .leaflet-popup-tip-container {
+  left: 50%;
+  margin-left: 0;
+  transform: translateX(-50%);
 }
 .showcase-job-modal {
   animation: showcaseJobModalIn 180ms ease-out both;
@@ -1549,4 +1571,35 @@ body {
 @keyframes showcaseJobModalIn {
   from { opacity: 0; transform: translateY(10px) scale(.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.worker-home-page,
+.worker-home-page * {
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+}
+.worker-home-page .job-listing-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.worker-home-page .job-card-apply,
+.worker-home-page .demo-job-apply-button:not(:disabled) {
+  background-color: #986744;
+}
+.worker-home-page .job-card-apply:not(:disabled)::after {
+  content: "↗";
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 1.05em;
+  line-height: 1;
+}
+.worker-home-page .job-card-apply:hover:not(:disabled),
+.worker-home-page .demo-job-apply-button:hover:not(:disabled) {
+  background-color: #80502F;
+}
+.worker-home-page .job-card-apply:disabled,
+.worker-home-page .demo-job-apply-button:disabled {
+  background-color: #80502F;
 }

@@ -18,6 +18,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/jsearch/(.*)",
+      "destination": { "service": "web" }
+    },
+    {
       "source": "/api/himalayas/(.*)",
       "destination": { "service": "web" }
     },

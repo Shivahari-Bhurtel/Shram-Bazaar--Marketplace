@@ -4,7 +4,7 @@ import { useDismissOnOutside } from "../hooks/useDismissOnOutside"
 import NotificationPanel from "./NotificationPanel"
 
 type WorkerPage = "worker-dashboard" | "worker-profile" | "job-discovery" | "my-applications" | "saved-jobs" | "learn" | "chat" | "shram-ai" | "voice-assistant" | "settings"
-type IconName = "home" | "search" | "applications" | "saved" | "ai" | "echo" | "learn"
+type IconName = "home" | "search" | "applications" | "saved" | "ai" | "echo" | "learn" | "profile" | "notifications" | "logout"
 
 function WorkspaceIcon({ name }: { name: IconName }) {
   if (name === "ai")
@@ -53,6 +53,9 @@ function WorkspaceIcon({ name }: { name: IconName }) {
         </>
       )}
       {name === "saved" && <path d="M6 3.5h12V21l-6-3.8L6 21V3.5Z" />}
+      {name === "profile" && <><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" /></>}
+      {name === "notifications" && <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M10 21h4" /></>}
+      {name === "logout" && <><path d="M10 17l5-5-5-5M15 12H3" /><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" /></>}
       {name === "learn" && (
         <>
           <path d="M3 5.5c3.2-.9 6.2-.5 9 1.3v13c-2.8-1.8-5.8-2.2-9-1.3v-13Z" />
@@ -82,10 +85,6 @@ export default function WorkerSidebar() {
 
   const workerProfile = state.workerProfile
   const userName = workerProfile?.name || state.currentUser?.name || "Worker"
-  const userTitle =
-    workerProfile?.professionalTitle ||
-    workerProfile?.skills.slice(0, 2).join(" · ") ||
-    "Worker"
   const initials = userName
     .trim()
     .split(/\s+/)
@@ -112,8 +111,9 @@ export default function WorkerSidebar() {
     setNotificationsOpen(false)
     navigate(page)
   }
-  const accountLinks: { label: string; page: WorkerPage; icon?: IconName }[] = [
-    { label: "My profile", page: "worker-profile" },
+  const accountLinks: { label: string; page?: WorkerPage; icon: IconName; action?: "notifications" }[] = [
+    { label: "My profile", page: "worker-profile", icon: "profile" },
+    { label: "Notifications", icon: "notifications", action: "notifications" },
     { label: "My applications", page: "my-applications", icon: "applications" },
     { label: "Saved jobs", page: "saved-jobs", icon: "saved" },
   ]
@@ -164,66 +164,34 @@ export default function WorkerSidebar() {
                   <p className="truncate text-sm font-semibold text-stone-900">
                     {userName}
                   </p>
-                  <p className="truncate text-xs text-stone-500">{userTitle}</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setNotificationsOpen((open) => !open)}
-                aria-label="Notifications"
-                aria-expanded={notificationsOpen}
-                className="flex w-full items-center justify-between rounded-lg border-b border-[#ECE7E1] px-2 py-3 text-sm font-medium text-stone-700 transition-colors hover:bg-[#F7F1EB] hover:text-[#553421]"
-              >
-                <span>Notifications</span>
-                <span className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-[#F7F1EB] text-[#80502F]">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-5 w-5"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M10 21h4" />
-                  </svg>
-                  {unreadNotificationsCount > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#80502F] px-1 text-[9px] font-bold text-white ring-2 ring-[#FFFEFC]">
-                      {unreadNotificationsCount > 9
-                        ? "9+"
-                        : unreadNotificationsCount}
-                    </span>
-                  )}
-                </span>
-              </button>
               <nav
-                className="space-y-0.5 border-b border-[#ECE7E1] py-2"
-                aria-label="Account links"
+                className="space-y-1 py-3"
+                aria-label="Profile navigation"
               >
                 {accountLinks.map((item) => (
                   <button
                     key={item.label}
                     type="button"
-                    onClick={() => openPage(item.page)}
-                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-stone-700 transition-colors hover:bg-[#F7F1EB] hover:text-[#553421]"
+                    onClick={() => item.action === "notifications" ? setNotificationsOpen((open) => !open) : item.page && openPage(item.page)}
+                    aria-current={item.page && state.currentPage === item.page ? "page" : undefined}
+                    aria-expanded={item.action === "notifications" ? notificationsOpen : undefined}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${item.page === state.currentPage ? "bg-[#F7F1EB] font-semibold text-[#553421]" : "font-medium text-stone-700 hover:bg-[#F7F1EB] hover:text-[#553421]"}`}
                   >
-                    {item.icon && (
-                      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#F7F1EB] text-[#80502F]">
-                        <WorkspaceIcon name={item.icon} />
-                      </span>
-                    )}
-                    <span>{item.label}</span>
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center ${item.page === state.currentPage ? "text-[#70472F]" : item.action === "notifications" && unreadNotificationsCount > 0 ? "text-[#80502F]" : "text-stone-500"}`}><WorkspaceIcon name={item.icon} /></span>
+                    <span className="flex-1">{item.label}</span>
+                    {item.action === "notifications" && unreadNotificationsCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#80502F] px-1.5 text-[10px] font-bold text-white">{unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}</span>}
                   </button>
                 ))}
               </nav>
-              <div className="space-y-0.5 pt-2">
+              <div className="border-t border-[#ECE7E1] pt-3">
                 <button
                   type="button"
                   onClick={logout}
-                  className="w-full rounded-lg px-2.5 py-2 text-left text-sm font-medium text-red-700 transition-colors hover:bg-[#FBEFEC]"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-700 transition-colors hover:bg-[#FBEFEC]"
                 >
+                  <span className="flex h-5 w-5 items-center justify-center"><WorkspaceIcon name="logout" /></span>
                   Log out
                 </button>
               </div>

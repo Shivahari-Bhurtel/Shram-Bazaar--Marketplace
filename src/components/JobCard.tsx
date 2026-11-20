@@ -36,7 +36,7 @@ export default function JobCard({ job, compact = false }: Props) {
   const applied = hasApplied(job.id)
   const saved = isSaved(job.id)
   const cat = categoryConfig[job.category as keyof typeof categoryConfig] || { label: job.category }
-  const isExternal = job.externalSource === "himalayas"
+  const isExternal = job.externalSource === "himalayas" || job.externalSource === "jsearch"
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -280,13 +280,13 @@ export default function JobCard({ job, compact = false }: Props) {
           </p>
           <p className="mt-2 text-[11px] font-mono-data uppercase tracking-wider text-stone-500">
             <a
-              href="https://himalayas.app"
+              href={job.externalSource === "jsearch" ? "https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch" : "https://himalayas.app"}
               target="_blank"
               rel="noreferrer"
               onClick={(event) => event.stopPropagation()}
               className="underline underline-offset-2 hover:text-primary-ink"
             >
-              Source: Himalayas
+              Source: {job.externalSource === "jsearch" ? "JSearch" : "Himalayas"}
             </a>
           </p>
         </div>

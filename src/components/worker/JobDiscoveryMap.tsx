@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import L from "leaflet"
-import { Circle, CircleMarker, MapContainer, Marker, Pane, Polyline, ScaleControl, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
+import { Circle, CircleMarker, MapContainer, Marker, Pane, Polyline, Popup, ScaleControl, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet"
 import type { DemoJob } from "../../services/demoJobs"
-import { distanceBetweenKm } from "../../services/demoJobs"
+import { distanceBetweenKm, formatDemoDistance, formatDemoSalary } from "../../services/demoJobs"
 import { DEFAULT_JOB_MAP_CENTER, DEFAULT_JOB_MAP_ZOOM } from "../../data/jobMapConfig"
 import "leaflet/dist/leaflet.css"
 
@@ -14,6 +14,7 @@ type Props = {
   userLocation: Coordinates | null
   focusLocation?: Coordinates | null
   onSelectJob: (job: DemoJob) => void
+  onOpenJob: (job: DemoJob) => void
   onCloseRoute: () => void
   onRequestLocation: () => void
   locating?: boolean
@@ -363,7 +364,7 @@ function RouteUnavailablePanel({ job, onCloseRoute }: { job: DemoJob; onCloseRou
   </div>
 }
 
-export default function JobDiscoveryMap({ jobs, selectedJobId, routeJob, userLocation, focusLocation, onSelectJob, onCloseRoute, onRequestLocation, locating = false, locationMessage, onBoundsChange, onMapInteraction, fitToJobs = true, searchCurrentArea = false, active = true }: Props) {
+export default function JobDiscoveryMap({ jobs, selectedJobId, routeJob, userLocation, focusLocation, onSelectJob, onOpenJob, onCloseRoute, onRequestLocation, locating = false, locationMessage, onBoundsChange, onMapInteraction, fitToJobs = true, searchCurrentArea = false, active = true }: Props) {
   const [zoom, setZoom] = useState(DEFAULT_JOB_MAP_ZOOM)
   const [tileError, setTileError] = useState(false)
   const [tileRetry, setTileRetry] = useState(0)
@@ -386,7 +387,7 @@ export default function JobDiscoveryMap({ jobs, selectedJobId, routeJob, userLoc
         <MapInteractionReporter onInteraction={onMapInteraction} />
         <FitJobs jobs={mappableJobs} enabled={active && fitToJobs && !userLocation && !routeActive} />
         <MapEvents enabled={searchCurrentArea} searchCurrentArea={searchCurrentArea} onBoundsChange={onBoundsChange} />
-        <FocusSelectedJob job={mappableJobs.find((job) => job.id === selectedJobId)} enabled={!routeActive} />
+        <FocusSelectedJob job={mappableJobs.find((job) => job.id === selectedJobId)} enabled={!validOrigin} />
         <FocusManualLocation location={focusLocation} />
         <FocusUserLocation location={validOrigin} enabled={!routeActive} />
         {validOrigin && <><Circle center={[validOrigin.latitude, validOrigin.longitude]} radius={Math.max(15, validOrigin.accuracy || 0)} pathOptions={{ color: "#4285F4", weight: 1, fillColor: "#4285F4", fillOpacity: 0.12 }} /><CircleMarker center={[validOrigin.latitude, validOrigin.longitude]} radius={13} pathOptions={{ color: "#4285F4", weight: 2, fillColor: "#4285F4", fillOpacity: 0.2 }} /><CircleMarker center={[validOrigin.latitude, validOrigin.longitude]} radius={5} pathOptions={{ color: "white", weight: 2, fillColor: "#4285F4", fillOpacity: 1 }}><Tooltip direction="top">Your current location{validOrigin.accuracy ? ` · ±${Math.round(validOrigin.accuracy)} m` : ""}</Tooltip></CircleMarker></>}
@@ -408,6 +409,15 @@ export default function JobDiscoveryMap({ jobs, selectedJobId, routeJob, userLoc
               } else onSelectJob(job)
             } }}
           >
+            {!clustered && <Popup closeButton autoPan className="job-map-preview-popup">
+              <button type="button" className="job-map-preview" onClick={() => onOpenJob(job)} aria-label={`View details for ${job.title}`}>
+                <strong>{job.title}</strong>
+                <span>{job.company}</span>
+                <span className="job-map-preview-meta">{job.job_type} · {job.city}{userLocation ? ` · ${formatDemoDistance(distanceBetweenKm(userLocation, job))}` : ""}</span>
+                <span className="job-map-preview-salary">{formatDemoSalary(job).replace(" / month", " / mo")}</span>
+                <span className="job-map-preview-link">View details ↗</span>
+              </button>
+            </Popup>}
             <Tooltip direction="top" offset={[0, -18]}>{clustered ? `${cluster.jobs.length} jobs · zoom in to explore` : `${job.title} · approximate workplace`}</Tooltip>
           </Marker>
         })}

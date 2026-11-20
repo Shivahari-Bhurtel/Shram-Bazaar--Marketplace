@@ -24,7 +24,9 @@ public class ShowcaseJobService {
     private static final Pattern SPACE = Pattern.compile("\\s+");
     private static final Set<String> CATEGORIES = Set.of(
             "Construction & Skilled Trades", "Delivery & Logistics",
-            "Hospitality & Service", "Retail & Sales");
+            "Hospitality & Service", "Retail & Sales",
+            "Agriculture & Local Production", "Technical & Repair Work",
+            "Cleaning & Maintenance", "Office Support & General Work");
     private final ShowcaseJobRepository repository;
 
     public ShowcaseJobService(ShowcaseJobRepository repository) {
@@ -55,8 +57,8 @@ public class ShowcaseJobService {
     @Transactional
     public ImportResult replaceWithDemoJson(InputStream jsonStream) throws IOException {
         JsonNode root = JSON.readTree(jsonStream);
-        if (root == null || !root.isArray() || root.size() != 80) {
-            throw new IOException("The demo jobs JSON must be an array containing exactly 80 listings.");
+        if (root == null || !root.isArray() || root.size() != 130) {
+            throw new IOException("The demo jobs JSON must be an array containing exactly 130 listings.");
         }
 
         List<ShowcaseJob> jobs = new ArrayList<>();

@@ -1065,7 +1065,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     )
       return
     setCurrentPage(page)
-    if (jobId) setCurrentJobId(jobId)
+    setCurrentJobId(jobId ?? null)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 

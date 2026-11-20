@@ -55,7 +55,8 @@ export default function JobDetail() {
   const applied = hasApplied(job.id)
   const saved = isSaved(job.id)
   const isWorker = currentUser?.role === "worker"
-  const isExternal = job.externalSource === "himalayas"
+  const isExternal = job.externalSource === "himalayas" || job.externalSource === "jsearch"
+  const externalSourceName = job.externalSource === "jsearch" ? "JSearch" : "Himalayas"
 
   const handleApply = async () => {
     setApplying(true)
@@ -166,14 +167,9 @@ export default function JobDetail() {
                     {job.employmentType || workTypeLabel[job.workType]}
                   </span>
                   {isExternal && (
-                    <a
-                      href="https://himalayas.app"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-mono-data text-stone-500 px-2.5 py-1 underline underline-offset-2 hover:text-primary-ink"
-                    >
-                      Source: Himalayas
-                    </a>
+                    <span className="text-xs font-mono-data text-stone-500 px-2.5 py-1">
+                      Source: {externalSourceName}
+                    </span>
                   )}
                 </div>
               </div>
@@ -487,7 +483,7 @@ export default function JobDetail() {
                   rel="noreferrer"
                   className="mt-5 block w-full rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
                 >
-                  View Original Job / Apply on Himalayas
+                  View Original Job / Apply on {externalSourceName}
                 </a>
               ) : (
                 <p className="mt-5 rounded-xl bg-stone-100 px-4 py-2.5 text-center text-sm text-stone-500">
@@ -538,7 +534,7 @@ export default function JobDetail() {
             <div className="mt-3 p-3 bg-stone-50 rounded-lg">
               <p className="text-xs text-stone-500 leading-relaxed">
                 {isExternal
-                  ? "This opportunity is hosted on Himalayas. Review the original listing before applying."
+                  ? `This opportunity is hosted on ${externalSourceName}. Review the original listing before applying.`
                   : "Jobs posted by verified providers include PAN registration and business verification for worker trust and safety."}
               </p>
             </div>

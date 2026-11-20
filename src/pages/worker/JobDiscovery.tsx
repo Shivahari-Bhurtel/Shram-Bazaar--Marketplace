@@ -12,6 +12,10 @@ const CATEGORIES = [
   { value: "Delivery & Logistics", label: "Delivery" },
   { value: "Hospitality & Service", label: "Hospitality" },
   { value: "Retail & Sales", label: "Retail" },
+  { value: "Agriculture & Local Production", label: "Agriculture" },
+  { value: "Technical & Repair Work", label: "Technical & Repair" },
+  { value: "Cleaning & Maintenance", label: "Cleaning" },
+  { value: "Office Support & General Work", label: "Office Support" },
 ]
 const DISTANCES = [1, 3, 5, 10] as const
 
@@ -71,8 +75,7 @@ export default function JobDiscovery() {
       setMaxDistance(null)
       setSortOrder("nearest")
       setFitMap(false)
-      const accuracyMessage = Number.isFinite(accuracy) ? ` (±${Math.round(accuracy)} m)` : ""
-      setLocationMessage(`Using your current location${accuracyMessage}. Workplace pins are approximate.`)
+      setLocationMessage("Current location updated.")
       setLocating(false)
     }, (error) => {
       if (token !== locationWatchTokenRef.current) return
@@ -101,6 +104,17 @@ export default function JobDiscovery() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
   }, [])
+
+  useEffect(() => {
+    if (!state.currentJobId || allDemoJobs.length === 0) return
+    const job = allDemoJobs.find((item) => item.id === state.currentJobId)
+    if (!job) return
+    setSelectedJobId(job.id)
+    setRouteDismissedJobId(undefined)
+    setFitMap(false)
+    setDiscoveryView("map")
+    demoState.markViewed(job.id)
+  }, [state.currentJobId, allDemoJobs, demoState.markViewed])
 
   useEffect(() => {
     let active = true
@@ -166,12 +180,16 @@ export default function JobDiscovery() {
       && (!maxSalary || job.payment <= Number(maxSalary))
   }), [marketplaceJobs, search, city, location, minSalary, maxSalary])
 
-  const handleSelectJob = useCallback((job: DemoJob) => {
+  const selectJob = useCallback((job: DemoJob) => {
     setSelectedJobId(job.id)
-    setSelectedJob(job)
     setRouteDismissedJobId(undefined)
     demoState.markViewed(job.id)
   }, [demoState.markViewed])
+
+  const handleSelectJob = useCallback((job: DemoJob) => {
+    selectJob(job)
+    setSelectedJob(job)
+  }, [selectJob])
 
   const closeDetails = useCallback(() => setSelectedJob(null), [])
   const saveJob = useCallback((jobId: string) => {
@@ -211,23 +229,36 @@ export default function JobDiscovery() {
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <aside id="job-list-view" className={`job-discovery-sidebar z-10 ${discoveryView === "list" ? "flex" : "hidden lg:flex"} ${discoveryView === "list" ? "w-full" : "w-full lg:w-[410px] xl:w-[440px]"} max-h-none shrink-0 flex-col border-b border-stone-200 bg-white lg:border-b-0 ${discoveryView === "map" ? "lg:border-r" : ""}`} aria-label="Find and filter jobs">
         <div className="shrink-0 border-b border-stone-200 px-4 pb-3 pt-2.5 sm:px-5">
-          <button type="button" onClick={() => navigate("worker-dashboard")} className="mb-1 inline-flex items-center gap-2 px-1 py-1 text-sm font-medium text-stone-600 transition-colors hover:text-primary-ink" aria-label="Back to worker dashboard">
+          <div className="flex items-center justify-between gap-3">
+          <button type="button" onClick={() => navigate("worker-dashboard")} className="inline-flex items-center gap-2 px-1 py-1 text-[14px] font-medium text-stone-600 transition-colors hover:text-primary-ink" aria-label="Back to worker dashboard">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>Back
           </button>
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="job-panel-heading text-lg font-semibold text-stone-900">Jobs</h1>
-            <p className="text-xs text-stone-500"><strong className="font-semibold text-stone-700">{filteredJobs.length}</strong> results</p>
+          <button type="button" onClick={() => navigate("saved-jobs")} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-[14px] font-medium text-stone-700 transition-colors hover:border-[#265D4C]/40 hover:bg-[#265D4C]/5 hover:text-[#265D4C]" aria-label={`Open saved jobs, ${demoState.savedIds.length} saved`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="M6 4.75A1.75 1.75 0 0 1 7.75 3h8.5A1.75 1.75 0 0 1 18 4.75V21l-6-3.75L6 21V4.75Z" /></svg>
+            Saved ({demoState.savedIds.length})
+          </button>
           </div>
-          <div className="job-discovery-filters mt-2.5 flex gap-1.5 overflow-x-auto pb-1" aria-label="Filter by category">
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <div className="flex min-w-0 items-baseline gap-2.5">
+              <h1 className="job-panel-heading text-lg font-semibold text-stone-900">Jobs</h1>
+              <p className="text-xs text-stone-500"><strong className="font-semibold text-stone-700">{filteredJobs.length}</strong> results</p>
+            </div>
+          </div>
+          <div className="job-discovery-filters mt-2.5 flex gap-1.5 overflow-x-auto pb-1" aria-label="Filters and job categories">
+            <button type="button" onClick={() => setShowFilters((value) => !value)} aria-expanded={showFilters} className={`inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${showFilters ? "border-[#265D4C] bg-[#265D4C]/10 text-[#265D4C]" : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-3.5 w-3.5" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+              {showFilters ? "Hide filters" : "Filters +"}
+            </button>
             <button type="button" aria-pressed={!category} onClick={() => setCategory("")} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${!category ? "border-[#265D4C] bg-[#265D4C] text-white" : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"}`}>All</button>
             {CATEGORIES.map((item) => <button key={item.value} type="button" aria-pressed={category === item.value} onClick={() => setCategory(category === item.value ? "" : item.value)} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${category === item.value ? "border-[#265D4C] bg-[#265D4C] text-white" : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"}`}>{item.label}</button>)}
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <button type="button" onClick={requestLocation} disabled={locating} className="inline-flex min-h-9 items-center justify-center gap-1.5 border border-[#265D4C]/30 bg-[#265D4C]/5 px-2.5 py-1.5 text-xs font-medium text-[#265D4C] hover:bg-[#265D4C]/10 disabled:opacity-60"><span aria-hidden="true">◎</span>{locating ? "Finding you…" : demoState.userLocation ? "Update location" : "Near me"}</button>
-            <button type="button" onClick={() => setShowFilters((value) => !value)} aria-expanded={showFilters} className="min-h-9 border border-stone-200 px-2.5 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">{showFilters ? "Hide filters −" : "More filters +"}</button>
-            <button type="button" onClick={() => navigate("saved-jobs")} className="ml-auto min-h-9 px-2 py-1.5 text-xs font-medium text-[#265D4C] hover:underline">Saved jobs <span className="text-stone-500">{demoState.savedIds.length}</span></button>
+          <div className="mt-1 flex items-center">
+            <button type="button" onClick={requestLocation} disabled={locating} className="group inline-flex min-h-10 max-w-full items-center gap-2 rounded-lg border border-[#265D4C] bg-[#265D4C] px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_-5px_rgba(38,93,76,.7)] transition-all hover:-translate-y-0.5 hover:bg-[#1D493B] hover:shadow-[0_7px_16px_-6px_rgba(38,93,76,.65)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#265D4C] disabled:cursor-wait disabled:opacity-75" aria-label="Locate me">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`h-[18px] w-[18px] shrink-0 ${locating ? "animate-pulse" : "transition-transform group-hover:scale-110"}`} aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/></svg>
+              <span className="truncate">{locating ? "Finding you…" : "Locate me"}</span>
+            </button>
           </div>
-          {locationMessage && <p role="status" className="mt-2 text-xs leading-relaxed text-stone-600">{locationMessage}</p>}
+          {locationMessage && !demoState.userLocation && <p role="status" className="mt-2 text-xs leading-relaxed text-stone-600">{locationMessage}</p>}
           {showFilters && <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 rounded-xl bg-stone-50 p-3">
             <Filter label="City" value={city} onChange={(value) => { setCity(value); setSearchCurrentArea(false) }}><option value="">All areas</option><option value="Kathmandu">Kathmandu</option><option value="Lalitpur">Lalitpur</option><option value="Bhaktapur">Bhaktapur</option><option value="Banepa">Banepa</option></Filter>
             <Filter label="Locality" value={location} onChange={(value) => { setLocation(value); setSearchCurrentArea(false) }}><option value="">All localities</option>{locations.map((item) => <option key={item} value={item}>{item}</option>)}</Filter>
@@ -264,7 +295,7 @@ export default function JobDiscovery() {
       </aside>
 
       <section id="job-map-view" aria-label="Job map" className={`${discoveryView === "map" ? "flex" : "hidden"} relative min-h-0 flex-1 bg-[#E8E6DF]`}>
-        <JobDiscoveryMap jobs={filteredJobs} selectedJobId={selectedJobId} routeJob={selectedJobId && routeDismissedJobId !== selectedJobId ? allDemoJobs.find((job) => job.id === selectedJobId) : undefined} userLocation={demoState.userLocation} focusLocation={selectedFocusJob ? { latitude: selectedFocusJob.latitude, longitude: selectedFocusJob.longitude } : null} onSelectJob={handleSelectJob} onCloseRoute={() => setRouteDismissedJobId(selectedJobId)} onRequestLocation={requestLocation} locating={locating} locationMessage={locationMessage} onBoundsChange={setMapBounds} onMapInteraction={() => setFitMap(false)} fitToJobs={fitMap && !searchCurrentArea} searchCurrentArea={searchCurrentArea} active={discoveryView === "map"} />
+        <JobDiscoveryMap jobs={filteredJobs} selectedJobId={selectedJobId} routeJob={selectedJobId && routeDismissedJobId !== selectedJobId ? allDemoJobs.find((job) => job.id === selectedJobId) : undefined} userLocation={demoState.userLocation} focusLocation={selectedFocusJob ? { latitude: selectedFocusJob.latitude, longitude: selectedFocusJob.longitude } : null} onSelectJob={selectJob} onOpenJob={handleSelectJob} onCloseRoute={() => setRouteDismissedJobId(selectedJobId)} onRequestLocation={requestLocation} locating={locating} locationMessage={locationMessage} onBoundsChange={setMapBounds} onMapInteraction={() => setFitMap(false)} fitToJobs={fitMap && !searchCurrentArea} searchCurrentArea={searchCurrentArea} active={discoveryView === "map"} />
         <div className="pointer-events-none absolute left-4 top-5 z-[500] flex flex-wrap gap-2 rounded-xl border border-white/70 bg-white/90 p-2.5 text-[11px] font-semibold text-stone-700 shadow-md backdrop-blur" aria-label="Map marker legend"><span className="inline-flex items-center gap-2"><i className="job-map-legend-bubble">Rs.</i>Pay</span><span className="inline-flex items-center gap-2"><i className="h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" />You</span></div>
         <div className="pointer-events-none absolute left-1/2 top-5 z-[500] w-[min(92%,560px)] -translate-x-1/2">
           <div className="job-map-search pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-5 py-3.5 shadow-[0_12px_36px_-18px_rgba(40,29,20,.55)] backdrop-blur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); if (searchCurrentArea) { setSearchCurrentArea(false); setMapBounds(null) } }} placeholder="Search jobs by title, company, or skill" aria-label="Search jobs by title, company, skill, or keyword" className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />{search && <button type="button" onClick={() => setSearch("")} aria-label="Clear job search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900">×</button>}</div>

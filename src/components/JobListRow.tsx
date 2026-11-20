@@ -28,7 +28,7 @@ function locationLabel(job: Job) {
 export default function JobListRow({ job }: { job: Job }) {
   const { state, navigate, hasApplied, isSaved, saveJob, unsaveJob } = useApp()
   const [logoFailed, setLogoFailed] = useState(false)
-  const isExternal = job.externalSource === "himalayas"
+  const isExternal = job.externalSource === "himalayas" || job.externalSource === "jsearch"
   const isWorker = state.currentUser?.role === "worker"
   const saved = isSaved(job.id)
   const applied = hasApplied(job.id)
@@ -88,7 +88,7 @@ export default function JobListRow({ job }: { job: Job }) {
                 )}
                 {isExternal && (
                   <span className="rounded-full bg-[#F1F3F5] px-2 py-0.5 text-xs font-medium text-[#646B73]">
-                    Himalayas
+                    {job.externalSource === "jsearch" ? "JSearch" : "Himalayas"}
                   </span>
                 )}
               </div>
