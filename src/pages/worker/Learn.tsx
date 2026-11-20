@@ -262,7 +262,7 @@ export default function Learn() {
             </div>
 
             <section className="mt-2" aria-labelledby="continue-learning-heading">
-              <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[.12em] text-[#D86C3A]">Pick up where you left off</p><h2 id="continue-learning-heading" className="mt-1 text-lg font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 id="continue-learning-heading" className="text-lg font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
               {inProgressCourses.length ? <div className="grid gap-4 md:grid-cols-2">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
@@ -270,7 +270,7 @@ export default function Learn() {
             </section>
 
             <section className="mt-8" aria-labelledby="recommended-heading">
-              <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[.12em] text-[#D86C3A]">Selected for your next step</p><h2 id="recommended-heading" className="mt-1 text-lg font-bold text-slate-900">Recommended courses</h2><p className="mt-1 text-xs text-slate-600">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
+              <div className="mb-4"><h2 id="recommended-heading" className="text-lg font-bold text-slate-900">Recommended courses</h2><p className="mt-1 text-xs text-slate-600">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{recommendedCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} />
