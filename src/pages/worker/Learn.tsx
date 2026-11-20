@@ -346,7 +346,6 @@ export default function Learn() {
             course={activeCourse}
             lesson={activeLesson}
             progress={progress}
-            onBackToCourse={() => setView("details")}
             onSelectLesson={selectLesson}
             onMarkComplete={markCurrentLessonComplete}
             onPrevious={() => changeLessonBy(-1)}
