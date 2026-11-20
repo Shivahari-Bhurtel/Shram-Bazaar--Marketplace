@@ -1,0 +1,164 @@
+{
+  "schemaVersion": "1.0",
+  "course": {
+    "id": "plumbing-introduction",
+    "title": "Introduction to Plumbing",
+    "category": "Plumbing",
+    "level": "Beginner",
+    "language": "English",
+    "isFree": true,
+    "provider": "Shram Bazaar AI",
+    "contentSource": "YouTube videos curated for learning",
+    "description": "Beginner learning path introducing residential plumbing as a trade, common tools, pipe materials, and water-supply plumbing concepts. Lesson titles and descriptions are curated from the linked TEACH Construction course outline where available; they are not presented as verbatim YouTube metadata.",
+    "learningOutcomes": [
+      "Understand the role and scope of residential plumbing",
+      "Recognize common plumbing tools and their uses",
+      "Become familiar with common pipe materials and fittings",
+      "Understand basic water-supply and drainage concepts",
+      "Identify safety considerations and when work requires a trained professional"
+    ],
+    "skills": [
+      "Plumbing basics",
+      "Tool awareness",
+      "Pipe and fitting awareness",
+      "Workplace safety"
+    ],
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Introduction to Residential Plumbing",
+        "description": "Start by understanding plumbing as a trade and how residential plumbing systems provide water and manage drainage. This introductory lesson establishes the context for the tools, materials, and plumbing processes covered in the course.",
+        "lessons": [
+          {
+            "id": "lesson-1",
+            "title": "Introduction to Residential Plumbing",
+            "youtubeUrl": "https://youtu.be/xNMl_CdQ4QA",
+            "videoId": "xNMl_CdQ4QA",
+            "embedUrl": "https://www.youtube.com/embed/xNMl_CdQ4QA",
+            "thumbnailUrl": "https://img.youtube.com/vi/xNMl_CdQ4QA/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Start by understanding plumbing as a trade and how residential plumbing systems provide water and manage drainage. This introductory lesson establishes the context for the tools, materials, and plumbing processes covered in the course.",
+            "learningObjectives": [
+              "Describe the role of plumbing in residential buildings",
+              "Recognize the broad purpose of water-supply and drainage systems",
+              "Preview the tools, materials, and practical processes covered in plumbing fundamentals"
+            ],
+            "order": 1,
+            "metadataStatus": "partially_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Basic Plumbing Tools: Hand and Power Tools",
+        "description": "Get familiar with common hand and power tools used in residential plumbing. Learn what different tool types are used for and why selecting the correct tool matters for the task and safe work practices.",
+        "lessons": [
+          {
+            "id": "lesson-2",
+            "title": "Basic Plumbing Tools: Hand and Power Tools",
+            "youtubeUrl": "https://youtu.be/V_SzExu2aV0",
+            "videoId": "V_SzExu2aV0",
+            "embedUrl": "https://www.youtube.com/embed/V_SzExu2aV0",
+            "thumbnailUrl": "https://img.youtube.com/vi/V_SzExu2aV0/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Get familiar with common hand and power tools used in residential plumbing. Learn what different tool types are used for and why selecting the correct tool matters for the task and safe work practices.",
+            "learningObjectives": [
+              "Recognize common residential plumbing hand tools",
+              "Identify the general purpose of plumbing power tools",
+              "Understand tool selection and safe handling basics"
+            ],
+            "order": 2,
+            "metadataStatus": "inferred_from_course_outline"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Plumbing Pipe Materials: Copper, PEX, PVC and Iron",
+        "description": "An introduction to commonly used residential plumbing pipe materials, including copper, PEX, PVC, and iron. Compare their general characteristics and recognize that each material has different uses, connection methods, and installation requirements.",
+        "lessons": [
+          {
+            "id": "lesson-3",
+            "title": "Plumbing Pipe Materials: Copper, PEX, PVC and Iron",
+            "youtubeUrl": "https://youtu.be/RxorPsoJSUo",
+            "videoId": "RxorPsoJSUo",
+            "embedUrl": "https://www.youtube.com/embed/RxorPsoJSUo",
+            "thumbnailUrl": "https://img.youtube.com/vi/RxorPsoJSUo/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "An introduction to commonly used residential plumbing pipe materials, including copper, PEX, PVC, and iron. Compare their general characteristics and recognize that each material has different uses, connection methods, and installation requirements.",
+            "learningObjectives": [
+              "Name common plumbing pipe materials: copper, PEX, PVC, and iron",
+              "Recognize that pipe material affects joining method and application",
+              "Understand that material choice must follow local codes and system requirements"
+            ],
+            "order": 3,
+            "metadataStatus": "inferred_from_course_outline"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Residential Plumbing: Water-Supply Systems and Pipe Connections",
+        "description": "Explore basic supply-side plumbing processes and the role of pipes and connections in delivering water through a residential system. This lesson is a conceptual introduction; practical installation should be learned under qualified supervision.",
+        "lessons": [
+          {
+            "id": "lesson-4",
+            "title": "Residential Plumbing: Water-Supply Systems and Pipe Connections",
+            "youtubeUrl": "https://youtu.be/0IzI8N7SkBY",
+            "videoId": "0IzI8N7SkBY",
+            "embedUrl": "https://www.youtube.com/embed/0IzI8N7SkBY",
+            "thumbnailUrl": "https://img.youtube.com/vi/0IzI8N7SkBY/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Explore basic supply-side plumbing processes and the role of pipes and connections in delivering water through a residential system. This lesson is a conceptual introduction; practical installation should be learned under qualified supervision.",
+            "learningObjectives": [
+              "Explain the basic purpose of a residential water-supply system",
+              "Recognize pipe connections as part of a supply-side plumbing process",
+              "Identify safety and code considerations before practical work"
+            ],
+            "order": 4,
+            "metadataStatus": "inferred_from_course_outline"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Plumbing Fundamentals: Materials, Tools and Practical Processes",
+        "description": "Consolidate the introductory concepts by connecting plumbing tools, pipe materials, and supply-side processes. Review how plumbing tasks depend on the correct materials, methods, and safe preparation.",
+        "lessons": [
+          {
+            "id": "lesson-5",
+            "title": "Plumbing Fundamentals: Materials, Tools and Practical Processes",
+            "youtubeUrl": "https://youtu.be/cfP8rCfc7qE",
+            "videoId": "cfP8rCfc7qE",
+            "embedUrl": "https://www.youtube.com/embed/cfP8rCfc7qE",
+            "thumbnailUrl": "https://img.youtube.com/vi/cfP8rCfc7qE/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Consolidate the introductory concepts by connecting plumbing tools, pipe materials, and supply-side processes. Review how plumbing tasks depend on the correct materials, methods, and safe preparation.",
+            "learningObjectives": [
+              "Connect tool choice with the plumbing task",
+              "Review common pipe materials and their general uses",
+              "Recognize the importance of correct procedures, supervision, and local standards"
+            ],
+            "order": 5,
+            "metadataStatus": "inferred_from_course_outline"
+          }
+        ]
+      }
+    ],
+    "totalLessons": 5,
+    "completion": {
+      "requiresAllLessons": true,
+      "requiresQuiz": true,
+      "passingScorePercent": 70,
+      "certificate": {
+        "enabled": true,
+        "type": "Certificate of Completion",
+        "issuer": "Shram Bazaar AI",
+        "disclaimer": "This is a platform-issued certificate of course completion, not a professional license, accredited qualification, or authorization to perform plumbing work."
+      }
+    },
+    "safetyNotice": "Plumbing work can involve water damage, contamination, pressurized systems, hot work, and building-code requirements. Use proper PPE, follow local standards and manufacturer instructions, and seek supervision from a qualified plumber for practical work. These videos are learning resources, not a substitute for supervised training.",
+    "metadataNotes": "Research located the TEACH Construction Introduction to Plumbing resource for video 1 and the linked course outline. The outline documents 2 lessons on residential plumbing tools, 4 lessons on copper/PEX/PVC/iron materials, and 3 supply-side process lessons (Copper, PEX, PVC). The remaining linked videos could not be individually opened or matched to exact YouTube titles/descriptions. Titles and descriptions for videos 2–5 are curator-written, inferred from the documented course curriculum, and are NOT verified exact video metadata. Video 1 is associated with the TEACH Construction introduction resource, but the exact YouTube title is not confirmed.",
+    "metadataStatus": "curriculum_inferred_not_exact_video_metadata"
+  }
+}
