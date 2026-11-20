@@ -57,10 +57,10 @@ export default function ShramGamePlayer({ gameId, title, courseName, embedUrl, o
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[#E5D9C9] bg-white shadow-sm" aria-label={`${title} game player`}>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5D9C9] bg-[#FBF5EF] px-4 py-3 sm:px-5">
+    <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white" aria-label={`${title} game player`}>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[#E5D9C9] bg-[#FBF5EF] px-3 py-2.5 sm:px-5">
         <button type="button" onClick={onBack} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-[#4E342E] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4E342E]">
-          <span aria-hidden="true">←</span> Back to Academy
+          <span aria-hidden="true">←</span> Back to course
         </button>
         <div className="order-3 min-w-0 flex-1 basis-full text-center sm:order-none sm:basis-auto sm:text-left">
           <h1 className="truncate text-sm font-bold text-[#4E342E] sm:text-base">{title}</h1>
@@ -78,7 +78,7 @@ export default function ShramGamePlayer({ gameId, title, courseName, embedUrl, o
         ref={iframeRef}
         title={`${title} — ${courseName}`}
         src={embedUrl}
-        className="block h-[72dvh] min-h-[500px] w-full border-0 bg-[#F8E4D4] sm:h-[78vh] sm:min-h-[560px]"
+        className="block min-h-0 w-full flex-1 border-0 bg-[#F8E4D4]"
         allow="autoplay; fullscreen"
         allowFullScreen
         sandbox="allow-scripts allow-same-origin"

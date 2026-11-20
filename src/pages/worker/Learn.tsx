@@ -164,12 +164,10 @@ export default function Learn() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const backToAcademyCourses = () => {
-    setView("dashboard")
-    setSection("overview")
-    setSearch("")
-    setActiveCategory(activeCourse?.category ?? "All skills")
-    window.requestAnimationFrame(() => document.getElementById("explore-courses")?.scrollIntoView({ behavior: "smooth", block: "start" }))
+  const backToCourseOverview = () => {
+    setView("details")
+    setMobileNavOpen(false)
+    window.scrollTo({ top: 0, behavior: "auto" })
   }
 
   const startLesson = (course: LearnCourse, requestedLessonId?: string) => {
@@ -225,8 +223,8 @@ export default function Learn() {
 
   const learnerInitials = learnerName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()
   return (
-    <div className="learn-portal min-h-screen bg-[#FAF8F5] text-slate-900">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div className={`learn-portal text-slate-900 ${view === "game" ? "h-dvh overflow-hidden bg-[#FAF8F5]" : "min-h-screen bg-[#FAF8F5]"}`}>
+      {view !== "game" && <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1480px] items-center justify-between gap-4 pl-2 pr-4 sm:gap-6 sm:pl-2 sm:pr-6 lg:pl-2 lg:pr-8">
           <div className="flex shrink-0 items-center">
             <button type="button" onClick={() => navigate("worker-dashboard")} className="ml-4 inline-flex min-h-10 shrink-0 items-baseline gap-0.5 whitespace-nowrap transition-opacity hover:opacity-80 sm:ml-5" aria-label="Go to Shram Bazaar worker page" title="Go to worker page">
@@ -246,7 +244,7 @@ export default function Learn() {
           )}
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            {view !== "dashboard" && <button type="button" onClick={() => view === "player" ? setView("details") : view === "game" ? backToAcademyCourses() : setView("dashboard")} className="hidden min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex">
+            {view !== "dashboard" && <button type="button" onClick={() => view === "player" ? setView("details") : view === "game" ? backToCourseOverview() : setView("dashboard")} className="hidden min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7" /></svg>
               {view === "player" ? "Course overview" : "All courses"}
             </button>}
@@ -254,11 +252,11 @@ export default function Learn() {
           </div>
         </div>
         {view === "dashboard" && <div className="px-4 pb-3 md:hidden"><label className="relative block"><span className="sr-only">Search courses</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m15.6 15.6 4.6 4.6" /></svg><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-12 w-full rounded-lg border border-slate-200 bg-slate-50 pl-11 pr-4 text-base outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" /></label></div>}
-      </header>
+      </header>}
 
-      {storageWarning && <div role="status" className="mx-auto mt-4 max-w-[1480px] px-4 sm:px-6 lg:px-8"><p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{storageWarning}</p></div>}
+      {storageWarning && view !== "game" && <div role="status" className="mx-auto mt-4 max-w-[1480px] px-4 sm:px-6 lg:px-8"><p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{storageWarning}</p></div>}
 
-      <div className={`mx-auto grid max-w-[1480px] ${view === "dashboard" ? "lg:grid-cols-[minmax(190px,19%)_minmax(0,1fr)]" : "grid-cols-1"}`}>
+      <div className={`mx-auto grid ${view === "game" ? "h-full w-full max-w-none grid-cols-1" : `max-w-[1480px] ${view === "dashboard" ? "lg:grid-cols-[minmax(190px,19%)_minmax(0,1fr)]" : "grid-cols-1"}`}`}>
         {view === "dashboard" && <aside aria-label="Main navigation" className="sticky top-16 hidden h-[calc(100vh-4rem)] self-start overflow-y-auto border-r border-[#D7BFA4] bg-[#E9D6BC] pb-8 pt-2 lg:block">
           <nav>
             <LearnSidebarItem label="Home" icon="home" active onClick={() => navigate("worker-dashboard")} />
@@ -280,7 +278,7 @@ export default function Learn() {
           </nav>
         </aside>}
 
-        <main className={`min-w-0 px-4 py-6 sm:px-6 sm:py-7 lg:px-6 lg:py-4 ${view === "player" ? "xl:px-10" : ""}`}>
+        <main className={view === "game" ? "h-full min-w-0 p-0" : `min-w-0 px-4 py-6 sm:px-6 sm:py-7 lg:px-6 lg:py-4 ${view === "player" ? "xl:px-10" : ""}`}>
           {view === "dashboard" && <div className="mb-5 lg:hidden">
             <button type="button" onClick={() => setMobileNavOpen((open) => !open)} aria-expanded={mobileNavOpen} className="mb-3 inline-flex min-h-9 items-center gap-2 text-sm font-semibold text-slate-700"><span className="text-blue-700">☰</span> Learning menu</button>
             {mobileNavOpen && <SectionNav section={section} onChange={(next) => { setSection(next); setMobileNavOpen(false) }} />}
@@ -357,7 +355,7 @@ export default function Learn() {
             title={activeCourse.optionalGame.title}
             courseName={activeCourse.title}
             embedUrl="/games/crane-sim/index.html"
-            onBack={backToAcademyCourses}
+            onBack={backToCourseOverview}
           />}
 
           {view === "player" && activeCourse && activeLesson && <LearningPlayer
