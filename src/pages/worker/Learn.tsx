@@ -211,14 +211,20 @@ export default function Learn() {
   return (
     <div className="learn-portal min-h-screen bg-[#FAF8F5] text-slate-900">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex min-h-[64px] max-w-[1480px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <button type="button" onClick={() => navigate("worker-dashboard")} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 text-sm font-semibold text-[#4E342E] transition hover:text-[#D86C3A]" aria-label="Back to the main page">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>
-            <span>Back</span>
-          </button>
+        <div className="mx-auto flex min-h-[72px] max-w-[1480px] items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 lg:px-8">
+          <div className="flex shrink-0 items-center gap-4 sm:gap-6">
+            <button type="button" onClick={() => navigate("worker-dashboard")} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 text-sm font-semibold text-[#4E342E] transition hover:text-[#D86C3A]" aria-label="Back to the main page">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>
+              <span>Back</span>
+            </button>
+            <div className="flex shrink-0 items-baseline gap-0.5 whitespace-nowrap" role="img" aria-label="Shram Bazaar">
+              <span className="text-[1.45rem] font-semibold leading-none text-[#553421]" style={{ fontFamily: "'Noto Serif Devanagari', serif" }}>श्रम</span>
+              <span className="font-script text-[1.45rem] font-semibold leading-none text-[#261C14]">Bazaar</span>
+            </div>
+          </div>
 
           {view === "dashboard" ? (
-            <label className="relative hidden w-full max-w-2xl md:block">
+            <label className="relative mx-auto hidden w-full max-w-2xl flex-1 md:block">
               <span className="sr-only">Search courses</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m15.6 15.6 4.6 4.6" /></svg>
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
