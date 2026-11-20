@@ -259,7 +259,7 @@ export default function Learn() {
 
             <section className="mt-2" aria-labelledby="continue-learning-heading">
               <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 id="continue-learning-heading" className="text-lg font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
-              {inProgressCourses.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{inProgressCourses.slice(0, 2).map((course) => {
+              {inProgressCourses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
               })}</div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5D9C9] bg-white">
@@ -270,7 +270,7 @@ export default function Learn() {
 
             <section className="mt-8" aria-labelledby="recommended-heading">
               <div className="mb-4"><h2 id="recommended-heading" className="text-lg font-bold text-slate-900">Recommended courses</h2><p className="mt-1 text-xs text-slate-600">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{recommendedCourses.map((course) => {
+              <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{recommendedCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} />
               })}</div>
@@ -281,7 +281,7 @@ export default function Learn() {
               <div className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Filter courses by skill category">
                 {["All skills", ...learningCategories].map((category) => <button key={category} type="button" onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`min-h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition ${activeCategory === category ? "border-blue-700 bg-blue-700 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-800"}`}>{category}</button>)}
               </div>
-              {filteredCourses.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filteredCourses.map((course) => {
+              {filteredCourses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{filteredCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} />
               })}</div> : <EmptyState title="No matching courses" description="Try another search or choose a different skill category." actionLabel="Clear filters" onAction={() => { setSearch(""); setActiveCategory("All skills") }} />}
@@ -296,7 +296,7 @@ export default function Learn() {
             {(() => {
               const sourceCourses = learningFilter === "all" ? enrolledCourses : learningFilter === "completed" ? completedCourses : inProgressCourses
               const courses = sourceCourses.filter(matchesCourseSearch)
-              return courses.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{courses.map((course) => {
+              return courses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{courses.map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
               })}</div> : <EmptyState title={normalizedSearch ? "No matching courses" : learningFilter === "completed" ? "No completed courses yet" : learningFilter === "in-progress" ? "Nothing in progress" : "No courses enrolled yet"} description={normalizedSearch ? "Try a different course or skill search." : learningFilter === "completed" ? "Finish every lesson in a course to see it here." : "Start a course when you are ready. Your enrolled courses and lesson progress will be saved on this device."} actionLabel={normalizedSearch ? "Clear search" : "Explore courses"} onAction={normalizedSearch ? () => setSearch("") : () => { setSection("overview"); goToExplore() }} />
