@@ -292,7 +292,7 @@ export default function Learn() {
               {inProgressCourses.length ? <div className="grid gap-4 md:grid-cols-2">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
-              })}</div> : <div className="rounded-xl border border-[#E5D9C9] bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-6"><div><h3 className="text-sm font-semibold text-slate-900">Your learning journey starts here</h3><p className="mt-1 text-xs text-slate-600">Choose a practical course to build your first skill and track lessons as you go.</p></div><button type="button" onClick={goToExplore} className="mt-4 min-h-9 shrink-0 rounded-lg border border-[#E5D9C9] px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-[#FAF8F5] sm:mt-0">Browse all five courses</button></div>}
+              })}</div> : <div className="rounded-xl border border-[#E5D9C9] bg-white p-4"><div><h3 className="text-sm font-semibold text-slate-900">Your learning journey starts here</h3><p className="mt-1 text-xs text-slate-600">Choose a practical course to build your first skill and track lessons as you go.</p></div></div>}
             </section>
 
             <section className="mt-8" aria-labelledby="recommended-heading">
