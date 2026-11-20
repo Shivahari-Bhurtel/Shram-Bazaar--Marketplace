@@ -15,6 +15,12 @@ public record JobPostRequest(
         @Size(max = 150)
         String title,
 
+        @NotBlank @Size(max = 80)
+        String category,
+
+        @Size(max = 255)
+        String qualificationRequired,
+
         @NotBlank
         String description,
 
@@ -27,6 +33,12 @@ public record JobPostRequest(
         String municipality,
         String district,
         String province,
+
+        @DecimalMin("-90.0") @DecimalMax("90.0")
+        Double latitude,
+
+        @DecimalMin("-180.0") @DecimalMax("180.0")
+        Double longitude,
 
         @NotNull
         @FutureOrPresent

@@ -289,6 +289,8 @@ public class JobPostService {
             JobPostRequest request) {
 
         job.setTitle(request.title().trim());
+        job.setCategory(request.category());
+        job.setQualificationRequired(request.qualificationRequired());
         job.setDescription(request.description());
         job.setResponsibilities(request.responsibilities());
 
@@ -296,6 +298,8 @@ public class JobPostService {
         job.setMunicipality(request.municipality());
         job.setDistrict(request.district());
         job.setProvince(request.province());
+        job.setLatitude(request.latitude());
+        job.setLongitude(request.longitude());
 
         job.setStartDate(request.startDate());
         job.setEndDate(request.endDate());
@@ -365,6 +369,8 @@ public class JobPostService {
                 job.getProviderProfile().getBusinessName(),
 
                 job.getTitle(),
+                job.getCategory(),
+                job.getQualificationRequired(),
                 job.getDescription(),
                 job.getResponsibilities(),
 
@@ -372,6 +378,8 @@ public class JobPostService {
                 job.getMunicipality(),
                 job.getDistrict(),
                 job.getProvince(),
+                job.getLatitude(),
+                job.getLongitude(),
 
                 job.getStartDate(),
                 job.getEndDate(),

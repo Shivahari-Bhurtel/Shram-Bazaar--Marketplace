@@ -14,19 +14,23 @@ export default function JobDetail() {
     unsaveJob,
     isSaved,
     reportJob,
+    reportUser,
   } = useApp()
   const { jobs, externalJobs, workerProfile, currentUser } = state
 
   const job =
     jobs.find((j) => j.id === state.currentJobId) ||
     externalJobs.find((j) => j.id === state.currentJobId)
-  const [coverNote, setCoverNote] = useState("")
   const [showApplyForm, setShowApplyForm] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [applicationError, setApplicationError] = useState("")
   const [applying, setApplying] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const [showProviderReport, setShowProviderReport] = useState(false)
+  const [providerReportReason, setProviderReportReason] = useState("FAKE_ACCOUNT")
+  const [providerReportDetails, setProviderReportDetails] = useState("")
+  const [providerReportMessage, setProviderReportMessage] = useState("")
   const [reportReason, setReportReason] = useState(
     "Incorrect or misleading information",
   )
@@ -57,7 +61,7 @@ export default function JobDetail() {
     setApplying(true)
     setApplicationError("")
     try {
-      await applyToJob(job.id, coverNote)
+      await applyToJob(job.id)
       setShowApplyForm(false)
       setShowConfirm(false)
       setSubmitted(true)
@@ -202,6 +206,10 @@ export default function JobDetail() {
                 "Description not listed on the original posting."}
             </p>
           </div>
+          {job.responsibilities && <div className="bg-white border border-stone-200 rounded-2xl p-6">
+            <h2 className="font-semibold text-stone-900 mb-3">Responsibilities</h2>
+            <p className="whitespace-pre-line text-stone-700 leading-relaxed text-sm">{job.responsibilities}</p>
+          </div>}
 
           {/* Requirements */}
           <div className="bg-white border border-stone-200 rounded-2xl p-6">
@@ -209,6 +217,10 @@ export default function JobDetail() {
               {isExternal ? "Role details" : "Requirements"}
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
+              {!isExternal && <div>
+                <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Payment method</h3>
+                <p className="text-sm text-stone-700">{{ CASH: "Cash", BANK_TRANSFER: "Bank transfer", DIGITAL_WALLET: "Digital wallet", OTHER: "Other" }[job.paymentMethod || "CASH"]}</p>
+              </div>}
               <div>
                 <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
                   {isExternal ? "Job categories" : "Skills Required"}
@@ -288,18 +300,9 @@ export default function JobDetail() {
                   Your Application
                 </h2>
                 <p className="text-stone-500 text-sm mb-4">
-                  {import.meta.env.VITE_DEMO_MODE === "true"
-                    ? "Add a short note to stand out. Your full profile will be shared with the provider."
-                    : "Your profile will be shared with the provider. You can add or update your experience and skills in your profile before applying."}
+                  "Your profile will be shared with the provider. You can update your skills and experience from your profile before applying."
                 </p>
                 {applicationError && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{applicationError}</p>}
-                {import.meta.env.VITE_DEMO_MODE === "true" && <textarea
-                  value={coverNote}
-                  onChange={(e) => setCoverNote(e.target.value)}
-                  placeholder="e.g. I have 5 years of experience in electrical work and am fully available on the dates you need…"
-                  rows={4}
-                  className="w-full px-4 py-3 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
-                />}
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={() => setShowApplyForm(false)}
@@ -309,8 +312,7 @@ export default function JobDetail() {
                   </button>
                   <button
                     onClick={() => setShowConfirm(true)}
-                    disabled={import.meta.env.VITE_DEMO_MODE === "true" && !coverNote.trim()}
-                    className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors"
                   >
                     Submit Application →
                   </button>
@@ -541,12 +543,18 @@ export default function JobDetail() {
               </p>
             </div>
             {isWorker && !isExternal && (
-              <button
-                onClick={() => setShowReport((value) => !value)}
-                className="mt-3 text-xs text-stone-500 hover:text-primary-ink"
-              >
-                Report this job
-              </button>
+              <div className="mt-3 flex flex-wrap gap-4">
+                <button onClick={() => setShowReport((value) => !value)} className="text-xs text-stone-500 hover:text-primary-ink">Report this job</button>
+                <button onClick={() => setShowProviderReport((value) => !value)} className="text-xs text-stone-500 hover:text-red-700">Report provider</button>
+              </div>
+            )}
+            {showProviderReport && isWorker && (
+              <div className="mt-3 space-y-2 rounded-xl border border-red-100 bg-red-50/50 p-3">
+                <label className="block text-xs font-semibold text-stone-700">Reason<select value={providerReportReason} onChange={(event) => setProviderReportReason(event.target.value)} className="input-style mt-1 w-full"><option value="SUSPICIOUS_JOB">Suspicious job or activity</option><option value="FAKE_ACCOUNT">Fake account</option><option value="MISCONDUCT">Misconduct</option><option value="HARASSMENT">Harassment</option><option value="PAYMENT_ISSUE">Payment issue</option><option value="OTHER">Other</option></select></label>
+                <label className="block text-xs font-semibold text-stone-700">Description<textarea value={providerReportDetails} onChange={(event) => setProviderReportDetails(event.target.value)} maxLength={2000} rows={3} className="input-style mt-1 w-full" placeholder="Briefly explain the concern" /></label>
+                <button type="button" disabled={!providerReportDetails.trim()} onClick={() => { void reportUser(job.providerId, providerReportReason, providerReportDetails).then((error) => { setProviderReportMessage(error || "Report submitted for review."); if (!error) { setShowProviderReport(false); setProviderReportDetails("") } }) }} className="rounded-lg bg-red-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Submit report</button>
+                {providerReportMessage && <p role="status" className="text-xs text-stone-600">{providerReportMessage}</p>}
+              </div>
             )}
             {showReport && (
               <div className="mt-3 space-y-2">

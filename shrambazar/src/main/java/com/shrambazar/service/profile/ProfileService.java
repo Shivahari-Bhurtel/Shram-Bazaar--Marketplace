@@ -58,6 +58,9 @@ public class ProfileService {
                 profile.getBio(),
                 profile.getAddress(),
                 profile.getPreferredTravelDistanceKm(),
+                profile.getLatitude(),
+                profile.getLongitude(),
+                profile.getPreferredCategories().stream().sorted().toList(),
                 getIsVerified(user.getId(), VerificationType.IDENTITY)
         );
     }
@@ -73,13 +76,22 @@ public class ProfileService {
 
         user.setFullName(request.fullName().trim());
         user.setPhoneNumber(request.phoneNumber());
-        user.setDateOfBirth(request.dateOfBirth());
+        if (request.dateOfBirth() != null) {
+            user.setDateOfBirth(request.dateOfBirth());
+        }
 
         profile.setAddress(request.address());
         profile.setBio(request.bio());
         profile.setPreferredTravelDistanceKm(
                 request.preferredTravelDistanceKm()
         );
+        profile.setLatitude(request.latitude());
+        profile.setLongitude(request.longitude());
+        if (request.preferredCategories() != null) {
+            profile.setPreferredCategories(request.preferredCategories().stream()
+                    .map(String::trim).filter(value -> !value.isBlank())
+                    .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+        }
 
         return getSeekerProfile();
     }

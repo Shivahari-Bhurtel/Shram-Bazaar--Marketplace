@@ -1,20 +1,24 @@
 export type UserRole = "worker" | "provider" | "admin"
 export type JobCategory = string
 export type WorkType = "full-day" | "half-day" | "hourly" | "multi-day"
-export type ApplicationStatus = "pending" | "shortlisted" | "accepted" | "rejected"
+export type ApplicationStatus = "pending" | "accepted" | "rejected" | "declined"
 export type JobStatus = "active" | "filled" | "closed" | "draft"
 export type PaymentType = "per-day" | "per-hour" | "fixed"
 export type KycStatus = "not-verified" | "pending" | "verified" | "rejected" | "expired"
-export type KycDocumentType = "national-id" | "citizenship" | "passport" | "driving-licence"
+export type KycDocumentType = "national-id" | "citizenship"
 export type ProviderVerificationStatus = "not-submitted" | "pending" | "verified" | "rejected"
 export type ProviderType = "individual" | "business" | "organization"
 
 export interface Qualification {
   id: string
+  credentialType?: "education" | "certificate" | "training"
   degree: string
   institution: string
   year: number
   field: string
+  startDate?: string
+  endDate?: string
+  currentlyStudying?: boolean
 }
 
 export interface Experience {
@@ -23,6 +27,9 @@ export interface Experience {
   company: string
   duration: string
   description: string
+  startDate?: string
+  endDate?: string
+  currentlyWorking?: boolean
 }
 
 export type Weekday = "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday"
@@ -32,6 +39,8 @@ export interface AvailabilitySlot {
   day: Weekday
   startTime: string
   endTime: string
+  date?: string
+  endDate?: string
 }
 
 export interface WorkHistory {
@@ -39,9 +48,15 @@ export interface WorkHistory {
   jobTitle: string
   providerName: string
   date: string
-  payment: number
+  payment?: number
   rating: number
   review: string
+  description?: string
+  location?: string
+  startDate?: string
+  endDate?: string
+  completedAt?: string
+  reviewedAt?: string
 }
 
 export interface WorkerProfile {
@@ -56,10 +71,14 @@ export interface WorkerProfile {
   address?: string
   location: string
   district: string
+  latitude?: number
+  longitude?: number
   skills: string[]
+  preferredCategories?: string[]
   qualifications: Qualification[]
   experience: Experience[]
   availableDates: string[]
+  preferredTravelDistanceKm?: number
   weeklyAvailability?: AvailabilitySlot[]
   availability: "morning" | "afternoon" | "full-day" | "flexible"
   bio: string
@@ -74,6 +93,7 @@ export interface WorkerProfile {
   kycDocumentNumber?: string
   kycDocumentFileName?: string
   kycDocumentData?: string
+  kycBackDocumentData?: string
   kycDocumentExpiryDate?: string
   kycSelfieData?: string
   kycSelfieFileName?: string
@@ -82,6 +102,8 @@ export interface WorkerProfile {
   kycReviewNote?: string
   kycRequestId?: string
   kycDocumentId?: string
+  kycBackDocumentId?: string
+  kycBackDocumentFileName?: string
 }
 
 export interface ProviderProfile {
@@ -93,6 +115,7 @@ export interface ProviderProfile {
   contactName: string
   email: string
   phone: string
+  address?: string
   location: string
   district: string
   industry: string
@@ -109,7 +132,14 @@ export interface ProviderProfile {
   yearsOperating?: number
   verificationStatus?: ProviderVerificationStatus
   verificationDocumentName?: string
+  verificationDocumentType?: "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE"
+  verificationIdentityDocumentType?: KycDocumentType
   verificationDocumentData?: string
+  verificationBackDocumentData?: string
+  verificationBackDocumentName?: string
+  verificationRequestId?: string
+  verificationDocumentId?: string
+  verificationBackDocumentId?: string
   verificationReviewNote?: string
 }
 
@@ -119,8 +149,11 @@ export interface Job {
   providerName: string
   providerLogo: string
   providerVerified: boolean
+  providerRating?: number
+  providerReviewCount?: number
   title: string
   description: string
+  responsibilities?: string
   category: JobCategory
   skillsRequired: string[]
   qualificationRequired: string
@@ -134,9 +167,15 @@ export interface Job {
   endTime: string
   duration: string
   location: string
+  address?: string
+  municipality?: string
   district: string
+  province?: string
+  latitude?: number
+  longitude?: number
   payment: number
   paymentType: PaymentType
+  paymentMethod?: "CASH" | "BANK_TRANSFER" | "DIGITAL_WALLET" | "OTHER"
   status: JobStatus
   postedDate: string
   deadline: string
@@ -164,9 +203,29 @@ export interface Application {
   jobId: string
   workerId: string
   workerName: string
+  workerPhone?: string
+  workerEmail?: string
   workerPhoto: string
   workerLocation: string
   workerSkills: string[]
+  workerVerified?: boolean
+  applicantProfile?: {
+    seekerName: string
+    phoneNumber?: string
+    email?: string
+    profilePictureUrl?: string
+    bio?: string
+    address?: string
+    preferredTravelDistanceKm?: number
+    skills?: string[]
+    qualifications?: Array<{ id: number; qualificationName: string; institution?: string; fieldOfStudy?: string; credentialType?: string; startDate?: string; endDate?: string; currentlyStudying: boolean }>
+    workExperience?: Array<{ id: number; jobTitle: string; organizationName?: string; description?: string; startDate?: string; endDate?: string; currentlyWorking: boolean }>
+    availability?: Array<{ id: number; dayOfWeek?: string; startDate: string; endDate?: string; startTime: string; endTime: string; active: boolean }>
+    completedJobHistory?: Array<{ jobPostId: number; jobTitle: string; providerName?: string; jobDescription: string; location: string; startDate: string; endDate: string; completedAt: string; rating?: number; review?: string; reviewedAt?: string }>
+    verified: boolean
+    averageRating?: number
+    reviewCount: number
+  }
   workerRating: number
   workerTotalJobs: number
   jobTitle: string
@@ -174,13 +233,15 @@ export interface Application {
   providerId: string
   appliedDate: string
   status: ApplicationStatus
-  coverNote: string
+  coverNote?: string
   providerNote?: string
   providerRating?: number
   providerReview?: string
   providerReviewDate?: string
   engagementId?: string
   engagementStatus?: string
+  providerCompletionConfirmed?: boolean
+  seekerCompletionConfirmed?: boolean
   workerReviewRating?: number
   workerReview?: string
   workerReviewDate?: string
@@ -189,19 +250,23 @@ export interface Application {
 export interface Notification {
   id: string
   userId: string
-  type: "application" | "selection" | "new-job" | "job-update" | "profile-update" | "rejection" | "shortlisted" | "message" | "announcement"
+  type: "application" | "selection" | "new-job" | "job-update" | "profile-update" | "rejection" | "message" | "announcement"
   title: string
   message: string
   date: string
+  createdAt?: string
   read: boolean
   jobId?: string
   applicationId?: string
+  engagementId?: string
 }
 
 export interface Report {
   id: string
   reporterId: string
-  jobId: string
+  jobId?: string
+  reportedUserId?: string
+  reportedUserName?: string
   reason: string
   details: string
   date: string

@@ -1,16 +1,20 @@
 import { useState } from "react"
 import { useApp } from "../../store/AppContext"
-import { ALL_SKILLS, DISTRICTS } from "../../data/mockData"
+import { DISTRICTS } from "../../data/mockData"
+import { useSkillCatalog } from "../../hooks/useSkillCatalog"
 import type { Job, JobCategory, WorkType, PaymentType } from "../../types"
 import { formatNepalDate, isDateOnlyString, nepalDateString } from "../../utils/dates"
 import { isValidTime } from "../../utils/validation"
 import { getConfiguredJobCategories } from "../../utils/categories"
+import { parseRequiredExperienceMonths } from "../../utils/experience"
+import { getCurrentCoordinates } from "../../utils/geolocation"
 
 interface Props {
   editJobId?: string | null
 }
 
 export default function CreateEditJob({ editJobId }: Props) {
+  const skillCatalog = useSkillCatalog()
   const { state, navigate, postJob, updateJob } = useApp()
   const existingJob = editJobId
     ? state.jobs.find((j) => j.id === editJobId)
@@ -19,10 +23,11 @@ export default function CreateEditJob({ editJobId }: Props) {
   const [form, setForm] = useState({
     title: existingJob?.title ?? "",
     description: existingJob?.description ?? "",
+    responsibilities: existingJob?.responsibilities ?? "",
     category: (existingJob?.category ?? "skill-based") as JobCategory,
     skillsRequired: existingJob?.skillsRequired ?? [] as string[],
     qualificationRequired: existingJob?.qualificationRequired ?? "",
-    experienceRequired: existingJob?.experienceRequired ?? "",
+    experienceRequired: existingJob ? String(parseRequiredExperienceMonths(existingJob.experienceRequired)) : "",
     workType: (existingJob?.workType ?? "full-day") as WorkType,
     workersNeeded: existingJob?.workersNeeded ?? 1,
     date: existingJob?.date ?? "",
@@ -30,10 +35,15 @@ export default function CreateEditJob({ editJobId }: Props) {
     startTime: existingJob?.startTime ?? "08:00",
     endTime: existingJob?.endTime ?? "17:00",
     duration: existingJob?.duration ?? "",
-    location: existingJob?.location ?? "",
+    location: existingJob?.address ?? existingJob?.location ?? "",
+    municipality: existingJob?.municipality ?? "",
     district: existingJob?.district ?? "",
+    province: existingJob?.province ?? "",
+    latitude: existingJob?.latitude,
+    longitude: existingJob?.longitude,
     payment: existingJob?.payment ?? 0,
     paymentType: (existingJob?.paymentType ?? "per-day") as PaymentType,
+    paymentMethod: existingJob?.paymentMethod ?? "CASH",
     deadline: existingJob?.deadline ?? "",
   })
 
@@ -41,9 +51,10 @@ export default function CreateEditJob({ editJobId }: Props) {
   const [step, setStep] = useState(1)
   const [submitted, setSubmitted] = useState(false)
   const [formError, setFormError] = useState("")
+  const [locationMessage, setLocationMessage] = useState("")
   const [jobCategories] = useState(getConfiguredJobCategories)
 
-  const filteredSkills = ALL_SKILLS.filter(
+  const filteredSkills = skillCatalog.filter(
     (s) =>
       s.toLowerCase().includes(skillInput.toLowerCase()) &&
       !form.skillsRequired.includes(s),
@@ -78,6 +89,8 @@ export default function CreateEditJob({ editJobId }: Props) {
       if (!form.title.trim()) message = "Enter a job title."
       else if (!form.description.trim())
         message = "Add a description of the work."
+      else if (!form.responsibilities.trim())
+        message = "List the main responsibilities for this work."
       else if (
         !Number.isInteger(form.workersNeeded) ||
         form.workersNeeded < 1 ||
@@ -88,7 +101,9 @@ export default function CreateEditJob({ editJobId }: Props) {
         message = `This job already has ${existingJob.workersHired} accepted workers. Keep the requested positions at ${existingJob.workersHired} or more.`
     } else if (stepToValidate === 2) {
       if (!form.location.trim()) message = "Enter the work location."
+      else if (!form.municipality.trim()) message = "Enter the municipality or city."
       else if (!form.district) message = "Select the work district."
+      else if (!form.province.trim()) message = "Enter the province."
     } else {
       const today = nepalDateString()
       if (!isDateOnlyString(form.date)) message = "Choose a valid start date."
@@ -295,6 +310,10 @@ export default function CreateEditJob({ editJobId }: Props) {
               />
             </div>
             <div>
+              <label className="text-sm font-medium text-stone-700 block mb-1.5">Responsibilities *</label>
+              <textarea value={form.responsibilities} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, responsibilities: event.target.value })) }} placeholder="List the tasks the worker will complete." rows={4} maxLength={4000} className="input-style resize-y" />
+            </div>
+            <div>
               <label className="text-sm font-medium text-stone-700 block mb-1.5">
                 Number of Workers Needed *
               </label>
@@ -387,14 +406,17 @@ export default function CreateEditJob({ editJobId }: Props) {
             </div>
             <div>
               <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Experience Required
+                Required experience (months)
               </label>
               <input
+                type="number"
+                min="0"
+                max="1200"
                 value={form.experienceRequired}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, experienceRequired: e.target.value }))
                 }
-                placeholder="e.g. Minimum 2 years in event coordination"
+                placeholder="0 for no previous experience"
                 className="input-style"
               />
             </div>
@@ -406,12 +428,18 @@ export default function CreateEditJob({ editJobId }: Props) {
                 value={form.location}
                 onChange={(e) => {
                   setFormError("")
-                  setForm((p) => ({ ...p, location: e.target.value }))
+                  setForm((p) => ({ ...p, location: e.target.value, latitude: undefined, longitude: undefined }))
                 }}
                 placeholder="e.g. Durbar Marg, Kathmandu"
                 className="input-style"
                 maxLength={120}
               />
+              <div className="mt-2 rounded-lg border border-stone-200 bg-stone-50 p-3">
+                <p className="text-xs leading-relaxed text-stone-600">Add the job site's approximate coordinates for workers who use distance-based matching. Location sharing is optional.</p>
+                <button type="button" onClick={() => { setLocationMessage("Getting location…"); void getCurrentCoordinates().then((coordinates) => { setForm((previous) => ({ ...previous, ...coordinates })); setLocationMessage("Job-site coordinates added. Confirm this device is at the work location.") }).catch((error: unknown) => setLocationMessage(error instanceof Error ? error.message : "Could not get location.")) }} className="mt-2 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100">Use current location for job site</button>
+                {locationMessage && <p role="status" className="mt-2 text-xs text-stone-600">{locationMessage}</p>}
+                {Number.isFinite(form.latitude) && Number.isFinite(form.longitude) && <p className="mt-1 text-xs text-teal-800">Job-site coordinates are set for distance matching.</p>}
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium text-stone-700 block mb-1.5">
@@ -432,6 +460,14 @@ export default function CreateEditJob({ editJobId }: Props) {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-stone-700 block mb-1.5">Municipality / city *</label>
+              <input value={form.municipality} onChange={(event) => setForm((previous) => ({ ...previous, municipality: event.target.value }))} maxLength={120} className="input-style" placeholder="e.g. Pokhara Metropolitan City" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-stone-700 block mb-1.5">Province *</label>
+              <select value={form.province} onChange={(event) => setForm((previous) => ({ ...previous, province: event.target.value }))} className="input-style"><option value="">Select province</option>{["Koshi", "Madhesh", "Bagmati", "Gandaki", "Lumbini", "Karnali", "Sudurpashchim"].map((province) => <option key={province} value={province}>{province}</option>)}</select>
             </div>
           </div>
         )}
@@ -596,6 +632,10 @@ export default function CreateEditJob({ editJobId }: Props) {
                   <option value="per-hour">Per Hour</option>
                   <option value="fixed">Fixed (total)</option>
                 </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-stone-700 block mb-1.5">Payment Method *</label>
+                <select value={form.paymentMethod} onChange={(event) => setForm((previous) => ({ ...previous, paymentMethod: event.target.value as typeof previous.paymentMethod }))} className="input-style"><option value="CASH">Cash</option><option value="BANK_TRANSFER">Bank transfer</option><option value="DIGITAL_WALLET">Digital wallet</option><option value="OTHER">Other</option></select>
               </div>
             </div>
 

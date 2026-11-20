@@ -334,11 +334,9 @@ export default function ProviderDashboard() {
                       className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                         app.status === "accepted"
                           ? "bg-green-100 text-green-700"
-                          : app.status === "shortlisted"
-                            ? "bg-amber-100 text-amber-700"
-                            : app.status === "rejected"
-                              ? "bg-stone-100 text-stone-500"
-                              : "bg-stone-100 text-stone-600"
+                          : app.status === "rejected"
+                            ? "bg-stone-100 text-stone-500"
+                            : "bg-stone-100 text-stone-600"
                       }`}
                     >
                       {app.status}

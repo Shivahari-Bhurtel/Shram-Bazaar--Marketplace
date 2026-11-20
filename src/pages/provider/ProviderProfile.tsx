@@ -1,8 +1,10 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useApp } from "../../store/AppContext"
+import { apiRequest } from "../../services/backendApi"
 import { VerifiedBadge } from "../../components/StatusBadge"
 import { DISTRICTS } from "../../data/mockData"
 import { isValidNepalPan, isValidPhoneNumber } from "../../utils/validation"
+import type { KycDocumentType } from "../../types"
 
 export default function ProviderProfile() {
   const { state, updateProviderProfile, submitProviderVerification } = useApp()
@@ -12,8 +14,58 @@ export default function ProviderProfile() {
   const [saved, setSaved] = useState(false)
   const [profileError, setProfileError] = useState("")
   const [verificationMessage, setVerificationMessage] = useState("")
+  const [verificationFront, setVerificationFront] = useState<{ name: string; data: string } | null>(null)
+  const [verificationBack, setVerificationBack] = useState<{ name: string; data: string } | null>(null)
+  const [identityDocumentType, setIdentityDocumentType] = useState<KycDocumentType>("national-id")
+  const [businessDocumentType, setBusinessDocumentType] = useState<"BUSINESS_REGISTRATION" | "PAN_CERTIFICATE">("BUSINESS_REGISTRATION")
+  const [verificationBusy, setVerificationBusy] = useState(false)
+  const [receivedReviews, setReceivedReviews] = useState<Array<{ id: string; reviewerName: string; rating: number; comment?: string; createdAt?: string }>>([])
+
+  useEffect(() => {
+    if (!providerProfile) return
+    if (import.meta.env.VITE_DEMO_MODE === "true") {
+      setReceivedReviews(state.applications.filter((app) => app.providerId === providerProfile.id && app.providerRating).map((app) => ({ id: app.id, reviewerName: app.workerName, rating: app.providerRating || 0, comment: app.providerReview, createdAt: app.providerReviewDate })))
+      return
+    }
+    let active = true
+    void apiRequest<Array<{ id: number; reviewerName: string; rating: number; comment?: string; createdAt?: string }>>(`/api/users/${providerProfile.id}/reviews`)
+      .then((reviews) => { if (active) setReceivedReviews(reviews.map((review) => ({ ...review, id: String(review.id) }))) })
+      .catch(() => { if (active) setReceivedReviews([]) })
+    return () => { active = false }
+  }, [providerProfile?.id, providerProfile?.reviewCount, state.applications])
 
   if (!providerProfile) return null
+
+  const readVerificationFile = (file: File | undefined, side: "front" | "back") => {
+    if (!file) return
+    const extension = file.name.split(".").pop()?.toLowerCase()
+    const validType = file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg"
+    const validExtension = ["pdf", "png", "jpg", "jpeg"].includes(extension || "")
+    if ((!validType && !validExtension) || !file.size || file.size > 1_000_000) {
+      setVerificationMessage("Choose a non-empty PDF, PNG or JPG file smaller than 1 MB.")
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result !== "string") return setVerificationMessage("Could not read that document.")
+      const value = { name: file.name, data: reader.result }
+      if (side === "front") setVerificationFront(value)
+      else setVerificationBack(value)
+      setVerificationMessage("")
+    }
+    reader.onerror = () => setVerificationMessage("Could not read that document. Please select it again.")
+    reader.readAsDataURL(file)
+  }
+
+  const submitVerificationFiles = async () => {
+    if (!verificationFront) return setVerificationMessage("Choose the required verification document.")
+    if (providerProfile.providerType === "individual" && !verificationBack) return setVerificationMessage("Upload both sides of your National ID.")
+    setVerificationBusy(true)
+    const error = await submitProviderVerification(verificationFront.name, verificationFront.data, verificationBack?.name, verificationBack?.data, identityDocumentType, businessDocumentType)
+    setVerificationBusy(false)
+    setVerificationMessage(error || "Document submitted for administrator review.")
+    if (!error) { setVerificationFront(null); setVerificationBack(null) }
+  }
 
   const startEdit = () => {
     setEditing(true)
@@ -161,6 +213,19 @@ export default function ProviderProfile() {
           </div>
         </div>
       </div>
+      <label className="mb-6 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
+        Change profile picture
+        <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => {
+          const file = event.target.files?.[0]
+          event.target.value = ""
+          if (!file) return
+          if (!file.type.startsWith("image/") || file.size > 2_000_000) { setProfileError("Choose a PNG, JPG, or WebP image smaller than 2 MB."); return }
+          const reader = new FileReader()
+          reader.onload = () => { if (typeof reader.result === "string") updateProviderProfile({ logo: reader.result }) }
+          reader.onerror = () => setProfileError("Could not read the selected image.")
+          reader.readAsDataURL(file)
+        }} />
+      </label>
 
       <div className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-5">
@@ -364,6 +429,11 @@ export default function ProviderProfile() {
               </div>
             )}
           </div>
+
+          <section className="bg-white border border-stone-200 rounded-2xl p-5">
+            <h3 className="font-semibold text-stone-900">Reviews from workers</h3>
+            {receivedReviews.length ? <div className="mt-4 space-y-3">{receivedReviews.slice(0, 10).map((review) => <article key={review.id} className="rounded-xl bg-stone-50 p-4"><div className="flex items-center justify-between gap-3"><strong className="text-sm text-stone-800">{review.reviewerName}</strong><span className="text-sm font-semibold text-amber-700">{review.rating} / 5 ★</span></div>{review.comment && <p className="mt-2 text-sm leading-relaxed text-stone-600">{review.comment}</p>}<p className="mt-2 text-xs text-stone-400">{review.createdAt ? new Date(review.createdAt).toLocaleDateString() : "Completed work review"}</p></article>)}</div> : <p className="mt-3 text-sm text-stone-500">No worker reviews yet. Reviews appear here after completed work.</p>}
+          </section>
         </div>
 
         {/* Sidebar */}
@@ -419,37 +489,22 @@ export default function ProviderProfile() {
                   : providerProfile.verificationStatus === "rejected"
                     ? providerProfile.verificationReviewNote || "Your document was not accepted. Submit an updated document for review."
                     : (providerProfile.providerType || "business") === "individual"
-                      ? "Submit a current government identity document. An administrator must review it before your provider badge is verified."
-                      : "Submit a business registration document or PAN certificate. An administrator must review it before your provider badge is verified."}
+                      ? "Submit both sides of your National ID or citizenship certificate. An administrator reviews your documents before granting the verified badge."
+                      : "Submit your business registration certificate or PAN document. An administrator reviews it before granting the verified badge."}
             </p>
             {!providerProfile.verified && providerProfile.verificationStatus !== "pending" && (
               <div className="mt-3 space-y-2">
-                <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-file">{(providerProfile.providerType || "business") === "individual" ? "Identity document (citizenship, national ID, or passport; PDF, PNG, JPG; max 1 MB)" : "Business registration or PAN document (PDF, PNG, JPG; max 1 MB for browser storage)"}</label>
-                <input id="provider-verification-file" type="file" accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-stone-700" onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  event.target.value = ""
-                  if (!file) return
-                  const extension = file.name.split(".").pop()?.toLowerCase()
-                  const supportedType = file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg"
-                  const supportedExtension = extension === "pdf" || extension === "png" || extension === "jpg" || extension === "jpeg"
-                  if (!supportedType && !supportedExtension) {
-                    setVerificationMessage("Choose a PDF, PNG or JPG verification document.")
-                    return
-                  }
-                  if (!file.size || file.size > 1 * 1024 * 1024) {
-                    setVerificationMessage("The document must be between 1 byte and 1 MB in this browser prototype.")
-                    return
-                  }
-                  const reader = new FileReader()
-                  reader.onload = () => {
-                    if (typeof reader.result === "string") {
-                      submitProviderVerification(file.name, reader.result)
-                      setVerificationMessage("Document submitted for administrator review.")
-                    } else setVerificationMessage("Could not read that document. Please select it again.")
-                  }
-                  reader.onerror = () => setVerificationMessage("Could not read that document. Please select it again.")
-                  reader.readAsDataURL(file)
-                }} />
+                {providerProfile.providerType === "individual" && <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-type">Identity document type<select id="provider-verification-type" value={identityDocumentType} onChange={(event) => setIdentityDocumentType(event.target.value as KycDocumentType)} className="input-style mt-1"><option value="national-id">National ID (NID)</option><option value="citizenship">Citizenship certificate</option></select></label>}
+                {providerProfile.providerType !== "individual" && <label className="block text-xs font-medium text-stone-700" htmlFor="provider-business-document-type">Business verification document<select id="provider-business-document-type" value={businessDocumentType} onChange={(event) => setBusinessDocumentType(event.target.value as typeof businessDocumentType)} className="input-style mt-1"><option value="BUSINESS_REGISTRATION">Business registration certificate</option><option value="PAN_CERTIFICATE">PAN certificate</option></select></label>}
+                <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-front">{providerProfile.providerType === "individual" ? `${identityDocumentType === "citizenship" ? "Citizenship certificate" : "National ID"} front side` : "Business registration or PAN document"}</label>
+                <input id="provider-verification-front" type="file" accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-stone-700" onChange={(event) => { readVerificationFile(event.target.files?.[0], "front"); event.target.value = "" }} />
+                {verificationFront && <p className="text-xs text-teal-800">Selected: {verificationFront.name}</p>}
+                {providerProfile.providerType === "individual" && <>
+                  <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-back">{identityDocumentType === "citizenship" ? "Citizenship certificate" : "National ID"} back side</label>
+                  <input id="provider-verification-back" type="file" accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-stone-700" onChange={(event) => { readVerificationFile(event.target.files?.[0], "back"); event.target.value = "" }} />
+                  {verificationBack && <p className="text-xs text-teal-800">Selected: {verificationBack.name}</p>}
+                </>}
+                <button type="button" disabled={verificationBusy || !verificationFront || (providerProfile.providerType === "individual" && !verificationBack)} onClick={() => void submitVerificationFiles()} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{verificationBusy ? "Submitting…" : "Submit for verification"}</button>
                 {verificationMessage && <p role="status" className="text-xs text-stone-700">{verificationMessage}</p>}
               </div>
             )}

@@ -7,8 +7,6 @@ import { isValidPhoneNumber } from "../../utils/validation"
 const documentHelp: Record<KycDocumentType, string> = {
   "national-id": "Enter the number shown on your Nepal National ID.",
   citizenship: "Enter the certificate number exactly as printed.",
-  passport: "Enter the number shown on your current passport.",
-  "driving-licence": "Enter the licence number shown on your driving licence.",
 }
 
 export default function KycVerification() {
@@ -28,6 +26,8 @@ export default function KycVerification() {
     documentNumber: "",
     fileName: "",
     documentData: "",
+    backFileName: "",
+    backDocumentData: "",
     documentExpiryDate: "",
     selfieFileName: "",
     selfieData: "",
@@ -39,6 +39,7 @@ export default function KycVerification() {
 
   const status = profile.kycStatus ?? "not-verified"
   const contactsVerified = !!profile.phoneVerified && !!profile.emailVerified
+  const requiresDemoContactVerification = import.meta.env.VITE_DEMO_MODE === "true"
   const maskedNumber = profile.kycDocumentNumber
     ? `••••${profile.kycDocumentNumber.slice(-4)}`
     : ""
@@ -114,28 +115,28 @@ export default function KycVerification() {
 
   const handleDocumentFile = (
     event: ChangeEvent<HTMLInputElement>,
-    kind: "document" | "selfie" = "document",
+    kind: "document" | "back" | "selfie" = "document",
   ) => {
     const file = event.target.files?.[0]
     if (!file) return
     const clearSelectedFile = () =>
       setForm((current) =>
-        kind === "document"
-          ? { ...current, fileName: "", documentData: "" }
-          : { ...current, selfieFileName: "", selfieData: "" },
+        kind === "document" ? { ...current, fileName: "", documentData: "" }
+          : kind === "back" ? { ...current, backFileName: "", backDocumentData: "" }
+            : { ...current, selfieFileName: "", selfieData: "" },
       )
     const acceptedTypes =
-      kind === "document"
+      kind !== "selfie"
         ? ["image/jpeg", "image/png", "application/pdf"]
         : ["image/jpeg", "image/png"]
     const extension = file.name.split(".").pop()?.toLowerCase()
-    const supportedExtension = kind === "document"
+    const supportedExtension = kind !== "selfie"
       ? ["jpg", "jpeg", "png", "pdf"].includes(extension || "")
       : ["jpg", "jpeg", "png"].includes(extension || "")
     if (!acceptedTypes.includes(file.type) && !supportedExtension) {
       clearSelectedFile()
       setFormMessage(
-        kind === "document"
+        kind !== "selfie"
           ? "Choose a JPG, PNG, or PDF identity document."
           : "Choose a JPG or PNG selfie image.",
       )
@@ -148,10 +149,10 @@ export default function KycVerification() {
       event.target.value = ""
       return
     }
-    const maxSize = kind === "document" ? 1 * 1024 * 1024 : 512 * 1024
+    const maxSize = kind !== "selfie" ? 1 * 1024 * 1024 : 512 * 1024
     if (file.size > maxSize) {
       clearSelectedFile()
-      setFormMessage(kind === "document" ? "Choose an identity document smaller than 1 MB for browser storage." : "Choose a selfie image smaller than 512 KB for browser storage.")
+      setFormMessage(kind !== "selfie" ? "Choose an identity document smaller than 1 MB for browser storage." : "Choose a selfie image smaller than 512 KB for browser storage.")
       event.target.value = ""
       return
     }
@@ -167,13 +168,15 @@ export default function KycVerification() {
         return
       }
       setForm((current) =>
-        kind === "document"
-          ? {
+        kind === "document" ? {
               ...current,
               fileName: file.name,
               documentData: String(reader.result),
-            }
-          : {
+            } : kind === "back" ? {
+              ...current,
+              backFileName: file.name,
+              backDocumentData: String(reader.result),
+            } : {
               ...current,
               selfieFileName: file.name,
               selfieData: String(reader.result),
@@ -451,7 +454,7 @@ export default function KycVerification() {
               Identity document
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-stone-500">
-              Submit one current identity document. Your document details are
+              Submit both sides of your Nepal National ID or citizenship certificate. An administrator reviews your documents before the verified badge is granted. Your document details are
               not displayed on your public profile.
             </p>
           </div>
@@ -530,23 +533,10 @@ export default function KycVerification() {
               className="grid gap-4 sm:grid-cols-2"
             >
               <label>
-                <span className="mb-1.5 block text-sm font-semibold text-stone-700">
-                  Document type
-                </span>
-                <select
-                  value={form.documentType}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      documentType: event.target.value as KycDocumentType,
-                    }))
-                  }
-                  className="input-style"
-                >
-                  <option value="national-id">Nepal National ID</option>
+                <span className="mb-1.5 block text-sm font-semibold text-stone-700">Document type</span>
+                <select value={form.documentType} onChange={(event) => setForm((current) => ({ ...current, documentType: event.target.value as KycDocumentType }))} className="input-style">
+                  <option value="national-id">National ID (NID)</option>
                   <option value="citizenship">Citizenship certificate</option>
-                  <option value="passport">Passport</option>
-                  <option value="driving-licence">Driving licence</option>
                 </select>
               </label>
               <label>
@@ -592,20 +582,24 @@ export default function KycVerification() {
                 </span>
               </label>
               <label className="sm:col-span-2">
-                <span className="mb-1.5 block text-sm font-semibold text-stone-700">
-                  Upload document
-                </span>
+                <span className="mb-1.5 block text-sm font-semibold text-stone-700">Upload front of {form.documentType === "citizenship" ? "citizenship certificate" : "National ID"}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,application/pdf"
                   onChange={handleDocumentFile}
                   disabled={readingFile}
                   className="input-style"
+                  required
                 />
                 <span className="mt-1 block text-xs text-stone-500">
                   JPG, PNG, or PDF · Maximum 1 MB in this browser prototype · Ensure the full document is
                   readable.
                 </span>
+              </label>
+              <label className="sm:col-span-2">
+                <span className="mb-1.5 block text-sm font-semibold text-stone-700">Upload back of {form.documentType === "citizenship" ? "citizenship certificate" : "National ID"}</span>
+                <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={(event) => handleDocumentFile(event, "back")} disabled={readingFile} className="input-style" required />
+                <span className="mt-1 block text-xs text-stone-500">JPG, PNG, or PDF · Maximum 1 MB.</span>
               </label>
               <label className="sm:col-span-2">
                 <span className="mb-1.5 block text-sm font-semibold text-stone-700">
@@ -627,21 +621,22 @@ export default function KycVerification() {
               <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-stone-500">
                   {form.fileName
-                    ? `Selected: ${form.fileName}`
+                    ? `Front: ${form.fileName}`
                     : "No document selected."}
+                  {form.backFileName ? ` · Back: ${form.backFileName}` : ""}
                   {form.selfieFileName
                     ? ` · Selfie: ${form.selfieFileName}`
                     : ""}
                 </p>
                 <button
                   type="submit"
-                  disabled={!contactsVerified || readingFile}
+                  disabled={(requiresDemoContactVerification && !contactsVerified) || readingFile}
                   className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {readingFile ? "Reading file…" : "Submit for review"}
                 </button>
               </div>
-              {!contactsVerified && (
+              {requiresDemoContactVerification && !contactsVerified && (
                 <p className="text-xs text-amber-800 sm:col-span-2">
                   Verify both your phone and email above to submit your identity
                   document.

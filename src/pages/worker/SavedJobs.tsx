@@ -13,7 +13,10 @@ export default function SavedJobs() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [selectedJob, setSelectedJob] = useState<DemoJob | null>(null)
-  const savedJobs = state.jobs.filter((job) => state.savedJobIds.includes(job.id))
+  const availableJobs = [...state.jobs, ...state.externalJobs]
+  const savedJobs = state.savedJobIds
+    .map((id) => availableJobs.find((job) => job.id === id))
+    .filter((job): job is NonNullable<typeof job> => Boolean(job))
   const savedDemoJobs = demoJobs.filter((job) => demoState.savedIds.includes(job.id))
   const appliedIds = new Set(demoState.applications.map((application) => application.jobId))
 

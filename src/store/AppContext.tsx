@@ -15,12 +15,14 @@ import type {
   Notification,
   ProviderProfile,
   ProviderType,
+  Qualification,
   Report,
   User,
   WorkerProfile,
   Weekday,
 } from "../types"
 import { isDateOnlyString, nepalDateString, nepalYear } from "../utils/dates"
+import { parseRequiredExperienceMonths } from "../utils/experience"
 import {
   isValidEmail,
   isValidNepalPan,
@@ -40,10 +42,10 @@ import {
   type BackendAuth,
 } from "../services/backendApi"
 
-export type Page = "landing" | "login" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "learn" | "settings" | "kyc-verification" | "provider-dashboard" | "provider-profile" | "provider-operations" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "admin-dashboard" | "chat" | "shram-ai" | "voice-assistant"
+export type Page = "landing" | "login" | "register-choice" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "learn" | "settings" | "kyc-verification" | "provider-dashboard" | "provider-profile" | "provider-operations" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "admin-dashboard" | "chat" | "shram-ai" | "voice-assistant"
 
 type Credentials = { userId: string; password: string }
-type SavedJob = { workerId: string; jobId: string }
+type SavedJob = { workerId: string; jobId: string; snapshot?: Job }
 type PersistedData = {
   users: User[]
   credentials: Credentials[]
@@ -73,6 +75,7 @@ interface AppState {
   adminWorkerProfiles: WorkerProfile[]
   adminUsers: User[]
   reports: Report[]
+  myReports: Report[]
   discoverySkill: string
   storageWarning: string
 }
@@ -100,6 +103,8 @@ export interface ProviderSignup {
   orgName: string
   pan: string
   industry: string
+  description?: string
+  website?: string
   district: string
   location: string
 }
@@ -108,6 +113,8 @@ export interface KycSubmission {
   documentNumber: string
   fileName: string
   documentData: string
+  backFileName?: string
+  backDocumentData?: string
   documentExpiryDate?: string
   selfieData?: string
   selfieFileName?: string
@@ -131,6 +138,15 @@ const emptyData: PersistedData = {
 const id = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 const today = () => nepalDateString()
+const backendNotificationType = (type?: string): Notification["type"] => {
+  if (type === "APPLICATION_SELECTED") return "selection"
+  if (type === "APPLICATION_REJECTED") return "rejection"
+  if (type === "APPLICATION_SUBMITTED" || type === "APPLICATION_WITHDRAWN") return "application"
+  if (type === "MESSAGE_RECEIVED" || type === "MESSAGE") return "message"
+  if (type === "JOB_UPDATED" || type === "JOB_CANCELLED" || type === "WORKER_CONFIRMED" || type === "WORKER_DECLINED" || type === "UPCOMING_WORK" || type === "COMPLETION_CONFIRMATION_REQUIRED" || type === "REVIEW_AVAILABLE") return "job-update"
+  if (type === "VERIFICATION_APPROVED" || type === "VERIFICATION_REJECTED" || type === "REVIEW_RECEIVED") return "profile-update"
+  return "announcement"
+}
 const blankProviderLogo =
   "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200&h=200&fit=crop&auto=format"
 const backendMode = import.meta.env.VITE_DEMO_MODE !== "true"
@@ -150,6 +166,16 @@ function loadData(): PersistedData {
       const value = (parsed as Partial<PersistedData>)[key]
       if (Array.isArray(value)) restored[key] = value as never
     }
+    restored.applications = restored.applications.map((application) =>
+      String(application.status) === "shortlisted"
+        ? { ...application, status: "pending" }
+        : application,
+    )
+    restored.notifications = restored.notifications.map((notification) =>
+      String(notification.type) === "shortlisted"
+        ? { ...notification, type: "job-update" }
+        : notification,
+    )
     return restored
   } catch {
     return emptyData
@@ -191,6 +217,16 @@ function experienceYears(profile: WorkerProfile) {
   }, 0)
 }
 
+function requiredExperienceYears(value: string) {
+  const text = value.toLowerCase().trim()
+  if (!text || /no experience|beginner|entry.level/.test(text)) return 0
+  const amount = Number(text.match(/\d+(?:\.\d+)?/)?.[0] || 0)
+  if (/year|\byrs?\b/.test(text)) return amount
+  // The provider form and backend contract store requirements in months.
+  // Treat unitless legacy values as months for consistent recommendations.
+  return amount / 12
+}
+
 const weekdayNames: Weekday[] = [
   "sunday",
   "monday",
@@ -209,6 +245,15 @@ function minutesOfDay(value: string) {
   return hours <= 23 && minutes <= 59 ? hours * 60 + minutes : null
 }
 
+function approximateDistanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const radians = (degrees: number) => degrees * Math.PI / 180
+  const latitudeDelta = radians(bLat - aLat)
+  const longitudeDelta = radians(bLng - aLng)
+  const haversine = Math.sin(latitudeDelta / 2) ** 2
+    + Math.cos(radians(aLat)) * Math.cos(radians(bLat)) * Math.sin(longitudeDelta / 2) ** 2
+  return 6371 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+}
+
 function availabilityMatch(job: Job, worker: WorkerProfile) {
   const schedule = worker.weeklyAvailability ?? []
   if (!schedule.length) {
@@ -220,55 +265,90 @@ function availabilityMatch(job: Job, worker: WorkerProfile) {
     }
   }
 
-  const date = new Date(`${job.date}T12:00:00`)
-  const day = Number.isNaN(date.getTime()) ? null : weekdayNames[date.getDay()]
   const jobStart = minutesOfDay(job.startTime)
   const jobEnd = minutesOfDay(job.endTime)
-  if (!day || jobStart === null || jobEnd === null || jobEnd <= jobStart)
+  const startDate = new Date(`${job.date}T00:00:00Z`)
+  const lastDate = job.endDate || job.date
+  const endDate = new Date(`${lastDate}T00:00:00Z`)
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate < startDate || jobStart === null || jobEnd === null || jobEnd <= jobStart)
     return { score: 0, reason: "Add valid job hours to compare your schedule" }
 
-  const daySlots: AvailabilitySlot[] = schedule.filter(
-    (slot) => slot.day === day,
-  )
-  const exact = daySlots.find((slot) => {
-    const start = minutesOfDay(slot.startTime)
-    const end = minutesOfDay(slot.endTime)
-    return start !== null && end !== null && start <= jobStart && end >= jobEnd
-  })
-  if (exact) {
-    return {
-      score: 15,
-      reason: `Matches your availability: ${day}, ${exact.startTime}–${exact.endTime}`,
-    }
+  const dayMatches: Array<{ day: string; exact?: AvailabilitySlot; partial: boolean }> = []
+  for (const current = new Date(startDate); current <= endDate; current.setUTCDate(current.getUTCDate() + 1)) {
+    const day = weekdayNames[current.getUTCDay()]
+    const date = current.toISOString().slice(0, 10)
+    const daySlots: AvailabilitySlot[] = schedule.filter((slot) => slot.date
+      ? date >= slot.date && date <= (slot.endDate || slot.date)
+      : slot.day === day)
+    const exact = daySlots.find((slot) => {
+      const start = minutesOfDay(slot.startTime)
+      const end = minutesOfDay(slot.endTime)
+      return start !== null && end !== null && start <= jobStart && end >= jobEnd
+    })
+    const partial = daySlots.some((slot) => {
+      const start = minutesOfDay(slot.startTime)
+      const end = minutesOfDay(slot.endTime)
+      return start !== null && end !== null && start < jobEnd && end > jobStart
+    })
+    dayMatches.push({ day, exact, partial })
+    // A malformed or unexpectedly long job range should not block the UI thread.
+    if (dayMatches.length > 366) return { score: 0, reason: "Job date range is too long to compare availability" }
   }
 
-  const partial = daySlots.some((slot) => {
-    const start = minutesOfDay(slot.startTime)
-    const end = minutesOfDay(slot.endTime)
-    return start !== null && end !== null && start < jobEnd && end > jobStart
-  })
-  return partial
-    ? { score: 4, reason: `Partially overlaps your ${day} availability` }
-    : { score: 0, reason: `Outside your saved ${day} availability` }
+  if (dayMatches.length > 0 && dayMatches.every((match) => match.exact)) {
+    return { score: 15, reason: `Matches your availability for all ${dayMatches.length} scheduled day${dayMatches.length === 1 ? "" : "s"}` }
+  }
+  if (dayMatches.length > 0 && dayMatches.every((match) => match.partial)) {
+    return { score: 4, reason: "Your saved availability partially overlaps the job hours on each scheduled day" }
+  }
+  return { score: 0, reason: "Your saved availability does not cover every scheduled day and hour" }
 }
 
 function computeMatch(job: Job, worker: WorkerProfile) {
+  const schedule = worker.weeklyAvailability ?? []
   const matchingSkills = job.skillsRequired.filter((required) =>
     worker.skills.some(
       (skill) => skill.toLowerCase() === required.toLowerCase(),
     ),
   )
   const skillsScore = job.skillsRequired.length
-    ? Math.round((matchingSkills.length / job.skillsRequired.length) * 40)
-    : 40
-  const locationScore = worker.district === job.district ? 20 : 0
+    ? Math.round((matchingSkills.length / job.skillsRequired.length) * 30)
+    : 30
+  const hasCoordinates = [worker.latitude, worker.longitude, job.latitude, job.longitude].every(Number.isFinite)
+  const distanceKm = hasCoordinates
+    ? approximateDistanceKm(worker.latitude!, worker.longitude!, job.latitude!, job.longitude!)
+    : null
+  const preferredDistanceKm = worker.preferredTravelDistanceKm ?? 10
+  const locationScore = distanceKm !== null
+    ? distanceKm <= preferredDistanceKm ? 15 : 0
+    : worker.district.toLowerCase() === job.district.toLowerCase() ? 15 : 0
+  const categoryMatch = (worker.preferredCategories || []).some((category) => category.toLowerCase() === job.category.toLowerCase())
+  const categoryScore = categoryMatch ? 10 : 0
+  const requiredQualifications = job.qualificationRequired.toLowerCase().split(/[,;]|\bor\b/).map((item) => item.trim()).filter(Boolean)
+  const profileQualifications = worker.qualifications.map((item) => `${item.degree} ${item.field}`.toLowerCase())
+  const qualificationMatch = !requiredQualifications.length || requiredQualifications.some((required) =>
+    profileQualifications.some((qualification) => qualification.includes(required) || required.split(/\s+/).some((word) => word.length > 3 && qualification.includes(word))),
+  )
+  const qualificationScore = qualificationMatch ? 5 : 0
   const availability = availabilityMatch(job, worker)
-  const availableOnDate =
-    worker.availableDates.length === 0 ||
-    worker.availableDates.includes(job.date)
+  const jobEndDate = job.endDate || job.date
+  const startDate = new Date(`${job.date}T00:00:00Z`)
+  const endDate = new Date(`${jobEndDate}T00:00:00Z`)
+  let availableOnDate = !Number.isNaN(startDate.getTime()) && !Number.isNaN(endDate.getTime()) && endDate >= startDate
+  let comparedDays = 0
+  for (const date = new Date(startDate); availableOnDate && date <= endDate; date.setUTCDate(date.getUTCDate() + 1)) {
+    const dateString = date.toISOString().slice(0, 10)
+    const weekday = weekdayNames[date.getUTCDay()]
+    const explicitlyAvailable = worker.availableDates.includes(dateString) || schedule.some((slot) => slot.date
+      ? dateString >= slot.date && dateString <= (slot.endDate || slot.date)
+      : slot.day === weekday)
+    if (worker.availableDates.length > 0 || schedule.length > 0) availableOnDate = explicitlyAvailable
+    comparedDays += 1
+    if (comparedDays > 366) availableOnDate = false
+  }
   const durationScore = availableOnDate ? 10 : 0
   const years = experienceYears(worker)
-  const requiredYears = Number(job.experienceRequired.match(/\d+/)?.[0] || 0)
+  const requiredYears = requiredExperienceYears(job.experienceRequired)
   const experienceScore =
     !requiredYears || years >= requiredYears
       ? 15
@@ -278,15 +358,23 @@ function computeMatch(job: Job, worker: WorkerProfile) {
       100,
       skillsScore +
         locationScore +
+        categoryScore +
+        qualificationScore +
         availability.score +
         durationScore +
         experienceScore,
     ),
     reasons: [
       `${matchingSkills.length} of ${job.skillsRequired.length} required skills match`,
+      categoryMatch ? `Matches your preferred ${job.category} category` : "Based on skill, location, and availability fit",
+      qualificationMatch ? "Meets or has no listed qualification requirement" : "Qualification may not match this job",
       locationScore
-        ? `Location matches ${job.district}`
-        : `Job is in ${job.district}; your district is ${worker.district}`,
+        ? distanceKm !== null
+          ? `Approximately ${distanceKm.toFixed(1)} km away, within your ${preferredDistanceKm} km travel preference (straight-line estimate)`
+          : `Same district as your profile; add an approximate location for distance-based matching`
+        : distanceKm !== null
+          ? `Approximately ${distanceKm.toFixed(1)} km away, beyond your ${preferredDistanceKm} km travel preference (straight-line estimate)`
+          : `Job is in ${job.district}; your district is ${worker.district}`,
       availability.reason,
       availableOnDate
         ? "Available for the job date/duration"
@@ -330,6 +418,7 @@ const adminOnly: Page[] = ["admin-dashboard"]
 const publicOnly: Page[] = [
   "landing",
   "login",
+  "register-choice",
   "worker-signup",
   "provider-signup",
   "job-discovery",
@@ -346,7 +435,7 @@ interface AppContextValue {
   loginAsProvider: () => void
   loginAsAdmin: () => void
   logout: () => void
-  applyToJob: (jobId: string, coverNote: string) => Promise<void>
+  applyToJob: (jobId: string) => Promise<void>
   saveJob: (jobId: string) => void
   unsaveJob: (jobId: string) => void
   updateApplicationStatus: (
@@ -366,13 +455,14 @@ interface AppContextValue {
   updateWorkerProfile: (updates: Partial<WorkerProfile>) => void
   notifyProfileUpdated: (message: string) => void
   updateProviderProfile: (updates: Partial<ProviderProfile>) => void
-  submitProviderVerification: (fileName: string, fileData: string) => void
+  submitProviderVerification: (fileName: string, fileData: string, backFileName?: string, backFileData?: string, identityDocumentType?: "national-id" | "citizenship", businessDocumentType?: "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE") => Promise<string | null>
   reviewProviderVerification: (providerId: string, approved: boolean, note?: string) => void
   sendUserNotification: (userId: string, title: string, message: string, type?: Notification["type"]) => Promise<string | null>
   hasApplied: (jobId: string) => boolean
   isSaved: (jobId: string) => boolean
   browseSkill: (skill: string) => void
   reportJob: (jobId: string, reason: string, details: string) => Promise<string | null>
+  reportUser: (userId: string, reason: string, details: string) => Promise<string | null>
   reviewWorker: (applicationId: string, rating: number, review: string) => Promise<string | null>
   reviewProvider: (applicationId: string, rating: number, review: string) => Promise<string | null>
   submitKyc: (submission: KycSubmission) => Promise<string | null>
@@ -418,7 +508,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     sessionId ? "worker-dashboard" : "landing",
   )
   const [currentJobId, setCurrentJobId] = useState<string | null>(null)
-  const [externalJobs, setExternalJobsState] = useState<Job[]>([])
+  const [externalJobs, setExternalJobsState] = useState<Job[]>(() => data.externalJobs)
   const [discoverySkill, setDiscoverySkill] = useState("")
 
   const currentUser = data.users.find((user) => user.id === sessionId) || null
@@ -511,10 +601,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let active = true
     const syncBackend = async () => {
       try {
-        const [publicJobs, serverNotifications] = await Promise.all([
+        const [publicJobs, serverNotifications, serverReports] = await Promise.all([
           apiRequest<ApiJob[]>("/api/jobs"),
           currentUser
             ? apiRequest<Array<{ id: number; title: string; message: string; type?: string; read: boolean; createdAt?: string; referenceType?: string; referenceId?: number }>>("/api/notifications")
+            : Promise.resolve([]),
+          currentUser && currentUser.role !== "admin"
+            ? apiRequest<Array<{ id: number; reportedUserId?: number; reportedJobPostId?: number; reason: string; description: string; status: string; createdAt?: string; resolvedAt?: string }>>("/api/reports/me")
             : Promise.resolve([]),
         ])
         if (!active) return
@@ -522,55 +615,92 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setData((old) => ({
           ...old,
           jobs: mappedJobs,
+          ...(currentUser && currentUser.role !== "admin" ? { reports: serverReports.map((report) => ({
+            id: String(report.id), reporterId: currentUser.id,
+            jobId: report.reportedJobPostId ? String(report.reportedJobPostId) : undefined,
+            reportedUserId: report.reportedUserId ? String(report.reportedUserId) : undefined,
+            reason: report.reason, details: report.description,
+            date: (report.createdAt || "").slice(0, 10),
+            status: report.status === "UNDER_REVIEW" ? "reviewing" as const : report.status === "RESOLVED" ? "resolved" as const : report.status === "REJECTED" ? "dismissed" as const : "submitted" as const,
+          })) } : {}),
           ...(currentUser ? { notifications: serverNotifications.map((note) => ({
             id: String(note.id),
             userId: currentUser.id,
-            type: (note.type === "APPLICATION" ? "application" : note.type === "SELECTION" ? "selection" : note.type === "MESSAGE" ? "message" : note.type === "JOB_UPDATE" ? "job-update" : "announcement") as Notification["type"],
+            type: backendNotificationType(note.type),
             title: note.title,
             message: note.message,
             date: (note.createdAt || "").slice(0, 10),
+            createdAt: note.createdAt,
             read: note.read,
             jobId: note.referenceType === "JOB" ? String(note.referenceId) : undefined,
             applicationId: note.referenceType === "APPLICATION" ? String(note.referenceId) : undefined,
+            engagementId: note.referenceType === "ENGAGEMENT" ? String(note.referenceId) : undefined,
           })) } : {}),
         }))
         if (currentUser?.role === "provider") {
-          const ownJobs = await apiRequest<ApiJob[]>("/api/provider/jobs")
+          const [ownJobs, verificationRequests, providerRatingSummary] = await Promise.all([
+            apiRequest<ApiJob[]>("/api/provider/jobs"),
+            apiRequest<Array<{ id: number; type: string; status: string; reviewNote?: string; submittedAt?: string; reviewedAt?: string; documents?: Array<{ id: number; documentType: string; originalFileName: string }> }>>("/api/verifications/me"),
+            apiRequest<{ averageRating?: number; totalReviews?: number }>(`/api/users/${currentUser.id}/reviews/summary`),
+          ])
           if (!active) return
           const mappedOwnJobs = ownJobs.map((job) => mapApiJob(job, currentUser.id))
+          const currentProvider = data.providerProfiles.find((profile) => profile.id === currentUser.profileId)
+          const verificationRequest = verificationRequests.find((item) => item.type === (currentProvider?.providerType === "individual" ? "IDENTITY" : "BUSINESS"))
+          const verificationFront = verificationRequest?.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "CITIZENSHIP_FRONT" || item.documentType === "BUSINESS_REGISTRATION" || item.documentType === "PAN_CERTIFICATE")
+          const verificationBack = verificationRequest?.documents?.find((item) => item.documentType === "NID_BACK" || item.documentType === "CITIZENSHIP_BACK")
           const applicantLists = await Promise.all(mappedOwnJobs.map(async (job) => {
-            const applicants = await apiRequest<Array<{ applicationId: number; seekerUserId: number; seekerName: string; profilePictureUrl?: string; bio?: string; skills?: string[]; status: string; appliedAt: string }>>(`/api/provider/jobs/${job.id}/applications`)
+            const applicants = await apiRequest<Array<{ applicationId: number; seekerUserId: number; seekerName: string; profilePictureUrl?: string; phoneNumber?: string; email?: string; bio?: string; address?: string; preferredTravelDistanceKm?: number; skills?: string[]; qualifications?: Array<{ id: number; qualificationName: string; institution?: string; fieldOfStudy?: string; credentialType?: string; startDate?: string; endDate?: string; currentlyStudying: boolean }>; workExperience?: Array<{ id: number; jobTitle: string; organizationName?: string; description?: string; startDate?: string; endDate?: string; currentlyWorking: boolean }>; availability?: Array<{ id: number; dayOfWeek?: string; startDate: string; endDate?: string; startTime: string; endTime: string; active: boolean }>; completedJobHistory?: Array<{ jobPostId: number; jobTitle: string; providerName?: string; jobDescription: string; location: string; startDate: string; endDate: string; completedAt: string; rating?: number; review?: string; reviewedAt?: string }>; verified: boolean; averageRating?: number; reviewCount: number; status: string; appliedAt: string }>>(`/api/provider/jobs/${job.id}/applications`)
             return applicants.map((app): Application => ({
               id: String(app.applicationId),
               jobId: job.id,
               workerId: String(app.seekerUserId),
               workerName: app.seekerName,
+              workerPhone: app.phoneNumber || "",
+              workerEmail: app.email || "",
               workerPhoto: app.profilePictureUrl || "",
-              workerLocation: "",
+              workerLocation: app.address || "",
               workerSkills: app.skills || [],
-              workerRating: 0,
-              workerTotalJobs: 0,
+              workerRating: Number(app.averageRating) || 0,
+              workerTotalJobs: app.completedJobHistory?.length || 0,
+              workerVerified: app.verified,
+              applicantProfile: app,
               jobTitle: job.title,
               providerName: job.providerName,
               providerId: currentUser.id,
               appliedDate: (app.appliedAt || "").slice(0, 10),
               status: app.status === "SELECTED" ? "accepted" as const : app.status === "NOT_SELECTED" || app.status === "CANCELLED" ? "rejected" as const : "pending" as const,
-              coverNote: app.bio || "",
             }))
           }))
+          const applicantRecords = new Map(applicantLists.flatMap((applications) => applications.map((application) => [application.workerId, application.applicantProfile] as const)))
+          const applicantProfiles = [...applicantRecords.entries()]
+            .filter((entry): entry is [string, NonNullable<Application["applicantProfile"]>] => Boolean(entry[1]))
+            .map(([workerId, applicant]): WorkerProfile => {
+            const user: User = { id: workerId, role: "worker", email: applicant.email || "", name: applicant.seekerName, profileId: workerId, backendAuth: true }
+            const base = mapSeekerProfile({ fullName: applicant.seekerName, phoneNumber: applicant.phoneNumber, email: applicant.email, profilePictureUrl: applicant.profilePictureUrl, bio: applicant.bio, address: applicant.address, preferredTravelDistanceKm: applicant.preferredTravelDistanceKm, verified: applicant.verified }, user)
+            const qualifications = (applicant.qualifications || []).map((item) => ({ id: String(item.id), credentialType: (item.credentialType?.toLowerCase() as Qualification["credentialType"]) || "education", degree: item.qualificationName, institution: item.institution || "", field: item.fieldOfStudy || "", startDate: item.startDate, endDate: item.endDate, currentlyStudying: item.currentlyStudying, year: Number((item.endDate || item.startDate || "").slice(0, 4)) || nepalYear() }))
+            const experience = (applicant.workExperience || []).map((item) => ({ id: String(item.id), title: item.jobTitle, company: item.organizationName || "", description: item.description || "", startDate: item.startDate, endDate: item.endDate, currentlyWorking: item.currentlyWorking, duration: `${item.startDate || ""}${item.endDate ? ` – ${item.endDate}` : item.currentlyWorking ? " – Present" : ""}` }))
+            const availability = (applicant.availability || []).map((item): AvailabilitySlot => ({ id: String(item.id), day: (item.dayOfWeek?.toLowerCase() as Weekday | undefined) || "monday", date: item.dayOfWeek ? undefined : item.startDate, endDate: item.dayOfWeek ? undefined : item.endDate, startTime: item.startTime.slice(0, 5), endTime: item.endTime.slice(0, 5) }))
+            const workHistory = (applicant.completedJobHistory || []).map((item) => ({ jobId: String(item.jobPostId), jobTitle: item.jobTitle, providerName: item.providerName || "Provider", date: item.completedAt?.slice(0, 10) || item.endDate, rating: item.rating || 0, review: item.review || "", description: item.jobDescription, location: item.location, startDate: item.startDate, endDate: item.endDate, completedAt: item.completedAt, reviewedAt: item.reviewedAt }))
+            return { ...base, skills: applicant.skills || [], qualifications, experience, weeklyAvailability: availability, availableDates: availability.flatMap((item) => item.date ? [item.date] : []), availability: "flexible", verified: applicant.verified, kycStatus: applicant.verified ? "verified" : "not-verified", rating: Number(applicant.averageRating) || 0, totalJobs: workHistory.length, workHistory }
+            })
           const [engagements, reviews] = await Promise.all([
-            apiRequest<Array<{ engagementId: number; applicationId: number; status: string }>>("/api/provider/engagements"),
+            apiRequest<Array<{ engagementId: number; applicationId: number; status: string; providerCompletionConfirmed: boolean; seekerCompletionConfirmed: boolean }>>("/api/provider/engagements"),
             apiRequest<Array<{ engagementId: number; direction: string; rating: number; comment?: string; createdAt: string }>>("/api/reviews/me"),
           ])
           if (!active) return
           const engagementByApplication = new Map(engagements.map((item) => [String(item.applicationId), item]))
+          const engagementById = new Map(engagements.map((item) => [String(item.engagementId), item]))
           const providerApplications = applicantLists.flat().map((application) => {
             const engagement = engagementByApplication.get(application.id)
             const review = engagement && reviews.find((item) => item.engagementId === engagement.engagementId)
             return engagement ? {
               ...application,
+              status: engagement.status === "DECLINED" ? "declined" as const : application.status,
               engagementId: String(engagement.engagementId),
               engagementStatus: engagement.status,
+              providerCompletionConfirmed: engagement.providerCompletionConfirmed,
+              seekerCompletionConfirmed: engagement.seekerCompletionConfirmed,
               ...(review ? { workerReviewRating: review.rating, workerReview: review.comment || "", workerReviewDate: (review.createdAt || "").slice(0, 10) } : {}),
             } : application
           })
@@ -578,18 +708,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ...job,
             workersHired: providerApplications.filter((app) => app.jobId === job.id && app.status === "accepted" && app.engagementStatus !== "DECLINED").length,
           }))
-          setData((old) => ({ ...old, jobs: [...jobsWithHires, ...mappedJobs.filter((job) => !jobsWithHires.some((own) => own.id === job.id))], applications: providerApplications }))
+          setData((old) => ({
+            ...old,
+            providerProfiles: old.providerProfiles.map((profile) => profile.id === currentUser.profileId ? {
+              ...profile,
+              verificationStatus: verificationRequest ? verificationRequest.status === "APPROVED" ? "verified" : verificationRequest.status === "REJECTED" ? "rejected" : "pending" : "not-submitted",
+              verified: verificationRequest?.status === "APPROVED",
+              verificationReviewNote: verificationRequest?.reviewNote,
+              verificationDocumentName: verificationFront?.originalFileName,
+              verificationDocumentType: verificationFront?.documentType === "PAN_CERTIFICATE" ? "PAN_CERTIFICATE" : verificationFront?.documentType === "BUSINESS_REGISTRATION" ? "BUSINESS_REGISTRATION" : undefined,
+              verificationIdentityDocumentType: verificationFront?.documentType === "CITIZENSHIP_FRONT" ? "citizenship" : verificationFront?.documentType === "NID_FRONT" ? "national-id" : undefined,
+              verificationBackDocumentName: verificationBack?.originalFileName,
+              verificationRequestId: verificationRequest ? String(verificationRequest.id) : undefined,
+              verificationDocumentId: verificationFront ? String(verificationFront.id) : undefined,
+              verificationBackDocumentId: verificationBack ? String(verificationBack.id) : undefined,
+              rating: Number(providerRatingSummary.averageRating) || 0,
+              reviewCount: Number(providerRatingSummary.totalReviews) || 0,
+              totalHires: providerApplications.filter((application) => application.status === "accepted" && application.engagementStatus === "COMPLETED").length,
+            } : profile),
+            workerProfiles: [...old.workerProfiles.filter((profile) => !applicantProfiles.some((item) => item.id === profile.id)), ...applicantProfiles],
+            jobs: [...jobsWithHires, ...mappedJobs.filter((job) => !jobsWithHires.some((own) => own.id === job.id))],
+            applications: providerApplications,
+            notifications: serverNotifications.map((note) => {
+              const engagement = note.referenceType === "ENGAGEMENT" ? engagementById.get(String(note.referenceId)) : undefined
+              const applicationId = note.referenceType === "APPLICATION" ? String(note.referenceId) : engagement ? String(engagement.applicationId) : undefined
+              const application = applicationId ? providerApplications.find((item) => item.id === applicationId) : undefined
+              return {
+                id: String(note.id), userId: currentUser.id,
+                type: backendNotificationType(note.type), title: note.title, message: note.message,
+                date: (note.createdAt || "").slice(0, 10), read: note.read,
+                createdAt: note.createdAt,
+                jobId: note.referenceType === "JOB" ? String(note.referenceId) : application?.jobId,
+                applicationId,
+                engagementId: engagement ? String(engagement.engagementId) : undefined,
+              }
+            }),
+          }))
         } else if (currentUser?.role === "worker") {
-          const [applications, savedJobs, notifications, engagements, reviews, verificationRequests] = await Promise.all([
+          const [applications, savedJobs, notifications, engagements, reviews, verificationRequests, availabilityRecords, qualificationRecords, experienceRecords, seekerProfileRecord, jobHistoryRecords, seekerRatingSummary] = await Promise.all([
             apiRequest<ApiApplication[]>("/api/seeker/applications"),
             apiRequest<Array<{ jobId: number }>>("/api/seeker/saved-jobs"),
             Promise.resolve(serverNotifications),
-            apiRequest<Array<{ engagementId: number; applicationId: number; status: string }>>("/api/seeker/engagements"),
+            apiRequest<Array<{ engagementId: number; applicationId: number; status: string; providerCompletionConfirmed: boolean; seekerCompletionConfirmed: boolean }>>("/api/seeker/engagements"),
             apiRequest<Array<{ engagementId: number; direction: string; rating: number; comment?: string; createdAt: string }>>("/api/reviews/me"),
             apiRequest<Array<{ type: string; status: string; reviewNote?: string; submittedAt?: string; reviewedAt?: string; documents?: Array<{ documentType: string; originalFileName: string }> }>>("/api/verifications/me"),
+            apiRequest<Array<{ id: number; dayOfWeek?: string | null; startDate: string; endDate?: string; startTime: string; endTime: string; active: boolean }>>("/api/seeker/availability"),
+            apiRequest<Array<{ id: number; qualificationName: string; institution?: string; fieldOfStudy?: string; credentialType?: string; startDate: string; endDate?: string; currentlyStudying: boolean }>>("/api/seeker/qualifications"),
+            apiRequest<Array<{ id: number; jobTitle: string; organizationName?: string; description?: string; startDate: string; endDate?: string; currentlyWorking: boolean }>>("/api/seeker/experience"),
+            apiRequest<Record<string, unknown>>("/api/seeker/profile"),
+            apiRequest<Array<{ jobPostId: number; jobTitle: string; providerName?: string; jobDescription: string; location: string; startDate: string; endDate: string; completedAt: string; rating?: number; review?: string; reviewedAt?: string }>>("/api/seeker/job-history"),
+            apiRequest<{ averageRating?: number; totalReviews?: number }>(`/api/users/${currentUser.id}/reviews/summary`),
           ])
           if (!active) return
           const engagementByApplication = new Map(engagements.map((item) => [String(item.applicationId), item]))
+          const engagementById = new Map(engagements.map((item) => [String(item.engagementId), item]))
           const mappedApplications = applications.map((app) => {
             const mapped = mapApiApplication(app, currentUser, workerProfile || undefined)
             const engagement = engagementByApplication.get(mapped.id)
@@ -601,44 +773,108 @@ export function AppProvider({ children }: { children: ReactNode }) {
               providerId: job?.providerId || "",
               engagementId: engagement ? String(engagement.engagementId) : undefined,
               engagementStatus: engagement?.status,
+              providerCompletionConfirmed: engagement?.providerCompletionConfirmed,
+              seekerCompletionConfirmed: engagement?.seekerCompletionConfirmed,
               ...(review ? { providerRating: review.rating, providerReview: review.comment || "", providerReviewDate: (review.createdAt || "").slice(0, 10) } : {}),
             }
           })
           const identityRequest = verificationRequests.find((item) => item.type === "IDENTITY")
           const verified = identityRequest?.status === "APPROVED"
-          const syncedWorkerProfile = identityRequest ? {
-            ...(workerProfile || mapSeekerProfile({}, currentUser)),
-            kycStatus: identityRequest.status === "APPROVED" ? "verified" as const : identityRequest.status === "REJECTED" ? "rejected" as const : "pending" as const,
-            verified,
-            kycReviewNote: identityRequest.reviewNote,
-            kycSubmittedDate: identityRequest.submittedAt?.slice(0, 10),
-            kycVerifiedDate: verified ? identityRequest.reviewedAt?.slice(0, 10) : undefined,
-            kycDocumentType: identityRequest.documents?.[0]?.documentType === "NID_FRONT" ? "national-id" as const : identityRequest.documents?.length ? "citizenship" as const : undefined,
-            kycDocumentFileName: identityRequest.documents?.[0]?.originalFileName,
-          } : workerProfile
+          const baseWorkerProfile = workerProfile || mapSeekerProfile({}, currentUser)
+          const activeAvailability = availabilityRecords.filter((item) => item.active)
+          const serverProfile = mapSeekerProfile(seekerProfileRecord, currentUser)
+          const syncedWorkerProfile = {
+            ...baseWorkerProfile,
+            name: serverProfile.name,
+            phone: serverProfile.phone,
+            email: serverProfile.email,
+            dateOfBirth: serverProfile.dateOfBirth,
+            photo: serverProfile.photo || baseWorkerProfile.photo,
+            address: serverProfile.address,
+            location: serverProfile.location,
+            district: serverProfile.district,
+              preferredTravelDistanceKm: serverProfile.preferredTravelDistanceKm,
+              preferredCategories: serverProfile.preferredCategories,
+            bio: serverProfile.bio,
+            verified: serverProfile.verified,
+            rating: Number(seekerRatingSummary.averageRating) || 0,
+            totalJobs: jobHistoryRecords.length,
+            workHistory: jobHistoryRecords.map((item) => ({ jobId: String(item.jobPostId), jobTitle: item.jobTitle, providerName: item.providerName || "Provider", date: item.completedAt?.slice(0, 10) || item.endDate, rating: item.rating || 0, review: item.review || "", description: item.jobDescription, location: item.location, startDate: item.startDate, endDate: item.endDate, completedAt: item.completedAt, reviewedAt: item.reviewedAt })),
+            qualifications: qualificationRecords.map((item) => ({
+              id: String(item.id), credentialType: (item.credentialType?.toLowerCase() as Qualification["credentialType"]) || "education", degree: item.qualificationName, institution: item.institution || "", field: item.fieldOfStudy || "",
+              startDate: item.startDate, endDate: item.endDate, currentlyStudying: item.currentlyStudying,
+              year: Number((item.endDate || item.startDate || "").slice(0, 4)) || nepalYear(),
+            })),
+            experience: experienceRecords.map((item) => ({
+              id: String(item.id), title: item.jobTitle, company: item.organizationName || "", description: item.description || "",
+              startDate: item.startDate, endDate: item.endDate, currentlyWorking: item.currentlyWorking,
+              duration: `${item.startDate}${item.endDate ? ` – ${item.endDate}` : " – Present"}`,
+            })),
+            ...(identityRequest ? {
+              kycStatus: identityRequest.status === "APPROVED" ? "verified" as const : identityRequest.status === "REJECTED" ? "rejected" as const : "pending" as const,
+              verified,
+              kycReviewNote: identityRequest.reviewNote,
+              kycSubmittedDate: identityRequest.submittedAt?.slice(0, 10),
+              kycVerifiedDate: verified ? identityRequest.reviewedAt?.slice(0, 10) : undefined,
+              kycDocumentType: identityRequest.documents?.some((item) => item.documentType === "CITIZENSHIP_FRONT") ? "citizenship" as const : identityRequest.documents?.length ? "national-id" as const : undefined,
+              kycDocumentFileName: identityRequest.documents?.[0]?.originalFileName,
+            } : {}),
+            weeklyAvailability: activeAvailability.map((item): AvailabilitySlot => {
+              const date = item.dayOfWeek ? undefined : item.startDate
+              const parsedDate = new Date(`${item.startDate}T12:00:00`)
+              return {
+                id: String(item.id),
+                day: (item.dayOfWeek?.toLowerCase() as Weekday | undefined) || weekdayNames[parsedDate.getDay()] || "monday",
+                date,
+                endDate: item.dayOfWeek ? undefined : item.endDate,
+                startTime: item.startTime.slice(0, 5),
+                endTime: item.endTime.slice(0, 5),
+              }
+            }),
+            availableDates: [...new Set([
+              ...baseWorkerProfile.availableDates,
+              ...activeAvailability.filter((item) => !item.dayOfWeek).map((item) => item.startDate),
+            ])].sort(),
+          }
           setData((old) => ({
             ...old,
             jobs: mappedJobs,
             applications: mappedApplications,
             workerProfiles: syncedWorkerProfile ? old.workerProfiles.map((profile) => profile.id === currentUser.profileId ? syncedWorkerProfile : profile) : old.workerProfiles,
-            savedJobs: savedJobs.map((item) => ({ workerId: currentUser.profileId, jobId: String(item.jobId) })),
-            notifications: notifications.map((note) => ({
-              id: String(note.id), userId: currentUser.id,
-              type: "application", title: note.title, message: note.message,
-              date: (note.createdAt || "").slice(0, 10), read: note.read,
-              jobId: note.referenceType === "JOB" ? String(note.referenceId) : undefined,
-            })),
+            savedJobs: [
+              ...savedJobs.map((item) => ({ workerId: currentUser.profileId, jobId: String(item.jobId) })),
+              ...old.savedJobs.filter((item) => item.workerId === currentUser.profileId && item.snapshot?.externalSource),
+            ],
+            notifications: notifications.map((note) => {
+              const engagement = note.referenceType === "ENGAGEMENT" ? engagementById.get(String(note.referenceId)) : undefined
+              const applicationId = note.referenceType === "APPLICATION" ? String(note.referenceId) : engagement ? String(engagement.applicationId) : undefined
+              const application = applicationId ? mappedApplications.find((item) => item.id === applicationId) : undefined
+              return {
+                id: String(note.id), userId: currentUser.id,
+                type: backendNotificationType(note.type), title: note.title, message: note.message,
+                date: (note.createdAt || "").slice(0, 10), read: note.read,
+                createdAt: note.createdAt,
+                jobId: note.referenceType === "JOB" ? String(note.referenceId) : application?.jobId,
+                applicationId,
+                engagementId: engagement ? String(engagement.engagementId) : undefined,
+              }
+            }),
           }))
         } else if (currentUser?.role === "admin") {
-          const [verificationRequests, backendReports] = await Promise.all([
+          const [verificationRequests, backendReports, backendUsers, backendAdminJobs] = await Promise.all([
             apiRequest<Array<{ id: number; userId: number; fullName: string; email: string; type: string; status: string; reviewNote?: string; submittedAt?: string; reviewedAt?: string; documents?: Array<{ id: number; documentType: string; originalFileName: string }> }>>("/api/admin/verifications"),
-            apiRequest<Array<{ id: number; reporterId: number; reportedJobPostId?: number; reportedJobTitle?: string; reason: string; description: string; status: string; createdAt: string }>>("/api/admin/reports"),
+            apiRequest<Array<{ id: number; reporterId: number; reportedUserId?: number; reportedUserName?: string; reportedJobPostId?: number; reportedJobTitle?: string; reason: string; description: string; status: string; createdAt: string }>>("/api/admin/reports"),
+            apiRequest<Array<{ userId: number; fullName: string; email: string; role: string; status: string; phoneNumber?: string; dateOfBirth?: string; profilePictureUrl?: string; address?: string; bio?: string; preferredTravelDistanceKm?: number; hasBusiness?: boolean; businessName?: string; businessLocation?: string; businessDescription?: string; businessWebsite?: string }>>("/api/admin/users"),
+            apiRequest<ApiJob[]>("/api/admin/jobs"),
           ])
           if (!active) return
-          const workerProfiles = verificationRequests.filter((request) => request.type === "IDENTITY").map((request) => {
-            const user: User = { id: String(request.userId), role: "worker", email: request.email, name: request.fullName, profileId: String(request.userId), backendAuth: true }
-            const profile = mapSeekerProfile({}, user)
-            const document = request.documents?.[0]
+          const workerProfiles = backendUsers.filter((item) => item.role === "JOB_SEEKER").map((item) => {
+            const user: User = { id: String(item.userId), role: "worker", email: item.email, name: item.fullName, profileId: String(item.userId), backendAuth: true }
+            const profile = mapSeekerProfile(item, user)
+            const request = verificationRequests.find((entry) => entry.userId === item.userId && entry.type === "IDENTITY")
+            if (!request) return profile
+            const document = request.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "CITIZENSHIP_FRONT") || request.documents?.[0]
+            const backDocument = request.documents?.find((item) => item.documentType === "NID_BACK" || item.documentType === "CITIZENSHIP_BACK")
             return {
               ...profile,
               kycStatus: request.status === "APPROVED" ? "verified" as const : request.status === "REJECTED" ? "rejected" as const : "pending" as const,
@@ -646,20 +882,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
               kycReviewNote: request.reviewNote,
               kycSubmittedDate: request.submittedAt?.slice(0, 10),
               kycVerifiedDate: request.status === "APPROVED" ? request.reviewedAt?.slice(0, 10) : undefined,
-              kycDocumentType: document?.documentType === "NID_FRONT" ? "national-id" as const : document ? "citizenship" as const : undefined,
+              kycDocumentType: document?.documentType === "CITIZENSHIP_FRONT" ? "citizenship" as const : document ? "national-id" as const : undefined,
               kycDocumentFileName: document?.originalFileName,
               kycRequestId: String(request.id),
               kycDocumentId: document ? String(document.id) : undefined,
+              kycBackDocumentId: backDocument ? String(backDocument.id) : undefined,
+              kycBackDocumentFileName: backDocument?.originalFileName,
+            }
+          })
+          const backendUserList: User[] = backendUsers.map((item) => ({
+            id: String(item.userId), role: item.role === "JOB_PROVIDER" ? "provider" : item.role === "ADMIN" ? "admin" : "worker",
+            email: item.email, name: item.fullName, profileId: String(item.userId), backendAuth: true,
+            accountStatus: item.status === "SUSPENDED" ? "suspended" : "active",
+          }))
+          const providerProfiles = backendUsers.filter((item) => item.role === "JOB_PROVIDER").map((item): ProviderProfile => {
+            const user = backendUserList.find((candidate) => candidate.id === String(item.userId))!
+            const request = verificationRequests.find((entry) => entry.userId === item.userId)
+            const document = request?.documents?.find((item) => item.documentType === "BUSINESS_REGISTRATION" || item.documentType === "PAN_CERTIFICATE") || request?.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "CITIZENSHIP_FRONT") || request?.documents?.[0]
+            const backDocument = request?.documents?.find((item) => item.documentType === "NID_BACK" || item.documentType === "CITIZENSHIP_BACK")
+            const existing = data.providerProfiles.find((profile) => profile.id === user.profileId)
+            return {
+              ...(existing || {
+                id: user.profileId, orgName: item.businessName || user.name, logo: item.profilePictureUrl || "", contactName: user.name, email: user.email, phone: item.phoneNumber || "",
+                address: item.address || "", location: item.businessLocation || item.address || "", district: (item.businessLocation || item.address || "").split(",").at(-1)?.trim() || "", industry: "Other", description: item.businessDescription || "", verified: false, pan: "",
+                totalHires: 0, rating: 0, reviewCount: 0,
+              }),
+              orgName: item.businessName || user.name,
+              logo: item.profilePictureUrl || "",
+              contactName: user.name,
+              email: user.email,
+              phone: item.phoneNumber || "",
+              address: item.address || "",
+              location: item.businessLocation || item.address || "",
+              district: (item.businessLocation || item.address || "").split(",").at(-1)?.trim() || "",
+              description: item.businessDescription || "",
+              website: item.businessWebsite || "",
+              providerType: item.hasBusiness ? "business" : "individual",
+              verificationStatus: request ? request.status === "APPROVED" ? "verified" : request.status === "REJECTED" ? "rejected" : "pending" : "not-submitted",
+              verified: request?.status === "APPROVED",
+              verifiedDate: request?.status === "APPROVED" ? request.reviewedAt?.slice(0, 10) : undefined,
+              verificationReviewNote: request?.reviewNote,
+              verificationRequestId: request ? String(request.id) : undefined,
+              verificationDocumentId: document ? String(document.id) : undefined,
+              verificationDocumentName: document?.originalFileName,
+              verificationDocumentType: document?.documentType === "PAN_CERTIFICATE" ? "PAN_CERTIFICATE" : document?.documentType === "BUSINESS_REGISTRATION" ? "BUSINESS_REGISTRATION" : undefined,
+              verificationIdentityDocumentType: document?.documentType === "CITIZENSHIP_FRONT" ? "citizenship" : document?.documentType === "NID_FRONT" ? "national-id" : undefined,
+              verificationBackDocumentId: backDocument ? String(backDocument.id) : undefined,
+              verificationBackDocumentName: backDocument?.originalFileName,
             }
           })
           setData((old) => ({
             ...old,
+            jobs: backendAdminJobs.map((job) => mapApiJob(job)),
             workerProfiles: [...old.workerProfiles.filter((item) => !workerProfiles.some((apiProfile) => apiProfile.id === item.id)), ...workerProfiles],
-            users: [...old.users.filter((item) => !workerProfiles.some((profile) => profile.id === item.id)), ...workerProfiles.map((profile) => ({ id: profile.id, role: "worker" as const, email: profile.email, name: profile.name, profileId: profile.id, backendAuth: true }))],
+            providerProfiles: [...old.providerProfiles.filter((item) => !providerProfiles.some((profile) => profile.id === item.id)), ...providerProfiles],
+            users: [...old.users.filter((item) => !backendUserList.some((user) => user.id === item.id)), ...backendUserList],
             reports: backendReports.map((report) => ({
               id: String(report.id),
               reporterId: String(report.reporterId),
-              jobId: report.reportedJobPostId ? String(report.reportedJobPostId) : "",
+              jobId: report.reportedJobPostId ? String(report.reportedJobPostId) : undefined,
+              reportedUserId: report.reportedUserId ? String(report.reportedUserId) : undefined,
+              reportedUserName: report.reportedUserName,
               reason: report.reason,
               details: report.description,
               date: (report.createdAt || "").slice(0, 10),
@@ -669,19 +952,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (active) setStorageWarning("")
       } catch (error) {
-        if (active) {
-          const message = error instanceof Error ? error.message : "The server could not be reached."
-          setStorageWarning(
-            message.includes("404") || message.includes("route not found")
-              ? "Server sync unavailable: the Java API is not deployed or reachable. Check the Vercel backend service and database."
-              : `Server sync unavailable: ${message}`,
-          )
-        }
+        if (active) setStorageWarning(error instanceof Error ? `Server sync: ${error.message}` : "The server could not be reached.")
       }
     }
     void syncBackend()
     return () => { active = false }
   }, [currentUser?.id, currentUser?.role, workerProfile?.id, providerProfile?.id])
+
+  useEffect(() => {
+    if (!backendMode || !currentUser) return
+    let active = true
+    const refreshLiveActivity = async () => {
+      try {
+        const notificationRequest = apiRequest<Array<{ id: number; title: string; message: string; type?: string; read: boolean; createdAt?: string; referenceType?: string; referenceId?: number }>>("/api/notifications")
+        const engagementRequest = currentUser.role === "worker"
+          ? apiRequest<Array<{ engagementId: number; applicationId: number; status: string; providerCompletionConfirmed: boolean; seekerCompletionConfirmed: boolean }>>("/api/seeker/engagements")
+          : currentUser.role === "provider"
+            ? apiRequest<Array<{ engagementId: number; applicationId: number; status: string; providerCompletionConfirmed: boolean; seekerCompletionConfirmed: boolean }>>("/api/provider/engagements")
+            : Promise.resolve([])
+        const [serverNotifications, engagements] = await Promise.all([notificationRequest, engagementRequest])
+        if (!active) return
+        const engagementByApplication = new Map(engagements.map((item) => [String(item.applicationId), item]))
+        const engagementById = new Map(engagements.map((item) => [String(item.engagementId), item]))
+        setData((old) => ({
+          ...old,
+          notifications: serverNotifications.map((note) => {
+            const engagement = note.referenceType === "ENGAGEMENT" ? engagementById.get(String(note.referenceId)) : undefined
+            const applicationId = note.referenceType === "APPLICATION" ? String(note.referenceId) : engagement ? String(engagement.applicationId) : undefined
+            const application = applicationId ? old.applications.find((item) => item.id === applicationId) : undefined
+            return {
+              id: String(note.id), userId: currentUser.id, type: backendNotificationType(note.type),
+              title: note.title, message: note.message, date: (note.createdAt || "").slice(0, 10),
+              createdAt: note.createdAt, read: note.read,
+              jobId: note.referenceType === "JOB" ? String(note.referenceId) : application?.jobId,
+              applicationId, engagementId: engagement ? String(engagement.engagementId) : undefined,
+            }
+          }),
+          ...(currentUser.role === "worker" || currentUser.role === "provider" ? {
+            applications: old.applications.map((application) => {
+              const engagement = engagementByApplication.get(application.id)
+              if (!engagement) return application
+              return {
+                ...application,
+                status: engagement.status === "DECLINED" ? "declined" as const : "accepted" as const,
+                engagementId: String(engagement.engagementId),
+                engagementStatus: engagement.status,
+                providerCompletionConfirmed: engagement.providerCompletionConfirmed,
+                seekerCompletionConfirmed: engagement.seekerCompletionConfirmed,
+              }
+            }),
+          } : {}),
+        }))
+      } catch {
+        // Keep the last successfully synced activity visible during a transient API failure.
+      }
+    }
+    void refreshLiveActivity()
+    const timer = window.setInterval(() => void refreshLiveActivity(), 15000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [currentUser?.id, currentUser?.role])
 
   useEffect(() => {
     const handleExpired = () => {
@@ -850,7 +1179,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           mapped.kycSubmittedDate = identityRequest.submittedAt?.slice(0, 10)
           mapped.kycVerifiedDate = identityRequest.status === "APPROVED" ? identityRequest.reviewedAt?.slice(0, 10) : undefined
           const document = identityRequest.documents?.[0]
-          mapped.kycDocumentType = document?.documentType === "NID_FRONT" ? "national-id" : document ? "citizenship" : undefined
+          mapped.kycDocumentType = document?.documentType === "CITIZENSHIP_FRONT" ? "citizenship" : document ? "national-id" : undefined
           mapped.kycDocumentFileName = document?.originalFileName
         }
         setData((old) => ({
@@ -864,6 +1193,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const profile = await apiRequest<Record<string, unknown>>("/api/provider/profile")
         const mapped = mapProviderProfile(profile, user)
+        const requests = await apiRequest<Array<{ id: number; type: string; status: string; reviewNote?: string; submittedAt?: string; reviewedAt?: string; documents?: Array<{ id: number; documentType: string; originalFileName: string }> }>>("/api/verifications/me")
+        const request = requests.find((item) => item.type === (mapped.providerType === "individual" ? "IDENTITY" : "BUSINESS"))
+        if (request) {
+          const front = request.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "BUSINESS_REGISTRATION" || item.documentType === "PAN_CERTIFICATE")
+          const back = request.documents?.find((item) => item.documentType === "NID_BACK" || item.documentType === "CITIZENSHIP_BACK")
+          mapped.verificationStatus = request.status === "APPROVED" ? "verified" : request.status === "REJECTED" ? "rejected" : "pending"
+          mapped.verificationReviewNote = request.reviewNote
+          mapped.verificationDocumentName = front?.originalFileName
+          mapped.verificationDocumentType = front?.documentType === "PAN_CERTIFICATE" ? "PAN_CERTIFICATE" : front?.documentType === "BUSINESS_REGISTRATION" ? "BUSINESS_REGISTRATION" : undefined
+          mapped.verificationIdentityDocumentType = front?.documentType === "CITIZENSHIP_FRONT" ? "citizenship" : front?.documentType === "NID_FRONT" ? "national-id" : undefined
+          mapped.verificationBackDocumentName = back?.originalFileName
+          mapped.verificationRequestId = String(request.id)
+          mapped.verificationDocumentId = front ? String(front.id) : undefined
+          mapped.verificationBackDocumentId = back ? String(back.id) : undefined
+        } else mapped.verificationStatus = "not-submitted"
         setData((old) => ({
           ...old,
           providerProfiles: [...old.providerProfiles.filter((item) => item.id !== mapped.id), { ...provider, ...mapped }],
@@ -938,7 +1282,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           confirmPassword: form.password,
           phoneNumber: form.phone.replace(/[\s()-]/g, ""),
           dateOfBirth: form.dateOfBirth,
-          address: (form.address || form.location || form.district).trim(),
+          address: [...new Set([form.address, form.location, form.district].map((value) => value?.trim()).filter(Boolean))].join(", "),
         }),
       })
         .then(async (auth) => {
@@ -1002,7 +1346,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const signupProvider = async (form: ProviderSignup) => {
     if (!form.contactName.trim()) return "Enter a contact person name."
-    if (!form.orgName.trim()) return "Enter your organisation name."
+    if (form.providerType !== "individual" && !form.orgName.trim()) return "Enter your business or organization name."
     if (!isValidEmail(form.email)) return "Enter a valid email address."
     if (!isValidPhoneNumber(form.phone))
       return "Enter a valid phone number with 7 to 15 digits."
@@ -1010,13 +1354,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return "Enter your date of birth."
     if (form.password.length < 8)
       return "Use a password with at least 8 characters."
-    if (form.providerType !== "individual" && !isValidNepalPan(form.pan))
-      return "Enter a 9-digit PAN number for your business or organization."
     if (form.pan && !isValidNepalPan(form.pan))
       return "Enter a valid 9-digit PAN number or leave it blank for an individual account."
-    if (!form.industry.trim()) return "Select your industry."
     if (!form.district.trim()) return "Select your district."
-    if (!form.location.trim()) return "Enter your organisation address."
+    if (!(form.address || form.location).trim()) return "Enter your street or local address."
+    if (form.providerType !== "individual" && !form.location.trim()) return "Enter your business or organization address."
     const duplicate = duplicateError(form.email)
     if (duplicate) return duplicate
     if (backendMode) {
@@ -1030,20 +1372,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
           confirmPassword: form.password,
           phoneNumber: form.phone.replace(/[\s()-]/g, ""),
           dateOfBirth: form.dateOfBirth,
-          address: (form.address || form.location || form.district).trim(),
+          address: [form.address || form.location, form.district].filter(Boolean).join(", ").trim(),
           hasBusiness,
           businessName: hasBusiness ? form.orgName.trim() : null,
-          businessLocation: hasBusiness ? form.location.trim() : null,
-          businessDescription: hasBusiness ? form.industry : null,
+          businessLocation: hasBusiness ? [form.location.trim(), form.district].filter(Boolean).join(", ") : null,
+          businessDescription: hasBusiness ? form.description?.trim() || null : null,
+          businessWebsite: hasBusiness ? form.website?.trim() || null : null,
         }),
       })
         .then(async (auth) => {
           await activateBackend(auth, {
             phone: form.phone,
             dateOfBirth: form.dateOfBirth,
-            location: form.location,
+            address: form.address,
+            location: form.providerType === "individual" ? form.address : form.location,
             orgName: form.orgName,
-            industry: form.industry,
+            industry: form.industry || "Other",
+            description: form.description,
+            website: form.website,
             district: form.district,
             providerType: form.providerType,
           })
@@ -1058,23 +1404,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       id: id("u-p"),
       role: "provider",
       email: form.email.trim().toLowerCase(),
-      name: form.orgName.trim(),
+      name: (form.providerType === "individual" ? form.contactName : form.orgName).trim(),
       profileId,
     }
     const profile: ProviderProfile = {
       id: profileId,
       providerType: form.providerType,
-      orgName: form.orgName.trim(),
+      orgName: (form.providerType === "individual" ? form.contactName : form.orgName).trim(),
       logo: blankProviderLogo,
       contactName: form.contactName.trim(),
       email: user.email,
       phone: form.phone.trim(),
-      location: form.location || form.district,
+      address: form.address || "",
+      location: form.providerType === "individual" ? (form.address || form.location) : form.location,
       district: form.district,
-      industry: form.industry,
-      description: "",
+      industry: form.industry || "Other",
+      description: form.description || "",
       verified: false,
       pan: form.pan.trim(),
+      website: form.website,
       totalHires: 0,
       rating: 0,
       reviewCount: 0,
@@ -1120,7 +1468,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activate(admin)
   }
 
-  const applyToJob = async (jobId: string, coverNote: string) => {
+  const applyToJob = async (jobId: string) => {
     if (
       !currentUser ||
       !workerProfile ||
@@ -1143,7 +1491,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...mapApiApplication(saved, currentUser, workerProfile),
         providerName: job.providerName,
         providerId: job.providerId,
-        coverNote,
       }
       setData((old) => ({ ...old, applications: [...old.applications.filter((item) => item.id !== application.id), application] }))
       return
@@ -1165,7 +1512,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         providerId: job.providerId,
         appliedDate: today(),
         status: "pending",
-        coverNote,
       }
       draft.applications.push(application)
       draft.jobs = draft.jobs.map((item) =>
@@ -1198,7 +1544,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     )
       return
     if (backendMode) {
-      if (!/^\d+$/.test(jobId)) return
+      if (!/^\d+$/.test(jobId)) {
+        const snapshot = data.jobs.find((job) => job.id === jobId) || externalJobs.find((job) => job.id === jobId)
+        if (!snapshot) {
+          setStorageWarning("This job is no longer available to save. Refresh job discovery and try again.")
+          return
+        }
+        setData((old) => ({
+          ...old,
+          externalJobs: [...old.externalJobs.filter((job) => job.id !== snapshot.id), snapshot],
+          savedJobs: [...old.savedJobs, { workerId: workerProfile.id, jobId, snapshot }],
+        }))
+        setExternalJobsState((old) => [...old.filter((job) => job.id !== snapshot.id), snapshot])
+        return
+      }
       void apiRequest(`/api/seeker/saved-jobs/${jobId}`, { method: "PUT" })
         .then(() => setData((old) => ({ ...old, savedJobs: [...old.savedJobs, { workerId: workerProfile.id, jobId }] })))
         .catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Unable to save this job."))
@@ -1294,18 +1653,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (workerUser)
         addNotification(draft, {
           userId: workerUser.id,
-          type:
-            status === "accepted"
-              ? "selection"
-              : status === "shortlisted"
-                ? "shortlisted"
-                : "rejection",
-          title:
-            status === "accepted"
-              ? "Application Accepted!"
-              : status === "shortlisted"
-                ? "You've been Shortlisted"
-                : "Application Update",
+          type: status === "accepted" ? "selection" : "rejection",
+          title: status === "accepted" ? "Application Accepted!" : "Application Update",
           message: `Your application for "${application.jobTitle}" is now ${status}.${
             note ? ` Note: ${note}` : ""
           }`,
@@ -1324,7 +1673,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then((result) => setData((old) => ({
         ...old,
         applications: old.applications.map((item) => item.id === applicationId
-          ? { ...item, status: accept ? "accepted" : "rejected", engagementStatus: result.status }
+          ? { ...item, status: accept ? "accepted" : "declined", engagementStatus: result.status }
           : item),
       })))
       .catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Unable to respond to the work selection."))
@@ -1343,8 +1692,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (currentUser.role === "provider" && application.engagementStatus === "CONFIRMED") {
           await apiRequest(`/api/provider/engagements/${application.engagementId}/start`, { method: "POST" })
         }
-        const result = await apiRequest<{ status: string }>(`/api/${prefix}/engagements/${application.engagementId}/confirm-completion`, { method: "POST" })
-        setData((old) => ({ ...old, applications: old.applications.map((item) => item.id === applicationId ? { ...item, engagementStatus: result.status } : item) }))
+        const result = await apiRequest<{ status: string; providerCompletionConfirmed: boolean; seekerCompletionConfirmed: boolean }>(`/api/${prefix}/engagements/${application.engagementId}/confirm-completion`, { method: "POST" })
+        setData((old) => ({ ...old, applications: old.applications.map((item) => item.id === applicationId ? { ...item, engagementStatus: result.status, providerCompletionConfirmed: result.providerCompletionConfirmed, seekerCompletionConfirmed: result.seekerCompletionConfirmed } : item) }))
         setStorageWarning("")
       } catch (error) {
         setStorageWarning(error instanceof Error ? error.message : "Unable to update the work status.")
@@ -1362,20 +1711,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
           .filter((skillId): skillId is number => Number.isFinite(skillId))
         const payload = {
           title: job.title,
+          category: job.category,
           description: job.description,
-          responsibilities: "",
-          address: job.location,
-          municipality: job.district,
+          responsibilities: job.responsibilities || "",
+          qualificationRequired: job.qualificationRequired || "",
+          address: job.address || job.location,
+          municipality: job.municipality || "",
           district: job.district,
-          province: "",
+          province: job.province || "",
+          latitude: job.latitude,
+          longitude: job.longitude,
           startDate: job.date,
           endDate: job.endDate || job.date,
           startTime: `${job.startTime}:00`,
           endTime: `${job.endTime}:00`,
           durationDescription: job.duration,
           paymentAmount: job.payment,
-          paymentMethod: job.paymentType === "fixed" ? "OTHER" : "CASH",
-          requiredExperienceMonths: Number(job.experienceRequired.match(/\d+/)?.[0] || 0),
+          paymentMethod: job.paymentMethod || "CASH",
+          requiredExperienceMonths: parseRequiredExperienceMonths(job.experienceRequired),
           numberOfWorkersRequired: job.workersNeeded,
           requiredSkillIds: skillIds,
         }
@@ -1438,13 +1791,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const saved = await apiRequest<ApiJob>(`/api/provider/jobs/${jobId}`, {
           method: "PUT",
           body: JSON.stringify({
-            title: job.title, description: job.description, responsibilities: "",
-            address: job.location, municipality: job.district, district: job.district, province: "",
+            title: job.title, category: job.category, description: job.description, responsibilities: job.responsibilities || "",
+            qualificationRequired: job.qualificationRequired || "",
+            address: job.address || job.location, municipality: job.municipality || "", district: job.district, province: job.province || "",
+            latitude: job.latitude, longitude: job.longitude,
             startDate: job.date, endDate: job.endDate || job.date,
             startTime: `${job.startTime}:00`, endTime: `${job.endTime}:00`,
             durationDescription: job.duration, paymentAmount: job.payment,
-            paymentMethod: job.paymentType === "fixed" ? "OTHER" : "CASH",
-            requiredExperienceMonths: Number(job.experienceRequired.match(/\d+/)?.[0] || 0),
+            paymentMethod: job.paymentMethod || "CASH",
+            requiredExperienceMonths: parseRequiredExperienceMonths(job.experienceRequired),
             numberOfWorkersRequired: job.workersNeeded, requiredSkillIds: skillIds,
           }),
         })
@@ -1558,10 +1913,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? "SUSPICIOUS_JOB"
             : "OTHER"
       try {
-        await apiRequest("/api/reports", {
+        const result = await apiRequest<{ id: number; status?: string; createdAt?: string }>("/api/reports", {
           method: "POST",
           body: JSON.stringify({ reportedJobPostId: Number(jobId), reason: backendReason, description: details.trim() || reason }),
         })
+        setData((old) => ({ ...old, reports: [...old.reports.filter((report) => report.id !== String(result.id)), {
+          id: String(result.id), reporterId: currentUser.id, jobId, reason: backendReason,
+          details: details.trim() || reason, date: (result.createdAt || today()).slice(0, 10), status: "submitted",
+        }] }))
         return null
       } catch (error) {
         return error instanceof Error ? error.message : "Could not submit this report. Please try again."
@@ -1585,12 +1944,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return null
   }
 
+  const reportUser = async (userId: string, reason: string, details: string) => {
+    if (!currentUser) return "Please sign in before reporting an account."
+    const target = data.users.find((user) => user.id === userId || user.profileId === userId)
+    const backendUserId = target?.id || userId
+    if (target && target.id === currentUser.id) return "You cannot report your own account."
+    if (data.reports.some((report) => report.reportedUserId === backendUserId && report.reporterId === currentUser.id))
+      return "You have already reported this account."
+    if (!details.trim()) return "Add a short description for this report."
+    const normalizedReason = reason.toUpperCase().replace(/[\s-]+/g, "_")
+    const allowedReasons = ["SUSPICIOUS_JOB", "FAKE_ACCOUNT", "MISCONDUCT", "HARASSMENT", "PAYMENT_ISSUE", "OTHER"]
+    const backendReason = allowedReasons.includes(normalizedReason) ? normalizedReason : "OTHER"
+    if (backendMode) {
+      if (!/^\d+$/.test(backendUserId)) return "This account cannot be reported until its server profile is available."
+      try {
+        const result = await apiRequest<{ id: number; status?: string; createdAt?: string }>("/api/reports", {
+          method: "POST", body: JSON.stringify({ reportedUserId: Number(backendUserId), reason: backendReason, description: details.trim() }),
+        })
+        setData((old) => ({ ...old, reports: [...old.reports.filter((report) => report.id !== String(result.id)), {
+          id: String(result.id), reporterId: currentUser.id, reportedUserId: backendUserId,
+          reportedUserName: target?.name, reason: backendReason, details: details.trim(),
+          date: (result.createdAt || today()).slice(0, 10), status: "submitted",
+        }] }))
+        return null
+      } catch (error) { return error instanceof Error ? error.message : "Could not submit this report. Please try again." }
+    }
+    if (!target) return "This account is no longer available."
+    setData((old) => ({ ...old, reports: [...old.reports, {
+      id: id("report"), reporterId: currentUser.id, reportedUserId: backendUserId,
+      reportedUserName: target.name, reason: backendReason, details: details.trim(), date: today(), status: "submitted",
+    }] }))
+    return null
+  }
+
   const reviewWorker = async (
     applicationId: string,
     rating: number,
     review: string,
   ) => {
-    if (!providerProfile || rating < 1 || rating > 5 || !review.trim()) return "Enter a rating and review first."
+    if (!providerProfile || rating < 1 || rating > 5) return "Choose a rating from 1 to 5 stars."
     if (backendMode) {
       const application = data.applications.find((item) => item.id === applicationId)
       if (!application?.engagementId || application.engagementStatus !== "COMPLETED") return "Reviews are available after both sides confirm the work is complete."
@@ -1654,7 +2046,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const reviewProvider = async (applicationId: string, rating: number, review: string) => {
-    if (!workerProfile || rating < 1 || rating > 5 || !review.trim()) return "Enter a rating and review first."
+    if (!workerProfile || rating < 1 || rating > 5) return "Choose a rating from 1 to 5 stars."
     if (backendMode) {
       const application = data.applications.find((item) => item.id === applicationId)
       if (!application?.engagementId || application.engagementStatus !== "COMPLETED") return "Reviews are available after both sides confirm the work is complete."
@@ -1689,16 +2081,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const submitKyc = async (submission: KycSubmission) => {
     if (!workerProfile)
       return "Only worker accounts can submit identity verification."
-    if (!workerProfile.phoneVerified || !workerProfile.emailVerified)
+    if (!backendMode && (!workerProfile.phoneVerified || !workerProfile.emailVerified))
       return "Verify your phone number and email address before submitting identity verification."
-    if (
-      !(
-        "national-id" === submission.documentType ||
-        "citizenship" === submission.documentType ||
-        "passport" === submission.documentType ||
-        "driving-licence" === submission.documentType
-      )
-    ) {
+    if (submission.documentType !== "national-id" && submission.documentType !== "citizenship") {
       return "Choose a valid identity document type."
     }
     const documentNumber = submission.documentNumber.trim()
@@ -1706,7 +2091,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (documentNumber.length < 4 || documentNumber.length > 40)
       return "Document number must be between 4 and 40 characters."
     if (!submission.fileName || !submission.documentData)
-      return "Upload a clear identity document."
+      return "Upload the front of your National ID."
+    if (!submission.backFileName || !submission.backDocumentData)
+      return `Upload the back of your ${submission.documentType === "citizenship" ? "citizenship certificate" : "National ID"} as well.`
     if (submission.documentExpiryDate) {
       if (!isDateOnlyString(submission.documentExpiryDate))
         return "Enter a valid document expiry date."
@@ -1719,26 +2106,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return "The selfie is too large. Use an image smaller than 512 KB."
     if (backendMode) {
       try {
-        const requests = await apiRequest<Array<{ id: number; type: string; status: string }>>("/api/verifications/me")
+        const requests = await apiRequest<Array<{ id: number; type: string; status: string; documents?: Array<{ id: number; documentType: string }> }>>("/api/verifications/me")
         const pendingRequest = requests.find((item) => item.type === "IDENTITY" && item.status === "PENDING")
+        const isCitizenship = submission.documentType === "citizenship"
+        const frontType = isCitizenship ? "CITIZENSHIP_FRONT" : "NID_FRONT"
+        const backType = isCitizenship ? "CITIZENSHIP_BACK" : "NID_BACK"
+        const existingFrontType = pendingRequest?.documents?.find((document) => document.documentType === "NID_FRONT" || document.documentType === "CITIZENSHIP_FRONT")?.documentType
+        if (existingFrontType && existingFrontType !== frontType) {
+          return "A pending request already uses a different identity document. Continue with that document or ask an administrator to reject the request before changing it."
+        }
         const requestId = pendingRequest?.id ?? (await apiRequest<{ id: number }>("/api/verifications", {
             method: "POST",
             body: JSON.stringify({ type: "IDENTITY" }),
           })).id
-        const blob = await (await fetch(submission.documentData)).blob()
-        const form = new FormData()
-        form.set("documentType", submission.documentType === "national-id" ? "NID_FRONT" : "OTHER")
-        form.set("file", new File([blob], submission.fileName, { type: blob.type || "application/octet-stream" }))
-        await apiRequest(`/api/verifications/${requestId}/documents`, {
-          method: "POST",
-          body: form,
-        })
+        const uploadDocument = async (data: string, fileName: string, documentType: "NID_FRONT" | "NID_BACK" | "CITIZENSHIP_FRONT" | "CITIZENSHIP_BACK") => {
+          const blob = await (await fetch(data)).blob()
+          const form = new FormData()
+          form.set("documentType", documentType)
+          form.set("file", new File([blob], fileName, { type: blob.type || "application/octet-stream" }))
+          await apiRequest(`/api/verifications/${requestId}/documents`, { method: "POST", body: form })
+        }
+        if (!pendingRequest?.documents?.some((document) => document.documentType === frontType)) {
+          await uploadDocument(submission.documentData, submission.fileName, frontType)
+        }
+        if (!pendingRequest?.documents?.some((document) => document.documentType === backType)) {
+          await uploadDocument(submission.backDocumentData!, submission.backFileName!, backType)
+        }
         updateWorkerProfile({
           kycStatus: "pending",
           kycDocumentType: submission.documentType,
           kycDocumentNumber: undefined,
           kycDocumentFileName: submission.fileName,
           kycDocumentData: undefined,
+          kycBackDocumentData: undefined,
           kycDocumentExpiryDate: submission.documentExpiryDate || undefined,
           kycSelfieData: undefined,
           kycSelfieFileName: undefined,
@@ -1758,6 +2158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       kycDocumentNumber: documentNumber,
       kycDocumentFileName: submission.fileName,
       kycDocumentData: submission.documentData,
+      kycBackDocumentData: submission.backDocumentData,
       kycDocumentExpiryDate: submission.documentExpiryDate || undefined,
       kycSelfieData: submission.selfieData,
       kycSelfieFileName: submission.selfieFileName,
@@ -1820,6 +2221,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         (profile) => profile.id === workerId,
       )
       if (!worker || worker.kycStatus !== "pending") return old
+      if (decision === "verified" && (!worker.kycDocumentData || !worker.kycBackDocumentData)) {
+        setStorageWarning("Both sides of the worker’s NID or citizenship document must be submitted before approval.")
+        return old
+      }
       worker.kycStatus = decision
       worker.verified = decision === "verified"
       worker.kycVerifiedDate = decision === "verified" ? today() : undefined
@@ -1905,7 +2310,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const moderateJob = (jobId: string, status: Job["status"]) => {
     if (currentUser?.role !== "admin") return
     if (backendMode) {
-      setStorageWarning("Administrator job moderation is not available in the backend API yet.")
+      const backendStatus = status === "active" ? "OPEN" : status === "closed" ? "CLOSED" : status === "filled" ? "COMPLETED" : "REMOVED"
+      void apiRequest<ApiJob>(`/api/admin/jobs/${jobId}/status`, { method: "PATCH", body: JSON.stringify({ status: backendStatus }) })
+        .then((job) => setData((old) => ({ ...old, jobs: old.jobs.map((item) => item.id === jobId ? mapApiJob(job) : item) })))
+        .catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Could not moderate this job listing."))
       return
     }
     setData((old) => ({
@@ -1918,6 +2326,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const verifyProvider = (providerId: string, verified: boolean) => {
     if (currentUser?.role !== "admin") return
+    // Badge grants must go through reviewProviderVerification after a pending request is reviewed.
+    if (verified) return
     setData((old) => ({
       ...old,
       providerProfiles: old.providerProfiles.map((profile) =>
@@ -1935,14 +2345,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const submitProviderVerification = (fileName: string, fileData: string) => {
-    if (currentUser?.role !== "provider" || !providerProfile || !fileData) return
+  const submitProviderVerification = async (fileName: string, fileData: string, backFileName?: string, backFileData?: string, identityDocumentType: "national-id" | "citizenship" = "national-id", businessDocumentType: "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE" = "BUSINESS_REGISTRATION") => {
+    if (currentUser?.role !== "provider" || !providerProfile || !fileData) return "Sign in as a provider and choose a document first."
+    if (providerProfile.providerType === "individual" && (!backFileName || !backFileData)) return `Upload both sides of your ${identityDocumentType === "citizenship" ? "citizenship certificate" : "National ID"}.`
+    if (backendMode) {
+      try {
+        const type = providerProfile.providerType === "individual" ? "IDENTITY" : "BUSINESS"
+        const requests = await apiRequest<Array<{ id: number; type: string; status: string; documents?: Array<{ id: number; documentType: string }> }>>("/api/verifications/me")
+        const existing = requests.find((item) => item.type === type && item.status === "PENDING")
+        const frontType = type === "BUSINESS" ? businessDocumentType : identityDocumentType === "citizenship" ? "CITIZENSHIP_FRONT" : "NID_FRONT"
+        const backType = identityDocumentType === "citizenship" ? "CITIZENSHIP_BACK" : "NID_BACK"
+        const existingFrontType = existing?.documents?.find((document) => ["NID_FRONT", "CITIZENSHIP_FRONT", "BUSINESS_REGISTRATION", "PAN_CERTIFICATE"].includes(document.documentType))?.documentType
+        if (existingFrontType && existingFrontType !== frontType) {
+          return "A pending request already uses a different verification document. Continue with that document or ask an administrator to reject the request before changing it."
+        }
+        const requestId = existing?.id ?? (await apiRequest<{ id: number }>("/api/verifications", { method: "POST", body: JSON.stringify({ type }) })).id
+        const upload = async (name: string, data: string, documentType: "NID_FRONT" | "NID_BACK" | "CITIZENSHIP_FRONT" | "CITIZENSHIP_BACK" | "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE") => {
+          const blob = await (await fetch(data)).blob()
+          const form = new FormData()
+          form.set("documentType", documentType)
+          form.set("file", new File([blob], name, { type: blob.type || "application/octet-stream" }))
+          return apiRequest<{ id: number }>(`/api/verifications/${requestId}/documents`, { method: "POST", body: form })
+        }
+        const front = existing?.documents?.some((document) => document.documentType === frontType)
+          ? undefined
+          : await upload(fileName, fileData, frontType)
+        const back = type === "IDENTITY" && !existing?.documents?.some((document) => document.documentType === backType)
+          ? await upload(backFileName!, backFileData!, backType)
+          : undefined
+        const uploadedFront = front || existing?.documents?.find((document) => document.documentType === frontType)
+        const uploadedBack = back || (type === "IDENTITY" ? existing?.documents?.find((document) => document.documentType === backType) : undefined)
+        setData((old) => ({
+          ...old,
+          providerProfiles: old.providerProfiles.map((profile) => profile.id === providerProfile.id ? {
+            ...profile, verificationDocumentName: fileName, verificationDocumentType: type === "BUSINESS" ? businessDocumentType : undefined, verificationIdentityDocumentType: type === "IDENTITY" ? identityDocumentType : undefined, verificationBackDocumentName: backFileName,
+            verificationStatus: "pending", verificationReviewNote: undefined, verified: false, verifiedDate: undefined,
+            verificationRequestId: String(requestId), verificationDocumentId: uploadedFront ? String(uploadedFront.id) : undefined,
+            verificationBackDocumentId: uploadedBack ? String(uploadedBack.id) : undefined,
+          } : profile),
+          jobs: old.jobs.map((job) => job.providerId === providerProfile.id ? { ...job, providerVerified: false } : job),
+        }))
+        return null
+      } catch (error) { return error instanceof Error ? error.message : "Unable to submit provider verification." }
+    }
     setData((old) => {
       const draft = structuredClone(old)
       const profile = draft.providerProfiles.find((item) => item.id === providerProfile.id)
       if (!profile) return old
       profile.verificationDocumentName = fileName
+      profile.verificationDocumentType = providerProfile.providerType === "individual" ? undefined : businessDocumentType
+      profile.verificationIdentityDocumentType = providerProfile.providerType === "individual" ? identityDocumentType : undefined
       profile.verificationDocumentData = fileData
+      profile.verificationBackDocumentName = backFileName
+      profile.verificationBackDocumentData = backFileData
       profile.verificationStatus = "pending"
       profile.verificationReviewNote = undefined
       profile.verified = false
@@ -1958,14 +2413,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
       )
       return draft
     })
+    return null
   }
 
   const reviewProviderVerification = (providerId: string, approved: boolean, note?: string) => {
     if (currentUser?.role !== "admin") return
+    if (backendMode) {
+      const profile = data.providerProfiles.find((item) => item.id === providerId)
+      if (!profile?.verificationRequestId) return
+      const params = approved ? "" : `?note=${encodeURIComponent(note?.trim() || "Please upload a clear verification document.")}`
+      void apiRequest(`/api/admin/verifications/${profile.verificationRequestId}/${approved ? "approve" : "reject"}${params}`, { method: "POST" })
+        .then(() => setData((old) => ({
+          ...old,
+          providerProfiles: old.providerProfiles.map((item) => item.id === providerId ? {
+            ...item,
+            verified: approved,
+            verifiedDate: approved ? today() : undefined,
+            verificationStatus: approved ? "verified" : "rejected",
+            verificationReviewNote: approved ? undefined : note?.trim() || "Please upload a clear verification document.",
+          } : item),
+          jobs: old.jobs.map((job) => job.providerId === providerId ? { ...job, providerVerified: approved } : job),
+        })))
+        .catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Could not review this provider verification."))
+      return
+    }
     setData((old) => {
       const draft = structuredClone(old)
       const profile = draft.providerProfiles.find((item) => item.id === providerId)
       if (!profile || profile.verificationStatus !== "pending") return old
+      if (approved && (!profile.verificationDocumentData || (profile.providerType === "individual" && !profile.verificationBackDocumentData))) {
+        setStorageWarning("Required provider verification documents must be submitted before approval.")
+        return old
+      }
       profile.verified = approved
       profile.verifiedDate = approved ? today() : undefined
       profile.verificationStatus = approved ? "verified" : "rejected"
@@ -2034,18 +2513,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!workerProfile) return
     if (backendMode) {
       const next = { ...workerProfile, ...updates }
-      if (updates.name !== undefined || updates.phone !== undefined || updates.dateOfBirth !== undefined || updates.address !== undefined || updates.location !== undefined || updates.bio !== undefined || updates.skills !== undefined) {
+      if (updates.name !== undefined || updates.phone !== undefined || updates.dateOfBirth !== undefined || updates.address !== undefined || updates.location !== undefined || updates.district !== undefined || updates.bio !== undefined || updates.skills !== undefined || updates.preferredTravelDistanceKm !== undefined || updates.preferredCategories !== undefined || Object.prototype.hasOwnProperty.call(updates, "latitude") || Object.prototype.hasOwnProperty.call(updates, "longitude")) {
         void apiRequest<Record<string, unknown>>("/api/seeker/profile", {
           method: "PUT",
           body: JSON.stringify({
             fullName: next.name,
             phoneNumber: next.phone.replace(/[\s()-]/g, ""),
             dateOfBirth: next.dateOfBirth,
-            address: next.address || next.location || next.district,
+            address: [...new Set([next.address, next.location, next.district].map((value) => value?.trim()).filter(Boolean))].join(", "),
             bio: next.bio,
-            preferredTravelDistanceKm: 10,
+            preferredTravelDistanceKm: next.preferredTravelDistanceKm ?? 10,
+            latitude: next.latitude,
+            longitude: next.longitude,
+            preferredCategories: next.preferredCategories || [],
           }),
         }).catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Unable to save the worker profile."))
+      }
+      if (updates.qualifications) {
+        void (async () => {
+          const desired = updates.qualifications ?? []
+          const current = await apiRequest<Array<{ id: number }>>("/api/seeker/qualifications")
+          const keepIds = new Set(desired.map((item) => item.id).filter((value) => /^\d+$/.test(value)))
+          await Promise.all(current.filter((item) => !keepIds.has(String(item.id))).map((item) => apiRequest<void>(`/api/seeker/qualifications/${item.id}`, { method: "DELETE" })))
+          for (const item of desired) {
+            const startDate = item.startDate || `${item.year}-01-01`
+            const payload = {
+              qualificationName: item.degree.trim(), institution: item.institution.trim(), fieldOfStudy: item.field.trim(), credentialType: (item.credentialType || "education").toUpperCase(), startDate,
+              endDate: item.currentlyStudying ? null : item.endDate || `${item.year}-12-31`, currentlyStudying: Boolean(item.currentlyStudying),
+            }
+            if (/^\\d+$/.test(item.id)) await apiRequest(`/api/seeker/qualifications/${item.id}`, { method: "PUT", body: JSON.stringify(payload) })
+            else {
+              const saved = await apiRequest<{ id: number }>("/api/seeker/qualifications", { method: "POST", body: JSON.stringify(payload) })
+              setData((old) => ({ ...old, workerProfiles: old.workerProfiles.map((profile) => profile.id === workerProfile.id ? { ...profile, qualifications: (profile.qualifications || []).map((value) => value.id === item.id ? { ...value, id: String(saved.id) } : value) } : profile) }))
+            }
+          }
+        })().catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Unable to save qualifications."))
+      }
+      if (updates.experience) {
+        void (async () => {
+          const desired = updates.experience ?? []
+          const current = await apiRequest<Array<{ id: number }>>("/api/seeker/experience")
+          const keepIds = new Set(desired.map((item) => item.id).filter((value) => /^\d+$/.test(value)))
+          await Promise.all(current.filter((item) => !keepIds.has(String(item.id))).map((item) => apiRequest<void>(`/api/seeker/experience/${item.id}`, { method: "DELETE" })))
+          for (const item of desired) {
+            const startDate = item.startDate
+            const payload = { jobTitle: item.title.trim(), organizationName: item.company.trim(), description: item.description.trim(), startDate, endDate: item.currentlyWorking ? null : item.endDate, currentlyWorking: Boolean(item.currentlyWorking) }
+            if (/^\\d+$/.test(item.id)) await apiRequest(`/api/seeker/experience/${item.id}`, { method: "PUT", body: JSON.stringify(payload) })
+            else {
+              const saved = await apiRequest<{ id: number }>("/api/seeker/experience", { method: "POST", body: JSON.stringify(payload) })
+              setData((old) => ({ ...old, workerProfiles: old.workerProfiles.map((profile) => profile.id === workerProfile.id ? { ...profile, experience: (profile.experience || []).map((value) => value.id === item.id ? { ...value, id: String(saved.id) } : value) } : profile) }))
+            }
+          }
+        })().catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Unable to save work experience."))
       }
       if (updates.skills) {
         void (async () => {
@@ -2065,6 +2584,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }))
           } catch (error) {
             setStorageWarning(error instanceof Error ? error.message : "Unable to update worker skills.")
+          }
+        })()
+      }
+      if (updates.weeklyAvailability) {
+        void (async () => {
+          const previous = workerProfile.weeklyAvailability ?? []
+          const nextSlots = updates.weeklyAvailability ?? []
+          const requestFor = (slot: AvailabilitySlot) => {
+            const endOfYear = new Date(`${today()}T12:00:00Z`)
+            endOfYear.setUTCDate(endOfYear.getUTCDate() + 365)
+            return {
+              dayOfWeek: slot.date ? null : slot.day.toUpperCase(),
+              startDate: slot.date || today(),
+              endDate: slot.date ? slot.endDate || slot.date : endOfYear.toISOString().slice(0, 10),
+              startTime: `${slot.startTime}:00`,
+              endTime: `${slot.endTime}:00`,
+            }
+          }
+          const sameSchedule = (a: AvailabilitySlot, b: AvailabilitySlot) =>
+            a.day === b.day && a.date === b.date && a.endDate === b.endDate && a.startTime === b.startTime && a.endTime === b.endTime
+          try {
+            for (const oldSlot of previous.filter((slot) => /^\d+$/.test(slot.id))) {
+              const replacement = nextSlots.find((slot) => slot.id === oldSlot.id)
+              if (!replacement) {
+                await apiRequest<void>(`/api/seeker/availability/${oldSlot.id}`, { method: "DELETE" })
+              } else if (!sameSchedule(oldSlot, replacement)) {
+                const saved = await apiRequest<{ id: number }>(`/api/seeker/availability/${oldSlot.id}`, { method: "PUT", body: JSON.stringify(requestFor(replacement)) })
+                setData((old) => ({ ...old, workerProfiles: old.workerProfiles.map((profile) => profile.id === workerProfile.id ? { ...profile, weeklyAvailability: (profile.weeklyAvailability ?? []).map((slot) => slot.id === replacement.id ? { ...replacement, id: String(saved.id) } : slot) } : profile) }))
+              }
+            }
+            for (const slot of nextSlots.filter((item) => !/^\d+$/.test(item.id))) {
+              const saved = await apiRequest<{ id: number }>("/api/seeker/availability", { method: "POST", body: JSON.stringify(requestFor(slot)) })
+              setData((old) => ({ ...old, workerProfiles: old.workerProfiles.map((profile) => profile.id === workerProfile.id ? { ...profile, weeklyAvailability: (profile.weeklyAvailability ?? []).map((item) => item.id === slot.id ? { ...slot, id: String(saved.id) } : item) } : profile) }))
+            }
+          } catch (error) {
+            setStorageWarning(error instanceof Error ? error.message : "Unable to save your availability.")
           }
         })()
       }
@@ -2152,7 +2707,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           fullName: next.contactName,
           phoneNumber: next.phone.replace(/[\s()-]/g, ""),
           dateOfBirth: next.dateOfBirth,
-          address: next.location || next.district,
+          address: [next.address || (next.providerType === "individual" ? next.location : ""), next.district].filter(Boolean).join(", "),
           businessName: next.providerType === "individual" ? null : next.orgName,
           businessLocation: next.providerType === "individual" ? null : next.location,
           businessDescription: next.description,
@@ -2232,10 +2787,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         address: _address,
         kycDocumentNumber: _documentNumber,
         kycDocumentData: _documentData,
+        kycBackDocumentData: _backDocumentData,
         kycDocumentFileName: _documentFileName,
+        kycBackDocumentFileName: _backDocumentFileName,
         kycDocumentExpiryDate: _documentExpiryDate,
         kycSelfieData: _selfieData,
         kycSelfieFileName: _selfieFileName,
+        kycReviewNote: _reviewNote,
+        kycRequestId: _requestId,
+        kycDocumentId: _documentId,
+        kycBackDocumentId: _backDocumentId,
         ...publicProfile
       } = profile
       return expired
@@ -2244,7 +2805,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }),
     allProviderProfiles: data.providerProfiles.map((profile) => {
       if (currentUser?.role === "admin") return profile
-      const { verificationDocumentName: _documentName, verificationDocumentData: _documentData, verificationReviewNote: _reviewNote, ...publicProfile } = profile
+      const {
+        verificationDocumentName: _documentName,
+        verificationDocumentType: _documentType,
+        verificationIdentityDocumentType: _identityDocumentType,
+        verificationDocumentData: _documentData,
+        verificationBackDocumentName: _backDocumentName,
+        verificationBackDocumentData: _backDocumentData,
+        verificationRequestId: _requestId,
+        verificationDocumentId: _documentId,
+        verificationBackDocumentId: _backDocumentId,
+        verificationReviewNote: _reviewNote,
+        ...publicProfile
+      } = profile
       return publicProfile
     }),
     adminWorkerProfiles:
@@ -2259,6 +2832,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         : [],
     adminUsers: currentUser?.role === "admin" ? data.users : [],
     reports: currentUser?.role === "admin" ? data.reports : [],
+    myReports: currentUser ? data.reports.filter((report) => report.reporterId === currentUser.id) : [],
     discoverySkill,
     storageWarning,
   }
@@ -2284,7 +2858,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppContextValue>(
     () => ({
       state,
-      setExternalJobs: setExternalJobsState,
+      setExternalJobs: (jobs) => {
+        setData((old) => {
+          const savedSnapshots = old.savedJobs
+            .map((item) => item.snapshot)
+            .filter((job): job is Job => Boolean(job?.externalSource))
+          const nextJobs = [...jobs, ...savedSnapshots.filter((saved) => !jobs.some((job) => job.id === saved.id))]
+          setExternalJobsState(nextJobs)
+          return { ...old, externalJobs: nextJobs }
+        })
+      },
       navigate,
       login,
       signupWorker,
@@ -2350,6 +2933,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         navigate("job-discovery")
       },
       reportJob,
+      reportUser,
       reviewWorker,
       reviewProvider,
       submitKyc,

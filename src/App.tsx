@@ -62,11 +62,11 @@ export default function App() {
     !["landing", "login", "worker-signup", "provider-signup"].includes(
       currentPage,
     )
-  const isAuthPage = ["login", "worker-signup", "provider-signup"].includes(
+  const isAuthPage = ["login", "register-choice", "worker-signup", "provider-signup"].includes(
     currentPage,
   )
 
-  const publicPages = ["landing", "login", "worker-signup", "provider-signup"]
+  const publicPages = ["landing", "login", "register-choice", "worker-signup", "provider-signup"]
   const isPublicPage = publicPages.includes(currentPage)
 
   return (
@@ -116,6 +116,7 @@ export default function App() {
           {/* Public pages */}
           {currentPage === "landing" && !isLoggedIn && <Landing />}
           {currentPage === "login" && <AuthPage mode="login" />}
+          {currentPage === "register-choice" && <AuthPage mode="register-choice" />}
           {currentPage === "worker-signup" && <AuthPage mode="worker-signup" />}
           {currentPage === "provider-signup" && (
             <AuthPage mode="provider-signup" />
