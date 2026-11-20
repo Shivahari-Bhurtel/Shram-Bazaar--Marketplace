@@ -42,12 +42,13 @@ export default function App() {
   const isAdmin = currentUser?.role === "admin"
   const isWorkerAIChat = isWorker && currentPage === "chat"
   const isFullScreenJobDiscovery = isWorker && currentPage === "job-discovery"
+  const isStandaloneLearn = isWorker && currentPage === "learn"
   const isVoiceAssistant =
     (isWorker || isProvider) && currentPage === "voice-assistant"
   const useWorkerPageBackground =
-    isWorker && !isWorkerAIChat && !isVoiceAssistant && !isFullScreenJobDiscovery && currentPage !== "shram-ai"
+    isWorker && !isWorkerAIChat && !isVoiceAssistant && !isFullScreenJobDiscovery && !isStandaloneLearn && currentPage !== "shram-ai"
   const workerTopSpacing =
-    isWorker && !isWorkerAIChat && !isVoiceAssistant && !isFullScreenJobDiscovery
+    isWorker && !isWorkerAIChat && !isVoiceAssistant && !isFullScreenJobDiscovery && !isStandaloneLearn
       ? currentPage === "my-applications"
         ? "lg:pt-0"
         : currentPage === "shram-ai"
@@ -59,6 +60,7 @@ export default function App() {
     !isVoiceAssistant &&
     !isWorkerAIChat &&
     !isFullScreenJobDiscovery &&
+    !isStandaloneLearn &&
     !["landing", "login", "worker-signup", "provider-signup"].includes(
       currentPage,
     )
@@ -71,7 +73,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen bg-cream ${isWorker ? "worker-interface" : ""} ${useWorkerPageBackground ? "worker-content-background" : ""}`}
+      className={`min-h-screen bg-cream ${isWorker && !isStandaloneLearn ? "worker-interface" : ""} ${useWorkerPageBackground ? "worker-content-background" : ""}`}
     >
       {state.storageWarning && (
         <div
@@ -81,18 +83,20 @@ export default function App() {
           {state.storageWarning}
         </div>
       )}
-      {!isLoggedIn && !isAuthPage && !isFullScreenJobDiscovery && <LanguageSwitch />}
+      {!isLoggedIn && !isAuthPage && !isFullScreenJobDiscovery && !isStandaloneLearn && <LanguageSwitch />}
       {isWorker && !isVoiceAssistant &&
         (isFullScreenJobDiscovery ? (
           <LanguageSwitch />
         ) : isWorkerAIChat ? (
           <LanguageSwitch />
+        ) : isStandaloneLearn ? (
+          null
         ) : (
           <div className="hidden lg:block">
             <LanguageSwitch />
           </div>
         ))}
-      {isWorker && !isVoiceAssistant && !isWorkerAIChat && !isFullScreenJobDiscovery && (
+      {isWorker && !isVoiceAssistant && !isWorkerAIChat && !isFullScreenJobDiscovery && !isStandaloneLearn && (
         <div className="lg:hidden">
           <Navbar />
         </div>

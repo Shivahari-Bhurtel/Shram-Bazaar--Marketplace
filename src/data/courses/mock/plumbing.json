@@ -1,0 +1,28 @@
+{
+  "id": "plumbing-fundamentals",
+  "title": "Plumbing Fundamentals",
+  "slug": "plumbing-fundamentals",
+  "category": "Plumbing",
+  "level": "Beginner",
+  "shortDescription": "Understand water systems, useful plumbing tools and everyday leak prevention.",
+  "description": "Learn the parts of a basic household water system, how to choose common hand tools and how to inspect simple leaks. Lessons emphasize safe shutoff, tidy work and knowing when a repair needs a trained plumber.",
+  "durationHours": 3,
+  "thumbnail": "/images/learn/plumbing.svg",
+  "accent": "#0891B2",
+  "skills": ["Pipe fittings", "Leak inspection", "Plumbing tools", "Water systems"],
+  "objectives": ["Recognize common household pipes and fittings", "Select basic tools for inspection and maintenance", "Locate shutoff valves and reduce water damage", "Describe common leak symptoms and safe next steps"],
+  "modules": [
+    { "id": "plumbing-systems", "title": "How household plumbing works", "summary": "Get familiar with water supply, drainage and common fittings.", "lessons": [
+      { "id": "plumbing-water-path", "title": "Following the water path", "description": "Trace how water reaches a home and how used water leaves through the drainage system.", "durationMinutes": 15, "videoId": null },
+      { "id": "plumbing-pipes-fittings", "title": "Pipes, joints and fittings", "description": "Recognize common pipe materials, connectors, taps and household fixtures.", "durationMinutes": 16, "videoId": null }
+    ]},
+    { "id": "plumbing-tools", "title": "Tools and safe preparation", "summary": "Prepare a work area and use basic plumbing tools carefully.", "lessons": [
+      { "id": "plumbing-hand-tools", "title": "Essential plumbing hand tools", "description": "Learn the purpose of adjustable wrenches, pipe grips, tape measures and pliers.", "durationMinutes": 17, "videoId": null },
+      { "id": "plumbing-shutoff", "title": "Find and use a water shutoff valve", "description": "Locate common shutoff points and reduce water flow before inspection or maintenance.", "durationMinutes": 15, "videoId": null }
+    ]},
+    { "id": "plumbing-inspection", "title": "Leak checks and maintenance", "summary": "Spot early signs of leaks and decide what needs professional repair.", "lessons": [
+      { "id": "plumbing-leak-signs", "title": "Finding signs of a leak", "description": "Check for damp patches, dripping joints, unusual water sounds and changes in water pressure.", "durationMinutes": 16, "videoId": null },
+      { "id": "plumbing-prevent-damage", "title": "Preventing damage and escalating repairs", "description": "Protect the work area, record what you find and know when a plumber should take over.", "durationMinutes": 14, "videoId": null }
+    ]}
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "basic-electrical-skills",
+  "title": "Basic Electrical Skills",
+  "slug": "basic-electrical-skills",
+  "category": "Electrical",
+  "level": "Beginner",
+  "shortDescription": "Learn safe habits, essential tools and the basics of household electrical work.",
+  "description": "Build a practical foundation in electrical safety, common tools, simple circuits and basic fault finding. This course is for new learners and focuses on understanding the work and knowing when a qualified electrician is needed.",
+  "durationHours": 3,
+  "thumbnail": "/images/learn/electrical.svg",
+  "accent": "#1D4ED8",
+  "skills": ["Electrical safety", "Hand tools", "Basic circuits", "Fault finding"],
+  "objectives": ["Identify common electrical tools and their uses", "Explain basic circuit components", "Follow safe isolation and testing steps", "Recognize faults that require a qualified electrician"],
+  "modules": [
+    { "id": "electrical-safety", "title": "Safety and preparation", "summary": "Set up work safely and understand the limits of basic maintenance.", "lessons": [
+      { "id": "electrical-safety-first", "title": "Electrical safety comes first", "description": "Learn about electrical hazards, safe working areas and why power must be isolated before inspection.", "durationMinutes": 14, "videoId": null },
+      { "id": "electrical-ppe", "title": "Protective equipment and safe checks", "description": "Review insulated tools, protective equipment and simple checks before beginning a task.", "durationMinutes": 16, "videoId": null }
+    ]},
+    { "id": "electrical-tools", "title": "Tools and basic circuits", "summary": "Recognize everyday tools and understand how a simple circuit works.", "lessons": [
+      { "id": "electrical-hand-tools", "title": "Common electrician hand tools", "description": "Identify screwdrivers, pliers, wire strippers and testers and learn where each tool is used.", "durationMinutes": 18, "videoId": null },
+      { "id": "electrical-circuit-basics", "title": "A simple circuit explained", "description": "Explore the role of a source, conductor, switch and load in a basic electrical circuit.", "durationMinutes": 17, "videoId": null }
+    ]},
+    { "id": "electrical-maintenance", "title": "Inspection and maintenance", "summary": "Practice visual inspection and know when to stop and seek qualified help.", "lessons": [
+      { "id": "electrical-visual-inspection", "title": "Visual inspection of cables and fittings", "description": "Spot visible damage, loose fittings and warning signs without opening energized equipment.", "durationMinutes": 16, "videoId": null },
+      { "id": "electrical-when-to-call", "title": "When to call a qualified electrician", "description": "Learn which faults are outside basic maintenance and how to communicate them clearly.", "durationMinutes": 14, "videoId": null }
+    ]}
+  ]
+}

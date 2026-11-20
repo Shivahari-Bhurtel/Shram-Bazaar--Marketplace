@@ -1,0 +1,28 @@
+{
+  "id": "carpentry-woodworking",
+  "title": "Carpentry & Woodworking",
+  "slug": "carpentry-woodworking",
+  "category": "Carpentry",
+  "level": "Beginner",
+  "shortDescription": "Build confidence with measuring, hand tools, timber and simple joints.",
+  "description": "Start with accurate measuring and workshop safety, then explore timber, hand tools and the principles behind simple joints. The course introduces practical habits that help new carpenters prepare for supervised work.",
+  "durationHours": 4,
+  "thumbnail": "/images/learn/carpentry.svg",
+  "accent": "#B45309",
+  "skills": ["Measuring", "Woodworking tools", "Timber selection", "Basic joints"],
+  "objectives": ["Measure and mark timber accurately", "Choose appropriate basic hand tools", "Recognize common timber types and defects", "Explain how simple woodworking joints fit together"],
+  "modules": [
+    { "id": "carpentry-preparation", "title": "Workshop safety and measuring", "summary": "Prepare a safe workspace and make clear, accurate marks.", "lessons": [
+      { "id": "carpentry-workshop-safety", "title": "A safe and organized workshop", "description": "Set up a clean workspace, store tools safely and understand the importance of eye and hearing protection.", "durationMinutes": 17, "videoId": null },
+      { "id": "carpentry-measure-mark", "title": "Measure, mark and check", "description": "Practice reading a tape measure, using a try square and marking a cut line clearly.", "durationMinutes": 19, "videoId": null }
+    ]},
+    { "id": "carpentry-materials", "title": "Timber and hand tools", "summary": "Understand wood grain, common defects and essential hand tools.", "lessons": [
+      { "id": "carpentry-timber", "title": "Choosing and checking timber", "description": "Compare common timber, follow the grain and look for warping, splits and other visible defects.", "durationMinutes": 18, "videoId": null },
+      { "id": "carpentry-hand-tools", "title": "Saws, chisels and planes", "description": "Explore the basic jobs of common hand tools and safe ways to carry and store them.", "durationMinutes": 20, "videoId": null }
+    ]},
+    { "id": "carpentry-joints", "title": "Cuts and simple joints", "summary": "Learn the principles behind clean cuts and beginner joinery.", "lessons": [
+      { "id": "carpentry-clean-cuts", "title": "Planning a clean cut", "description": "Follow a marked line, support the workpiece and check the cut before assembly.", "durationMinutes": 18, "videoId": null },
+      { "id": "carpentry-basic-joints", "title": "How basic joints fit together", "description": "Understand butt, lap and simple corner joints and why accurate marking matters.", "durationMinutes": 18, "videoId": null }
+    ]}
+  ]
+}

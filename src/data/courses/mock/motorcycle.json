@@ -1,0 +1,28 @@
+{
+  "id": "motorcycle-maintenance",
+  "title": "Motorcycle Maintenance",
+  "slug": "motorcycle-maintenance",
+  "category": "Motorcycle Maintenance",
+  "level": "Beginner",
+  "shortDescription": "Learn a clear pre-ride check and the basics of routine motorcycle care.",
+  "description": "Build a practical routine for checking tires, lights, chain condition, fluids and visible wear. The lessons focus on preventive care and safe inspection rather than complex repairs that require a trained mechanic.",
+  "durationHours": 4,
+  "thumbnail": "/images/learn/motorcycle.svg",
+  "accent": "#7C3AED",
+  "skills": ["Pre-ride inspection", "Tire checks", "Chain care", "Routine maintenance"],
+  "objectives": ["Follow a repeatable pre-ride inspection", "Check tires, lights and visible controls", "Understand basic chain care and warning signs", "Keep a simple maintenance record"],
+  "modules": [
+    { "id": "motorcycle-safety", "title": "Safe inspection habits", "summary": "Set up the motorcycle safely before checking it.", "lessons": [
+      { "id": "motorcycle-work-area", "title": "Prepare a safe work area", "description": "Park securely, let hot components cool and gather basic tools before an inspection.", "durationMinutes": 16, "videoId": null },
+      { "id": "motorcycle-pre-ride", "title": "A simple pre-ride routine", "description": "Use a consistent walk-around to check the motorcycle before each ride.", "durationMinutes": 18, "videoId": null }
+    ]},
+    { "id": "motorcycle-checks", "title": "Tires, lights and controls", "summary": "Inspect common wear points and recognize problems early.", "lessons": [
+      { "id": "motorcycle-tires", "title": "Tire condition and pressure", "description": "Look for damage and tread wear and understand why the correct pressure matters.", "durationMinutes": 18, "videoId": null },
+      { "id": "motorcycle-lights-controls", "title": "Lights, brakes and visible controls", "description": "Check that lights work and inspect visible controls without attempting advanced repairs.", "durationMinutes": 17, "videoId": null }
+    ]},
+    { "id": "motorcycle-routine-care", "title": "Routine care and records", "summary": "Learn basic chain and fluid checks and when to visit a mechanic.", "lessons": [
+      { "id": "motorcycle-chain", "title": "Chain condition and care", "description": "Recognize a dry or poorly adjusted chain and learn when maintenance should be handled by a mechanic.", "durationMinutes": 18, "videoId": null },
+      { "id": "motorcycle-maintenance-log", "title": "Keep a maintenance record", "description": "Track inspection dates, service reminders and symptoms to share with a mechanic.", "durationMinutes": 15, "videoId": null }
+    ]}
+  ]
+}

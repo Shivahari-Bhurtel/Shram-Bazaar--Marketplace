@@ -1,0 +1,28 @@
+{
+  "id": "painting-finishing",
+  "title": "Painting & Finishing",
+  "slug": "painting-finishing",
+  "category": "Painting",
+  "level": "Beginner",
+  "shortDescription": "Prepare surfaces, choose the right tools and achieve a cleaner finish.",
+  "description": "Learn how surface preparation, masking, tool selection and steady application create a better finish. This practical introduction covers indoor painting workflows and safe cleanup for new painters.",
+  "durationHours": 3,
+  "thumbnail": "/images/learn/painting.svg",
+  "accent": "#DB2777",
+  "skills": ["Surface preparation", "Brush and roller", "Masking", "Paint finishing"],
+  "objectives": ["Prepare and protect a work area", "Select brushes and rollers for common surfaces", "Apply paint with consistent coverage", "Clean tools and store materials safely"],
+  "modules": [
+    { "id": "painting-preparation", "title": "Planning and preparation", "summary": "Protect people and surfaces before opening paint.", "lessons": [
+      { "id": "painting-work-area", "title": "Prepare the room and work area", "description": "Move or cover furniture, ventilate the space and organize materials before beginning.", "durationMinutes": 16, "videoId": null },
+      { "id": "painting-surface-prep", "title": "Clean and prepare a surface", "description": "Identify loose paint, dust, small holes and uneven areas that affect the final finish.", "durationMinutes": 18, "videoId": null }
+    ]},
+    { "id": "painting-tools", "title": "Tools and paint application", "summary": "Choose suitable tools and apply paint with an even technique.", "lessons": [
+      { "id": "painting-brush-roller", "title": "Brushes, rollers and masking", "description": "Match common brushes and rollers to a task and use masking tape to protect clean edges.", "durationMinutes": 17, "videoId": null },
+      { "id": "painting-even-coat", "title": "Apply an even coat", "description": "Learn about loading a roller, working in sections and keeping a wet edge for consistent coverage.", "durationMinutes": 19, "videoId": null }
+    ]},
+    { "id": "painting-finishing", "title": "Finishing and cleanup", "summary": "Check the result and leave tools and the work area in good condition.", "lessons": [
+      { "id": "painting-final-check", "title": "Inspect the finish", "description": "Check for missed areas, drips and uneven coverage and understand when a second coat is needed.", "durationMinutes": 15, "videoId": null },
+      { "id": "painting-cleanup", "title": "Clean tools and store materials", "description": "Clean reusable tools, close containers and dispose of leftover materials safely.", "durationMinutes": 15, "videoId": null }
+    ]}
+  ]
+}
