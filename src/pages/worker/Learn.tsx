@@ -178,9 +178,9 @@ export default function Learn() {
     <div className="learn-portal min-h-screen bg-[#FAF8F5] text-slate-900">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[52px] max-w-[1480px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <button type="button" onClick={() => navigate("worker-dashboard")} className="flex shrink-0 items-center gap-2 text-left" aria-label="Return to Shram Bazaar dashboard">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#4E342E] text-xs font-bold text-white">S</span>
-            <span className="hidden leading-tight sm:block"><span className="block text-xs font-bold text-slate-900">Shram Bazaar</span><span className="block text-[10px] font-medium text-slate-600">Learn</span></span>
+          <button type="button" onClick={() => navigate("worker-dashboard")} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 text-sm font-semibold text-[#4E342E] transition hover:text-[#D86C3A]" aria-label="Back to the main page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>
+            <span>Back</span>
           </button>
 
           {view === "dashboard" ? (
@@ -225,13 +225,7 @@ export default function Learn() {
 
           {view === "dashboard" && section === "overview" && <>
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <button type="button" onClick={() => navigate("worker-dashboard")} className="inline-flex min-h-8 items-center gap-1.5 text-sm font-semibold text-[#4E342E] transition hover:text-[#D86C3A]" aria-label="Back to the main page">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>
-                  <span>Back</span>
-                </button>
-                <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p>
-              </div>
+              <div><h1 className="text-3xl font-bold tracking-tight text-slate-950">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
               <button type="button" onClick={goToExplore} className="min-h-10 rounded-md bg-[#4E342E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Explore courses</button>
             </div>
 
