@@ -39,7 +39,7 @@ function MetricCard({ label, value, detail, icon }: { label: string; value: numb
           <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
           <p className="mt-1 text-xs text-slate-500">{detail}</p>
         </div>
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700" aria-hidden="true">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDF0E9] text-[#D86C3A]" aria-hidden="true">
           {icon === "book" ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-5 w-5"><path d="M4 5.5c3-.9 5.8-.4 8 1.2v13c-2.2-1.6-5-2.1-8-1.2v-13Zm16 0c-3-.9-5.8-.4-8 1.2v13c2.2-1.6 5-2.1 8-1.2v-13Z" /></svg>
             : icon === "play" ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="m9 6 10 6-10 6V6Z" /></svg>
               : icon === "check" ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="m5 12 4.5 4.5L19 7" /><circle cx="12" cy="12" r="9" /></svg>
@@ -54,7 +54,7 @@ function SectionNav({ section, onChange }: { section: LearnSection; onChange: (s
   return (
     <nav aria-label="Learn navigation" className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 lg:flex-col lg:border-0 lg:bg-transparent lg:p-0">
       {(Object.keys(sectionLabels) as LearnSection[]).map((item) => (
-        <button key={item} type="button" onClick={() => onChange(item)} aria-current={section === item ? "page" : undefined} className={`min-h-10 shrink-0 rounded-lg px-3 text-left text-sm font-medium transition lg:w-full ${section === item ? "bg-blue-50 text-blue-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:bg-transparent"}`}>
+        <button key={item} type="button" onClick={() => onChange(item)} aria-current={section === item ? "page" : undefined} className={`min-h-10 shrink-0 rounded-lg px-3 text-left text-sm font-medium transition lg:w-full ${section === item ? item === "overview" ? "bg-[#4E342E] text-white" : "bg-[#FDF0E9] text-[#D86C3A]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:bg-transparent"}`}>
           {sectionLabels[item]}
         </button>
       ))}
@@ -65,7 +65,7 @@ function SectionNav({ section, onChange }: { section: LearnSection; onChange: (s
 function EmptyState({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
-      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-700" aria-hidden="true">
+      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#FDF0E9] text-[#D86C3A]" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6"><path d="M4 5.5c3-.9 5.8-.4 8 1.2v13c-2.2-1.6-5-2.1-8-1.2v-13Zm16 0c-3-.9-5.8-.4-8 1.2v13c2.2-1.6 5-2.1 8-1.2v-13Z" /></svg>
       </span>
       <h3 className="mt-4 font-semibold text-slate-900">{title}</h3>
@@ -175,7 +175,7 @@ export default function Learn() {
 
   const learnerInitials = learnerName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-[#FAF8F5] text-slate-900">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[68px] max-w-[1480px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <button type="button" onClick={() => navigate("worker-dashboard")} className="flex shrink-0 items-center gap-2 text-left" aria-label="Return to Shram Bazaar dashboard">
@@ -215,9 +215,9 @@ export default function Learn() {
           <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[.12em] text-slate-400">Learning space</p>
           <SectionNav section={section} onChange={setSection} />
           <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your next step</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#D86C3A]">Your next step</p>
             <p className="mt-2 text-sm font-semibold leading-snug text-slate-900">Build a skill you can use at work.</p>
-            <button type="button" onClick={goToExplore} className="mt-3 text-sm font-semibold text-blue-700 hover:text-blue-900">Explore courses <span aria-hidden="true">→</span></button>
+            <button type="button" onClick={goToExplore} className="mt-3 text-sm font-semibold text-[#D86C3A] hover:text-[#B8542A]">Explore courses <span aria-hidden="true">→</span></button>
           </div>
         </aside>}
 
@@ -229,8 +229,8 @@ export default function Learn() {
 
           {view === "dashboard" && section === "overview" && <>
             <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-              <div><p className="text-sm font-semibold text-blue-700">Shram Bazaar Learn</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
-              <button type="button" onClick={goToExplore} className="min-h-10 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800">Explore courses</button>
+              <div><p className="text-sm font-semibold text-[#D86C3A]">Shram Bazaar Learn</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
+              <button type="button" onClick={goToExplore} className="min-h-10 rounded-lg bg-[#4E342E] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Explore courses</button>
             </div>
 
             <section aria-label="Learning overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -241,7 +241,7 @@ export default function Learn() {
             </section>
 
             <section className="mt-9" aria-labelledby="continue-learning-heading">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[.12em] text-blue-700">Pick up where you left off</p><h2 id="continue-learning-heading" className="mt-1 text-xl font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[.12em] text-[#D86C3A]">Pick up where you left off</p><h2 id="continue-learning-heading" className="mt-1 text-xl font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
               {inProgressCourses.length ? <div className="grid gap-4 md:grid-cols-2">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
@@ -249,7 +249,7 @@ export default function Learn() {
             </section>
 
             <section className="mt-10" aria-labelledby="recommended-heading">
-              <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[.12em] text-blue-700">Selected for your next step</p><h2 id="recommended-heading" className="mt-1 text-xl font-bold text-slate-900">Recommended courses</h2><p className="mt-1 text-sm text-slate-600">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
+              <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[.12em] text-[#D86C3A]">Selected for your next step</p><h2 id="recommended-heading" className="mt-1 text-xl font-bold text-slate-900">Recommended courses</h2><p className="mt-1 text-sm text-slate-600">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{recommendedCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} />
@@ -257,7 +257,7 @@ export default function Learn() {
             </section>
 
             <section id="explore-courses" className="mt-10 scroll-mt-24" aria-labelledby="explore-heading">
-              <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[.12em] text-blue-700">Practical skills for work</p><h2 id="explore-heading" className="mt-1 text-xl font-bold text-slate-900">Explore courses</h2><p className="mt-1 text-sm text-slate-600">Short, self-paced introductions across five vocational skill areas.</p></div>
+              <div className="mb-4"><p className="text-xs font-semibold uppercase tracking-[.12em] text-[#D86C3A]">Practical skills for work</p><h2 id="explore-heading" className="mt-1 text-xl font-bold text-slate-900">Explore courses</h2><p className="mt-1 text-sm text-slate-600">Short, self-paced introductions across five vocational skill areas.</p></div>
               <div className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Filter courses by skill category">
                 {["All skills", ...learningCategories].map((category) => <button key={category} type="button" onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`min-h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition ${activeCategory === category ? "border-blue-700 bg-blue-700 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-800"}`}>{category}</button>)}
               </div>
@@ -269,7 +269,7 @@ export default function Learn() {
           </>}
 
           {view === "dashboard" && section === "my-learning" && <section>
-            <div className="mb-6"><p className="text-sm font-semibold text-blue-700">Your learning space</p><h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">My learning</h1><p className="mt-2 text-sm text-slate-600">Keep track of courses you have started and finished.</p></div>
+            <div className="mb-6"><p className="text-sm font-semibold text-[#D86C3A]">Your learning space</p><h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">My learning</h1><p className="mt-2 text-sm text-slate-600">Keep track of courses you have started and finished.</p></div>
             <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Filter your courses">
               {(["all", "in-progress", "completed"] as LearningFilter[]).map((filter) => <button key={filter} type="button" role="tab" aria-selected={learningFilter === filter} onClick={() => setLearningFilter(filter)} className={`min-h-9 rounded-full px-4 text-sm font-semibold ${learningFilter === filter ? "bg-blue-700 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}>{filter === "all" ? `All (${enrolledCourses.length})` : filter === "in-progress" ? `In progress (${inProgressCourses.length})` : `Completed (${completedCourses.length})`}</button>)}
             </div>
@@ -284,7 +284,7 @@ export default function Learn() {
           </section>}
 
           {view === "dashboard" && section === "certificates" && <section>
-            <div className="mb-6"><p className="text-sm font-semibold text-blue-700">Your achievements</p><h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">My certificates</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Completion records are created after you finish every lesson in a course. They recognize course completion and are not accredited professional qualifications.</p></div>
+            <div className="mb-6"><p className="text-sm font-semibold text-[#D86C3A]">Your achievements</p><h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">My certificates</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Completion records are created after you finish every lesson in a course. They recognize course completion and are not accredited professional qualifications.</p></div>
             {earnedCourses.filter(matchesCourseSearch).length ? <div className="space-y-3">{earnedCourses.filter(matchesCourseSearch).map((course) => <CertificateCard key={course.id} course={course} learnerName={learnerName} completedAt={progress.completedAt[course.id] || new Date().toISOString()} />)}</div> : <EmptyState title={normalizedSearch ? "No matching certificates" : "Your certificates will appear here"} description={normalizedSearch ? "Try a different course or skill search." : "Complete all lessons in a course to earn a course completion record. You can save it from this page."} actionLabel={normalizedSearch ? "Clear search" : "Continue learning"} onAction={normalizedSearch ? () => setSearch("") : () => { setSection("my-learning"); setLearningFilter("in-progress") }} />}
           </section>}
 
