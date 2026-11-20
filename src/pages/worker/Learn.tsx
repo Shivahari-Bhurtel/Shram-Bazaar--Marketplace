@@ -30,26 +30,6 @@ const sectionLabels: Record<LearnSection, string> = {
   certificates: "Certificates",
 }
 
-function MetricCard({ label, value, detail, icon }: { label: string; value: number; detail: string; icon: string }) {
-  return (
-    <article className="rounded-xl border border-[#E5D9C9] bg-white p-3.5 sm:p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-slate-600">{label}</p>
-          <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500">{detail}</p>
-        </div>
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2D8C9] text-[#D86C3A]" aria-hidden="true">
-          {icon === "book" ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4"><path d="M4 5.5c3-.9 5.8-.4 8 1.2v13c-2.2-1.6-5-2.1-8-1.2v-13Zm16 0c-3-.9-5.8-.4-8 1.2v13c2.2-1.6 5-2.1 8-1.2v-13Z" /></svg>
-            : icon === "play" ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4"><path d="m9 6 10 6-10 6V6Z" /></svg>
-              : icon === "check" ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4"><path d="m5 12 4.5 4.5L19 7" /><circle cx="12" cy="12" r="9" /></svg>
-                : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4"><path d="M6 3.75h8l4 4v12.5H6z" /><path d="M14 3.75v4h4M9 12h6M9 15h4" /></svg>}
-        </span>
-      </div>
-    </article>
-  )
-}
-
 function SectionNav({ section, onChange }: { section: LearnSection; onChange: (section: LearnSection) => void }) {
   return (
     <nav aria-label="Learn navigation" className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 lg:flex-col lg:border-0 lg:bg-transparent lg:p-0">
@@ -279,14 +259,7 @@ export default function Learn() {
               <div><h1 className="text-3xl font-bold tracking-tight text-slate-950">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
             </div>
 
-            <section aria-label="Learning overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard label="Enrolled courses" value={enrolledCourses.length} detail="Courses you have started" icon="book" />
-              <MetricCard label="In progress" value={inProgressCourses.length} detail="Pick up where you left off" icon="play" />
-              <MetricCard label="Completed" value={completedCourses.length} detail="Skills courses completed" icon="check" />
-              <MetricCard label="Certificates" value={earnedCourses.length} detail="Course completion records" icon="certificate" />
-            </section>
-
-            <section className="mt-7" aria-labelledby="continue-learning-heading">
+            <section className="mt-2" aria-labelledby="continue-learning-heading">
               <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[.12em] text-[#D86C3A]">Pick up where you left off</p><h2 id="continue-learning-heading" className="mt-1 text-lg font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
               {inProgressCourses.length ? <div className="grid gap-4 md:grid-cols-2">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
