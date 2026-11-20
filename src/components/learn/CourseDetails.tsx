@@ -43,7 +43,6 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
                 )}
                 <div className="mt-3">{courseMetadata}</div>
                 <p className="mt-4 max-w-3xl text-[15px] leading-7 text-slate-600">{course.description}</p>
-                {course.safetyNotice && !isCraneCourse && <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950"><strong className="font-semibold">Safety notice: </strong>{course.safetyNotice}</p>}
               </header>
 
               <section className="mt-7" aria-labelledby="course-objectives-heading">
