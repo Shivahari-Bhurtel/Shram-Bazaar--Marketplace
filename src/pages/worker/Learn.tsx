@@ -259,7 +259,7 @@ export default function Learn() {
 
             <section className="mt-2" aria-labelledby="continue-learning-heading">
               <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 id="continue-learning-heading" className="text-lg font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
-              {inProgressCourses.length ? <div className="grid gap-4 md:grid-cols-2">{inProgressCourses.slice(0, 2).map((course) => {
+              {inProgressCourses.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
               })}</div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5D9C9] bg-white">
