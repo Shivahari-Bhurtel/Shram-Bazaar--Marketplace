@@ -59,7 +59,7 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
                 <ModuleAccordion modules={course.modules} courseId={course.id} progress={progress} currentLessonId={progress.currentLessons[course.id]} onSelectLesson={onSelectLesson} />
               </section>
             </div>
-            <aside className={`h-fit rounded-2xl border p-4 sm:p-5 lg:sticky lg:top-24 ${isCraneCourse ? "border-[#E8DDCF] bg-[#FCFAF7]" : "border-slate-200 bg-slate-50"}`}>
+            <aside className={`h-fit rounded-2xl border p-4 sm:p-5 lg:sticky lg:top-24 ${isCraneCourse ? "border-[#E8DDCF] bg-white" : "border-slate-200 bg-slate-50"}`}>
               <div className={isCraneCourse ? "" : "border-t border-slate-200/80 pt-4"}>
                 <p className="text-sm font-semibold text-slate-900">Your course progress</p>
                 <div className="mt-3"><CourseProgress completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} /></div>
@@ -68,7 +68,7 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
                 <p className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Skills covered</p>
                 <div className="flex flex-wrap gap-2">{course.skills.map((skill) => <span key={skill} className="rounded-full border border-[#E5D9C9] bg-white px-2.5 py-1.5 text-xs font-medium text-[#5B4032]">{skill}</span>)}</div>
               </div>
-              <button type="button" onClick={onStart} className={`mt-5 min-h-11 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition ${isCraneCourse ? "bg-[#4E342E] hover:bg-[#3D2924]" : "bg-blue-700 hover:bg-blue-800"}`}>{metric.isComplete ? "Review lessons" : isEnrolled ? "Continue learning" : "Start learning"}</button>
+              <button type="button" onClick={onStart} className="mt-5 min-h-11 w-full rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800">{metric.isComplete ? "Review lessons" : isEnrolled ? "Continue learning" : "Start learning"}</button>
               <p className="mt-3 text-center text-xs leading-5 text-slate-500">Self-paced · progress saves on this device</p>
             </aside>
           </div>
