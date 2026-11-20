@@ -7,13 +7,14 @@ type Props = {
   total: number
   percent: number
   enrolled: boolean
+  highlighted?: boolean
   onView: (course: LearnCourse) => void
   onContinue?: (course: LearnCourse) => void
 }
 
-export default function CourseCard({ course, completed, total, percent, enrolled, onView, onContinue }: Props) {
+export default function CourseCard({ course, completed, total, percent, enrolled, highlighted = false, onView, onContinue }: Props) {
   return (
-    <article className="learn-course-card group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:shadow-slate-200/60">
+    <article className={`learn-course-card group flex h-full flex-col overflow-hidden rounded-xl border transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md hover:shadow-slate-200/60 ${highlighted ? "border-blue-200 bg-blue-50" : "border-slate-200 bg-white"}`}>
       <button type="button" className="relative block w-full overflow-hidden bg-slate-100 text-left" onClick={() => onView(course)} aria-label={`View ${course.title}`}>
         <img src={course.thumbnail} alt="" loading="lazy" className="aspect-[2/1] w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
         <span className="absolute left-2.5 top-2.5 max-w-[70%] truncate rounded-full bg-white/95 px-2 py-1 text-[9px] font-semibold text-slate-700 shadow-sm">{course.category}</span>
