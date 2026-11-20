@@ -277,7 +277,6 @@ export default function Learn() {
           {view === "dashboard" && section === "overview" && <>
             <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
               <div><h1 className="text-3xl font-bold tracking-tight text-slate-950">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
-              <button type="button" onClick={goToExplore} className="min-h-10 rounded-md bg-[#4E342E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Explore courses</button>
             </div>
 
             <section aria-label="Learning overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
