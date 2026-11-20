@@ -8,6 +8,7 @@ type FinalCourseSource = {
     category: string
     level?: "Beginner" | "Intermediate"
     description: string
+    shortDescription?: string
     durationHours?: number
     thumbnail?: string
     accent?: string
@@ -15,6 +16,17 @@ type FinalCourseSource = {
     learningOutcomes?: string[]
     objectives?: string[]
     safetyNotice?: string
+    certificateEligible?: boolean
+    optionalGame?: {
+      title: string
+      repositoryUrl: string
+      gameType: string
+      entryRoute: string
+      optional: boolean
+      requiredForCourseCompletion: boolean
+      completionTracking: boolean
+    }
+    optionalGameNotice?: string
     modules: Array<{
       id: string
       title: string
@@ -56,7 +68,7 @@ for (const sourceFile of Object.values(finalCourseFiles)) {
     slug: existing.slug,
     category: source.category as CourseCategory,
     level: source.level ?? existing.level,
-    shortDescription: source.description,
+    shortDescription: source.shortDescription ?? source.description,
     description: source.description,
     ...(source.durationHours == null ? {} : { durationHours: source.durationHours }),
     thumbnail: source.thumbnail ?? firstLesson?.thumbnailUrl ?? (firstLesson?.videoId ? `https://img.youtube.com/vi/${firstLesson.videoId}/hqdefault.jpg` : existing.thumbnail),
@@ -64,6 +76,9 @@ for (const sourceFile of Object.values(finalCourseFiles)) {
     skills: source.skills ?? [],
     objectives: source.learningOutcomes ?? source.objectives ?? [],
     safetyNotice: source.safetyNotice,
+    certificateEligible: source.certificateEligible,
+    optionalGame: source.optionalGame,
+    optionalGameNotice: source.optionalGameNotice,
     modules: source.modules.map((module) => ({
       id: module.id,
       title: module.title,

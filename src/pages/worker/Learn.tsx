@@ -111,7 +111,7 @@ export default function Learn() {
   )
   const inProgressCourses = enrolledCourses.filter((course) => !getCourseProgress(course, progress).isComplete)
   const completedCourses = enrolledCourses.filter((course) => getCourseProgress(course, progress).isComplete)
-  const earnedCourses = learningCourses.filter((course) => getCourseProgress(course, progress).isComplete)
+  const earnedCourses = learningCourses.filter((course) => course.certificateEligible !== false && getCourseProgress(course, progress).isComplete)
   const normalizedSearch = search.trim().toLowerCase()
   const matchesCourseSearch = (course: LearnCourse) => !normalizedSearch || [course.title, course.category, course.shortDescription, ...course.skills]
     .join(" ").toLowerCase().includes(normalizedSearch)

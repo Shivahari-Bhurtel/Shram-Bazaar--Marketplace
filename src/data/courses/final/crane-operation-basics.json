@@ -1,0 +1,80 @@
+{
+  "course": {
+    "id": "crane-operation-basics",
+    "title": "Crane Operation Basics",
+    "category": "Construction Skills",
+    "level": "Beginner",
+    "shortDescription": "Understand crane operation and safe lifting practices.",
+    "description": "Learn the fundamentals of crane operation, lifting equipment inspection, heavy machinery safety and crane controls.",
+    "thumbnail": "/images/learn/crane-operation.svg",
+    "skills": ["Crane", "Construction", "Heavy Machinery", "Lifting Equipment", "Workplace Safety"],
+    "learningOutcomes": [
+      "Understand lifting sling inspection.",
+      "Identify hazards around heavy construction machinery.",
+      "Understand basic crane throttle operation.",
+      "Recognize the importance of safe lifting practices."
+    ],
+    "safetyNotice": "This is an introductory educational course, not professional crane operator training or certification. Actual crane operation requires appropriate training, authorization, supervision and compliance with applicable safety regulations.",
+    "certificateEligible": false,
+    "optionalGame": {
+      "title": "Interactive Construction Game",
+      "repositoryUrl": "https://github.com/zanecosmo/pipe-game",
+      "gameType": "pipe-puzzle",
+      "entryRoute": "/learn/games/crane-operation",
+      "optional": true,
+      "requiredForCourseCompletion": false,
+      "completionTracking": false
+    },
+    "optionalGameNotice": "The supplied game is a pipe-connecting puzzle, not a crane simulator. It is not available in the portal yet because the source repository has no license granting permission to copy or redistribute it.",
+    "modules": [
+      {
+        "id": "crane-slings",
+        "title": "How to Inspect Lifting Slings",
+        "description": "Learn how to inspect chain, wire rope and synthetic lifting slings before use.",
+        "lessons": [
+          {
+            "id": "crane-video-1",
+            "title": "How to Inspect Lifting Slings",
+            "description": "Learn how to inspect chain, wire rope and synthetic lifting slings before use.",
+            "durationMinutes": null,
+            "videoId": "FeoK70vFZxY",
+            "youtubeUrl": "https://youtu.be/FeoK70vFZxY",
+            "thumbnailUrl": "https://img.youtube.com/vi/FeoK70vFZxY/hqdefault.jpg"
+          }
+        ]
+      },
+      {
+        "id": "crane-hazards",
+        "title": "Heavy Machinery Hazard Identification",
+        "description": "Understand how to identify potential hazards when working around heavy machinery on construction sites.",
+        "lessons": [
+          {
+            "id": "crane-video-2",
+            "title": "Heavy Machinery Hazard Identification",
+            "description": "Understand how to identify potential hazards when working around heavy machinery on construction sites.",
+            "durationMinutes": null,
+            "videoId": "nAYDFokIXQg",
+            "youtubeUrl": "https://youtu.be/nAYDFokIXQg",
+            "thumbnailUrl": "https://img.youtube.com/vi/nAYDFokIXQg/hqdefault.jpg"
+          }
+        ]
+      },
+      {
+        "id": "crane-controls",
+        "title": "How to Use the Crane Throttle",
+        "description": "Learn about crane throttle operation and its role in controlling crane movements.",
+        "lessons": [
+          {
+            "id": "crane-video-3",
+            "title": "How to Use the Crane Throttle",
+            "description": "Learn about crane throttle operation and its role in controlling crane movements.",
+            "durationMinutes": null,
+            "videoId": "MEY4YTOfVyo",
+            "youtubeUrl": "https://youtu.be/MEY4YTOfVyo",
+            "thumbnailUrl": "https://img.youtube.com/vi/MEY4YTOfVyo/hqdefault.jpg"
+          }
+        ]
+      }
+    ]
+  }
+}

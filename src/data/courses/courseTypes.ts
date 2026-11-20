@@ -5,6 +5,7 @@ export type CourseCategory =
   | "Motorcycle Maintenance"
   | "Painting"
   | "Painting and Finishing"
+  | "Construction Skills"
 
 export type CourseLesson = {
   id: string
@@ -52,6 +53,14 @@ export type LearnCourse = {
   modules: CourseModule[]
   safetyNotice?: string
   quizzes?: CourseQuiz[]
+  certificateEligible?: boolean
+  optionalGame?: {
+    title: string
+    repositoryUrl: string
+    gameType: string
+    entryRoute: string
+  }
+  optionalGameNotice?: string
 }
 
 export type LearningProgress = {
