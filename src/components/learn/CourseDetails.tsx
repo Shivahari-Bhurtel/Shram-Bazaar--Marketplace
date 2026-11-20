@@ -28,7 +28,7 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
   return (
     <section>
       <div className={`overflow-hidden rounded-2xl border border-slate-200 bg-white ${isCraneCourse ? "shadow-sm" : ""}`}>
-        <img src={course.thumbnail} alt="" className={`${isCraneCourse ? "aspect-video max-h-[260px] object-contain bg-[#E9E8E5]" : "aspect-[2.7/1] max-h-[360px] object-cover bg-slate-100"} w-full`} />
+        <img src={course.thumbnail} alt="" className={`${isCraneCourse ? "aspect-video max-h-[200px] object-contain bg-[#E9E8E5]" : "aspect-[2.7/1] max-h-[360px] object-cover bg-slate-100"} w-full`} />
         <div className={isCraneCourse ? "p-4 sm:p-6 lg:p-8" : "p-5 sm:p-8"}>
           {!isCraneCourse && courseMetadata}
           <div className={`mt-5 grid items-start gap-8 ${isCraneCourse ? "lg:grid-cols-[minmax(0,1fr)_300px]" : "lg:grid-cols-[minmax(0,1fr)_280px]"}`}>
