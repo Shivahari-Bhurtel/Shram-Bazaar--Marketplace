@@ -262,7 +262,7 @@ export default function Learn() {
               {inProgressCourses.length ? <div className="grid gap-4 md:grid-cols-2">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
-              })}</div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><article className="group flex min-h-[420px] flex-col overflow-hidden rounded-2xl border border-[#E5D9C9] bg-white">
+              })}</div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5D9C9] bg-white">
                 <div className="flex aspect-[16/9] w-full items-center justify-center bg-[#F2D8C9]" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" className="h-16 w-16 text-[#80502F]"><path d="M8 10.5c6.5-2 13-.5 16 2v25c-3-2.5-9.5-4-16-2v-25Zm32 0c-6.5-2-13-.5-16 2v25c3-2.5 9.5-4 16-2v-25Z" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" /><path d="M14 18c2-.3 4.3 0 6 1m14-1c-2-.3-4.3 0-6 1M14 24c2-.3 4.3 0 6 1m14-1c-2-.3-4.3 0-6 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></div>
                 <div className="flex flex-1 flex-col p-4 sm:p-5"><h3 className="text-lg font-semibold leading-snug text-slate-900">Your learning journey starts here</h3><p className="mt-2 text-sm leading-relaxed text-slate-600">Choose a practical course to build your first skill and track lessons as you go.</p></div>
               </article></div>}
