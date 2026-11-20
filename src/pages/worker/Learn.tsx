@@ -262,7 +262,7 @@ export default function Learn() {
               {inProgressCourses.length ? <div className="grid gap-4 md:grid-cols-2">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled onView={openCourse} onContinue={startLesson} />
-              })}</div> : <div className="rounded-xl border border-[#E5D9C9] bg-white p-4"><div><h3 className="text-sm font-semibold text-slate-900">Your learning journey starts here</h3><p className="mt-1 text-xs text-slate-600">Choose a practical course to build your first skill and track lessons as you go.</p></div></div>}
+              })}</div> : <div className="rounded-xl border border-[#E5D9C9] bg-white p-3"><div><h3 className="text-sm font-semibold text-slate-900">Your learning journey starts here</h3><p className="mt-1 text-xs text-slate-600">Choose a practical course to build your first skill and track lessons as you go.</p></div></div>}
             </section>
 
             <section className="mt-8" aria-labelledby="recommended-heading">
