@@ -252,7 +252,10 @@ export default function Learn() {
 
             <LearnSidebarItem label="Certifications" icon="certificate" onClick={() => setSection("certificates")} />
 
-            <LearnSidebarHeading>Our courses</LearnSidebarHeading>
+            <div className="flex items-center gap-3 px-7 pb-3 pt-8 text-[17px] font-normal text-[#735B49]">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3.5 2.7 8.5 2.7 12 0v-5M22 9v6" /></svg>
+              <span>Our courses</span>
+            </div>
             <div className="space-y-0.5">
               {learningCourses.map((course) => <LearnSidebarCourse key={course.id} title={course.title} active={activeCategory === course.category} onClick={() => goToCourseCategory(course.category)} />)}
             </div>
