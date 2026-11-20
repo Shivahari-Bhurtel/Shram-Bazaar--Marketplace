@@ -27,6 +27,7 @@ type FinalCourseSource = {
         durationMinutes: number | null
         videoId?: string | null
         youtubeUrl?: string | null
+        thumbnailUrl?: string | null
       }>
     }>
   }
@@ -56,7 +57,7 @@ for (const sourceFile of Object.values(finalCourseFiles)) {
     shortDescription: source.description,
     description: source.description,
     ...(source.durationHours == null ? {} : { durationHours: source.durationHours }),
-    thumbnail: source.thumbnail ?? existing.thumbnail,
+    thumbnail: source.thumbnail ?? source.modules[0]?.lessons[0]?.thumbnailUrl ?? existing.thumbnail,
     accent: source.accent ?? existing.accent,
     skills: source.skills ?? [],
     objectives: source.learningOutcomes ?? source.objectives ?? [],

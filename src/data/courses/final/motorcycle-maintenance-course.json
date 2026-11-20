@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.0",
+  "course": {
+    "id": "motorcycle-maintenance-basic-servicing",
+    "title": "Motorcycle Maintenance & Basic Servicing",
+    "category": "Motorcycle Maintenance",
+    "level": "Beginner",
+    "language": "English",
+    "isFree": true,
+    "provider": "Shram Bazaar AI",
+    "contentSource": "Curated YouTube videos",
+    "description": "Beginner-oriented learning path using five selected videos to introduce motorcycle maintenance, routine care, inspection awareness, and basic servicing concepts. Individual video titles, topics, and durations have not been independently verified; lesson labels and descriptions are curator-written placeholders to be reviewed against the videos before publishing.",
+    "learningOutcomes": [
+      "Understand the value of routine motorcycle maintenance for reliability and safety",
+      "Become familiar with motorcycle components and routine checks presented in the videos",
+      "Recognize common maintenance tasks and basic troubleshooting concepts",
+      "Know when to consult a qualified motorcycle mechanic and follow the owner manual"
+    ],
+    "skills": [
+      "Motorcycle maintenance awareness",
+      "Routine inspection awareness",
+      "Basic servicing concepts",
+      "Troubleshooting awareness",
+      "Workshop safety"
+    ],
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Motorcycle Maintenance: Getting Started",
+        "description": "Introduction to the motorcycle maintenance learning sequence. Learners should identify the topics demonstrated in the video and understand why routine maintenance helps keep a motorcycle reliable and safe. The specific video topic should be confirmed against the source.",
+        "lessons": [
+          {
+            "id": "lesson-1",
+            "title": "Motorcycle Maintenance: Getting Started",
+            "youtubeUrl": "https://youtu.be/g8xnIFf4id4",
+            "videoId": "g8xnIFf4id4",
+            "embedUrl": "https://www.youtube.com/embed/g8xnIFf4id4",
+            "thumbnailUrl": "https://img.youtube.com/vi/g8xnIFf4id4/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Introduction to the motorcycle maintenance learning sequence. Learners should identify the topics demonstrated in the video and understand why routine maintenance helps keep a motorcycle reliable and safe. The specific video topic should be confirmed against the source.",
+            "learningObjectives": [
+              "Understand the purpose of regular motorcycle maintenance",
+              "Recognize maintenance as a safety and reliability practice",
+              "Identify the course topics after watching the source video"
+            ],
+            "order": 1,
+            "metadataStatus": "curator_inferred_topic_not_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Motorcycle Components and Routine Inspection",
+        "description": "An introductory lesson in motorcycle components and routine inspection. Use the video to familiarize yourself with the components and checks it demonstrates; exact content should be confirmed before publishing.",
+        "lessons": [
+          {
+            "id": "lesson-2",
+            "title": "Motorcycle Components and Routine Inspection",
+            "youtubeUrl": "https://youtu.be/9cKbzUgFdS0",
+            "videoId": "9cKbzUgFdS0",
+            "embedUrl": "https://www.youtube.com/embed/9cKbzUgFdS0",
+            "thumbnailUrl": "https://img.youtube.com/vi/9cKbzUgFdS0/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "An introductory lesson in motorcycle components and routine inspection. Use the video to familiarize yourself with the components and checks it demonstrates; exact content should be confirmed before publishing.",
+            "learningObjectives": [
+              "Recognize the motorcycle parts shown in the video",
+              "Understand the purpose of routine inspection",
+              "Identify items that require professional attention"
+            ],
+            "order": 2,
+            "metadataStatus": "curator_inferred_topic_not_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Basic Motorcycle Servicing and Care",
+        "description": "A lesson grouped under basic motorcycle servicing and care. Review the video to identify the service procedures and maintenance practices actually demonstrated; this description is provisional.",
+        "lessons": [
+          {
+            "id": "lesson-3",
+            "title": "Basic Motorcycle Servicing and Care",
+            "youtubeUrl": "https://youtu.be/JhTf7cBeGcs",
+            "videoId": "JhTf7cBeGcs",
+            "embedUrl": "https://www.youtube.com/embed/JhTf7cBeGcs",
+            "thumbnailUrl": "https://img.youtube.com/vi/JhTf7cBeGcs/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "A lesson grouped under basic motorcycle servicing and care. Review the video to identify the service procedures and maintenance practices actually demonstrated; this description is provisional.",
+            "learningObjectives": [
+              "Identify the servicing tasks demonstrated",
+              "Understand why maintenance should follow the owner manual and manufacturer specifications",
+              "Recognize when a task exceeds beginner skill level"
+            ],
+            "order": 3,
+            "metadataStatus": "curator_inferred_topic_not_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Maintenance Checks and Troubleshooting",
+        "description": "A lesson in the maintenance sequence focused on checks and troubleshooting awareness. Exact subject matter is unverified; learners should follow the video and note when professional service is needed.",
+        "lessons": [
+          {
+            "id": "lesson-4",
+            "title": "Maintenance Checks and Troubleshooting",
+            "youtubeUrl": "https://youtu.be/XgPpLKCUlbA",
+            "videoId": "XgPpLKCUlbA",
+            "embedUrl": "https://www.youtube.com/embed/XgPpLKCUlbA",
+            "thumbnailUrl": "https://img.youtube.com/vi/XgPpLKCUlbA/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "A lesson in the maintenance sequence focused on checks and troubleshooting awareness. Exact subject matter is unverified; learners should follow the video and note when professional service is needed.",
+            "learningObjectives": [
+              "Recognize symptoms or maintenance checks discussed in the lesson",
+              "Understand that troubleshooting should be methodical and safety-first",
+              "Know when to stop and consult a qualified mechanic"
+            ],
+            "order": 4,
+            "metadataStatus": "curator_inferred_topic_not_verified"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Motorcycle Maintenance: Practical Review",
+        "description": "Final lesson in the curated motorcycle maintenance series. Review and consolidate maintenance concepts shown in the video. Exact video topic and title are not independently verified.",
+        "lessons": [
+          {
+            "id": "lesson-5",
+            "title": "Motorcycle Maintenance: Practical Review",
+            "youtubeUrl": "https://youtu.be/hnNN6c7lb8c",
+            "videoId": "hnNN6c7lb8c",
+            "embedUrl": "https://www.youtube.com/embed/hnNN6c7lb8c",
+            "thumbnailUrl": "https://img.youtube.com/vi/hnNN6c7lb8c/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Final lesson in the curated motorcycle maintenance series. Review and consolidate maintenance concepts shown in the video. Exact video topic and title are not independently verified.",
+            "learningObjectives": [
+              "Review the key maintenance concepts demonstrated in the video",
+              "Identify routine care habits that support motorcycle reliability",
+              "Recognize the limits of introductory video learning"
+            ],
+            "order": 5,
+            "metadataStatus": "curator_inferred_topic_not_verified"
+          }
+        ]
+      }
+    ],
+    "totalLessons": 5,
+    "completion": {
+      "requiresAllLessons": true,
+      "requiresQuiz": true,
+      "passingScorePercent": 70,
+      "certificate": {
+        "enabled": true,
+        "type": "certificate-of-completion",
+        "issuer": "Shram Bazaar AI",
+        "disclaimer": "This certificate confirms completion of introductory online learning only. It is not a mechanic licence, trade qualification, or authorization to perform repairs."
+      }
+    },
+    "safetyNotice": "Motorcycle maintenance can involve hot components, moving parts, fuel, electrical systems, chemicals, lifting, and safety-critical brakes or tires. Work on safety-critical systems should be done by qualified mechanics. Follow the motorcycle owner manual, use proper protective equipment, and never work on an unstable motorcycle.",
+    "metadataNotes": [
+      "Video IDs, URLs, embed URLs, and thumbnail URLs are generated from the links supplied.",
+      "Public YouTube metadata and video contents could not be reliably verified for these links during this session. Lesson names and descriptions are provisional curator-written labels, not claimed as exact video titles or summaries.",
+      "Replace provisional titles, descriptions, and duration fields with confirmed source details before publishing."
+    ],
+    "metadataStatus": "unverified_source_metadata"
+  }
+}
