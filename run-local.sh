@@ -14,6 +14,43 @@ export DB_USERNAME="${DB_USERNAME:-shrambazar}"
 export DB_PASSWORD="${DB_PASSWORD:-local-only-shrambazar}"
 export JWT_SECRET="${JWT_SECRET:-bG9jYWwtZGV2LW9ubHktc2hyYW1iYXphci1qd3Qtc2VjcmV0LW5vdC1mb3ItcHJvZHVjdGlvbi0yMDI2}"
 
+# Figma Make and Vite read .env.local for the frontend, but child processes
+# started here do not inherit those values. Import only the database variables
+# Spring needs when no explicit DB_* override was supplied in the shell.
+if [[ -f "$APP_DIR/.env.local" ]]; then
+  while IFS='=' read -r name value; do
+    case "$name" in
+      POSTGRES_HOST|POSTGRES_DATABASE|POSTGRES_USER|POSTGRES_PASSWORD|PGHOST|PGDATABASE|PGUSER|PGPASSWORD)
+        if [[ -n "${!name+x}" ]]; then continue; fi
+        value="${value%$'\r'}"
+        if [[ "$value" == \"*\" ]]; then value="${value:1:${#value}-2}"; fi
+        if [[ "$value" == \'*\' ]]; then value="${value:1:${#value}-2}"; fi
+        printf -v "$name" '%s' "$value"
+        export "$name"
+        ;;
+    esac
+  done < "$APP_DIR/.env.local"
+fi
+
+managed_db_configured=false
+if [[ "${DB_URL:-}" != "jdbc:postgresql://127.0.0.1:5432/shrambazar" ]]; then
+  managed_db_configured=true
+else
+  db_host="${POSTGRES_HOST:-${PGHOST:-}}"
+  db_name="${POSTGRES_DATABASE:-${PGDATABASE:-}}"
+  db_user="${POSTGRES_USER:-${PGUSER:-}}"
+  db_password="${POSTGRES_PASSWORD:-${PGPASSWORD:-}}"
+
+  # Managed Postgres providers expose host/database/user/password separately.
+  # Use those values only when present; otherwise keep the local Compose defaults.
+  if [[ -n "$db_host" && -n "$db_name" && -n "$db_user" && -n "$db_password" ]]; then
+    export DB_URL="jdbc:postgresql://${db_host}:5432/${db_name}?sslmode=require"
+    export DB_USERNAME="$db_user"
+    export DB_PASSWORD="$db_password"
+    managed_db_configured=true
+  fi
+fi
+
 showcase_healthy() {
   local base_url="$1"
   curl -fsS --max-time 4 "$base_url/api/jobs/showcase" 2>/dev/null |
@@ -38,7 +75,7 @@ if ! api_healthy; then
   if curl -sS --max-time 2 "$API_URL/" >/dev/null 2>&1; then
     echo "The API on port 8080 is not serving the current showcase dataset. Job discovery will use its bundled dataset."
   else
-    if ! pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
+    if [[ "$managed_db_configured" != true ]] && ! pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
     if command -v docker >/dev/null 2>&1; then
         if docker compose -f "$APP_DIR/shrambazar/compose.yaml" up -d database; then
           for _ in {1..30}; do
@@ -48,7 +85,7 @@ if ! api_healthy; then
         fi
       fi
     fi
-    if pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
+    if pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1 || [[ "$managed_db_configured" == true ]]; then
       if (cd "$APP_DIR/shrambazar" && sh ./mvnw -DskipTests package); then
         (
           cd "$APP_DIR/shrambazar"
@@ -69,7 +106,7 @@ if ! api_healthy; then
         echo "The API build did not complete. Job discovery will use its bundled dataset."
       fi
     else
-      echo "PostgreSQL is not available. Starting job discovery with its bundled dataset."
+      echo "PostgreSQL is not available. Start a local database or configure POSTGRES_HOST, POSTGRES_DATABASE, POSTGRES_USER, and POSTGRES_PASSWORD to enable login and account creation."
     fi
   fi
 fi
