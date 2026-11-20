@@ -7,8 +7,6 @@ import { isValidPhoneNumber } from "../../utils/validation"
 const documentHelp: Record<KycDocumentType, string> = {
   "national-id": "Enter the number shown on your Nepal National ID.",
   citizenship: "Enter the certificate number exactly as printed.",
-  passport: "Enter the number shown on your current passport.",
-  "driving-licence": "Enter the licence number shown on your driving licence.",
 }
 
 export default function KycVerification() {
@@ -456,7 +454,7 @@ export default function KycVerification() {
               Identity document
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-stone-500">
-              Submit both sides of your current Nepal National ID. Your document details are
+              Submit both sides of your Nepal National ID or citizenship certificate. An administrator reviews your documents before the verified badge is granted. Your document details are
               not displayed on your public profile.
             </p>
           </div>
@@ -600,7 +598,7 @@ export default function KycVerification() {
               </label>
               <label className="sm:col-span-2">
                 <span className="mb-1.5 block text-sm font-semibold text-stone-700">Upload back of {form.documentType === "citizenship" ? "citizenship certificate" : "National ID"}</span>
-                <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={(event) => handleDocumentFile(event, "back")} disabled={readingFile} className="input-style" required={import.meta.env.VITE_DEMO_MODE !== "true"} />
+                <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={(event) => handleDocumentFile(event, "back")} disabled={readingFile} className="input-style" required />
                 <span className="mt-1 block text-xs text-stone-500">JPG, PNG, or PDF · Maximum 1 MB.</span>
               </label>
               <label className="sm:col-span-2">

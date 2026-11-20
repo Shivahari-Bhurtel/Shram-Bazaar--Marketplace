@@ -390,8 +390,8 @@ public class VerificationService {
                                         documentType == VerificationDocumentType.CITIZENSHIP_FRONT ||
                                         documentType == VerificationDocumentType.CITIZENSHIP_BACK)) ||
                         (requestType == VerificationType.BUSINESS &&
-                                documentType ==
-                                        VerificationDocumentType.BUSINESS_REGISTRATION);
+                                (documentType == VerificationDocumentType.BUSINESS_REGISTRATION ||
+                                        documentType == VerificationDocumentType.PAN_CERTIFICATE));
 
         if (!valid) {
             throw new ResponseStatusException(
@@ -419,8 +419,8 @@ public class VerificationService {
         }
 
         return documents.stream().anyMatch(d ->
-                d.getDocumentType() ==
-                        VerificationDocumentType.BUSINESS_REGISTRATION);
+                d.getDocumentType() == VerificationDocumentType.BUSINESS_REGISTRATION ||
+                        d.getDocumentType() == VerificationDocumentType.PAN_CERTIFICATE);
     }
 
     private VerificationRequestResponse mapToResponse(

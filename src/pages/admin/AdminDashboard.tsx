@@ -52,7 +52,7 @@ export default function AdminDashboard() {
   const [announcement, setAnnouncement] = useState("")
   const [announcementAudience, setAnnouncementAudience] = useState<"all" | "worker" | "provider">("all")
   const [announcementNotice, setAnnouncementNotice] = useState("")
-  const [apiDocumentUrls, setApiDocumentUrls] = useState<Record<string, string>>({})
+  const [apiDocumentUrls, setApiDocumentUrls] = useState<Record<string, { front?: string; back?: string }>>({})
   const [apiMetrics, setApiMetrics] = useState<AdminMetrics | null>(null)
   const { sendUserNotification } = useApp()
 
@@ -77,23 +77,31 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (import.meta.env.VITE_DEMO_MODE === "true") return
     let active = true
-    const urls: Record<string, string> = {}
-    void Promise.all(pendingKyc.map(async (worker) => {
-      if (!worker.kycRequestId || !worker.kycDocumentId) return
+    const urls: Record<string, { front?: string; back?: string }> = {}
+    const reviewDocuments: Array<{ key: string; requestId?: string; frontId?: string; backId?: string }> = [
+      ...pendingKyc.map((worker) => ({ key: worker.id, requestId: worker.kycRequestId, frontId: worker.kycDocumentId, backId: worker.kycBackDocumentId })),
+      ...state.allProviderProfiles.filter((provider) => provider.verificationStatus === "pending").map((provider) => ({ key: `provider:${provider.id}`, requestId: provider.verificationRequestId, frontId: provider.verificationDocumentId, backId: provider.verificationBackDocumentId })),
+    ]
+    void Promise.all(reviewDocuments.map(async (record) => {
+      if (!record.requestId) return
+      const sides: Array<["front" | "back", string | undefined]> = [["front", record.frontId], ["back", record.backId]]
+      for (const [side, documentId] of sides) {
+        if (!documentId) continue
       try {
-        const blob = await apiFileRequest(`/api/admin/verifications/${worker.kycRequestId}/documents/${worker.kycDocumentId}`)
+        const blob = await apiFileRequest(`/api/admin/verifications/${record.requestId}/documents/${documentId}`)
         if (!active) return
         const url = URL.createObjectURL(blob)
-        urls[worker.id] = url
+        urls[record.key] = { ...urls[record.key], [side]: url }
       } catch {
-        // Keep the review controls available if a protected document cannot load.
+        // Keep review controls available if a protected document cannot load.
+      }
       }
     })).then(() => { if (active) setApiDocumentUrls(urls) })
     return () => {
       active = false
-      Object.values(urls).forEach((url) => URL.revokeObjectURL(url))
+      Object.values(urls).forEach((documents) => Object.values(documents).forEach((url) => { if (url) URL.revokeObjectURL(url) }))
     }
-  }, [pendingKyc])
+  }, [pendingKyc, state.allProviderProfiles])
 
   const tabs: { id: AdminTab; label: string; count?: number }[] = [
     { id: "overview", label: "A · Dashboard" },
@@ -162,7 +170,10 @@ export default function AdminDashboard() {
         <section className="space-y-4">
           <SectionHeading title="Worker identity review" description="Only the admin view receives identity document data. Review the document before changing a worker’s verification status." />
           {pendingKyc.length === 0 ? <EmptyState message="No identity documents are waiting for review." /> : pendingKyc.map((worker) => {
-            const isPdf = worker.kycDocumentData?.startsWith("data:application/pdf")
+            const frontUrl = worker.kycDocumentData || apiDocumentUrls[worker.id]?.front
+            const backUrl = worker.kycBackDocumentData || apiDocumentUrls[worker.id]?.back
+            const isPdf = worker.kycDocumentData?.startsWith("data:application/pdf") || worker.kycDocumentFileName?.toLowerCase().endsWith(".pdf")
+            const isBackPdf = worker.kycBackDocumentFileName?.toLowerCase().endsWith(".pdf")
             return (
               <article key={worker.id} className="grid gap-5 rounded-2xl border border-stone-200 bg-white p-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
                 <div>
@@ -177,7 +188,7 @@ export default function AdminDashboard() {
                     <Data label="Phone / email" value={`${worker.phoneVerified ? "Phone verified" : "Phone unverified"} · ${worker.emailVerified ? "Email verified" : "Email unverified"}`} />
                   </dl>
                   <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                    <button type="button" onClick={() => { reviewKyc(worker.id, "verified"); audit(`Approved worker identity ${worker.id}`) }} className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Approve identity</button>
+                    <button type="button" disabled={!frontUrl || !backUrl} onClick={() => { reviewKyc(worker.id, "verified"); audit(`Approved worker identity ${worker.id}`) }} className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">Approve identity</button>
                     <div className="flex min-w-0 flex-1 gap-2">
                       <input value={rejectionNotes[worker.id] || ""} onChange={(event) => setRejectionNotes((current) => ({ ...current, [worker.id]: event.target.value }))} placeholder="Reason to send to worker" className="input-style min-w-0" aria-label={`Reason for rejecting ${worker.name}`} />
                       <button type="button" onClick={() => { reviewKyc(worker.id, "rejected", rejectionNotes[worker.id] || "Please upload a clear, valid document."); audit(`Requested worker identity update ${worker.id}`) }} className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50">Request update</button>
@@ -187,11 +198,15 @@ export default function AdminDashboard() {
                 <div className="space-y-3">
                   <div className="min-h-48 overflow-hidden rounded-xl border border-stone-200 bg-stone-50 p-3">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Identity document</p>
-                    {(worker.kycDocumentData || apiDocumentUrls[worker.id]) ? isPdf || (apiDocumentUrls[worker.id] && worker.kycDocumentFileName?.toLowerCase().endsWith(".pdf")) ? (
-                      <a href={worker.kycDocumentData || apiDocumentUrls[worker.id]} target="_blank" rel="noreferrer" className="flex h-44 items-center justify-center rounded-lg bg-white text-sm font-semibold text-primary-ink underline">Open submitted PDF ↗</a>
+                    {frontUrl ? isPdf ? (
+                      <a href={frontUrl} target="_blank" rel="noreferrer" className="flex h-44 items-center justify-center rounded-lg bg-white text-sm font-semibold text-primary-ink underline">Open front document ↗</a>
                     ) : (
-                      <img src={worker.kycDocumentData || apiDocumentUrls[worker.id]} alt={`Identity document submitted by ${worker.name}`} className="mx-auto max-h-64 rounded-lg object-contain" />
+                      <img src={frontUrl} alt={`Front of identity document submitted by ${worker.name}`} className="mx-auto max-h-64 rounded-lg object-contain" />
                     ) : <p className="flex h-44 items-center justify-center text-sm text-stone-500">No document preview available.</p>}
+                  </div>
+                  <div className="min-h-36 overflow-hidden rounded-xl border border-stone-200 bg-stone-50 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Back of identity document</p>
+                    {backUrl ? isBackPdf ? <a href={backUrl} target="_blank" rel="noreferrer" className="flex h-32 items-center justify-center rounded-lg bg-white text-sm font-semibold text-primary-ink underline">Open back document ↗</a> : <img src={backUrl} alt={`Back of identity document submitted by ${worker.name}`} className="mx-auto max-h-52 rounded-lg object-contain" /> : <p className="flex h-32 items-center justify-center text-sm text-stone-500">No back document available.</p>}
                   </div>
                   {worker.kycSelfieData && (
                     <div className="overflow-hidden rounded-xl border border-stone-200 bg-stone-50 p-3">
@@ -260,10 +275,10 @@ export default function AdminDashboard() {
           {state.allProviderProfiles.filter((provider) => `${provider.orgName} ${provider.contactName} ${provider.email} ${provider.district}`.toLowerCase().includes(providerSearch.trim().toLowerCase())).length === 0 ? <EmptyState message="No providers match this search." /> : state.allProviderProfiles.filter((provider) => `${provider.orgName} ${provider.contactName} ${provider.email} ${provider.district}`.toLowerCase().includes(providerSearch.trim().toLowerCase())).map((provider) => (
             <article key={provider.id} className="rounded-2xl border border-stone-200 bg-white p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-center gap-3">{provider.logo && <img src={provider.logo} alt="" className="h-12 w-12 rounded-xl object-cover" />}<div><h3 className="font-semibold text-stone-900">{provider.orgName}</h3><p className="mt-1 text-sm text-stone-500">{provider.contactName} · {provider.email} · {provider.providerType || "business"} · PAN {provider.pan || "not provided"}</p><p className="mt-1 text-xs text-stone-500">{provider.location}, {provider.district} · {provider.industry}</p><p className="mt-1 text-xs font-semibold text-stone-600">{provider.verificationStatus || (provider.verified ? "verified" : "not submitted")}</p></div></div>
+                <div className="flex items-center gap-3">{provider.logo && <img src={provider.logo} alt="" className="h-12 w-12 rounded-xl object-cover" />}<div><h3 className="font-semibold text-stone-900">{provider.orgName}</h3><p className="mt-1 text-sm text-stone-500">{provider.contactName} · {provider.email} · {provider.providerType || "business"} · PAN {provider.pan || "not provided"}</p><p className="mt-1 text-xs text-stone-500">{provider.location}, {provider.district} · {provider.industry}</p><p className="mt-1 text-xs font-semibold text-stone-600">Status: {provider.verificationStatus || (provider.verified ? "verified" : "not submitted")}</p>{provider.verificationStatus === "pending" && <p className="mt-1 text-xs text-stone-600">Submitted document: {provider.providerType === "individual" ? provider.verificationIdentityDocumentType === "citizenship" ? "Citizenship certificate" : "National ID" : provider.verificationDocumentType === "PAN_CERTIFICATE" ? "PAN certificate" : "Business registration"}</p>}</div></div>
                 {provider.verificationStatus === "pending" && (
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => { reviewProviderVerification(provider.id, true); audit(`Approved provider verification ${provider.orgName}`) }} className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Approve provider</button>
+                    <button type="button" disabled={!(provider.verificationDocumentData || apiDocumentUrls[`provider:${provider.id}`]?.front) || (provider.providerType === "individual" && !(provider.verificationBackDocumentData || apiDocumentUrls[`provider:${provider.id}`]?.back))} onClick={() => { reviewProviderVerification(provider.id, true); audit(`Approved provider verification ${provider.orgName}`) }} className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50">Approve provider</button>
                     <button type="button" onClick={() => { reviewProviderVerification(provider.id, false, providerNotes[provider.id] || "Please upload a clear identity or organisation verification document."); audit(`Requested provider verification update ${provider.orgName}`) }} className="rounded-xl border border-amber-300 px-4 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-50">Request update</button>
                   </div>
                 )}
@@ -271,7 +286,13 @@ export default function AdminDashboard() {
               </div>
               {provider.verificationStatus === "pending" && <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
                 <label className="text-sm font-semibold text-stone-700">Review note for provider<input value={providerNotes[provider.id] || ""} onChange={(event) => setProviderNotes((current) => ({ ...current, [provider.id]: event.target.value }))} placeholder="Explain what needs correction" className="input-style mt-2 w-full" /></label>
-                <div className="rounded-xl border border-stone-200 bg-stone-50 p-3"><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">Submitted document</p>{provider.verificationDocumentData?.startsWith("data:application/pdf") ? <a href={provider.verificationDocumentData} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary-ink underline">Open {provider.verificationDocumentName || "PDF"}</a> : provider.verificationDocumentData ? <img src={provider.verificationDocumentData} alt={`Verification document submitted by ${provider.orgName}`} className="max-h-56 rounded-lg object-contain" /> : <p className="text-sm text-stone-500">No document attached.</p>}</div>
+                <div className="space-y-3">
+                  {([["front", provider.verificationDocumentData, provider.verificationDocumentName], ["back", provider.verificationBackDocumentData, provider.verificationBackDocumentName]] as const).map(([side, localData, fileName]) => {
+                    const url = localData || apiDocumentUrls[`provider:${provider.id}`]?.[side]
+                    const isPdf = localData?.startsWith("data:application/pdf") || fileName?.toLowerCase().endsWith(".pdf")
+                    return <div key={side} className="rounded-xl border border-stone-200 bg-stone-50 p-3"><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">{side === "front" ? "Submitted verification document" : "Back of identity document"}</p>{url ? isPdf ? <a href={url} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary-ink underline">Open {fileName || `${side} document`} ↗</a> : <img src={url} alt={`${side} verification document submitted by ${provider.orgName}`} className="max-h-56 rounded-lg object-contain" /> : <p className="text-sm text-stone-500">{side === "back" && provider.providerType !== "individual" ? "Not required for this provider type." : "No document attached."}</p>}</div>
+                  })}
+                </div>
               </div>}
             </article>
           ))}
