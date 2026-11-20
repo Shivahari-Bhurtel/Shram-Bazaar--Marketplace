@@ -7,17 +7,15 @@ type Props = {
   course: LearnCourse
   progress: LearningProgress
   isEnrolled: boolean
-  onBack: () => void
   onStart: () => void
   onSelectLesson: (lessonId: string) => void
 }
 
-export default function CourseDetails({ course, progress, isEnrolled, onBack, onStart, onSelectLesson }: Props) {
+export default function CourseDetails({ course, progress, isEnrolled, onStart, onSelectLesson }: Props) {
   const metric = getCourseProgress(course, progress)
 
   return (
     <section>
-      <button type="button" onClick={onBack} className="mb-5 inline-flex min-h-9 items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-800"><span aria-hidden="true">←</span> Back to courses</button>
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <img src={course.thumbnail} alt="" className="aspect-[2.7/1] max-h-[360px] w-full bg-slate-100 object-cover" />
         <div className="p-5 sm:p-8">

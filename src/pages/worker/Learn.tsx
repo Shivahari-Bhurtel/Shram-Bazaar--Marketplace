@@ -309,7 +309,6 @@ export default function Learn() {
             course={activeCourse}
             progress={progress}
             isEnrolled={progress.enrolledCourseIds.includes(activeCourse.id)}
-            onBack={() => setView("dashboard")}
             onStart={() => startLesson(activeCourse)}
             onSelectLesson={(lessonId) => startLesson(activeCourse, lessonId)}
           />}
