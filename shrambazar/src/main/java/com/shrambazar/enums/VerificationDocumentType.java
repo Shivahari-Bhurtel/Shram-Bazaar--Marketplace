@@ -6,5 +6,6 @@ public enum VerificationDocumentType {
     CITIZENSHIP_FRONT,
     CITIZENSHIP_BACK,
     BUSINESS_REGISTRATION,
+    PAN_CERTIFICATE,
     OTHER
 }

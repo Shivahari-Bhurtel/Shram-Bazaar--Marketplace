@@ -418,6 +418,7 @@ const adminOnly: Page[] = ["admin-dashboard"]
 const publicOnly: Page[] = [
   "landing",
   "login",
+  "register-choice",
   "worker-signup",
   "provider-signup",
   "job-discovery",
@@ -454,7 +455,7 @@ interface AppContextValue {
   updateWorkerProfile: (updates: Partial<WorkerProfile>) => void
   notifyProfileUpdated: (message: string) => void
   updateProviderProfile: (updates: Partial<ProviderProfile>) => void
-  submitProviderVerification: (fileName: string, fileData: string, backFileName?: string, backFileData?: string) => Promise<string | null>
+  submitProviderVerification: (fileName: string, fileData: string, backFileName?: string, backFileData?: string, identityDocumentType?: "national-id" | "citizenship", businessDocumentType?: "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE") => Promise<string | null>
   reviewProviderVerification: (providerId: string, approved: boolean, note?: string) => void
   sendUserNotification: (userId: string, title: string, message: string, type?: Notification["type"]) => Promise<string | null>
   hasApplied: (jobId: string) => boolean
@@ -646,7 +647,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const mappedOwnJobs = ownJobs.map((job) => mapApiJob(job, currentUser.id))
           const currentProvider = data.providerProfiles.find((profile) => profile.id === currentUser.profileId)
           const verificationRequest = verificationRequests.find((item) => item.type === (currentProvider?.providerType === "individual" ? "IDENTITY" : "BUSINESS"))
-          const verificationFront = verificationRequest?.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "CITIZENSHIP_FRONT" || item.documentType === "BUSINESS_REGISTRATION")
+          const verificationFront = verificationRequest?.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "CITIZENSHIP_FRONT" || item.documentType === "BUSINESS_REGISTRATION" || item.documentType === "PAN_CERTIFICATE")
           const verificationBack = verificationRequest?.documents?.find((item) => item.documentType === "NID_BACK" || item.documentType === "CITIZENSHIP_BACK")
           const applicantLists = await Promise.all(mappedOwnJobs.map(async (job) => {
             const applicants = await apiRequest<Array<{ applicationId: number; seekerUserId: number; seekerName: string; profilePictureUrl?: string; phoneNumber?: string; email?: string; bio?: string; address?: string; preferredTravelDistanceKm?: number; skills?: string[]; qualifications?: Array<{ id: number; qualificationName: string; institution?: string; fieldOfStudy?: string; credentialType?: string; startDate?: string; endDate?: string; currentlyStudying: boolean }>; workExperience?: Array<{ id: number; jobTitle: string; organizationName?: string; description?: string; startDate?: string; endDate?: string; currentlyWorking: boolean }>; availability?: Array<{ id: number; dayOfWeek?: string; startDate: string; endDate?: string; startTime: string; endTime: string; active: boolean }>; completedJobHistory?: Array<{ jobPostId: number; jobTitle: string; providerName?: string; jobDescription: string; location: string; startDate: string; endDate: string; completedAt: string; rating?: number; review?: string; reviewedAt?: string }>; verified: boolean; averageRating?: number; reviewCount: number; status: string; appliedAt: string }>>(`/api/provider/jobs/${job.id}/applications`)
@@ -715,6 +716,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
               verified: verificationRequest?.status === "APPROVED",
               verificationReviewNote: verificationRequest?.reviewNote,
               verificationDocumentName: verificationFront?.originalFileName,
+              verificationDocumentType: verificationFront?.documentType === "PAN_CERTIFICATE" ? "PAN_CERTIFICATE" : verificationFront?.documentType === "BUSINESS_REGISTRATION" ? "BUSINESS_REGISTRATION" : undefined,
+              verificationIdentityDocumentType: verificationFront?.documentType === "CITIZENSHIP_FRONT" ? "citizenship" : verificationFront?.documentType === "NID_FRONT" ? "national-id" : undefined,
               verificationBackDocumentName: verificationBack?.originalFileName,
               verificationRequestId: verificationRequest ? String(verificationRequest.id) : undefined,
               verificationDocumentId: verificationFront ? String(verificationFront.id) : undefined,
@@ -895,7 +898,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const providerProfiles = backendUsers.filter((item) => item.role === "JOB_PROVIDER").map((item): ProviderProfile => {
             const user = backendUserList.find((candidate) => candidate.id === String(item.userId))!
             const request = verificationRequests.find((entry) => entry.userId === item.userId)
-            const document = request?.documents?.find((item) => item.documentType === "BUSINESS_REGISTRATION") || request?.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "CITIZENSHIP_FRONT") || request?.documents?.[0]
+            const document = request?.documents?.find((item) => item.documentType === "BUSINESS_REGISTRATION" || item.documentType === "PAN_CERTIFICATE") || request?.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "CITIZENSHIP_FRONT") || request?.documents?.[0]
             const backDocument = request?.documents?.find((item) => item.documentType === "NID_BACK" || item.documentType === "CITIZENSHIP_BACK")
             const existing = data.providerProfiles.find((profile) => profile.id === user.profileId)
             return {
@@ -916,10 +919,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
               website: item.businessWebsite || "",
               providerType: item.hasBusiness ? "business" : "individual",
               verificationStatus: request ? request.status === "APPROVED" ? "verified" : request.status === "REJECTED" ? "rejected" : "pending" : "not-submitted",
+              verified: request?.status === "APPROVED",
+              verifiedDate: request?.status === "APPROVED" ? request.reviewedAt?.slice(0, 10) : undefined,
               verificationReviewNote: request?.reviewNote,
               verificationRequestId: request ? String(request.id) : undefined,
               verificationDocumentId: document ? String(document.id) : undefined,
               verificationDocumentName: document?.originalFileName,
+              verificationDocumentType: document?.documentType === "PAN_CERTIFICATE" ? "PAN_CERTIFICATE" : document?.documentType === "BUSINESS_REGISTRATION" ? "BUSINESS_REGISTRATION" : undefined,
+              verificationIdentityDocumentType: document?.documentType === "CITIZENSHIP_FRONT" ? "citizenship" : document?.documentType === "NID_FRONT" ? "national-id" : undefined,
               verificationBackDocumentId: backDocument ? String(backDocument.id) : undefined,
               verificationBackDocumentName: backDocument?.originalFileName,
             }
@@ -1189,11 +1196,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const requests = await apiRequest<Array<{ id: number; type: string; status: string; reviewNote?: string; submittedAt?: string; reviewedAt?: string; documents?: Array<{ id: number; documentType: string; originalFileName: string }> }>>("/api/verifications/me")
         const request = requests.find((item) => item.type === (mapped.providerType === "individual" ? "IDENTITY" : "BUSINESS"))
         if (request) {
-          const front = request.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "BUSINESS_REGISTRATION")
-          const back = request.documents?.find((item) => item.documentType === "NID_BACK")
+          const front = request.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "BUSINESS_REGISTRATION" || item.documentType === "PAN_CERTIFICATE")
+          const back = request.documents?.find((item) => item.documentType === "NID_BACK" || item.documentType === "CITIZENSHIP_BACK")
           mapped.verificationStatus = request.status === "APPROVED" ? "verified" : request.status === "REJECTED" ? "rejected" : "pending"
           mapped.verificationReviewNote = request.reviewNote
           mapped.verificationDocumentName = front?.originalFileName
+          mapped.verificationDocumentType = front?.documentType === "PAN_CERTIFICATE" ? "PAN_CERTIFICATE" : front?.documentType === "BUSINESS_REGISTRATION" ? "BUSINESS_REGISTRATION" : undefined
+          mapped.verificationIdentityDocumentType = front?.documentType === "CITIZENSHIP_FRONT" ? "citizenship" : front?.documentType === "NID_FRONT" ? "national-id" : undefined
           mapped.verificationBackDocumentName = back?.originalFileName
           mapped.verificationRequestId = String(request.id)
           mapped.verificationDocumentId = front ? String(front.id) : undefined
@@ -2074,14 +2083,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return "Only worker accounts can submit identity verification."
     if (!backendMode && (!workerProfile.phoneVerified || !workerProfile.emailVerified))
       return "Verify your phone number and email address before submitting identity verification."
-    if (
-      !(
-        "national-id" === submission.documentType ||
-        "citizenship" === submission.documentType ||
-        "passport" === submission.documentType ||
-        "driving-licence" === submission.documentType
-      )
-    ) {
+    if (submission.documentType !== "national-id" && submission.documentType !== "citizenship") {
       return "Choose a valid identity document type."
     }
     const documentNumber = submission.documentNumber.trim()
@@ -2090,8 +2092,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return "Document number must be between 4 and 40 characters."
     if (!submission.fileName || !submission.documentData)
       return "Upload the front of your National ID."
-    if (backendMode && (!submission.backFileName || !submission.backDocumentData))
-      return "Upload the back of your National ID as well."
+    if (!submission.backFileName || !submission.backDocumentData)
+      return `Upload the back of your ${submission.documentType === "citizenship" ? "citizenship certificate" : "National ID"} as well.`
     if (submission.documentExpiryDate) {
       if (!isDateOnlyString(submission.documentExpiryDate))
         return "Enter a valid document expiry date."
@@ -2104,15 +2106,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return "The selfie is too large. Use an image smaller than 512 KB."
     if (backendMode) {
       try {
-        const requests = await apiRequest<Array<{ id: number; type: string; status: string }>>("/api/verifications/me")
+        const requests = await apiRequest<Array<{ id: number; type: string; status: string; documents?: Array<{ id: number; documentType: string }> }>>("/api/verifications/me")
         const pendingRequest = requests.find((item) => item.type === "IDENTITY" && item.status === "PENDING")
+        const isCitizenship = submission.documentType === "citizenship"
+        const frontType = isCitizenship ? "CITIZENSHIP_FRONT" : "NID_FRONT"
+        const backType = isCitizenship ? "CITIZENSHIP_BACK" : "NID_BACK"
+        const existingFrontType = pendingRequest?.documents?.find((document) => document.documentType === "NID_FRONT" || document.documentType === "CITIZENSHIP_FRONT")?.documentType
+        if (existingFrontType && existingFrontType !== frontType) {
+          return "A pending request already uses a different identity document. Continue with that document or ask an administrator to reject the request before changing it."
+        }
         const requestId = pendingRequest?.id ?? (await apiRequest<{ id: number }>("/api/verifications", {
             method: "POST",
             body: JSON.stringify({ type: "IDENTITY" }),
           })).id
-        const isCitizenship = submission.documentType === "citizenship"
-        const frontType = isCitizenship ? "CITIZENSHIP_FRONT" : "NID_FRONT"
-        const backType = isCitizenship ? "CITIZENSHIP_BACK" : "NID_BACK"
         const uploadDocument = async (data: string, fileName: string, documentType: "NID_FRONT" | "NID_BACK" | "CITIZENSHIP_FRONT" | "CITIZENSHIP_BACK") => {
           const blob = await (await fetch(data)).blob()
           const form = new FormData()
@@ -2120,14 +2126,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           form.set("file", new File([blob], fileName, { type: blob.type || "application/octet-stream" }))
           await apiRequest(`/api/verifications/${requestId}/documents`, { method: "POST", body: form })
         }
-        await uploadDocument(submission.documentData, submission.fileName, frontType)
-        await uploadDocument(submission.backDocumentData!, submission.backFileName!, backType)
+        if (!pendingRequest?.documents?.some((document) => document.documentType === frontType)) {
+          await uploadDocument(submission.documentData, submission.fileName, frontType)
+        }
+        if (!pendingRequest?.documents?.some((document) => document.documentType === backType)) {
+          await uploadDocument(submission.backDocumentData!, submission.backFileName!, backType)
+        }
         updateWorkerProfile({
           kycStatus: "pending",
           kycDocumentType: submission.documentType,
           kycDocumentNumber: undefined,
           kycDocumentFileName: submission.fileName,
           kycDocumentData: undefined,
+          kycBackDocumentData: undefined,
           kycDocumentExpiryDate: submission.documentExpiryDate || undefined,
           kycSelfieData: undefined,
           kycSelfieFileName: undefined,
@@ -2147,6 +2158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       kycDocumentNumber: documentNumber,
       kycDocumentFileName: submission.fileName,
       kycDocumentData: submission.documentData,
+      kycBackDocumentData: submission.backDocumentData,
       kycDocumentExpiryDate: submission.documentExpiryDate || undefined,
       kycSelfieData: submission.selfieData,
       kycSelfieFileName: submission.selfieFileName,
@@ -2209,6 +2221,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         (profile) => profile.id === workerId,
       )
       if (!worker || worker.kycStatus !== "pending") return old
+      if (decision === "verified" && (!worker.kycDocumentData || !worker.kycBackDocumentData)) {
+        setStorageWarning("Both sides of the worker’s NID or citizenship document must be submitted before approval.")
+        return old
+      }
       worker.kycStatus = decision
       worker.verified = decision === "verified"
       worker.kycVerifiedDate = decision === "verified" ? today() : undefined
@@ -2310,6 +2326,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const verifyProvider = (providerId: string, verified: boolean) => {
     if (currentUser?.role !== "admin") return
+    // Badge grants must go through reviewProviderVerification after a pending request is reviewed.
+    if (verified) return
     setData((old) => ({
       ...old,
       providerProfiles: old.providerProfiles.map((profile) =>
@@ -2327,31 +2345,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const submitProviderVerification = async (fileName: string, fileData: string, backFileName?: string, backFileData?: string) => {
+  const submitProviderVerification = async (fileName: string, fileData: string, backFileName?: string, backFileData?: string, identityDocumentType: "national-id" | "citizenship" = "national-id", businessDocumentType: "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE" = "BUSINESS_REGISTRATION") => {
     if (currentUser?.role !== "provider" || !providerProfile || !fileData) return "Sign in as a provider and choose a document first."
-    if (providerProfile.providerType === "individual" && (!backFileName || !backFileData)) return "Upload both sides of your National ID."
+    if (providerProfile.providerType === "individual" && (!backFileName || !backFileData)) return `Upload both sides of your ${identityDocumentType === "citizenship" ? "citizenship certificate" : "National ID"}.`
     if (backendMode) {
       try {
         const type = providerProfile.providerType === "individual" ? "IDENTITY" : "BUSINESS"
-        const requests = await apiRequest<Array<{ id: number; type: string; status: string }>>("/api/verifications/me")
+        const requests = await apiRequest<Array<{ id: number; type: string; status: string; documents?: Array<{ id: number; documentType: string }> }>>("/api/verifications/me")
         const existing = requests.find((item) => item.type === type && item.status === "PENDING")
+        const frontType = type === "BUSINESS" ? businessDocumentType : identityDocumentType === "citizenship" ? "CITIZENSHIP_FRONT" : "NID_FRONT"
+        const backType = identityDocumentType === "citizenship" ? "CITIZENSHIP_BACK" : "NID_BACK"
+        const existingFrontType = existing?.documents?.find((document) => ["NID_FRONT", "CITIZENSHIP_FRONT", "BUSINESS_REGISTRATION", "PAN_CERTIFICATE"].includes(document.documentType))?.documentType
+        if (existingFrontType && existingFrontType !== frontType) {
+          return "A pending request already uses a different verification document. Continue with that document or ask an administrator to reject the request before changing it."
+        }
         const requestId = existing?.id ?? (await apiRequest<{ id: number }>("/api/verifications", { method: "POST", body: JSON.stringify({ type }) })).id
-        const upload = async (name: string, data: string, documentType: "NID_FRONT" | "NID_BACK" | "BUSINESS_REGISTRATION") => {
+        const upload = async (name: string, data: string, documentType: "NID_FRONT" | "NID_BACK" | "CITIZENSHIP_FRONT" | "CITIZENSHIP_BACK" | "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE") => {
           const blob = await (await fetch(data)).blob()
           const form = new FormData()
           form.set("documentType", documentType)
           form.set("file", new File([blob], name, { type: blob.type || "application/octet-stream" }))
           return apiRequest<{ id: number }>(`/api/verifications/${requestId}/documents`, { method: "POST", body: form })
         }
-        const front = await upload(fileName, fileData, type === "BUSINESS" ? "BUSINESS_REGISTRATION" : "NID_FRONT")
-        const back = type === "IDENTITY" ? await upload(backFileName!, backFileData!, "NID_BACK") : undefined
+        const front = existing?.documents?.some((document) => document.documentType === frontType)
+          ? undefined
+          : await upload(fileName, fileData, frontType)
+        const back = type === "IDENTITY" && !existing?.documents?.some((document) => document.documentType === backType)
+          ? await upload(backFileName!, backFileData!, backType)
+          : undefined
+        const uploadedFront = front || existing?.documents?.find((document) => document.documentType === frontType)
+        const uploadedBack = back || (type === "IDENTITY" ? existing?.documents?.find((document) => document.documentType === backType) : undefined)
         setData((old) => ({
           ...old,
           providerProfiles: old.providerProfiles.map((profile) => profile.id === providerProfile.id ? {
-            ...profile, verificationDocumentName: fileName, verificationBackDocumentName: backFileName,
+            ...profile, verificationDocumentName: fileName, verificationDocumentType: type === "BUSINESS" ? businessDocumentType : undefined, verificationIdentityDocumentType: type === "IDENTITY" ? identityDocumentType : undefined, verificationBackDocumentName: backFileName,
             verificationStatus: "pending", verificationReviewNote: undefined, verified: false, verifiedDate: undefined,
-            verificationRequestId: String(requestId), verificationDocumentId: String(front.id),
-            verificationBackDocumentId: back ? String(back.id) : undefined,
+            verificationRequestId: String(requestId), verificationDocumentId: uploadedFront ? String(uploadedFront.id) : undefined,
+            verificationBackDocumentId: uploadedBack ? String(uploadedBack.id) : undefined,
           } : profile),
           jobs: old.jobs.map((job) => job.providerId === providerProfile.id ? { ...job, providerVerified: false } : job),
         }))
@@ -2363,7 +2393,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const profile = draft.providerProfiles.find((item) => item.id === providerProfile.id)
       if (!profile) return old
       profile.verificationDocumentName = fileName
+      profile.verificationDocumentType = providerProfile.providerType === "individual" ? undefined : businessDocumentType
+      profile.verificationIdentityDocumentType = providerProfile.providerType === "individual" ? identityDocumentType : undefined
       profile.verificationDocumentData = fileData
+      profile.verificationBackDocumentName = backFileName
+      profile.verificationBackDocumentData = backFileData
       profile.verificationStatus = "pending"
       profile.verificationReviewNote = undefined
       profile.verified = false
@@ -2407,6 +2441,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const draft = structuredClone(old)
       const profile = draft.providerProfiles.find((item) => item.id === providerId)
       if (!profile || profile.verificationStatus !== "pending") return old
+      if (approved && (!profile.verificationDocumentData || (profile.providerType === "individual" && !profile.verificationBackDocumentData))) {
+        setStorageWarning("Required provider verification documents must be submitted before approval.")
+        return old
+      }
       profile.verified = approved
       profile.verifiedDate = approved ? today() : undefined
       profile.verificationStatus = approved ? "verified" : "rejected"
@@ -2749,10 +2787,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         address: _address,
         kycDocumentNumber: _documentNumber,
         kycDocumentData: _documentData,
+        kycBackDocumentData: _backDocumentData,
         kycDocumentFileName: _documentFileName,
+        kycBackDocumentFileName: _backDocumentFileName,
         kycDocumentExpiryDate: _documentExpiryDate,
         kycSelfieData: _selfieData,
         kycSelfieFileName: _selfieFileName,
+        kycReviewNote: _reviewNote,
+        kycRequestId: _requestId,
+        kycDocumentId: _documentId,
+        kycBackDocumentId: _backDocumentId,
         ...publicProfile
       } = profile
       return expired
@@ -2761,7 +2805,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }),
     allProviderProfiles: data.providerProfiles.map((profile) => {
       if (currentUser?.role === "admin") return profile
-      const { verificationDocumentName: _documentName, verificationDocumentData: _documentData, verificationReviewNote: _reviewNote, ...publicProfile } = profile
+      const {
+        verificationDocumentName: _documentName,
+        verificationDocumentType: _documentType,
+        verificationIdentityDocumentType: _identityDocumentType,
+        verificationDocumentData: _documentData,
+        verificationBackDocumentName: _backDocumentName,
+        verificationBackDocumentData: _backDocumentData,
+        verificationRequestId: _requestId,
+        verificationDocumentId: _documentId,
+        verificationBackDocumentId: _backDocumentId,
+        verificationReviewNote: _reviewNote,
+        ...publicProfile
+      } = profile
       return publicProfile
     }),
     adminWorkerProfiles:

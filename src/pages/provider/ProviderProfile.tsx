@@ -4,6 +4,7 @@ import { apiRequest } from "../../services/backendApi"
 import { VerifiedBadge } from "../../components/StatusBadge"
 import { DISTRICTS } from "../../data/mockData"
 import { isValidNepalPan, isValidPhoneNumber } from "../../utils/validation"
+import type { KycDocumentType } from "../../types"
 
 export default function ProviderProfile() {
   const { state, updateProviderProfile, submitProviderVerification } = useApp()
@@ -15,6 +16,8 @@ export default function ProviderProfile() {
   const [verificationMessage, setVerificationMessage] = useState("")
   const [verificationFront, setVerificationFront] = useState<{ name: string; data: string } | null>(null)
   const [verificationBack, setVerificationBack] = useState<{ name: string; data: string } | null>(null)
+  const [identityDocumentType, setIdentityDocumentType] = useState<KycDocumentType>("national-id")
+  const [businessDocumentType, setBusinessDocumentType] = useState<"BUSINESS_REGISTRATION" | "PAN_CERTIFICATE">("BUSINESS_REGISTRATION")
   const [verificationBusy, setVerificationBusy] = useState(false)
   const [receivedReviews, setReceivedReviews] = useState<Array<{ id: string; reviewerName: string; rating: number; comment?: string; createdAt?: string }>>([])
 
@@ -58,7 +61,7 @@ export default function ProviderProfile() {
     if (!verificationFront) return setVerificationMessage("Choose the required verification document.")
     if (providerProfile.providerType === "individual" && !verificationBack) return setVerificationMessage("Upload both sides of your National ID.")
     setVerificationBusy(true)
-    const error = await submitProviderVerification(verificationFront.name, verificationFront.data, verificationBack?.name, verificationBack?.data)
+    const error = await submitProviderVerification(verificationFront.name, verificationFront.data, verificationBack?.name, verificationBack?.data, identityDocumentType, businessDocumentType)
     setVerificationBusy(false)
     setVerificationMessage(error || "Document submitted for administrator review.")
     if (!error) { setVerificationFront(null); setVerificationBack(null) }
@@ -486,16 +489,18 @@ export default function ProviderProfile() {
                   : providerProfile.verificationStatus === "rejected"
                     ? providerProfile.verificationReviewNote || "Your document was not accepted. Submit an updated document for review."
                     : (providerProfile.providerType || "business") === "individual"
-                      ? "Submit a current government identity document. An administrator must review it before your provider badge is verified."
-                      : "Submit a business registration document or PAN certificate. An administrator must review it before your provider badge is verified."}
+                      ? "Submit both sides of your National ID or citizenship certificate. An administrator reviews your documents before granting the verified badge."
+                      : "Submit your business registration certificate or PAN document. An administrator reviews it before granting the verified badge."}
             </p>
             {!providerProfile.verified && providerProfile.verificationStatus !== "pending" && (
               <div className="mt-3 space-y-2">
-                <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-front">{providerProfile.providerType === "individual" ? "National ID front side" : "Business registration document"}</label>
+                {providerProfile.providerType === "individual" && <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-type">Identity document type<select id="provider-verification-type" value={identityDocumentType} onChange={(event) => setIdentityDocumentType(event.target.value as KycDocumentType)} className="input-style mt-1"><option value="national-id">National ID (NID)</option><option value="citizenship">Citizenship certificate</option></select></label>}
+                {providerProfile.providerType !== "individual" && <label className="block text-xs font-medium text-stone-700" htmlFor="provider-business-document-type">Business verification document<select id="provider-business-document-type" value={businessDocumentType} onChange={(event) => setBusinessDocumentType(event.target.value as typeof businessDocumentType)} className="input-style mt-1"><option value="BUSINESS_REGISTRATION">Business registration certificate</option><option value="PAN_CERTIFICATE">PAN certificate</option></select></label>}
+                <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-front">{providerProfile.providerType === "individual" ? `${identityDocumentType === "citizenship" ? "Citizenship certificate" : "National ID"} front side` : "Business registration or PAN document"}</label>
                 <input id="provider-verification-front" type="file" accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-stone-700" onChange={(event) => { readVerificationFile(event.target.files?.[0], "front"); event.target.value = "" }} />
                 {verificationFront && <p className="text-xs text-teal-800">Selected: {verificationFront.name}</p>}
                 {providerProfile.providerType === "individual" && <>
-                  <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-back">National ID back side</label>
+                  <label className="block text-xs font-medium text-stone-700" htmlFor="provider-verification-back">{identityDocumentType === "citizenship" ? "Citizenship certificate" : "National ID"} back side</label>
                   <input id="provider-verification-back" type="file" accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-stone-700" onChange={(event) => { readVerificationFile(event.target.files?.[0], "back"); event.target.value = "" }} />
                   {verificationBack && <p className="text-xs text-teal-800">Selected: {verificationBack.name}</p>}
                 </>}

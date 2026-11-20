@@ -5,7 +5,7 @@ export type ApplicationStatus = "pending" | "accepted" | "rejected" | "declined"
 export type JobStatus = "active" | "filled" | "closed" | "draft"
 export type PaymentType = "per-day" | "per-hour" | "fixed"
 export type KycStatus = "not-verified" | "pending" | "verified" | "rejected" | "expired"
-export type KycDocumentType = "national-id" | "citizenship" | "passport" | "driving-licence"
+export type KycDocumentType = "national-id" | "citizenship"
 export type ProviderVerificationStatus = "not-submitted" | "pending" | "verified" | "rejected"
 export type ProviderType = "individual" | "business" | "organization"
 
@@ -93,6 +93,7 @@ export interface WorkerProfile {
   kycDocumentNumber?: string
   kycDocumentFileName?: string
   kycDocumentData?: string
+  kycBackDocumentData?: string
   kycDocumentExpiryDate?: string
   kycSelfieData?: string
   kycSelfieFileName?: string
@@ -131,7 +132,10 @@ export interface ProviderProfile {
   yearsOperating?: number
   verificationStatus?: ProviderVerificationStatus
   verificationDocumentName?: string
+  verificationDocumentType?: "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE"
+  verificationIdentityDocumentType?: KycDocumentType
   verificationDocumentData?: string
+  verificationBackDocumentData?: string
   verificationBackDocumentName?: string
   verificationRequestId?: string
   verificationDocumentId?: string
