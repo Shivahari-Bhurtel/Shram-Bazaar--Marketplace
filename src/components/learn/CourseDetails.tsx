@@ -34,7 +34,14 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
           <div className={`mt-5 grid items-start gap-8 ${isCraneCourse ? "lg:grid-cols-[minmax(0,1fr)_300px]" : "lg:grid-cols-[minmax(0,1fr)_280px]"}`}>
             <div className="min-w-0">
               <header className={isCraneCourse ? "border-b border-slate-100 pb-5" : ""}>
-                <h1 className={`${isCraneCourse ? "text-3xl leading-tight sm:text-4xl" : "text-2xl sm:text-3xl"} font-bold tracking-tight text-slate-950`}>{course.title}</h1>
+                {isCraneCourse && course.optionalGame && onPlayGame ? (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h1 className="min-w-0 flex-1 text-3xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl">{course.title}</h1>
+                    <button type="button" onClick={onPlayGame} className="min-h-11 shrink-0 rounded-xl bg-[#4E342E] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Test Your Skill</button>
+                  </div>
+                ) : (
+                  <h1 className={`${isCraneCourse ? "text-3xl leading-tight sm:text-4xl" : "text-2xl sm:text-3xl"} font-bold tracking-tight text-slate-950`}>{course.title}</h1>
+                )}
                 {isCraneCourse && <div className="mt-3">{courseMetadata}</div>}
                 <p className={`${isCraneCourse ? "mt-4 text-[15px] leading-7" : "mt-3 text-sm leading-relaxed"} max-w-3xl text-slate-600`}>{course.description}</p>
                 {course.safetyNotice && !isCraneCourse && <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950"><strong className="font-semibold">Safety notice: </strong>{course.safetyNotice}</p>}
@@ -53,8 +60,7 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
               </section>
             </div>
             <aside className={`h-fit rounded-2xl border p-4 sm:p-5 lg:sticky lg:top-24 ${isCraneCourse ? "border-[#E8DDCF] bg-[#FCFAF7]" : "border-slate-200 bg-slate-50"}`}>
-              {course.optionalGame && onPlayGame && <button type="button" onClick={onPlayGame} className="mb-4 min-h-11 w-full rounded-xl bg-[#4E342E] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Play Interactive Game</button>}
-              <div className="border-t border-slate-200/80 pt-4">
+              <div className={isCraneCourse ? "" : "border-t border-slate-200/80 pt-4"}>
                 <p className="text-sm font-semibold text-slate-900">Your course progress</p>
                 <div className="mt-3"><CourseProgress completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} /></div>
               </div>
