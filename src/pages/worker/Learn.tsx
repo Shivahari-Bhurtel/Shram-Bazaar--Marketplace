@@ -209,7 +209,7 @@ export default function Learn() {
 
       {storageWarning && <div role="status" className="mx-auto mt-4 max-w-[1480px] px-4 sm:px-6 lg:px-8"><p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{storageWarning}</p></div>}
 
-      <div className="mx-auto grid max-w-[1480px] lg:grid-cols-[156px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1480px] lg:grid-cols-[minmax(190px,19%)_minmax(0,1fr)]">
         {view === "dashboard" && <aside className="hidden border-r border-[#E3CCAE] bg-[#E9D6BC] px-2.5 py-5 lg:block">
           <p className="mb-3 px-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#6A5542]">Learning space</p>
           <SectionNav section={section} onChange={setSection} />
