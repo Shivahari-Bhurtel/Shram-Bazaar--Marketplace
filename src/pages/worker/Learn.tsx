@@ -67,8 +67,26 @@ function LearnSidebarHeading({ children }: { children: React.ReactNode }) {
   return <p className="px-5 pb-2 pt-6 text-base font-bold text-[#735B49]">{children}</p>
 }
 
-function LearnSidebarCourse({ title, active, onClick }: { title: string; active: boolean; onClick: () => void }) {
-  return <button type="button" onClick={onClick} aria-pressed={active} className={`w-full border-l-4 py-2.5 pl-12 pr-3 text-left text-[13px] leading-5 transition-colors ${active ? "border-[#4E342E] bg-[#F2E4D4] font-semibold text-[#4E342E]" : "border-transparent text-[#4E342E] hover:bg-[#F2E4D4]"}`}>{title}</button>
+function LearnCourseIcon({ courseId, active }: { courseId: string; active: boolean }) {
+  const icons: Record<string, React.ReactNode> = {
+    "carpentry-woodworking": <><path d="m14 4 6 6-3 3-6-6m-2 2-6 8 4 4 8-7M9 8l3-3" /></>,
+    "crane-operation-basics": <><path d="M4 21h17M7 21V5l4-2 4 2v16M7 6h14M15 6v9m-2 0h4m-2 0v3" /></>,
+    "basic-electrical-skills": <path d="M13 2 5 13h6l-1 9 9-12h-6l0-8Z" />,
+    "motorcycle-maintenance": <><circle cx="5" cy="17" r="3" /><circle cx="19" cy="17" r="3" /><path d="m5 17 4-6h4l4 6m-7-6 3-4h4m-5 4-3 6h8" /></>,
+    "painting-finishing": <><path d="m14 4 6 6m-4-8 6 6M4 15l10-10 5 5L9 20H4v-5Z" /><path d="M6 20c.5-2 1.5-3 3-3" /></>,
+    "plumbing-fundamentals": <path d="M5 3v6h5v3a4 4 0 0 0 4 4h3v4h4v-7h-7a1 1 0 0 1-1-1V9h5V3" />,
+  }
+
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`mt-0.5 h-[18px] w-[18px] shrink-0 ${active ? "text-[#4E342E]" : "text-[#8A6A52]"}`} aria-hidden="true">{icons[courseId] ?? <><circle cx="12" cy="12" r="8" /><path d="M12 8v8m-4-4h8" /></>}</svg>
+}
+
+function LearnSidebarCourse({ courseId, title, active, onClick }: { courseId: string; title: string; active: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={active} className={`flex w-full items-start gap-2.5 border-l-4 py-2.5 pl-11 pr-3 text-left text-[14px] leading-[1.35] transition-colors ${active ? "border-[#4E342E] bg-[#F2E4D4] font-semibold text-[#4E342E]" : "border-transparent font-medium text-[#4E342E] hover:bg-[#F2E4D4]"}`}>
+      <LearnCourseIcon courseId={courseId} active={active} />
+      <span className="min-w-0 flex-1">{title}</span>
+    </button>
+  )
 }
 
 function EmptyState({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) {
@@ -256,8 +274,8 @@ export default function Learn() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px] shrink-0" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3.5 2.7 8.5 2.7 12 0v-5M22 9v6" /></svg>
               <span>Our courses</span>
             </div>
-            <div className="space-y-0.5">
-              {learningCourses.map((course) => <LearnSidebarCourse key={course.id} title={course.title} active={activeCategory === course.category} onClick={() => goToCourseCategory(course.category)} />)}
+            <div className="space-y-1">
+              {learningCourses.map((course) => <LearnSidebarCourse key={course.id} courseId={course.id} title={course.title} active={activeCategory === course.category} onClick={() => goToCourseCategory(course.category)} />)}
             </div>
           </nav>
         </aside>}
