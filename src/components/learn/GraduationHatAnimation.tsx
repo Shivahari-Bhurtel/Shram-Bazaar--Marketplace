@@ -23,5 +23,5 @@ export default function GraduationHatAnimation() {
     return () => animation.destroy()
   }, [])
 
-  return <div ref={containerRef} className="h-20 w-20 shrink-0 sm:h-40 sm:w-40" role="img" aria-label="Animated graduation cap" />
+  return <div ref={containerRef} className="mr-3 h-24 w-24 shrink-0 sm:mr-5 sm:h-48 sm:w-48" role="img" aria-label="Animated graduation cap" />
 }
