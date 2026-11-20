@@ -194,7 +194,7 @@ export default function Learn() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1480px] items-center justify-between gap-4 pl-2 pr-4 sm:gap-6 sm:pl-2 sm:pr-6 lg:pl-2 lg:pr-8">
           <div className="flex shrink-0 items-center">
-            <button type="button" onClick={() => navigate("worker-dashboard")} className="inline-flex min-h-10 shrink-0 items-baseline gap-0.5 whitespace-nowrap transition-opacity hover:opacity-80" aria-label="Go to Shram Bazaar worker page" title="Go to worker page">
+            <button type="button" onClick={() => navigate("worker-dashboard")} className="ml-4 inline-flex min-h-10 shrink-0 items-baseline gap-0.5 whitespace-nowrap transition-opacity hover:opacity-80 sm:ml-5" aria-label="Go to Shram Bazaar worker page" title="Go to worker page">
               <span className="text-[1.45rem] font-semibold leading-none text-[#553421]" style={{ fontFamily: "'Noto Serif Devanagari', serif" }}>श्रम</span>
               <span className="font-script text-[1.45rem] font-semibold leading-none text-[#261C14]">Bazaar</span>
             </button>
