@@ -4,6 +4,7 @@ import CourseCard from "../../components/learn/CourseCard"
 import CertificateCard from "../../components/learn/CertificateCard"
 import CourseDetails from "../../components/learn/CourseDetails"
 import LearningPlayer from "../../components/learn/LearningPlayer"
+import GraduationHatAnimation from "../../components/learn/GraduationHatAnimation"
 import {
   getCourseLessons,
   getCourseProgress,
@@ -255,8 +256,9 @@ export default function Learn() {
           </div>}
 
           {view === "dashboard" && section === "overview" && <>
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
-              <div><h1 className="text-3xl font-bold tracking-tight text-slate-950">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-600">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
+            <div className="mb-5 flex min-h-[168px] items-center justify-between gap-4 overflow-hidden rounded-2xl bg-[#4E342E] px-5 py-6 text-white shadow-sm sm:min-h-[192px] sm:px-8">
+              <div className="max-w-3xl"><h1 className="text-3xl font-bold tracking-tight text-white">Good to see you, {learnerName.split(" ")[0]}</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-[#F3E8DE]">Build practical skills at your own pace. Choose a short course, learn a new technique and keep track of your progress.</p></div>
+              <GraduationHatAnimation />
             </div>
 
             <section className="mt-2" aria-labelledby="continue-learning-heading">
