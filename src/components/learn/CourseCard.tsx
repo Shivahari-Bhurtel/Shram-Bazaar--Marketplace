@@ -21,7 +21,7 @@ export default function CourseCard({ course, completed, total, percent, enrolled
       </button>
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span>{course.level}</span><span aria-hidden="true">·</span><span>{total} lessons</span><span aria-hidden="true">·</span><span>{course.durationHours} hrs</span>
+          <span>{course.level}</span><span aria-hidden="true">·</span><span>{total} lessons</span>{course.durationHours != null && <><span aria-hidden="true">·</span><span>{course.durationHours} hrs</span></>}
         </div>
         <button type="button" onClick={() => onView(course)} className="learn-course-title mt-2 text-left text-lg font-semibold leading-snug text-slate-900 transition hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
           {course.title}

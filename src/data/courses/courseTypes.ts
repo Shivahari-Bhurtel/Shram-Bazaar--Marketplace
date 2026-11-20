@@ -9,8 +9,9 @@ export type CourseLesson = {
   id: string
   title: string
   description: string
-  durationMinutes: number
+  durationMinutes: number | null
   videoId?: string | null
+  youtubeUrl?: string | null
 }
 
 export type CourseModule = {
@@ -42,12 +43,13 @@ export type LearnCourse = {
   level: "Beginner" | "Intermediate"
   shortDescription: string
   description: string
-  durationHours: number
+  durationHours?: number
   thumbnail: string
   accent: string
   skills: string[]
   objectives: string[]
   modules: CourseModule[]
+  safetyNotice?: string
   quizzes?: CourseQuiz[]
 }
 

@@ -16,7 +16,7 @@ export default function LessonItem({ lesson, index, completed, current, onSelect
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium text-slate-800">{lesson.title}</span>
-        <span className="mt-0.5 block text-xs text-slate-500">{completed ? "Completed" : current ? "Current lesson" : "Lesson"} · {lesson.durationMinutes} min</span>
+        <span className="mt-0.5 block text-xs text-slate-500">{completed ? "Completed" : current ? "Current lesson" : "Lesson"} · {lesson.durationMinutes == null ? "Duration unavailable" : `${lesson.durationMinutes} min`}</span>
       </span>
       {onSelect && <span aria-hidden="true" className="text-slate-400">›</span>}
     </>

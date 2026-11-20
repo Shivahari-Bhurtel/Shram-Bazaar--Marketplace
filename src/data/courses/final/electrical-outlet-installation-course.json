@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "1.0",
+  "course": {
+    "id": "electrical-outlet-installation-basics",
+    "title": "Electrical Outlet Installation & Basics",
+    "category": "Electrical",
+    "level": "Beginner",
+    "language": "English",
+    "isFree": true,
+    "description": "An introductory course exploring household electrical outlets, outlet installation contexts, cable and circuit concepts, and basic electrical safety. This course is for awareness and learning only; it does not qualify learners to perform electrical work.",
+    "learningOutcomes": [
+      "Recognize common household electrical outlet types and their intended uses.",
+      "Understand the broad stages and considerations involved in adding an outlet to an existing or unfinished wall.",
+      "Identify why circuit capacity, protective devices, grounding, and local electrical codes matter.",
+      "Recognize when electrical work must be assessed and completed by a qualified electrician."
+    ],
+    "skills": [
+      "Electrical outlet awareness",
+      "Basic electrical terminology",
+      "Electrical safety awareness",
+      "Recognizing when professional assistance is required"
+    ],
+    "safetyNotice": "Electrical installation and testing can cause electric shock, burns, fire, or death. Do not attempt wiring, live testing, panel work, or outlet installation based on these videos. Practical work must be performed by a qualified electrician in accordance with applicable local codes and safety procedures.",
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Adding an Outlet to an Existing Wall",
+        "description": "Introduction to the considerations involved when an outlet is added to a finished wall.",
+        "lessons": [
+          {
+            "id": "lesson-1",
+            "title": "How to Add an Outlet to a Finished Wall",
+            "youtubeUrl": "https://youtu.be/nWfEANZOYSk",
+            "videoId": "nWfEANZOYSk",
+            "embedUrl": "https://www.youtube.com/embed/nWfEANZOYSk",
+            "durationMinutes": null,
+            "description": "A video about adding an electrical outlet to a finished wall. Learners should focus on the planning considerations, components, and safety issues demonstrated.",
+            "learningObjectives": [
+              "Understand the context of adding an outlet to an existing finished wall.",
+              "Recognize that wall construction, circuit capacity, and code compliance must be assessed.",
+              "Identify why this work requires a qualified electrician."
+            ],
+            "order": 1,
+            "metadataStatus": "Topic corroborated by an external resource; exact YouTube title and duration should be checked against the video."
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Outlet and Cable Installation Contexts",
+        "description": "Explore outlet installation in unfinished spaces and understand the difference between residential outlet projects.",
+        "lessons": [
+          {
+            "id": "lesson-2",
+            "title": "Adding an Outlet to an Unfinished Basement or Garage",
+            "youtubeUrl": "https://youtu.be/w0I8MzIwyfk",
+            "videoId": "w0I8MzIwyfk",
+            "embedUrl": "https://www.youtube.com/embed/w0I8MzIwyfk",
+            "durationMinutes": null,
+            "description": "A video identified in an external reference as covering an outlet installation in an unfinished basement or garage. Treat it as an overview of the installation context, not a do-it-yourself instruction.",
+            "learningObjectives": [
+              "Compare the context of unfinished spaces with finished-wall outlet projects.",
+              "Recognize that wiring methods and environmental conditions affect installation requirements.",
+              "Understand the importance of code-compliant work by a qualified electrician."
+            ],
+            "order": 2,
+            "metadataStatus": "Topic corroborated by an external reference; verify exact title and duration on YouTube."
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Higher-Power Outlets and EV Charging",
+        "description": "An introductory look at a higher-power outlet installation context and the electrical considerations involved.",
+        "lessons": [
+          {
+            "id": "lesson-3",
+            "title": "Level 2 EV Charger / 240-Volt Outlet Installation",
+            "youtubeUrl": "https://youtu.be/tBxGo0qveNs",
+            "videoId": "tBxGo0qveNs",
+            "embedUrl": "https://www.youtube.com/embed/tBxGo0qveNs",
+            "durationMinutes": null,
+            "description": "External references associate this video with installing a Level 2 EV charging outlet. Learners should focus on why higher-power circuits require correct circuit design, protection, and professional installation.",
+            "learningObjectives": [
+              "Recognize that EV charging outlets can require dedicated higher-capacity circuits.",
+              "Understand the importance of circuit protection, grounding, and equipment compatibility.",
+              "Know that this type of installation must be assessed and completed by a qualified electrician."
+            ],
+            "order": 3,
+            "metadataStatus": "Topic corroborated by external references; exact YouTube title and duration should be checked."
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Understanding Electrical Measurements",
+        "description": "Learn why electrical measurements and correct interpretation matter for outlet systems.",
+        "lessons": [
+          {
+            "id": "lesson-4",
+            "title": "Understanding Voltage Measurements on an Outlet Connection",
+            "youtubeUrl": "https://youtu.be/F3yGUZv36gs",
+            "videoId": "F3yGUZv36gs",
+            "embedUrl": "https://www.youtube.com/embed/F3yGUZv36gs",
+            "durationMinutes": null,
+            "description": "A discussion reference points to this video for voltage measurements on a North American outlet connector. This lesson is for conceptual awareness only; learners must not reproduce live electrical tests.",
+            "learningObjectives": [
+              "Understand what voltage measurement is intended to establish.",
+              "Recognize that outlet wiring configurations differ by region and equipment type.",
+              "Understand why live electrical testing should be left to qualified personnel."
+            ],
+            "order": 4,
+            "metadataStatus": "Context corroborated by a discussion referencing the video's voltage measurements; exact title and duration unverified."
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Outlet Installation Concepts and Review",
+        "description": "Review the key concepts covered and identify what should be checked by a qualified electrician.",
+        "lessons": [
+          {
+            "id": "lesson-5",
+            "title": "Electrical Outlet Installation — Additional Video",
+            "youtubeUrl": "https://youtu.be/ww6huRWr_YI",
+            "videoId": "ww6huRWr_YI",
+            "embedUrl": "https://www.youtube.com/embed/ww6huRWr_YI",
+            "durationMinutes": null,
+            "description": "The video topic and exact title could not be independently verified from accessible search results. Confirm its content before publishing this lesson to learners.",
+            "learningObjectives": [
+              "Review the topic demonstrated in the video after confirming its content.",
+              "Identify any safety, equipment, and code-compliance considerations discussed."
+            ],
+            "order": 5,
+            "metadataStatus": "Unverified — confirm the actual video title and subject before publishing."
+          }
+        ]
+      }
+    ],
+    "completion": {
+      "requiresAllLessons": true,
+      "requiresQuiz": true,
+      "passingScorePercent": 70,
+      "certificate": {
+        "enabled": true,
+        "type": "certificate-of-completion",
+        "issuer": "Shram Bazaar AI",
+        "disclaimer": "This certificate confirms completion of introductory online learning only. It is not a trade license, professional qualification, or authorization to perform electrical work."
+      }
+    },
+    "metadataNotes": [
+      "Video IDs and embed URLs are taken directly from the links supplied by the learner.",
+      "Exact video titles and durations could not be independently verified for every link. Check each YouTube page before publishing.",
+      "The supplied playlist links appear to include North American outlet and EV-charging examples. Do not present their wiring specifications as Nepal-specific installation guidance."
+    ]
+  }
+}
