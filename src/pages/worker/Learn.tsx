@@ -180,7 +180,7 @@ export default function Learn() {
         <div className="mx-auto flex min-h-[68px] max-w-[1480px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <button type="button" onClick={() => navigate("worker-dashboard")} className="flex shrink-0 items-center gap-2 text-left" aria-label="Return to Shram Bazaar dashboard">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-700 text-sm font-bold text-white">S</span>
-            <span className="hidden leading-tight sm:block"><span className="block text-sm font-bold text-slate-900">Shram Bazaar</span><span className="block text-xs font-medium text-blue-700">Learn</span></span>
+            <span className="hidden text-sm font-bold leading-tight text-slate-900 sm:block">Shram Bazaar</span>
           </button>
 
           {view === "dashboard" ? (
@@ -198,7 +198,10 @@ export default function Learn() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7" /></svg>
               {view === "player" ? "Course overview" : "All courses"}
             </button>}
-            <button type="button" onClick={() => navigate("worker-dashboard")} className="min-h-10 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 sm:px-4 sm:text-sm">Back to Shram Bazaar</button>
+            <button type="button" onClick={() => navigate("worker-dashboard")} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 sm:px-4 sm:text-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7" /></svg>
+              Back to main page
+            </button>
             {state.workerProfile?.photo ? <img src={state.workerProfile.photo} alt={`${learnerName} profile`} className="h-9 w-9 rounded-full object-cover" /> : <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-white" aria-label={learnerName}>{learnerInitials || "L"}</span>}
           </div>
         </div>
