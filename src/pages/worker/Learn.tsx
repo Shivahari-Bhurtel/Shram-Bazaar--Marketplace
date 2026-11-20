@@ -62,6 +62,29 @@ function SectionNav({ section, onChange }: { section: LearnSection; onChange: (s
   )
 }
 
+function LearnSidebarItem({ label, icon, active = false, onClick }: { label: string; icon: "home" | "journey" | "library" | "content" | "tech" | "certificate" | "help"; active?: boolean; onClick?: () => void }) {
+  const iconPaths: Record<typeof icon, React.ReactNode> = {
+    home: <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" fill="currentColor" />,
+    journey: <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15" fill="currentColor" />,
+    library: <path d="M5 3h12a2 2 0 0 1 2 2v16H7a3 3 0 0 1-3-3V5a2 2 0 0 1 1-2Zm3 0v7l3-2 3 2V3M4 7H2v11a3 3 0 0 0 3 3" fill="currentColor" />,
+    content: <><path d="M9 5h12M9 12h12M9 19h12" stroke="currentColor" strokeWidth="2" /><circle cx="4" cy="5" r="1.5" fill="currentColor" /><circle cx="4" cy="12" r="1.5" fill="currentColor" /><circle cx="4" cy="19" r="1.5" fill="currentColor" /></>,
+    tech: <path d="M8 4H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 15v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />,
+    certificate: <><path d="M3 4h18v14H3z" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M7 8h10M7 12h7m-7 3h4" stroke="currentColor" strokeWidth="1.5" /><circle cx="18" cy="15" r="1" fill="currentColor" /></>,
+    help: <><circle cx="12" cy="12" r="9" fill="currentColor" /><path d="M9.7 9a2.4 2.4 0 1 1 4 1.8c-1.1.8-1.7 1.2-1.7 2.7m0 3v.1" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" /></>,
+  }
+
+  return (
+    <button type="button" onClick={onClick} aria-current={active ? "page" : undefined} className={`flex min-h-[64px] w-full items-center gap-4 border-l-[5px] px-5 text-left text-[17px] leading-snug text-[#222] transition-colors ${active ? "border-[#4A4A4A] bg-[#E8E8E8] font-medium" : "border-transparent hover:bg-[#F2F2F2]"}`}>
+      <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0 text-[#414141]" aria-hidden="true">{iconPaths[icon]}</svg>
+      <span>{label}</span>
+    </button>
+  )
+}
+
+function LearnSidebarHeading({ children }: { children: React.ReactNode }) {
+  return <p className="px-7 pb-3 pt-8 text-[17px] font-normal text-[#686868]">{children}</p>
+}
+
 function EmptyState({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center">
@@ -207,14 +230,36 @@ export default function Learn() {
       {storageWarning && <div role="status" className="mx-auto mt-4 max-w-[1480px] px-4 sm:px-6 lg:px-8"><p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{storageWarning}</p></div>}
 
       <div className="mx-auto grid max-w-[1480px] lg:grid-cols-[minmax(190px,19%)_minmax(0,1fr)]">
-        {view === "dashboard" && <aside className="hidden border-r border-[#E3CCAE] bg-[#E9D6BC] px-2.5 py-5 lg:block">
-          <p className="mb-3 px-2 text-[10px] font-bold uppercase tracking-[.12em] text-[#6A5542]">Learning space</p>
-          <SectionNav section={section} onChange={setSection} />
-          <div className="mt-8 rounded-xl border border-[#E5D9C9] bg-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#D86C3A]">Your next step</p>
-            <p className="mt-2 text-sm font-semibold leading-snug text-slate-900">Build a skill you can use at work.</p>
-            <button type="button" onClick={goToExplore} className="mt-3 text-sm font-semibold text-[#D86C3A] hover:text-[#B8542A]">Explore courses <span aria-hidden="true">→</span></button>
-          </div>
+        {view === "dashboard" && <aside aria-label="Main navigation" className="hidden min-h-screen border-r border-[#E0E0E0] bg-white pb-8 pt-2 lg:block">
+          <nav>
+            <LearnSidebarItem label="Home" icon="home" active onClick={() => navigate("worker-dashboard")} />
+            <LearnSidebarItem label="My Career Journey" icon="journey" onClick={() => setSection("my-learning")} />
+
+            <LearnSidebarHeading>Learn</LearnSidebarHeading>
+            <LearnSidebarItem label="My Library" icon="library" onClick={() => setSection("overview")} />
+            <LearnSidebarItem label="Content" icon="content" onClick={goToExplore} />
+
+            <LearnSidebarHeading>Apply</LearnSidebarHeading>
+            <LearnSidebarItem label="Hands-On Tech" icon="tech" onClick={goToExplore} />
+            <LearnSidebarItem label="Certifications" icon="certificate" onClick={() => setSection("certificates")} />
+
+            <LearnSidebarHeading>Trending topics</LearnSidebarHeading>
+            <div className="space-y-0.5 px-7">
+              <p className="py-3 text-[17px] leading-snug text-[#222]">Leadership and Management</p>
+              <p className="py-3 text-[17px] leading-snug text-[#222]">Artificial Intelligence</p>
+              <p className="py-3 text-[17px] leading-snug text-[#222]">Cybersecurity</p>
+            </div>
+
+            <LearnSidebarHeading>Featured This Week</LearnSidebarHeading>
+            <div className="space-y-0.5 px-7">
+              <p className="py-3 text-[17px] leading-snug text-[#222]">AI Productivity</p>
+              <p className="py-3 text-[17px] leading-snug text-[#222]">Human Skills</p>
+              <p className="py-3 text-[17px] leading-snug text-[#222]">Data Analysis</p>
+            </div>
+            <div className="mt-5 border-t border-[#E7E7E7] pt-2">
+              <LearnSidebarItem label="Help" icon="help" onClick={() => navigate("worker-dashboard")} />
+            </div>
+          </nav>
         </aside>}
 
         <main className={`min-w-0 px-4 py-6 sm:px-6 sm:py-7 lg:px-6 lg:py-4 ${view === "player" ? "xl:px-10" : ""}`}>
