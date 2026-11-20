@@ -37,7 +37,7 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
                 {isCraneCourse && course.optionalGame && onPlayGame ? (
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h1 className="min-w-0 flex-1 text-3xl font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl">{course.title}</h1>
-                    <button type="button" onClick={onPlayGame} className="min-h-11 shrink-0 rounded-xl bg-[#4E342E] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3D2924]">Test Your Skill</button>
+                    <button type="button" onClick={onPlayGame} className="min-h-11 shrink-0 rounded-xl bg-[#8B1E3F] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#6F162D]">Test Your Skill</button>
                   </div>
                 ) : (
                   <h1 className={`${isCraneCourse ? "text-3xl leading-tight sm:text-4xl" : "text-2xl sm:text-3xl"} font-bold tracking-tight text-slate-950`}>{course.title}</h1>
