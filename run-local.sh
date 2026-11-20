@@ -8,6 +8,10 @@ API_LOG="${TMPDIR:-/tmp}/shram-bazar-api.log"
 API_PID=""
 WEB_PID=""
 
+DB_URL_WAS_CONFIGURED="${DB_URL+x}"
+DB_USERNAME_WAS_CONFIGURED="${DB_USERNAME+x}"
+DB_PASSWORD_WAS_CONFIGURED="${DB_PASSWORD+x}"
+
 export DB_URL="${DB_URL:-jdbc:postgresql://127.0.0.1:5432/shrambazar}"
 export DB_USERNAME="${DB_USERNAME:-shrambazar}"
 # These match the local-development defaults in shrambazar/compose.yaml.
@@ -33,8 +37,10 @@ if [[ -f "$APP_DIR/.env.local" ]]; then
 fi
 
 managed_db_configured=false
-if [[ "${DB_URL:-}" != "jdbc:postgresql://127.0.0.1:5432/shrambazar" ]]; then
-  managed_db_configured=true
+if [[ "$DB_URL_WAS_CONFIGURED" == x ]]; then
+  if [[ "$DB_URL" != "jdbc:postgresql://127.0.0.1:5432/shrambazar" ]]; then
+    managed_db_configured=true
+  fi
 else
   db_host="${POSTGRES_HOST:-${PGHOST:-}}"
   db_name="${POSTGRES_DATABASE:-${PGDATABASE:-}}"
@@ -45,8 +51,8 @@ else
   # Use those values only when present; otherwise keep the local Compose defaults.
   if [[ -n "$db_host" && -n "$db_name" && -n "$db_user" && -n "$db_password" ]]; then
     export DB_URL="jdbc:postgresql://${db_host}:5432/${db_name}?sslmode=require"
-    export DB_USERNAME="$db_user"
-    export DB_PASSWORD="$db_password"
+    if [[ "$DB_USERNAME_WAS_CONFIGURED" != x ]]; then export DB_USERNAME="$db_user"; fi
+    if [[ "$DB_PASSWORD_WAS_CONFIGURED" != x ]]; then export DB_PASSWORD="$db_password"; fi
     managed_db_configured=true
   fi
 fi

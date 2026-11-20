@@ -1270,8 +1270,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return "Enter a valid date of birth that is not in the future."
     if (!form.district.trim()) return "Select your district."
     if (!form.location.trim()) return "Enter your local address."
-    const duplicate = duplicateError(form.email)
-    if (duplicate) return duplicate
     if (backendMode) {
       return await apiRequest<BackendAuth>("/api/auth/register/job-seeker", {
         method: "POST",
@@ -1298,6 +1296,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           error instanceof Error ? error.message : "Could not create your account.",
         )
     }
+    const duplicate = duplicateError(form.email)
+    if (duplicate) return duplicate
     const profileId = id("wp")
     const user: User = {
       id: id("u-w"),
@@ -1359,8 +1359,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!form.district.trim()) return "Select your district."
     if (!(form.address || form.location).trim()) return "Enter your street or local address."
     if (form.providerType !== "individual" && !form.location.trim()) return "Enter your business or organization address."
-    const duplicate = duplicateError(form.email)
-    if (duplicate) return duplicate
     if (backendMode) {
       const hasBusiness = form.providerType !== "individual"
       return await apiRequest<BackendAuth>("/api/auth/register/job-provider", {
@@ -1399,6 +1397,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           error instanceof Error ? error.message : "Could not create your account.",
         )
     }
+    const duplicate = duplicateError(form.email)
+    if (duplicate) return duplicate
     const profileId = id("pp")
     const user: User = {
       id: id("u-p"),
