@@ -212,7 +212,7 @@ export default function Learn() {
     <div className="learn-portal min-h-screen bg-[#FAF8F5] text-slate-900">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1480px] items-center justify-between gap-4 pl-2 pr-4 sm:gap-6 sm:pl-2 sm:pr-6 lg:pl-2 lg:pr-8">
-          <div className="flex shrink-0 items-center gap-4 sm:gap-6">
+          <div className="flex shrink-0 items-center gap-4 sm:gap-8">
             <button type="button" onClick={() => navigate("worker-dashboard")} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 text-sm font-semibold text-[#4E342E] transition hover:text-[#D86C3A]" aria-label="Back to the main page">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>
               <span>Back</span>
