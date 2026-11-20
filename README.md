@@ -1,6 +1,6 @@
 # Shram Bazaar
 
-Shram Bazaar is a Nepal-focused work marketplace and learning portal. The application includes a React/Vite frontend, a Spring Boot API, a PostgreSQL database, a historical Nepal jobs showcase dataset, and an optional AI service.
+Shram Bazaar is a Nepal-focused work marketplace and learning portal. The application includes a React/Vite frontend, a Spring Boot API, a PostgreSQL database, one centralized set of simulated Kathmandu Valley job listings, and an optional AI service.
 
 ## Run locally
 
@@ -24,7 +24,13 @@ pnpm exec tsc --noEmit
 
 ## Backend
 
-The Spring Boot source is in `shrambazar`. The showcase import reads `shrambazar/data/nepali_jobs.csv` and is idempotent. To rebuild the API manually:
+The Spring Boot source is in `shrambazar`. On startup, the API validates and replaces its showcase listings from `shrambazar/src/main/resources/data/jobs.json`. Worker discovery reads these listings from `GET /api/jobs/showcase`; employer-created jobs remain in the separate provider jobs API. All 80 supplied listings are marked as simulated and their workplace coordinates as approximate. Validate the source data with:
+
+```sh
+pnpm validate:jobs
+```
+
+To rebuild the API manually:
 
 ```sh
 cd shrambazar
@@ -39,4 +45,4 @@ AI chat, resume analysis, and voice features use a separate FastAPI service in `
 
 ## Data and privacy
 
-Historical dataset listings are for demonstration; their availability is unverified. Source attribution and recorded listing information are retained. Supply private credentials through environment variables or ignored `.env` files; do not commit real secrets, local uploads, or production credentials.
+The showcase listings are simulated university demo data and are not verified vacancies. Supply private credentials through environment variables or ignored `.env` files; do not commit real secrets, local uploads, or production credentials.

@@ -1,138 +1,87 @@
 package com.shrambazar.service.job;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import com.shrambazar.entity.ShowcaseJob;
 import com.shrambazar.repository.ShowcaseJobRepository;
+import org.junit.jupiter.api.Test;
 
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.*;
 
 class ShowcaseJobServiceTest {
-    @TempDir Path tempDir;
-
     @Test
-    void csvReaderHandlesQuotedCommasAndEscapedQuotes() throws Exception {
-        var rows = ShowcaseJobService.parseCsv(new StringReader(
-                "title,company,location\r\n\"Designer, Senior\",\"A \"\"quoted\"\" Co\",\"Lalitpur, Nepal\"\r\n"));
-
-        assertEquals(2, rows.size());
-        assertEquals("Designer, Senior", rows.get(1).get(0));
-        assertEquals("A \"quoted\" Co", rows.get(1).get(1));
-        assertEquals("Lalitpur, Nepal", rows.get(1).get(2));
-    }
-
-    @Test
-    void parsesPythonStyleListFieldsFromDataset() {
-        assertEquals(java.util.List.of("Full Time", "Part Time"), ShowcaseJobService.parseList("['Full Time', 'Part Time']"));
-        assertEquals(java.util.List.of(), ShowcaseJobService.parseList("[]"));
-    }
-
-    @Test
-    void excludesNoticesWithoutExcludingProcurementEmployment() {
-        assertTrue(ShowcaseJobService.isNonEmploymentListing("TENDER NOTICE - Supply of Equipment", "Development Project, Tender Notice, Bid"));
-        assertTrue(ShowcaseJobService.isNonEmploymentListing("Request for Quotation", "Hospitality / Hotel"));
-        assertFalse(ShowcaseJobService.isNonEmploymentListing("Procurement Officer", "Accounting / Finance"));
-    }
-
-    @Test
-    void fingerprintIsRepeatableAndNormalized() {
-        Map<String, String> first = Map.of("source", "MeroJob", "title", "Graphic Designer", "company", "Acme Co", "location", "Kathmandu", "posted_date", "2026-11-18");
-        Map<String, String> same = Map.of("source", "merojob", "title", " GRAPHIC designer ", "company", "ACME CO", "location", "kathmandu", "posted_date", "2026-11-18");
-        assertEquals(ShowcaseJobService.fingerprint(first), ShowcaseJobService.fingerprint(same));
-    }
-
-    @Test
-    void csvImportIsIdempotentAndExcludesNotices() throws Exception {
-        Path csv = tempDir.resolve("jobs.csv");
-        Files.writeString(csv, "title,company,location,country,category,source,posted_date,salary_min\n"
-                + "Graphic Designer,Acme,\"Kathmandu, Nepal\",Nepal,Creative,merojob,2026-11-18,50000\n"
-                + "Graphic Designer,Acme,\"Kathmandu, Nepal\",Nepal,Creative,merojob,2026-11-18,50000\n"
-                + "TENDER NOTICE,Agency,Kathmandu,Nepal,\"Expression of Interests, Tender Notice\",jobsnepal,,\n");
-
+    void suppliedDatasetReplacesShowcaseRowsWithEightyExactListings() throws Exception {
         ShowcaseJobRepository repository = mock(ShowcaseJobRepository.class);
-        List<ShowcaseJob> persisted = new ArrayList<>();
-        when(repository.findAll()).thenAnswer(call -> new ArrayList<>(persisted));
-        when(repository.save(any(ShowcaseJob.class))).thenAnswer(call -> {
-            ShowcaseJob saved = call.getArgument(0);
-            persisted.add(saved);
-            return saved;
-        });
+        ShowcaseJobService service = new ShowcaseJobService(repository);
+        Path dataset = Path.of("src/main/resources/data/jobs.json");
+
+        var result = service.replaceWithDemoJson(Files.newInputStream(dataset));
+
+        assertEquals(80, result.recordsRead());
+        verify(repository).deleteAllInBatch();
+        verify(repository).saveAll(argThat(jobs -> {
+            java.util.List<ShowcaseJob> imported = new java.util.ArrayList<>();
+            jobs.forEach(imported::add);
+            if (imported.size() != 80) return false;
+            ShowcaseJob first = imported.get(0);
+            return "job-001".equals(first.getDatasetId())
+                    && first.getDescription().length() > 100
+                    && first.getMapLatitude() != null
+                    && first.getMapLongitude() != null
+                    && "approximate".equals(first.getLocationAccuracy())
+                    && Boolean.TRUE.equals(first.getDemo())
+                    && first.getRequirementsRaw().contains("basic")
+                    && first.getSkillsRaw().contains("Brick");
+        }));
+    }
+
+    @Test
+    void invalidDatasetDoesNotDeleteExistingShowcaseRows() {
+        ShowcaseJobRepository repository = mock(ShowcaseJobRepository.class);
         ShowcaseJobService service = new ShowcaseJobService(repository);
 
-        var firstRun = service.importCsv(csv);
-        var secondRun = service.importCsv(csv);
+        assertThrows(java.io.IOException.class, () -> service.replaceWithDemoJson(
+                new ByteArrayInputStream("[]".getBytes())));
 
-        assertEquals(1, firstRun.inserted());
-        assertEquals(1, firstRun.duplicatesSkipped());
-        assertEquals(1, firstRun.nonEmploymentExcluded());
-        assertEquals(0, secondRun.inserted());
-        assertEquals(2, secondRun.duplicatesSkipped());
-        assertEquals(1, secondRun.nonEmploymentExcluded());
-        assertEquals(1, persisted.size());
-        assertEquals(new BigDecimal("50000"), persisted.getFirst().getSalaryMin());
-        verify(repository, times(1)).save(any(ShowcaseJob.class));
+        verify(repository, never()).deleteAllInBatch();
+        verify(repository, never()).saveAll(anyList());
     }
 
     @Test
-    void suppliedNepalSnapshotImportsExpectedEmploymentRowsAndRepeatsSafely() throws Exception {
-        Path csv = Path.of("data/nepali_jobs.csv");
-        assertTrue(Files.exists(csv), "Run this test from the shrambazar module directory");
+    void searchUsesDescriptionLocationCategoryAndSalaryFilters() {
+        ShowcaseJob job = new ShowcaseJob();
+        job.setDatasetId("job-001");
+        job.setTitle("Mason (Rajmistri)");
+        job.setCompany("Himal Nirman Sewa");
+        job.setCategory("Construction & Skilled Trades");
+        job.setLocation("New Baneshwor");
+        job.setCity("Kathmandu");
+        job.setNormalizedLocation("new baneshwor kathmandu");
+        job.setAddress("Near Shantinagar Gate");
+        job.setDescription("Lay bricks and concrete blocks at a residential site.");
+        job.setExperience("2+ years of masonry experience");
+        job.setSalaryMin(new BigDecimal("1500"));
+        job.setSalaryMax(new BigDecimal("1900"));
+        job.setSalaryType("daily");
+        job.setJobTypeRaw("Daily wage");
+        job.setSource("Shram Bazaar Demo Dataset");
+        job.setDemo(true);
+
         ShowcaseJobRepository repository = mock(ShowcaseJobRepository.class);
-        List<ShowcaseJob> persisted = new ArrayList<>();
-        when(repository.findAll()).thenAnswer(call -> new ArrayList<>(persisted));
-        when(repository.save(any(ShowcaseJob.class))).thenAnswer(call -> {
-            ShowcaseJob saved = call.getArgument(0);
-            persisted.add(saved);
-            return saved;
-        });
+        when(repository.findAllByOrderByPostedDateDescTitleAsc()).thenReturn(List.of(job));
         ShowcaseJobService service = new ShowcaseJobService(repository);
 
-        var firstRun = service.importCsv(csv);
-        var secondRun = service.importCsv(csv);
+        var matches = service.search("residential", "Kathmandu", "Construction", "daily", new BigDecimal("1400"), new BigDecimal("2000"), null);
+        var filtered = service.search("residential", null, null, null, new BigDecimal("2000"), null, null);
 
-        assertEquals(414, firstRun.recordsRead());
-        assertEquals(352, firstRun.inserted());
-        assertEquals(0, firstRun.duplicatesSkipped());
-        assertEquals(62, firstRun.nonEmploymentExcluded());
-        assertEquals(0, firstRun.invalidSkipped());
-        assertEquals(0, secondRun.inserted());
-        assertEquals(352, secondRun.duplicatesSkipped());
-        assertEquals(352, persisted.size());
-        assertTrue(persisted.stream().allMatch(job -> job.getSourceUrl() == null));
-    }
-
-    @Test
-    void searchAppliesLocationSourceAndNumericSalaryFilters() {
-        ShowcaseJob listing = new ShowcaseJob();
-        listing.setTitle("Graphic Designer");
-        listing.setCompany("Acme");
-        listing.setLocation("Kathmandu, Nepal");
-        listing.setNormalizedLocation("kathmandu nepal");
-        listing.setCategory("Creative / Graphics / Designing");
-        listing.setJobTypeRaw("['Full Time']");
-        listing.setSalaryMin(new BigDecimal("50000"));
-        listing.setSalaryMax(new BigDecimal("70000"));
-        listing.setSource("merojob");
-        ShowcaseJobRepository repository = mock(ShowcaseJobRepository.class);
-        when(repository.findAllByOrderByPostedDateDescTitleAsc()).thenReturn(List.of(listing));
-
-        List<?> result = new ShowcaseJobService(repository).search("graphic", "kathmandu", "creative", "full time",
-                new BigDecimal("60000"), new BigDecimal("80000"), "merojob");
-        List<?> excludedBySalary = new ShowcaseJobService(repository).search(null, null, null, null,
-                new BigDecimal("80001"), null, null);
-
-        assertEquals(1, result.size());
-        assertEquals(0, excludedBySalary.size());
+        assertEquals(1, matches.size());
+        assertEquals("job-001", matches.getFirst().id());
+        assertEquals(0, filtered.size());
     }
 }

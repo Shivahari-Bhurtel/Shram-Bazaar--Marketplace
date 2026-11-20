@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { useApp } from "../../store/AppContext"
 import JobCard from "../../components/JobCard"
-import ShowcaseJobRow from "../../components/ShowcaseJobRow"
-import ShowcaseJobDetailsModal from "../../components/ShowcaseJobDetailsModal"
+import DemoJobCard from "../../components/DemoJobCard"
+import DemoJobDetailsModal from "../../components/DemoJobDetailsModal"
+import { useDemoJobState } from "../../hooks/useDemoJobState"
 import type { Job } from "../../types"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
 import { searchHimalayasJobs } from "../../services/himalayas"
-import { searchShowcaseJobs, type ShowcaseJob } from "../../services/showcaseJobs"
+import { distanceBetweenKm, filterDemoJobs, loadDemoJobs, type DemoJob } from "../../services/demoJobs"
 
 function SidebarIcon({
   name,
@@ -62,12 +63,15 @@ function recommendedScore(job: Job, skills: string[]) {
 export default function WorkerDashboard() {
   const { state, navigate, myApplications } = useApp()
   const { workerProfile, jobs, externalJobs } = state
+  const demoState = useDemoJobState(workerProfile?.id)
   const [search, setSearch] = useState("")
   const [submittedSearch, setSubmittedSearch] = useState("")
-  const [showcaseSearchJobs, setShowcaseSearchJobs] = useState<ShowcaseJob[]>([])
+  const [demoJobs, setDemoJobs] = useState<DemoJob[]>([])
+  const [demoLoadError, setDemoLoadError] = useState("")
+  const [showcaseSearchJobs, setShowcaseSearchJobs] = useState<DemoJob[]>([])
   const [showcaseSearchLoading, setShowcaseSearchLoading] = useState(false)
   const [showcaseSearchError, setShowcaseSearchError] = useState("")
-  const [selectedShowcaseJob, setSelectedShowcaseJob] = useState<ShowcaseJob | null>(null)
+  const [selectedDemoJob, setSelectedDemoJob] = useState<DemoJob | null>(null)
   const [recommendedTab, setRecommendedTab] =
     useState<"best" | "recent" | "saved">("best")
   const [recommendedExternalJobs, setRecommendedExternalJobs] = useState<Job[]>(
@@ -75,6 +79,16 @@ export default function WorkerDashboard() {
   )
   const [recommendedExternalLoading, setRecommendedExternalLoading] =
     useState(true)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    loadDemoJobs(controller.signal)
+      .then(setDemoJobs)
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name !== "AbortError") setDemoLoadError(error.message)
+      })
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     if (!workerProfile) return
@@ -100,17 +114,17 @@ export default function WorkerDashboard() {
       setShowcaseSearchError("")
       return
     }
-    const controller = new AbortController()
     setShowcaseSearchLoading(true)
+    setShowcaseSearchError(demoLoadError)
+    if (!demoJobs.length) {
+      setShowcaseSearchJobs([])
+      setShowcaseSearchLoading(!demoLoadError)
+      return
+    }
     setShowcaseSearchError("")
-    searchShowcaseJobs({ keyword: submittedSearch }, controller.signal)
-      .then(setShowcaseSearchJobs)
-      .catch((error: unknown) => {
-        if (error instanceof Error && error.name !== "AbortError") setShowcaseSearchError(`Imported listings could not be loaded: ${error.message}`)
-      })
-      .finally(() => { if (!controller.signal.aborted) setShowcaseSearchLoading(false) })
-    return () => controller.abort()
-  }, [submittedSearch])
+    setShowcaseSearchJobs(filterDemoJobs(demoJobs, { keyword: submittedSearch }))
+    setShowcaseSearchLoading(false)
+  }, [submittedSearch, demoJobs, demoLoadError])
 
   if (!workerProfile) return null
 
@@ -130,6 +144,14 @@ export default function WorkerDashboard() {
   const savedJobs = allJobs
     .filter((job) => state.savedJobIds.includes(job.id))
     .slice(0, 2)
+  const demoAppliedIds = new Set(demoState.applications.map((application) => application.jobId))
+  const recommendedDemoJobs = demoJobs.filter((job) => !demoAppliedIds.has(job.id)).sort((a, b) => {
+    const score = (job: DemoJob) => job.skills.filter((skill) => workerProfile.skills.some((item) => item.toLowerCase() === skill.toLowerCase())).length
+    return score(b) - score(a) || b.posted_date.localeCompare(a.posted_date)
+  }).slice(0, 3)
+  const savedDemoJobs = demoJobs.filter((job) => demoState.savedIds.includes(job.id)).slice(0, 2)
+  const recentDemoJobs = demoState.recentlyViewedIds.map((id) => demoJobs.find((job) => job.id === id)).filter((job): job is DemoJob => !!job).slice(0, 3)
+  const nearbyDemoCount = demoState.userLocation ? demoJobs.filter((job) => distanceBetweenKm(demoState.userLocation!, job) <= 5).length : null
   const recommendedJobs = (
     recommendedTab === "saved"
       ? allJobs.filter((job) => state.savedJobIds.includes(job.id))
@@ -149,6 +171,11 @@ export default function WorkerDashboard() {
     event.preventDefault()
     const query = search.trim()
     setSubmittedSearch(query)
+  }
+
+  const selectDemoJob = (job: DemoJob) => {
+    setSelectedDemoJob(job)
+    demoState.markViewed(job.id)
   }
 
   return (
@@ -195,13 +222,20 @@ export default function WorkerDashboard() {
             </div>
           </header>
 
-          {submittedSearch && <section className="mb-8 scroll-mt-6" aria-live="polite" aria-label="Matching jobs">
-            {showcaseSearchError && <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{showcaseSearchError}</p>}
-            {showcaseSearchJobs.length > 0 ? <div className="overflow-hidden rounded-xl border border-[#E8E2D5] bg-white">
-              <div className="border-b border-stone-100 px-4 py-3"><h2 className="text-sm font-bold text-stone-900">Nepal job dataset</h2><p className="mt-0.5 text-xs text-stone-500">Historical source listings · availability is unverified</p></div>
-              {showcaseSearchJobs.map((job) => <ShowcaseJobRow key={`showcase-${job.id}`} job={job} onOpen={setSelectedShowcaseJob} />)}
-            </div> : showcaseSearchLoading ? <div role="status" className="rounded-xl border border-stone-200 bg-white px-5 py-6 text-sm text-stone-600"><span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-primary align-[-2px]" />Searching dataset listings…</div> : <div className="rounded-xl border border-stone-200 bg-white px-5 py-8 text-center"><p className="font-semibold text-stone-900">No matching dataset listings found</p><p className="mt-1 text-sm text-stone-500">Try another job title, skill, or town.</p></div>}
+          {submittedSearch && <section className="mb-8 scroll-mt-6" aria-live="polite" aria-label="Matching demo jobs">
+            {showcaseSearchError && <p role="alert" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{showcaseSearchError}</p>}
+            {showcaseSearchJobs.length > 0 ? <div className="space-y-3"><div><h2 className="text-lg font-bold text-stone-900">Kathmandu Valley jobs</h2><p className="mt-0.5 text-xs text-stone-500">Sample listings · vacancy and employer details are illustrative.</p></div>{showcaseSearchJobs.map((job) => <DemoJobCard key={job.id} job={job} saved={demoState.savedIds.includes(job.id)} applied={demoAppliedIds.has(job.id)} onOpen={selectDemoJob} onToggleSaved={demoState.toggleSaved} onApply={demoState.apply} />)}</div> : showcaseSearchLoading ? <div role="status" className="rounded-xl border border-stone-200 bg-white px-5 py-6 text-sm text-stone-600"><span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-primary align-[-2px]" />Loading jobs…</div> : <div className="rounded-xl border border-stone-200 bg-white px-5 py-8 text-center"><p className="font-semibold text-stone-900">No matching jobs found</p><p className="mt-1 text-sm text-stone-500">Try another job title, skill, or locality.</p></div>}
           </section>}
+
+          <section className="mb-8 rounded-2xl border border-[#E8E2D5] bg-white p-5 shadow-sm sm:p-6" aria-label="Kathmandu Valley job discovery">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div><h2 className="font-heading text-xl font-bold text-stone-950">Explore work across Kathmandu Valley and nearby areas</h2><p className="mt-1 max-w-2xl text-sm leading-relaxed text-stone-600">Browse 80 opportunities by locality, pay period, skills, or distance. Sample listing details are illustrative; applying saves your interest on this device and does not contact employers.</p></div>
+              <button type="button" onClick={() => navigate("job-discovery")} className="shrink-0 rounded-lg bg-[#80502F] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#553421]">Open job map</button>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">{["Construction & Skilled Trades", "Delivery & Logistics", "Hospitality & Service", "Retail & Sales"].map((category) => <div key={category} className="rounded-xl bg-[#F8F5F1] px-3 py-3"><p className="text-xs leading-snug text-stone-600">{category}</p><p className="mt-1 text-lg font-bold text-stone-900">{demoJobs.filter((job) => job.category === category).length}</p></div>)}</div>
+            <div className="mt-2 grid grid-cols-2 gap-2"><div className="rounded-xl border border-stone-200 px-3 py-3"><p className="text-xs text-stone-600">Available jobs</p><p className="mt-1 text-xl font-bold text-stone-900">{demoJobs.length}</p></div><div className="rounded-xl border border-stone-200 px-3 py-3"><p className="text-xs text-stone-600">Within 5 km</p><p className="mt-1 text-xl font-bold text-stone-900">{nearbyDemoCount ?? "—"}</p><p className="text-[11px] text-stone-500">{nearbyDemoCount == null ? "Share location on the map to calculate" : "From your saved current location"}</p></div></div>
+            {recommendedDemoJobs.length > 0 && <div className="mt-5"><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-bold text-stone-900">Suggested from your saved skills</h3><span className="text-[11px] text-stone-500">Rule-based profile matches</span></div><div className="grid gap-3 lg:grid-cols-3">{recommendedDemoJobs.map((job) => <DemoJobCard key={job.id} job={job} matchReasons={workerProfile.skills.filter((skill) => job.skills.some((required) => required.toLowerCase() === skill.toLowerCase())).slice(0, 1).map((skill) => `Matches your skill: ${skill}`)} saved={demoState.savedIds.includes(job.id)} applied={demoAppliedIds.has(job.id)} onOpen={selectDemoJob} onToggleSaved={demoState.toggleSaved} onApply={demoState.apply} />)}</div></div>}
+          </section>
 
           <section className="mb-8">
             <div className="mb-4 flex items-center justify-between gap-4">
@@ -259,9 +293,9 @@ export default function WorkerDashboard() {
                   }`}
                 >
                   {label}
-                  {tab === "saved" && state.savedJobIds.length > 0 && (
+                  {tab === "saved" && state.savedJobIds.length + demoState.savedIds.length > 0 && (
                     <span className="ml-1.5 text-xs text-stone-400">
-                      {state.savedJobIds.length}
+                      {state.savedJobIds.length + demoState.savedIds.length}
                     </span>
                   )}
                 </button>
@@ -332,11 +366,10 @@ export default function WorkerDashboard() {
                 View all <span aria-hidden="true">→</span>
               </button>
             </div>
-            {savedJobs.length ? (
-              <div className="grid gap-4 xl:grid-cols-2">
-                {savedJobs.map((job) => (
-                  <JobCard key={job.id} job={job} compact />
-                ))}
+            {savedJobs.length || savedDemoJobs.length ? (
+              <div className="space-y-5">
+                {savedDemoJobs.length > 0 && <div><h3 className="mb-3 text-sm font-semibold text-stone-700">Saved Kathmandu Valley jobs</h3><div className="grid gap-4 xl:grid-cols-2">{savedDemoJobs.map((job) => <DemoJobCard key={job.id} job={job} saved onOpen={selectDemoJob} onToggleSaved={demoState.toggleSaved} onApply={demoState.apply} applied={demoAppliedIds.has(job.id)} />)}</div></div>}
+                {savedJobs.length > 0 && <div><h3 className="mb-3 text-sm font-semibold text-stone-700">Saved provider and external posts</h3><div className="grid gap-4 xl:grid-cols-2">{savedJobs.map((job) => <JobCard key={job.id} job={job} compact />)}</div></div>}
               </div>
             ) : (
               <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -374,6 +407,17 @@ export default function WorkerDashboard() {
               </div>
             )}
           </section>
+
+          {demoState.applications.length > 0 && <section className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Recent application activity"><div className="mb-2 flex items-center justify-between"><h2 className="text-lg font-semibold text-stone-900">Recent application activity</h2><span className="text-[11px] text-stone-500">This device</span></div><div className="divide-y divide-stone-100">{demoState.applications.slice(0, 3).map((application) => {
+              const job = demoJobs.find((item) => item.id === application.jobId)
+              if (!job) return null
+              return <div key={application.jobId} className="flex flex-col gap-2 py-3 first:pt-1 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-semibold text-stone-900">{job.title}</p><p className="mt-0.5 text-xs text-stone-500">{job.company}</p></div><div className="flex items-center gap-3"><span className="rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-stone-700">Saved locally</span><button type="button" onClick={() => selectDemoJob(job)} className="text-xs font-semibold text-primary-ink hover:underline">View</button></div></div>
+            })}</div><p className="mt-2 text-[11px] leading-relaxed text-stone-500">These entries are saved on this device and haven’t been sent to employers.</p></section>}
+
+          {recentDemoJobs.length > 0 && <section className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Recently viewed jobs">
+            <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="font-sans text-xl font-semibold tracking-tight text-stone-950">Recently viewed jobs</h2><p className="mt-1 text-xs text-stone-500">Saved in this browser</p></div><button type="button" onClick={() => navigate("job-discovery")} className="text-sm font-semibold text-primary-ink hover:underline">Open map</button></div>
+            <div className="grid gap-3 lg:grid-cols-3">{recentDemoJobs.map((job) => <DemoJobCard key={job.id} job={job} saved={demoState.savedIds.includes(job.id)} applied={demoAppliedIds.has(job.id)} onOpen={selectDemoJob} onToggleSaved={demoState.toggleSaved} onApply={demoState.apply} />)}</div>
+          </section>}
 
           <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-4 flex items-center justify-between">
@@ -439,7 +483,7 @@ export default function WorkerDashboard() {
           </section>
         </main>
       </div>
-      {selectedShowcaseJob && <ShowcaseJobDetailsModal job={selectedShowcaseJob} onClose={() => setSelectedShowcaseJob(null)} />}
+      {selectedDemoJob && <DemoJobDetailsModal job={selectedDemoJob} saved={demoState.savedIds.includes(selectedDemoJob.id)} applied={demoAppliedIds.has(selectedDemoJob.id)} onClose={() => setSelectedDemoJob(null)} onToggleSaved={demoState.toggleSaved} onApply={demoState.apply} />}
     </div>
   )
 }

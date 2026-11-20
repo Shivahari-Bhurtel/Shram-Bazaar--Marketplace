@@ -1,120 +1,303 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
-import JobDiscoveryMap, { type ShowcaseAreaMarker } from "../../components/worker/JobDiscoveryMap"
-import ShowcaseJobRow from "../../components/ShowcaseJobRow"
-import ShowcaseJobDetailsModal from "../../components/ShowcaseJobDetailsModal"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import JobDiscoveryMap from "../../components/worker/JobDiscoveryMap"
+import DemoJobCard from "../../components/DemoJobCard"
+import DemoJobDetailsModal from "../../components/DemoJobDetailsModal"
+import JobCard from "../../components/JobCard"
+import { useDemoJobState } from "../../hooks/useDemoJobState"
+import { distanceBetweenKm, filterDemoJobs, loadDemoJobs, type DemoJob } from "../../services/demoJobs"
 import { useApp } from "../../store/AppContext"
-import { searchShowcaseJobs, type ShowcaseJob } from "../../services/showcaseJobs"
+
+const CATEGORIES = [
+  { value: "Construction & Skilled Trades", label: "Trades" },
+  { value: "Delivery & Logistics", label: "Delivery" },
+  { value: "Hospitality & Service", label: "Hospitality" },
+  { value: "Retail & Sales", label: "Retail" },
+]
+const DISTANCES = [1, 3, 5, 10] as const
 
 export default function JobDiscovery() {
   const { state, navigate } = useApp()
+  const { jobs: marketplaceJobs, workerProfile } = state
+  const demoState = useDemoJobState(workerProfile?.id)
+  const [allDemoJobs, setAllDemoJobs] = useState<DemoJob[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState("")
   const [search, setSearch] = useState(() => state.discoverySkill || "")
-  const [district, setDistrict] = useState("All Nepal")
-  const [locationSearch, setLocationSearch] = useState("")
-  const [category, setCategory] = useState("All jobs")
-  const [jobTypeFilter, setJobTypeFilter] = useState("")
-  const [sourceFilter, setSourceFilter] = useState("")
-  const [minSalaryFilter, setMinSalaryFilter] = useState("")
-  const [maxSalaryFilter, setMaxSalaryFilter] = useState("")
+  const [category, setCategory] = useState("")
+  const [city, setCity] = useState("")
+  const [location, setLocation] = useState("")
+  const [jobType, setJobType] = useState("")
+  const [experience, setExperience] = useState("")
+  const [salaryType, setSalaryType] = useState("")
+  const [minSalary, setMinSalary] = useState("")
+  const [maxSalary, setMaxSalary] = useState("")
+  const [skillPreference, setSkillPreference] = useState("")
+  const [maxDistance, setMaxDistance] = useState<number | null>(null)
+  const [sortOrder, setSortOrder] = useState<"recommended" | "nearest">("recommended")
   const [showFilters, setShowFilters] = useState(false)
   const [mapBounds, setMapBounds] = useState<[number, number, number, number] | null>(null)
   const [searchCurrentArea, setSearchCurrentArea] = useState(false)
-  const [selectedShowcaseJob, setSelectedShowcaseJob] = useState<ShowcaseJob | null>(null)
-  const [showcaseJobs, setShowcaseJobs] = useState<ShowcaseJob[]>([])
-  const [showcaseLoading, setShowcaseLoading] = useState(true)
-  const [showcaseError, setShowcaseError] = useState("")
-  const closeShowcaseDetails = useCallback(() => setSelectedShowcaseJob(null), [])
+  const [selectedJob, setSelectedJob] = useState<DemoJob | null>(null)
+  const [selectedJobId, setSelectedJobId] = useState<string>()
+  const [routeDismissedJobId, setRouteDismissedJobId] = useState<string>()
+  const [locating, setLocating] = useState(false)
+  const [locationMessage, setLocationMessage] = useState("")
+  const [fitMap, setFitMap] = useState(true)
+  const [notice, setNotice] = useState("")
+  const [discoveryView, setDiscoveryView] = useState<"map" | "list">("map")
+  const locationWatchRef = useRef<number | null>(null)
+  const locationWatchTokenRef = useRef(0)
+
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      demoState.setUserLocation(null)
+      setSortOrder("recommended")
+      setLocationMessage("Location sharing is unavailable in this browser. Choose a city or locality instead.")
+      return
+    }
+    if (locationWatchRef.current !== null) navigator.geolocation.clearWatch(locationWatchRef.current)
+    const token = ++locationWatchTokenRef.current
+    setLocating(true)
+    setLocationMessage("")
+    const watchId = navigator.geolocation.watchPosition(({ coords }) => {
+      if (token !== locationWatchTokenRef.current) return
+      const { latitude, longitude, accuracy } = coords
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        setLocating(false)
+        setLocationMessage("Your browser returned an invalid location. Check GPS access and retry.")
+        return
+      }
+      demoState.setUserLocation({ latitude, longitude, accuracy: Number.isFinite(accuracy) ? accuracy : undefined })
+      setMaxDistance(null)
+      setSortOrder("nearest")
+      setFitMap(false)
+      const accuracyMessage = Number.isFinite(accuracy) ? ` (±${Math.round(accuracy)} m)` : ""
+      setLocationMessage(`Using your current location${accuracyMessage}. Workplace pins are approximate.`)
+      setLocating(false)
+    }, (error) => {
+      if (token !== locationWatchTokenRef.current) return
+      if (locationWatchRef.current !== null) navigator.geolocation.clearWatch(locationWatchRef.current)
+      locationWatchRef.current = null
+      setLocating(false)
+      demoState.setUserLocation(null)
+      setMaxDistance(null)
+      setSortOrder("recommended")
+      setLocationMessage(error.code === error.PERMISSION_DENIED
+        ? "Location permission was denied. Enable it in your browser settings, then retry."
+        : error.code === error.POSITION_UNAVAILABLE
+          ? "Your current location is unavailable. Check GPS or device location services, then retry."
+          : "Getting your location timed out. Check GPS access and retry.")
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })
+    locationWatchRef.current = watchId
+  }, [demoState.setUserLocation])
 
   useEffect(() => {
     const controller = new AbortController()
-    searchShowcaseJobs({}, controller.signal)
-      .then(setShowcaseJobs)
+    loadDemoJobs(controller.signal)
+      .then((items) => { setAllDemoJobs(items); setLoadError("") })
       .catch((error: unknown) => {
-        if (error instanceof Error && error.name !== "AbortError") setShowcaseError(`Dataset listings are unavailable: ${error.message}`)
+        if (error instanceof Error && error.name !== "AbortError") setLoadError(error.message)
       })
-      .finally(() => { if (!controller.signal.aborted) setShowcaseLoading(false) })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
   }, [])
 
-  const filteredShowcaseJobs = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    const place = locationSearch.trim().toLowerCase()
-    const [south, west, north, east] = mapBounds ?? [0, 0, 0, 0]
-    return showcaseJobs.filter((job) => {
-      const searchable = [job.title, job.company, job.location, job.category, job.experience, job.jobLevel, job.source, ...job.skills, ...job.jobTypes].filter(Boolean).join(" ").toLowerCase()
-      const matchesQuery = !query || searchable.includes(query)
-      const matchesPlace = !place || `${job.location || ""} ${job.mapArea || ""}`.toLowerCase().includes(place)
-      const matchesDistrict = district === "All Nepal" || `${job.location || ""} ${job.mapArea || ""}`.toLowerCase().includes(district.toLowerCase())
-      const matchesCategory = category === "All jobs" || (job.category || "").toLowerCase().includes(category.toLowerCase()) || searchable.includes(category.toLowerCase())
-      const matchesJobType = !jobTypeFilter || job.jobTypes.some((type) => type.toLowerCase().includes(jobTypeFilter.toLowerCase()))
-      const matchesSource = !sourceFilter || job.source.toLowerCase() === sourceFilter.toLowerCase()
-      const low = job.salaryMin ?? job.salaryMax
-      const high = job.salaryMax ?? job.salaryMin
-      const matchesMinSalary = !minSalaryFilter || (high != null && high >= Number(minSalaryFilter))
-      const matchesMaxSalary = !maxSalaryFilter || (low != null && low <= Number(maxSalaryFilter))
-      const matchesBounds = !searchCurrentArea || (job.mapLatitude != null && job.mapLongitude != null && job.mapLatitude >= south && job.mapLatitude <= north && job.mapLongitude >= west && job.mapLongitude <= east)
-      return matchesQuery && matchesPlace && matchesDistrict && matchesCategory && matchesJobType && matchesSource && matchesMinSalary && matchesMaxSalary && matchesBounds
+  useEffect(() => {
+    let active = true
+    if (!navigator.geolocation || !navigator.permissions?.query) return () => { active = false }
+    navigator.permissions.query({ name: "geolocation" })
+      .then((permission) => {
+        if (active && permission.state === "granted") requestLocation()
+      })
+      .catch(() => { /* The manual location button remains available when permission status cannot be queried. */ })
+
+    return () => { active = false }
+  }, [requestLocation])
+
+  useEffect(() => () => {
+    locationWatchTokenRef.current += 1
+    if (locationWatchRef.current !== null && navigator.geolocation) navigator.geolocation.clearWatch(locationWatchRef.current)
+  }, [])
+
+  const workerSkills = workerProfile?.skills ?? []
+  const matchingJobs = useMemo(() => filterDemoJobs(allDemoJobs, {
+    keyword: search,
+    category,
+    city,
+    location,
+    jobType,
+    experience,
+    salaryType,
+    minSalary,
+    maxSalary,
+    maxDistance,
+    userLocation: demoState.userLocation,
+    bounds: searchCurrentArea ? mapBounds : null,
+  }).filter((job) => !skillPreference || job.skills.some((skill) => normalize(skill).includes(normalize(skillPreference))))
+    .map((job) => {
+      const distance = demoState.userLocation ? distanceBetweenKm(demoState.userLocation, job) : null
+      const match = getMatchScore(job, workerSkills)
+      if (skillPreference) match.reasons.push(`Matches selected skill: ${skillPreference}`)
+      if (category) match.reasons.push("Matches selected category")
+      if (city || location) match.reasons.push("Matches selected area")
+      if (maxDistance != null && distance != null) match.reasons.push(`Within ${maxDistance} km`)
+      if ((minSalary || maxSalary) && salaryType) match.reasons.push("Fits your pay range")
+      match.score += Number(!!skillPreference) * 2 + Number(!!category) + Number(!!(city || location)) + Number(maxDistance != null) + Number(!!(minSalary || maxSalary))
+      return { job, distance, match }
     })
-  }, [showcaseJobs, search, locationSearch, district, category, jobTypeFilter, sourceFilter, minSalaryFilter, maxSalaryFilter, mapBounds, searchCurrentArea])
+    .sort((a, b) => sortOrder === "nearest" && a.distance != null && b.distance != null
+      ? a.distance - b.distance
+      : b.match.score - a.match.score || a.job.title.localeCompare(b.job.title)),
+  [allDemoJobs, search, category, city, location, jobType, experience, salaryType, minSalary, maxSalary, skillPreference, maxDistance, demoState.userLocation, searchCurrentArea, mapBounds, workerSkills, sortOrder])
+  const filteredJobs = useMemo(() => matchingJobs.map((item) => item.job), [matchingJobs])
 
-  const showcaseAreas = useMemo<ShowcaseAreaMarker[]>(() => {
-    const grouped = new Map<string, ShowcaseAreaMarker>()
-    for (const job of filteredShowcaseJobs) {
-      if (!job.mapArea || job.mapLatitude == null || job.mapLongitude == null) continue
-      const current = grouped.get(job.mapArea)
-      if (current) current.count++
-      else grouped.set(job.mapArea, { name: job.mapArea, count: 1, latitude: job.mapLatitude, longitude: job.mapLongitude })
-    }
-    return [...grouped.values()].sort((a, b) => b.count - a.count)
-  }, [filteredShowcaseJobs])
+  const locations = useMemo(() => [...new Set(allDemoJobs.map((job) => job.location))].sort((a, b) => a.localeCompare(b)), [allDemoJobs])
+  const skills = useMemo(() => [...new Set(allDemoJobs.flatMap((job) => job.skills))].sort((a, b) => a.localeCompare(b)), [allDemoJobs])
+  const selectedFocusJob = useMemo(() => allDemoJobs.find((job) => job.location === location && (!city || job.city === city)) || allDemoJobs.find((job) => job.city === city), [allDemoJobs, location, city])
 
-  const updateMapBounds = useCallback((bounds: [number, number, number, number]) => setMapBounds(bounds), [])
+  const demoApplications = demoState.applications
+  const marketplaceResults = useMemo(() => marketplaceJobs.filter((job) => {
+    if (job.status !== "active") return false
+    const searchText = `${job.title} ${job.providerName} ${job.description} ${job.location} ${job.district} ${job.skillsRequired.join(" ")}`.toLowerCase()
+    return (!search.trim() || searchText.includes(search.trim().toLowerCase()))
+      && (!city || `${job.location} ${job.district}`.toLowerCase().includes(city.toLowerCase()))
+      && (!location || `${job.location} ${job.district}`.toLowerCase().includes(location.toLowerCase()))
+      && (!minSalary || job.payment >= Number(minSalary))
+      && (!maxSalary || job.payment <= Number(maxSalary))
+  }), [marketplaceJobs, search, city, location, minSalary, maxSalary])
 
-  const categories = useMemo(() => [...new Set(showcaseJobs.map((job) => job.category).filter((value): value is string => Boolean(value)))].slice(0, 8), [showcaseJobs])
+  const handleSelectJob = useCallback((job: DemoJob) => {
+    setSelectedJobId(job.id)
+    setSelectedJob(job)
+    setRouteDismissedJobId(undefined)
+    demoState.markViewed(job.id)
+  }, [demoState.markViewed])
+
+  const closeDetails = useCallback(() => setSelectedJob(null), [])
+  const saveJob = useCallback((jobId: string) => {
+    demoState.toggleSaved(jobId)
+    setNotice(demoState.savedIds.includes(jobId) ? "Removed from saved jobs." : "Saved on this device.")
+  }, [demoState.toggleSaved, demoState.savedIds])
+  const applyToJob = useCallback((jobId: string) => {
+    if (demoApplications.some((item) => item.jobId === jobId)) return
+    demoState.apply(jobId)
+    setNotice("Your interest was saved on this device. It wasn’t sent to an employer.")
+  }, [demoApplications, demoState.apply])
+
+  const clearFilters = () => {
+    setSearch("")
+    setCategory("")
+    setCity("")
+    setLocation("")
+    setJobType("")
+    setExperience("")
+    setSalaryType("")
+    setMinSalary("")
+    setMaxSalary("")
+    setSkillPreference("")
+    setMaxDistance(null)
+    setSearchCurrentArea(false)
+    setMapBounds(null)
+    setSelectedJobId(undefined)
+    setFitMap(true)
+    setSortOrder("recommended")
+  }
+
+  const appliedIds = new Set(demoApplications.map((application) => application.jobId))
+  const hasActiveFilters = Boolean(search || category || city || location || jobType || experience || salaryType || minSalary || maxSalary || skillPreference || maxDistance !== null || searchCurrentArea)
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-white lg:flex-row">
-      <aside className="job-discovery-sidebar z-10 flex max-h-[58dvh] w-full shrink-0 flex-col border-b border-stone-200 bg-white lg:max-h-none lg:w-[390px] lg:border-b-0 lg:border-r xl:w-[420px]" aria-label="Find and filter jobs">
-        <div className="border-b border-stone-100 px-4 pb-4 pt-3">
-          <button type="button" onClick={() => navigate("worker-dashboard")} className="mb-2 inline-flex items-center gap-2 rounded-lg px-1 py-1.5 text-sm font-semibold text-stone-600 transition-colors hover:text-primary-ink" aria-label="Back to worker dashboard">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>
-            Back to main page
+    <div className="job-discovery relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white">
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <aside id="job-list-view" className={`job-discovery-sidebar z-10 ${discoveryView === "list" ? "flex" : "hidden lg:flex"} ${discoveryView === "list" ? "w-full" : "w-full lg:w-[410px] xl:w-[440px]"} max-h-none shrink-0 flex-col border-b border-stone-200 bg-white lg:border-b-0 ${discoveryView === "map" ? "lg:border-r" : ""}`} aria-label="Find and filter jobs">
+        <div className="shrink-0 border-b border-stone-200 px-4 pb-3 pt-2.5 sm:px-5">
+          <button type="button" onClick={() => navigate("worker-dashboard")} className="mb-1 inline-flex items-center gap-2 px-1 py-1 text-sm font-medium text-stone-600 transition-colors hover:text-primary-ink" aria-label="Back to worker dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="m15 18-6-6 6-6" /><path d="M9 12h11" /></svg>Back
           </button>
-          <div className="mt-4 flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><h1 className="font-heading text-xl font-bold text-stone-900">Discover jobs</h1><img src="/images/worker/detective.png" alt="" aria-hidden="true" className="h-10 w-10 shrink-0 object-contain" /></div><span className="shrink-0 text-xs text-stone-500">Nepal</span></div>
-          <label className="job-discovery-search mt-3 flex items-center gap-3 rounded-2xl border border-stone-200 px-4 py-3 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
-            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Job title, company, or keywords…" aria-label="Search jobs" className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />
-          </label>
-          <div className="job-discovery-filters mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Filter by industry">
-            {["All jobs", ...categories].map((item) => <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${category === item ? "bg-[#80502F] text-white shadow-sm" : "bg-stone-100 text-stone-700 hover:-translate-y-0.5 hover:bg-stone-200"}`}>{item}</button>)}
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="job-panel-heading text-lg font-semibold text-stone-900">Jobs</h1>
+            <p className="text-xs text-stone-500"><strong className="font-semibold text-stone-700">{filteredJobs.length}</strong> results</p>
           </div>
-          <button type="button" onClick={() => setShowFilters((value) => !value)} aria-expanded={showFilters} className="mt-3 flex items-center gap-2 rounded-lg py-1 text-sm font-semibold text-stone-700 hover:text-[#80502F]">☷ More filters <span className="text-xs text-stone-400">{showFilters ? "−" : "+"}</span></button>
-          {showFilters && <div className="mt-2 grid grid-cols-2 gap-2"><label className="text-xs font-medium text-stone-500">Area<select value={district} onChange={(event) => setDistrict(event.target.value)} aria-label="Filter by area" className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-800"><option>All Nepal</option><option>Kathmandu</option><option>Lalitpur</option><option>Bhaktapur</option><option>Pokhara</option><option>Chitwan</option><option>Biratnagar</option><option>Dhangadhi</option></select></label><label className="text-xs font-medium text-stone-500">Map place<input type="search" value={locationSearch} onChange={(event) => setLocationSearch(event.target.value)} placeholder="Town or address" aria-label="Search job locations" className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm text-stone-800" /></label><label className="text-xs font-medium text-stone-500">Job type<select value={jobTypeFilter} onChange={(event) => setJobTypeFilter(event.target.value)} aria-label="Filter by job type" className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-800"><option value="">All types</option><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Internship</option><option>Traineeship</option></select></label><label className="text-xs font-medium text-stone-500">Source<select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} aria-label="Filter by source" className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2 py-2 text-sm text-stone-800"><option value="">All sources</option><option value="merojob">MeroJob</option><option value="jobsnepal">JobsNepal</option></select></label><label className="text-xs font-medium text-stone-500">Minimum salary<input type="number" min="0" value={minSalaryFilter} onChange={(event) => setMinSalaryFilter(event.target.value)} placeholder="NPR" className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm text-stone-800" /></label><label className="text-xs font-medium text-stone-500">Maximum salary<input type="number" min="0" value={maxSalaryFilter} onChange={(event) => setMaxSalaryFilter(event.target.value)} placeholder="NPR" className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm text-stone-800" /></label></div>}
-          <p className="mt-3 text-sm text-stone-600"><strong className="text-stone-900">{filteredShowcaseJobs.length}</strong> jobs found</p>
+          <div className="job-discovery-filters mt-2.5 flex gap-1.5 overflow-x-auto pb-1" aria-label="Filter by category">
+            <button type="button" aria-pressed={!category} onClick={() => setCategory("")} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${!category ? "border-[#265D4C] bg-[#265D4C] text-white" : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"}`}>All</button>
+            {CATEGORIES.map((item) => <button key={item.value} type="button" aria-pressed={category === item.value} onClick={() => setCategory(category === item.value ? "" : item.value)} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${category === item.value ? "border-[#265D4C] bg-[#265D4C] text-white" : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"}`}>{item.label}</button>)}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <button type="button" onClick={requestLocation} disabled={locating} className="inline-flex min-h-9 items-center justify-center gap-1.5 border border-[#265D4C]/30 bg-[#265D4C]/5 px-2.5 py-1.5 text-xs font-medium text-[#265D4C] hover:bg-[#265D4C]/10 disabled:opacity-60"><span aria-hidden="true">◎</span>{locating ? "Finding you…" : demoState.userLocation ? "Update location" : "Near me"}</button>
+            <button type="button" onClick={() => setShowFilters((value) => !value)} aria-expanded={showFilters} className="min-h-9 border border-stone-200 px-2.5 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-50">{showFilters ? "Hide filters −" : "More filters +"}</button>
+            <button type="button" onClick={() => navigate("saved-jobs")} className="ml-auto min-h-9 px-2 py-1.5 text-xs font-medium text-[#265D4C] hover:underline">Saved jobs <span className="text-stone-500">{demoState.savedIds.length}</span></button>
+          </div>
+          {locationMessage && <p role="status" className="mt-2 text-xs leading-relaxed text-stone-600">{locationMessage}</p>}
+          {showFilters && <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 rounded-xl bg-stone-50 p-3">
+            <Filter label="City" value={city} onChange={(value) => { setCity(value); setSearchCurrentArea(false) }}><option value="">All areas</option><option value="Kathmandu">Kathmandu</option><option value="Lalitpur">Lalitpur</option><option value="Bhaktapur">Bhaktapur</option><option value="Banepa">Banepa</option></Filter>
+            <Filter label="Locality" value={location} onChange={(value) => { setLocation(value); setSearchCurrentArea(false) }}><option value="">All localities</option>{locations.map((item) => <option key={item} value={item}>{item}</option>)}</Filter>
+            <Filter label="Job type" value={jobType} onChange={setJobType}><option value="">Any type</option>{[...new Set(allDemoJobs.map((job) => job.job_type))].map((item) => <option key={item} value={item}>{item}</option>)}</Filter>
+            <Filter label="Experience" value={experience} onChange={setExperience}><option value="">Any experience</option><option value="beginner">Beginner friendly</option><option value="experienced">Experience preferred</option></Filter>
+            <Filter label="Pay period" value={salaryType} onChange={setSalaryType}><option value="">Any pay period</option><option value="monthly">Monthly</option><option value="daily">Daily wage</option><option value="hourly">Hourly</option></Filter>
+            <Filter label="Skill match" value={skillPreference} onChange={setSkillPreference}><option value="">Any skill</option>{skills.map((item) => <option key={item} value={item}>{item}</option>)}</Filter>
+            <label className="text-xs font-medium text-stone-600">Minimum pay<input type="number" min="0" value={minSalary} onChange={(event) => setMinSalary(event.target.value)} placeholder={salaryType ? "NPR" : "Select pay period"} disabled={!salaryType} className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-sm text-stone-800 disabled:bg-stone-100 disabled:text-stone-400" /></label>
+            <label className="text-xs font-medium text-stone-600">Maximum pay<input type="number" min="0" value={maxSalary} onChange={(event) => setMaxSalary(event.target.value)} placeholder={salaryType ? "NPR" : "Select pay period"} disabled={!salaryType} className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-sm text-stone-800 disabled:bg-stone-100 disabled:text-stone-400" /></label>
+            <div className="col-span-2">
+              <p className="text-xs font-medium text-stone-600">Distance from your location</p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                <DistanceButton active={maxDistance === null} disabled={!demoState.userLocation} onClick={() => setMaxDistance(null)}>All</DistanceButton>
+                {DISTANCES.map((distance) => <DistanceButton key={distance} active={maxDistance === distance} disabled={!demoState.userLocation} onClick={() => setMaxDistance(distance)}>{distance} km</DistanceButton>)}
+              </div>
+              {!demoState.userLocation && <p className="mt-1 text-[11px] text-stone-500">Share your location to enable distance filters.</p>}
+            </div>
+            <div className="col-span-2 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-2">
+              <label className="flex items-center gap-2 text-xs font-medium text-stone-600">Sort<select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as "recommended" | "nearest")} className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-700"><option value="recommended">Best match</option><option value="nearest" disabled={!demoState.userLocation}>Nearest first</option></select></label>
+              <button type="button" onClick={clearFilters} disabled={!hasActiveFilters} className="text-xs font-semibold text-[#70472F] underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-45">Clear filters</button>
+            </div>
+          </div>}
+          {hasActiveFilters && <div className="mt-2 flex justify-end"><button type="button" onClick={clearFilters} className="text-xs font-medium text-[#70472F] hover:underline">Clear filters</button></div>}
         </div>
-        <div className="job-discovery-results flex-1 space-y-3 overflow-y-auto bg-[#F8F6F2] p-3">
-          {showcaseLoading && <p role="status" className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs text-stone-600">Loading Nepal job dataset…</p>}
-          {showcaseError && <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">{showcaseError}</p>}
-          {filteredShowcaseJobs.length > 0 && <section className="overflow-hidden rounded-xl border border-stone-200 bg-white"><div className="border-b border-stone-100 px-4 py-3"><h2 className="text-sm font-bold text-stone-900">Nepal job dataset</h2><p className="mt-0.5 text-xs text-stone-500">Historical source listings · availability is unverified</p></div>{filteredShowcaseJobs.map((job) => <ShowcaseJobRow key={`dataset-${job.id}`} job={job} onOpen={setSelectedShowcaseJob} />)}</section>}
-          {filteredShowcaseJobs.length === 0 && !showcaseLoading && !showcaseError && <div className="rounded-xl border border-dashed border-stone-300 bg-white p-7 text-center"><p className="font-semibold text-stone-800">No dataset listings match</p><p className="mt-1 text-sm text-stone-500">Try another keyword, industry, or location.</p></div>}
+
+        <div className="job-discovery-results min-h-0 flex-1 space-y-2.5 overflow-y-auto bg-[#FAF8F5] p-3 sm:p-4">
+          {notice && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">{notice}</p>}
+          {loading && <p role="status" className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600">Loading jobs…</p>}
+          {loadError && <div role="alert" className="rounded-lg border border-amber-300 bg-white px-4 py-4 text-sm text-amber-950"><p className="font-semibold">Jobs could not be loaded</p><p className="mt-1">{loadError}</p><button type="button" onClick={() => { setLoading(true); setLoadError(""); void loadDemoJobs().then(setAllDemoJobs).catch((error: unknown) => setLoadError(error instanceof Error ? error.message : "Please try again.")).finally(() => setLoading(false)) }} className="mt-3 rounded-lg bg-[#80502F] px-3 py-2 text-xs font-semibold text-white">Try again</button></div>}
+          {!loading && !loadError && filteredJobs.length === 0 && <div className="rounded-xl border border-dashed border-stone-300 bg-white p-7 text-center"><p className="font-semibold text-stone-800">No jobs match these filters</p><p className="mt-1 text-sm text-stone-500">Try a nearby locality, broader pay range, or clear filters.</p><button type="button" onClick={clearFilters} className="mt-4 rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700">Clear filters</button></div>}
+          {matchingJobs.map(({ job }) => <DemoJobCard key={job.id} job={job} selected={selectedJobId === job.id} saved={demoState.savedIds.includes(job.id)} applied={appliedIds.has(job.id)} onOpen={handleSelectJob} onToggleSaved={saveJob} onApply={applyToJob} />)}
+          {marketplaceResults.length > 0 && <section className="space-y-3 border-t border-stone-200 pt-4" aria-label="Employer-posted jobs"><div><h2 className="text-sm font-bold text-stone-900">Employer-posted jobs</h2><p className="mt-1 text-xs text-stone-500">Recently posted through Shram Bazar.</p></div>{marketplaceResults.map((job) => <JobCard key={`marketplace-${job.id}`} job={job} compact />)}</section>}
         </div>
       </aside>
-      <section aria-label="Job map" className="relative min-h-0 flex-1 bg-[#E8E6DF]">
-        <JobDiscoveryMap onBoundsChange={updateMapBounds} fitToJobs={!searchCurrentArea && !showcaseLoading} focusArea={locationSearch || (district === "All Nepal" ? undefined : district)} searchCurrentArea={searchCurrentArea} showcaseAreas={showcaseAreas} onSelectShowcaseArea={(area) => { setLocationSearch(area.name); setSearchCurrentArea(false) }} />
-        <div className="pointer-events-none absolute left-4 top-5 z-[500] flex flex-wrap gap-2 rounded-xl border border-white/70 bg-white/90 p-2.5 text-[11px] font-semibold text-stone-700 shadow-md backdrop-blur" aria-label="Map marker legend">
-          <span className="inline-flex items-center gap-2"><i className="job-map-marker-legend">J</i>Job listing areas</span>
-        </div>
-        <div className="pointer-events-none absolute left-1/2 top-5 z-[500] w-[min(92%,560px)] -translate-x-1/2">
-          <label className="job-map-location-search pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-5 py-3.5 shadow-[0_12px_36px_-18px_rgba(40,29,20,.55)] backdrop-blur">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
-            <input type="search" value={locationSearch} onChange={(event) => { setLocationSearch(event.target.value); setSearchCurrentArea(false) }} placeholder="Search city, address or place" aria-label="Search map location" className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />
-          </label>
-          <div className="mt-3 flex justify-center"><button type="button" onClick={() => setSearchCurrentArea(true)} className="job-map-area-button pointer-events-auto rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-800 shadow-lg hover:-translate-y-0.5 hover:bg-[#FFFDF9]">Search this area</button></div>
-        </div>
-        <div className="absolute bottom-5 left-4 z-[500] rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-stone-700 shadow-md">{showcaseAreas.length} mapped areas · {filteredShowcaseJobs.length} dataset listings</div>
-        {searchCurrentArea && <button type="button" onClick={() => setSearchCurrentArea(false)} className="absolute bottom-5 right-4 z-[500] rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-stone-700 shadow-md">Clear map area search</button>}
-      </section>
 
-      {selectedShowcaseJob && <ShowcaseJobDetailsModal job={selectedShowcaseJob} onClose={closeShowcaseDetails} />}
+      <section id="job-map-view" aria-label="Job map" className={`${discoveryView === "map" ? "flex" : "hidden"} relative min-h-0 flex-1 bg-[#E8E6DF]`}>
+        <JobDiscoveryMap jobs={filteredJobs} selectedJobId={selectedJobId} routeJob={selectedJobId && routeDismissedJobId !== selectedJobId ? allDemoJobs.find((job) => job.id === selectedJobId) : undefined} userLocation={demoState.userLocation} focusLocation={selectedFocusJob ? { latitude: selectedFocusJob.latitude, longitude: selectedFocusJob.longitude } : null} onSelectJob={handleSelectJob} onCloseRoute={() => setRouteDismissedJobId(selectedJobId)} onRequestLocation={requestLocation} locating={locating} locationMessage={locationMessage} onBoundsChange={setMapBounds} onMapInteraction={() => setFitMap(false)} fitToJobs={fitMap && !searchCurrentArea} searchCurrentArea={searchCurrentArea} active={discoveryView === "map"} />
+        <div className="pointer-events-none absolute left-4 top-5 z-[500] flex flex-wrap gap-2 rounded-xl border border-white/70 bg-white/90 p-2.5 text-[11px] font-semibold text-stone-700 shadow-md backdrop-blur" aria-label="Map marker legend"><span className="inline-flex items-center gap-2"><i className="job-map-legend-bubble">Rs.</i>Pay</span><span className="inline-flex items-center gap-2"><i className="h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" />You</span></div>
+        <div className="pointer-events-none absolute left-1/2 top-5 z-[500] w-[min(92%,560px)] -translate-x-1/2">
+          <div className="job-map-search pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-5 py-3.5 shadow-[0_12px_36px_-18px_rgba(40,29,20,.55)] backdrop-blur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); if (searchCurrentArea) { setSearchCurrentArea(false); setMapBounds(null) } }} placeholder="Search jobs by title, company, or skill" aria-label="Search jobs by title, company, skill, or keyword" className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />{search && <button type="button" onClick={() => setSearch("")} aria-label="Clear job search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900">×</button>}</div>
+          <div className="mt-3 flex justify-center"><button type="button" onClick={() => { setSearchCurrentArea(true); setFitMap(false) }} className="job-map-area-button pointer-events-auto rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-800 shadow-lg hover:bg-[#FFFDF9]">Search this map area</button></div>
+        </div>
+        <div className="pointer-events-none absolute bottom-5 left-4 z-[500] rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-stone-700 shadow-md">{filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"} shown · approximate locations</div>
+        {searchCurrentArea && <button type="button" onClick={() => { setSearchCurrentArea(false); setMapBounds(null) }} className="absolute bottom-5 right-4 z-[500] rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-stone-700 shadow-md">Clear map area</button>}
+        {city || location ? <div className="absolute bottom-16 right-4 z-[500] rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-stone-700 shadow-md">{selectedFocusJob ? `${selectedFocusJob.location}, ${selectedFocusJob.city}` : city || location}</div> : null}
+        {!loading && !loadError && filteredJobs.length === 0 && <div className="absolute inset-x-4 bottom-20 z-[500] mx-auto max-w-md rounded-xl border border-stone-200 bg-white/95 p-4 text-center shadow-lg backdrop-blur"><p className="font-semibold text-stone-800">No jobs match your search</p><p className="mt-1 text-xs text-stone-500">Try a different job title, company, or skill.</p>{hasActiveFilters && <button type="button" onClick={clearFilters} className="mt-3 rounded-lg bg-[#80502F] px-3 py-2 text-xs font-semibold text-white">Clear filters</button>}</div>}
+      </section>
+      </div>
+
+      {selectedJob && <DemoJobDetailsModal job={selectedJob} distance={demoState.userLocation ? distanceBetweenKm(demoState.userLocation, selectedJob) : null} saved={demoState.savedIds.includes(selectedJob.id)} applied={appliedIds.has(selectedJob.id)} matchReasons={getMatchScore(selectedJob, workerSkills).reasons} onClose={closeDetails} onViewMap={() => { closeDetails(); setDiscoveryView("map"); setFitMap(false) }} onToggleSaved={saveJob} onApply={applyToJob} />}
     </div>
   )
+}
+
+function Filter({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
+  return <label className="text-xs font-medium text-stone-600">{label}<select value={value} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-sm text-stone-800">{children}</select></label>
+}
+
+function DistanceButton({ active, disabled, onClick, children }: { active: boolean; disabled: boolean; onClick: () => void; children: ReactNode }) {
+  return <button type="button" aria-pressed={active} disabled={disabled} onClick={onClick} className={`rounded-full px-2.5 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-[#80502F] text-white" : "bg-white text-stone-700 ring-1 ring-stone-200 hover:bg-stone-100"}`}>{children}</button>
+}
+
+function getMatchScore(job: DemoJob, workerSkills: string[]) {
+  const matches = job.skills.filter((skill) => workerSkills.some((workerSkill) => normalize(workerSkill) === normalize(skill)))
+  const beginner = /no experience required|fresh workers welcome/i.test(job.experience)
+  const reasons = matches.length ? [`Matches your skill: ${matches[0]}`] : []
+  if (beginner) reasons.push("Suitable for beginners")
+  return { score: matches.length * 10 + (beginner ? 2 : 0), reasons }
+}
+
+function normalize(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
 }

@@ -12,7 +12,7 @@ Authorization: Bearer <accessToken>
 
 The token is returned by registration and login in an `AuthResponse`. JWTs expire after the configured `jwt.expiration-ms` (the committed configuration sets one hour) and are rejected after logout because the token is stored in the revocation table.
 
-Spring Security is stateless. `POST /api/auth/register/job-seeker`, `POST /api/auth/register/job-provider`, and `POST /api/auth/login` are public. `GET /api/jobs`, `GET /api/jobs/{jobId}`, and profile-picture files under `/uploads/profile-pictures/**` are public. `GET` routes under `/api/jobs` are the only public job routes; all other routes require authentication. `/api/admin/**` additionally requires `ADMIN`, although the current `UserRole` enum contains `JOB_SEEKER` and `JOB_PROVIDER` only.
+Spring Security is stateless. `POST /api/auth/register/job-seeker`, `POST /api/auth/register/job-provider`, and `POST /api/auth/login` are public. `GET /api/jobs`, `GET /api/jobs/showcase`, `GET /api/jobs/{jobId}`, and profile-picture files under `/uploads/profile-pictures/**` are public. `GET` routes under `/api/jobs` are the only public job routes; all other routes require authentication. `/api/admin/**` additionally requires `ADMIN`, although the current `UserRole` enum contains `JOB_SEEKER` and `JOB_PROVIDER` only.
 
 ## Response and error conventions
 
@@ -53,10 +53,13 @@ Common statuses are `400` invalid JSON, validation, enum, date, or query input; 
 | POST | `/api/provider/jobs/{jobId}/close` | Provider owner | path `jobId` | `204` | 401, 403, 404, 409 |
 | POST | `/api/provider/jobs/{jobId}/cancel` | Provider owner | path `jobId` | `204` | 401, 403, 404, 409 |
 | GET | `/api/jobs` | Public | `keyword`, `district`, `minPayment`, `maxPayment`, `workDate` optional | `200 JobPostResponse[]` | 400 for malformed numbers/date |
+| GET | `/api/jobs/showcase` | Public | optional `keyword`, `location`, `category`, `jobType`, `minSalary`, `maxSalary`, `source` | `200 ShowcaseJobResponse[]` | 400 for malformed numbers |
 | GET | `/api/jobs/{jobId}` | Public | path `jobId` | `200 JobPostResponse` | 404 |
 | GET | `/api/provider/jobs/active?page=0` | Provider | optional non-negative `page`; page size is 5 | `200 Page<JobPostResponse>` | 400, 401, 403 |
 
 `GET /api/jobs` filters only currently `OPEN` jobs. Keyword matching checks title, description, and responsibilities; `workDate` matches any day in the job’s start/end range.
+
+`GET /api/jobs/showcase` returns the centralized simulated dataset loaded from `src/main/resources/data/jobs.json` at API startup. Its records are independent from provider-created `job_posts`, and this import replaces only showcase records. The response retains the dataset fields (`id`, `title`, `category`, `company`, `description`, `location`, `address`, `city`, coordinates, salary range/type, job type, experience, skills, requirements, vacancies, dates, `is_demo`, source, and location accuracy). These listings are demonstration data and are not verified vacancies.
 
 ### Applications and engagements
 

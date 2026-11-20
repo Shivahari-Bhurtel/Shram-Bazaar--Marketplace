@@ -1,6 +1,9 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useApp } from "../../store/AppContext"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
+import DemoJobDetailsModal from "../../components/DemoJobDetailsModal"
+import { useDemoJobState } from "../../hooks/useDemoJobState"
+import { loadDemoJobs, type DemoJob } from "../../services/demoJobs"
 import type { Application, ApplicationStatus, Job, WorkType } from "../../types"
 import { formatNepalDate, nepalDateString } from "../../utils/dates"
 
@@ -144,10 +147,27 @@ function ApplicationRow({
 
 export default function MyApplications() {
   const { myApplications, navigate, state } = useApp()
+  const demoState = useDemoJobState(state.workerProfile?.id)
+  const [demoJobs, setDemoJobs] = useState<DemoJob[]>([])
+  const [selectedDemoJob, setSelectedDemoJob] = useState<DemoJob | null>(null)
+  const [demoLoadError, setDemoLoadError] = useState("")
   const [activeTab, setActiveTab] = useState<StatusFilter>("all")
   const [query, setQuery] = useState("")
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
   const [workType, setWorkType] = useState("all")
+
+  useEffect(() => {
+    const controller = new AbortController()
+    loadDemoJobs(controller.signal).then(setDemoJobs).catch((error: unknown) => {
+      if (error instanceof Error && error.name !== "AbortError") setDemoLoadError(error.message)
+    })
+    return () => controller.abort()
+  }, [])
+
+  const demoApplications = demoState.applications.map((application) => ({
+    application,
+    job: demoJobs.find((job) => job.id === application.jobId),
+  })).filter((item): item is { application: typeof demoState.applications[number]; job: DemoJob } => !!item.job)
 
   const jobsById = useMemo(() => new Map<string, Job>([...state.jobs, ...state.externalJobs].map((job) => [job.id, job] as const)), [state.jobs, state.externalJobs])
   const counts = {
@@ -186,6 +206,12 @@ export default function MyApplications() {
         <h1 className="text-4xl font-extrabold tracking-tight text-stone-950 sm:text-5xl">My applications</h1>
         <p className="mt-3 max-w-3xl text-base leading-relaxed text-stone-600 sm:text-lg">Explore current openings and your applications will be tracked here.</p>
       </header>
+
+      {(demoApplications.length > 0 || demoLoadError) && <section className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Saved application activity">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold text-stone-900">Saved application activity</h2><p className="mt-1 text-sm text-stone-600">{demoApplications.length} saved entr{demoApplications.length === 1 ? "y" : "ies"} · stored on this device</p></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700">Not sent to employers</span></div>
+        {demoLoadError && <p role="alert" className="mt-3 text-sm text-amber-900">Job listing details could not load: {demoLoadError}</p>}
+        {demoApplications.length > 0 && <div className="mt-4 divide-y divide-stone-100">{demoApplications.map(({ application, job }) => <div key={application.jobId} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="font-semibold text-stone-900">{job.title}</p><p className="mt-0.5 text-sm text-stone-600">{job.company} · {job.location}, {job.city}</p><p className="mt-1 text-xs text-stone-500">Saved {new Intl.DateTimeFormat("en-NP", { dateStyle: "medium" }).format(new Date(application.appliedAt))}</p></div><span className="w-fit rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-700">Saved locally</span><button type="button" onClick={() => setSelectedDemoJob(job)} className="w-fit rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50">View listing</button></div>)}</div>}
+      </section>}
 
       {myApplications.length ? (
         <section className="mb-7 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5" aria-label="Application totals">
@@ -292,6 +318,7 @@ export default function MyApplications() {
           )}
         </aside>
       </div>
+      {selectedDemoJob && <DemoJobDetailsModal job={selectedDemoJob} applied onClose={() => setSelectedDemoJob(null)} onToggleSaved={demoState.toggleSaved} saved={demoState.savedIds.includes(selectedDemoJob.id)} />}
     </main>
   )
 }

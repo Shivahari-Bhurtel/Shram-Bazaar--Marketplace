@@ -1232,11 +1232,6 @@ body {
 .job-discovery-sidebar {
   box-shadow: 8px 0 28px -28px rgb(42 33 24 / 45%);
 }
-.job-discovery-search {
-  background: #fff;
-  box-shadow: 0 7px 22px -18px rgb(64 47 34 / 45%);
-  transition: border-color 180ms ease, box-shadow 180ms ease;
-}
 .job-discovery-filters {
   scrollbar-width: none;
 }
@@ -1329,10 +1324,10 @@ body {
   color: #8a8177;
   font-weight: 500;
 }
-.job-map-location-search {
+.job-map-search {
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
-.job-map-location-search:focus-within {
+.job-map-search:focus-within {
   transform: translateY(-1px);
   box-shadow: 0 18px 38px -20px rgb(40 29 20 / 60%);
 }
@@ -1397,32 +1392,126 @@ body {
   border: 0;
   background: transparent;
 }
-.job-map-marker-letter,
-.job-map-marker-legend {
+.job-map-salary-bubble {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border: 1px solid #d8d8d8;
+  border-radius: 9999px;
+  color: #e53935;
+  background: #ffc72c;
+  box-shadow: 0 3px 10px rgb(32 33 36 / 24%);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 140ms ease, color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+.job-map-marker-icon:hover .job-map-salary-bubble {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgb(32 33 36 / 28%);
+}
+.job-map-marker-icon.is-selected { z-index: 1000 !important; }
+.job-map-salary-bubble.is-selected {
+  transform: scale(1.12);
+  border-color: #e53935;
+  color: #fff;
+  background: #e53935;
+  box-shadow: 0 8px 20px rgb(149 24 22 / 42%);
+}
+.job-map-marker-icon:focus-visible .job-map-salary-bubble {
+  outline: 3px solid #265d4c;
+  outline-offset: 3px;
+}
+.job-map-cluster {
   display: grid;
-  width: var(--job-marker-size, 48px);
-  height: var(--job-marker-size, 48px);
-  flex: 0 0 auto;
+  width: var(--job-cluster-size, 40px);
+  height: var(--job-cluster-size, 40px);
   place-items: center;
-  border: 3px solid #fff;
+  border: 3px solid rgb(229 57 53 / 25%);
   border-radius: 50%;
   color: #fff;
-  background: #80502f;
-  box-shadow: 0 5px 14px rgb(55 35 21 / 35%);
-  font-size: 15px;
-  font-style: normal;
-  font-weight: 800;
-  transition: transform 140ms ease, background-color 140ms ease;
+  background: #e53935;
+  box-shadow: 0 3px 10px rgb(32 33 36 / 28%);
+  font-size: 12px;
+  font-weight: 750;
+  transition: transform 140ms ease, box-shadow 140ms ease;
 }
-.job-map-marker-icon:hover .job-map-marker-letter {
-  transform: scale(1.12);
-  background: #553421;
-}
-.job-map-marker-legend {
-  width: 22px;
+.job-map-cluster.is-selected { border-color: #fff; box-shadow: 0 0 0 3px rgb(229 57 53 / 38%), 0 5px 14px rgb(32 33 36 / 30%); }
+.job-map-marker-icon:hover .job-map-cluster { transform: scale(1.08); }
+.job-map-legend-bubble {
+  display: inline-flex;
   height: 22px;
-  border-width: 2px;
-  font-size: 10px;
+  align-items: center;
+  border: 1px solid #dedede;
+  border-radius: 9999px;
+  padding: 0 6px;
+  color: #e53935;
+  background: #fff;
+  box-shadow: 0 2px 6px rgb(32 33 36 / 18%);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+}
+.job-discovery,
+.job-detail-modal {
+  font-family: 'Neue Montreal', 'Rza', 'Outfit', 'Noto Sans Devanagari', sans-serif;
+}
+.job-listing-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgb(38 28 20 / 8%);
+}
+.job-card-type {
+  max-width: 112px;
+  overflow: hidden;
+  border: 1px solid #e1dad3;
+  border-radius: 9999px;
+  padding: 3px 7px;
+  color: #5a544f;
+  background: #f5f2ee;
+  font-size: 11px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.job-card-salary {
+  border: 1px solid #e3b323;
+  border-radius: 4px;
+  color: #302b27;
+  background: #ffc72c;
+}
+.job-detail-salary {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid #e3b323;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: #302b27;
+  background: #ffc72c;
+}
+.job-listing-title,
+.job-panel-heading,
+.job-card-salary,
+.job-detail-title,
+.job-detail-salary,
+.job-detail-section-title {
+  font-family: 'Neue Montreal', 'Rza', 'Outfit', 'Noto Sans Devanagari', sans-serif;
+}
+.job-detail-modal { font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif; }
+.job-detail-modal .job-detail-title,
+.job-detail-modal .job-detail-section-title { font-family: 'Outfit', 'Noto Sans Devanagari', system-ui, sans-serif; }
+.job-detail-modal {
+  animation: jobDetailModalIn 180ms ease-out both;
+}
+@keyframes jobDetailModalIn {
+  from { opacity: 0; transform: translateY(8px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .job-detail-modal { animation: none; }
 }
 @keyframes discoveryCardIn {
   from { opacity: 0; transform: translateY(8px); }

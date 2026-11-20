@@ -14,12 +14,18 @@ public class ShowcaseJob {
 
     @Column(nullable = false, length = 64)
     private String fingerprint;
+    @Column(unique = true, length = 64)
+    private String datasetId;
     @Column(nullable = false, length = 500)
     private String title;
     @Column(length = 300)
     private String company;
     @Column(length = 500)
     private String location;
+    @Column(length = 500)
+    private String address;
+    @Column(length = 100)
+    private String city;
     @Column(length = 500)
     private String normalizedLocation;
     @Column(length = 100)
@@ -56,16 +62,33 @@ public class ShowcaseJob {
     private String mapArea;
     private Double mapLatitude;
     private Double mapLongitude;
+    @Column(columnDefinition = "TEXT")
+    private String description;
+    @Column(columnDefinition = "TEXT")
+    private String requirementsRaw;
+    @Column(length = 20)
+    private String salaryType;
+    @Column(length = 100)
+    private String experienceText;
+    private Boolean demo;
+    @Column(length = 40)
+    private String locationAccuracy;
 
     public Long getId() { return id; }
     public String getFingerprint() { return fingerprint; }
     public void setFingerprint(String value) { this.fingerprint = value; }
+    public String getDatasetId() { return datasetId; }
+    public void setDatasetId(String value) { this.datasetId = value; }
     public String getTitle() { return title; }
     public void setTitle(String value) { this.title = value; }
     public String getCompany() { return company; }
     public void setCompany(String value) { this.company = value; }
     public String getLocation() { return location; }
     public void setLocation(String value) { this.location = value; }
+    public String getAddress() { return address; }
+    public void setAddress(String value) { this.address = value; }
+    public String getCity() { return city; }
+    public void setCity(String value) { this.city = value; }
     public String getNormalizedLocation() { return normalizedLocation; }
     public void setNormalizedLocation(String value) { this.normalizedLocation = value; }
     public String getCountry() { return country; }
@@ -108,4 +131,16 @@ public class ShowcaseJob {
     public void setMapLatitude(Double value) { this.mapLatitude = value; }
     public Double getMapLongitude() { return mapLongitude; }
     public void setMapLongitude(Double value) { this.mapLongitude = value; }
+    public String getDescription() { return description; }
+    public void setDescription(String value) { this.description = value; }
+    public String getRequirementsRaw() { return requirementsRaw; }
+    public void setRequirementsRaw(String value) { this.requirementsRaw = value; }
+    public String getSalaryType() { return salaryType; }
+    public void setSalaryType(String value) { this.salaryType = value; }
+    public String getExperienceText() { return experienceText; }
+    public void setExperienceText(String value) { this.experienceText = value; }
+    public Boolean getDemo() { return demo; }
+    public void setDemo(Boolean value) { this.demo = value; }
+    public String getLocationAccuracy() { return locationAccuracy; }
+    public void setLocationAccuracy(String value) { this.locationAccuracy = value; }
 }

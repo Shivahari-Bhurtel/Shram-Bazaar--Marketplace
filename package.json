@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bash ./run-local.sh",
     "dev:vite": "vite",
-    "generate:showcase": "python3 scripts/build-showcase-data.py",
+    "validate:jobs": "python3 scripts/validate-jobs.py",
     "ai": "python -m uvicorn main:app --app-dir ai-service --reload --host 0.0.0.0 --port 8000",
     "build": "vite build",
     "preview": "vite preview",

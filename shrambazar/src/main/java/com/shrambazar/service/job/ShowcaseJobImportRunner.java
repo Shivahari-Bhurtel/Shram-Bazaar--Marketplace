@@ -8,36 +8,34 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.io.InputStream;
 import java.util.logging.Logger;
 
-/** Imports the bundled showcase snapshot on startup; the fingerprint makes this idempotent. */
+/** Replaces the imported showcase table with the canonical simulated jobs snapshot. */
 @Component
 public class ShowcaseJobImportRunner implements ApplicationRunner {
     private static final Logger log = Logger.getLogger(ShowcaseJobImportRunner.class.getName());
     private final ShowcaseJobService service;
-    private final String csvPath;
+    private final String jsonPath;
 
     public ShowcaseJobImportRunner(ShowcaseJobService service,
-                                   @Value("${app.dataset.import-file}") String csvPath) {
+                                   @Value("${app.dataset.import-file:data/jobs.json}") String jsonPath) {
         this.service = service;
-        this.csvPath = csvPath;
+        this.jsonPath = jsonPath;
     }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        Path source = Path.of(csvPath);
-        if (!Files.isRegularFile(source) && Files.isRegularFile(Path.of("shrambazar", "data", "nepali_jobs.csv"))) {
-            source = Path.of("shrambazar", "data", "nepali_jobs.csv");
-        }
-        ClassPathResource bundledCsv = new ClassPathResource("data/nepali_jobs.csv");
-        if (!Files.isRegularFile(source) && !bundledCsv.exists()) {
-            log.warning("Showcase CSV not found at " + source.toAbsolutePath() + "; showcase jobs will be empty until SHOWCASE_JOBS_CSV is configured.");
+        Path source = Path.of(jsonPath);
+        ClassPathResource bundledJson = new ClassPathResource("data/jobs.json");
+        if (!Files.isRegularFile(source) && !bundledJson.exists()) {
+            log.warning("Demo jobs JSON not found at " + source.toAbsolutePath() + "; imported showcase listings will be empty.");
             return;
         }
-        ShowcaseJobService.ImportResult result = Files.isRegularFile(source)
-                ? service.importCsv(source)
-                : service.importCsv(bundledCsv.getInputStream());
-        System.out.printf("Showcase CSV import: %d records read; %d inserted; %d duplicates skipped; %d non-employment records excluded; %d invalid records skipped.%n",
-                result.recordsRead(), result.inserted(), result.duplicatesSkipped(), result.nonEmploymentExcluded(), result.invalidSkipped());
+        ShowcaseJobService.ImportResult result;
+        try (InputStream input = Files.isRegularFile(source) ? Files.newInputStream(source) : bundledJson.getInputStream()) {
+            result = service.replaceWithDemoJson(input);
+        }
+        System.out.printf("Demo jobs import: %d records validated and replaced.%n", result.recordsRead());
     }
 }
