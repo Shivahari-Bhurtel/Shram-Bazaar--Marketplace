@@ -1,28 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" fill="none">
-  <defs>
-    <linearGradient id="bg" x1="100" y1="30" x2="1090" y2="580" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F4E8DA"/>
-      <stop offset="1" stop-color="#D9B99B"/>
-    </linearGradient>
-    <linearGradient id="crane" x1="350" y1="80" x2="875" y2="515" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#B76C35"/>
-      <stop offset="1" stop-color="#70442F"/>
-    </linearGradient>
-  </defs>
-  <path fill="url(#bg)" d="M0 0h1200v600H0z"/>
-  <circle cx="1010" cy="120" r="190" fill="#fff" fill-opacity=".22"/>
-  <path d="M0 470c190-60 322-25 490 6 204 39 438 37 710-48v172H0V470Z" fill="#8A5A3C" fill-opacity=".2"/>
-  <path d="M250 513h710" stroke="#4E342E" stroke-width="18" stroke-linecap="round"/>
-  <path d="M423 170h405l85 55H477l-54-55Z" fill="url(#crane)" stroke="#4E342E" stroke-width="14" stroke-linejoin="round"/>
-  <path d="M469 225v288m345-288v288M437 513h409" stroke="#4E342E" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="m474 244 340 243M812 244 476 487" stroke="#F2D8C3" stroke-opacity=".55" stroke-width="11"/>
-  <path d="M511 166V85h194v81" stroke="#4E342E" stroke-width="14" stroke-linejoin="round"/>
-  <path d="M579 166V104h57v62" fill="#D98C49" stroke="#4E342E" stroke-width="10"/>
-  <path d="M704 136h87l73 60" stroke="#4E342E" stroke-width="14" stroke-linecap="round"/>
-  <path d="M867 196v58c0 20 16 36 36 36s36-16 36-36" stroke="#4E342E" stroke-width="12" stroke-linecap="round"/>
-  <path d="M876 303h100v92H876z" fill="#D99557" stroke="#4E342E" stroke-width="12"/>
-  <path d="M892 326h68m-68 24h68m-68 24h68" stroke="#F7E7D6" stroke-width="8" stroke-linecap="round"/>
-  <path d="M112 487h176" stroke="#70442F" stroke-width="13" stroke-linecap="round"/>
-  <path d="M143 456h112v31H143z" fill="#A96B43"/>
-  <circle cx="171" cy="497" r="22" fill="#4E342E"/><circle cx="227" cy="497" r="22" fill="#4E342E"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" fill="none">
+  <rect width="1280" height="720" fill="#E9E8E5"/>
+  <path d="M0 693h1280" stroke="#D7D6D2" stroke-width="4"/>
+
+  <!-- Counterweight and rear boom -->
+  <path d="M84 174h249v43H101l-17-43Z" fill="#F7B900" stroke="#344258" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M98 184h229v15H111l-13-15Zm0 27h229v-14H111l-13 14Z" fill="#F7B900" stroke="#344258" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="137" cy="230" r="20" fill="#F7B900" stroke="#344258" stroke-width="8"/>
+  <circle cx="181" cy="230" r="20" fill="#F7B900" stroke="#344258" stroke-width="8"/>
+  <circle cx="225" cy="230" r="20" fill="#F7B900" stroke="#344258" stroke-width="8"/>
+  <path d="M227 168 385 34l33 10-151 130" stroke="#344258" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M258 174 385 34l23 6-98 134" fill="#F7B900" stroke="#344258" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- Tower mast -->
+  <path d="M337 232h45v488h-45z" fill="#F7B900" stroke="#344258" stroke-width="8"/>
+  <path d="M343 267h33m-33 65h33m-33 65h33m-33 65h33m-33 65h33m-33 65h33m-33 65h33" stroke="#344258" stroke-width="7"/>
+  <path d="m341 239 37 52-37 53 37 52-37 53 37 52-37 53 37 52-37 53 37 52" stroke="#344258" stroke-width="7" stroke-linejoin="round"/>
+  <path d="m379 239-37 52 37 53-37 52 37 53-37 52 37 53-37 52 37 53-37 52" stroke="#344258" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- Main cabin and operator window -->
+  <path d="M304 132 376 115l102 33v106H304V132Z" fill="#F7B900" stroke="#344258" stroke-width="9" stroke-linejoin="round"/>
+  <path d="m405 151 62 12v73l-62-9c-18-3-28-15-28-33v-8c0-20 10-32 28-35Z" fill="#20A5A4" stroke="#344258" stroke-width="8" stroke-linejoin="round"/>
+  <path d="m411 161 44 9v52l-44-7c-11-2-17-10-17-22v-7c0-14 6-23 17-25Z" fill="#A7E5D9"/>
+  <path d="M326 161h38m-38 15h38m-38 15h38m-38 15h38" stroke="#344258" stroke-width="6"/>
+  <path d="m376 117 13-83 29 1 37 115" fill="#F7B900" stroke="#344258" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="389" cy="39" r="17" fill="#F7B900" stroke="#344258" stroke-width="8"/>
+
+  <!-- Main boom with lattice -->
+  <path d="M470 149h575l36 55H470v-55Z" fill="#F7B900" stroke="#344258" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M482 161h556l19 30H482v-30Z" fill="#E9E8E5" stroke="#344258" stroke-width="6" stroke-linejoin="round"/>
+  <path d="m494 190 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 34-29m10 29 25-21" stroke="#344258" stroke-width="6"/>
+  <path d="m389 34 652 116" stroke="#344258" stroke-width="8" stroke-linecap="round"/>
+  <path d="M947 204h116v41H947z" fill="#F7B900" stroke="#344258" stroke-width="8"/>
+  <circle cx="975" cy="224" r="7" fill="#344258"/>
+  <circle cx="1037" cy="224" r="7" fill="#344258"/>
+
+  <!-- Hoist, hook and slings -->
+  <path d="m958 246 28 75m59-75-28 75" stroke="#344258" stroke-width="6"/>
+  <rect x="973" y="321" width="43" height="45" rx="18" fill="#F7B900" stroke="#344258" stroke-width="8"/>
+  <path d="M994 366v24c0 12 9 18 19 18" stroke="#344258" stroke-width="9" stroke-linecap="round"/>
+  <path d="M1012 408c-1 18-14 29-30 24-11-4-16-15-14-25" stroke="#344258" stroke-width="9" stroke-linecap="round"/>
+  <path d="m987 428-144 260m160-260 145 260" stroke="#344258" stroke-width="7"/>
+
+  <!-- Lifted structural block -->
+  <path d="M887 514h221v178H887z" fill="#1785C1"/>
+  <path d="M872 505h250v27H872z" fill="#1478B0"/>
+  <path d="M977 505h35v187h-35z" fill="#123F62"/>
+  <path d="m912 505 48 45 47-45" stroke="#123F62" stroke-width="17" stroke-linejoin="round"/>
+  <path d="M840 693h314" stroke="#344258" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Small highlight marks -->
+  <path d="m854 578-13 13m28 9 11 13m-27-37-6-18m308-21 15-15m-2 36 20 1m-38-26 1-19" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
 </svg>
