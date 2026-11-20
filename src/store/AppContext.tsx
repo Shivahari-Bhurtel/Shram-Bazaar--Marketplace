@@ -418,6 +418,7 @@ const adminOnly: Page[] = ["admin-dashboard"]
 const publicOnly: Page[] = [
   "landing",
   "login",
+  "register-choice",
   "worker-signup",
   "provider-signup",
   "job-discovery",

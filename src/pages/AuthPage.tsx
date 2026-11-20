@@ -55,10 +55,10 @@ export default function AuthPage({ mode }: Props) {
           <p className="mt-2 text-sm text-stone-600">Choose how you want to use Shram Bazzar.</p>
           <div className="mt-7 grid gap-4 sm:grid-cols-2">
             <button type="button" onClick={() => navigate("worker-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
-              <span className="block text-lg font-bold text-stone-900">I’m looking for work</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Create a worker profile, find suitable jobs, and manage applications.</span>
+              <span className="block text-lg font-bold text-stone-900">Job Worker</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Create a worker profile, find suitable jobs, and manage applications.</span>
             </button>
             <button type="button" onClick={() => navigate("provider-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
-              <span className="block text-lg font-bold text-stone-900">I want to hire</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Register as a provider and find workers for your jobs.</span>
+              <span className="block text-lg font-bold text-stone-900">Job Provider</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Create a provider account to post jobs and find workers.</span>
             </button>
           </div>
           <p className="mt-7 text-center text-sm text-stone-600">Already have an account? <button type="button" onClick={() => navigate("login")} className="font-semibold text-primary-ink hover:underline">Sign in</button></p>
@@ -272,12 +272,14 @@ export default function AuthPage({ mode }: Props) {
             {isLogin && (
               <div className="mb-8 flex rounded-xl bg-stone-100 p-1">
                 <button
+                  type="button"
                   onClick={() => navigate("login")}
                   className="flex-1 rounded-lg bg-white py-2.5 text-sm font-medium text-stone-900 shadow-sm transition-colors"
                 >
                   Sign In
                 </button>
                 <button
+                  type="button"
                   onClick={() => navigate("register-choice")}
                   className="flex-1 rounded-lg py-2.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
                 >
@@ -741,26 +743,7 @@ export default function AuthPage({ mode }: Props) {
             )}
 
             {/* Footer links */}
-            {isLogin ? (
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-stone-600">
-                <span>Don’t have an account?</span>
-                <button
-                  onClick={() => navigate("register-choice")}
-                  className="font-semibold text-[#5A2A27] hover:underline"
-                >
-                  Register as Worker
-                </button>
-                <span aria-hidden="true" className="text-stone-400">
-                  ·
-                </span>
-                <button
-                  onClick={() => navigate("provider-signup")}
-                  className="font-semibold text-[#5A2A27] hover:underline"
-                >
-                  Register as Provider
-                </button>
-              </div>
-            ) : (
+            {!isLogin && (
               <div className="mt-6 text-center">
                 <p className="text-[13px] text-stone-600">
                   Already have an account?{" "}
@@ -771,29 +754,6 @@ export default function AuthPage({ mode }: Props) {
                     Sign in
                   </button>
                 </p>
-                <div className="mt-4 border-t border-stone-200 pt-4">
-                  {isWorker ? (
-                    <p className="text-sm text-stone-600">
-                      Looking to hire?{" "}
-                      <button
-                        onClick={() => navigate("provider-signup")}
-                        className="ml-1 font-semibold text-[#5A2A27] underline-offset-4 hover:underline"
-                      >
-                        Register as a provider
-                      </button>
-                    </p>
-                  ) : (
-                    <p className="text-sm text-stone-600">
-                      Looking for work?{" "}
-                      <button
-                        onClick={() => navigate("worker-signup")}
-                        className="ml-1 font-semibold text-[#5A2A27] underline-offset-4 hover:underline"
-                      >
-                        Register as a worker
-                      </button>
-                    </p>
-                  )}
-                </div>
               </div>
             )}
           </div>
