@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "1.0",
+  "course": {
+    "id": "carpentry-and-woodworking-basics",
+    "title": "Carpentry & Woodworking Basics",
+    "category": "Carpentry",
+    "level": "Beginner",
+    "language": "English",
+    "isFree": true,
+    "provider": "Shram Bazaar Learning",
+    "contentSource": "Curated YouTube videos",
+    "description": "A beginner-oriented video learning collection for carpentry and woodworking. The five lessons are curated from supplied YouTube links; specific lesson titles, descriptions, and outcomes should be verified against each video before publishing.",
+    "learningOutcomes": [
+      "Become familiar with carpentry and woodworking topics presented in the selected videos.",
+      "Recognize common woodworking tools and materials as covered by the lessons.",
+      "Develop awareness of measuring, shaping, joining, and finishing concepts where demonstrated.",
+      "Understand the importance of workshop safety and appropriate supervision."
+    ],
+    "skills": [
+      "Carpentry awareness",
+      "Woodworking fundamentals",
+      "Tool and material awareness",
+      "Workshop safety awareness"
+    ],
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Carpentry & Woodworking — Lesson 1",
+        "description": "Curated lesson 1 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+        "lessons": [
+          {
+            "id": "lesson-1",
+            "title": "Carpentry & Woodworking — Video 1",
+            "youtubeUrl": "https://youtu.be/Nu-WaqEg4vQ",
+            "videoId": "Nu-WaqEg4vQ",
+            "embedUrl": "https://www.youtube.com/embed/Nu-WaqEg4vQ",
+            "thumbnailUrl": "https://img.youtube.com/vi/Nu-WaqEg4vQ/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Curated lesson 1 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+            "learningObjectives": [
+              "Review the video and identify the carpentry or woodworking technique demonstrated.",
+              "Recognize tools, materials, and safety considerations relevant to the topic after viewing."
+            ],
+            "order": 1,
+            "metadataStatus": "needs_video_content_confirmation"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Carpentry & Woodworking — Lesson 2",
+        "description": "Curated lesson 2 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+        "lessons": [
+          {
+            "id": "lesson-2",
+            "title": "Carpentry & Woodworking — Video 2",
+            "youtubeUrl": "https://youtu.be/y3AxkIb4srQ",
+            "videoId": "y3AxkIb4srQ",
+            "embedUrl": "https://www.youtube.com/embed/y3AxkIb4srQ",
+            "thumbnailUrl": "https://img.youtube.com/vi/y3AxkIb4srQ/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Curated lesson 2 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+            "learningObjectives": [
+              "Review the video and identify the carpentry or woodworking technique demonstrated.",
+              "Recognize tools, materials, and safety considerations relevant to the topic after viewing."
+            ],
+            "order": 2,
+            "metadataStatus": "needs_video_content_confirmation"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Carpentry & Woodworking — Lesson 3",
+        "description": "Curated lesson 3 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+        "lessons": [
+          {
+            "id": "lesson-3",
+            "title": "Carpentry & Woodworking — Video 3",
+            "youtubeUrl": "https://youtu.be/fH2h-2CpbPU",
+            "videoId": "fH2h-2CpbPU",
+            "embedUrl": "https://www.youtube.com/embed/fH2h-2CpbPU",
+            "thumbnailUrl": "https://img.youtube.com/vi/fH2h-2CpbPU/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Curated lesson 3 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+            "learningObjectives": [
+              "Review the video and identify the carpentry or woodworking technique demonstrated.",
+              "Recognize tools, materials, and safety considerations relevant to the topic after viewing."
+            ],
+            "order": 3,
+            "metadataStatus": "needs_video_content_confirmation"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Carpentry & Woodworking — Lesson 4",
+        "description": "Curated lesson 4 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+        "lessons": [
+          {
+            "id": "lesson-4",
+            "title": "Carpentry & Woodworking — Video 4",
+            "youtubeUrl": "https://youtu.be/utZiDSViXG0",
+            "videoId": "utZiDSViXG0",
+            "embedUrl": "https://www.youtube.com/embed/utZiDSViXG0",
+            "thumbnailUrl": "https://img.youtube.com/vi/utZiDSViXG0/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Curated lesson 4 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+            "learningObjectives": [
+              "Review the video and identify the carpentry or woodworking technique demonstrated.",
+              "Recognize tools, materials, and safety considerations relevant to the topic after viewing."
+            ],
+            "order": 4,
+            "metadataStatus": "needs_video_content_confirmation"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Carpentry & Woodworking — Lesson 5",
+        "description": "Curated lesson 5 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+        "lessons": [
+          {
+            "id": "lesson-5",
+            "title": "Carpentry & Woodworking — Video 5",
+            "youtubeUrl": "https://youtu.be/1Xiu8nus4CE",
+            "videoId": "1Xiu8nus4CE",
+            "embedUrl": "https://www.youtube.com/embed/1Xiu8nus4CE",
+            "thumbnailUrl": "https://img.youtube.com/vi/1Xiu8nus4CE/hqdefault.jpg",
+            "durationMinutes": null,
+            "description": "Curated lesson 5 in the beginner carpentry and woodworking course. Exact video subject could not be independently verified; review the video and replace this description with its specific topic before publishing.",
+            "learningObjectives": [
+              "Review the video and identify the carpentry or woodworking technique demonstrated.",
+              "Recognize tools, materials, and safety considerations relevant to the topic after viewing."
+            ],
+            "order": 5,
+            "metadataStatus": "needs_video_content_confirmation"
+          }
+        ]
+      }
+    ],
+    "totalLessons": 5,
+    "completion": {
+      "requiresAllLessons": true,
+      "requiresQuiz": true,
+      "passingScorePercent": 70,
+      "certificate": {
+        "enabled": true,
+        "type": "certificate-of-completion",
+        "issuer": "Shram Bazaar AI",
+        "disclaimer": "This certificate confirms completion of introductory online learning only. It is not a trade license or professional qualification."
+      }
+    },
+    "safetyNotice": "Woodworking can involve sharp tools, rotating machinery, dust, noise, and kickback. Use appropriate PPE, follow tool manuals, and practice only with proper training and qualified supervision.",
+    "metadataNotes": [
+      "Video IDs and links were taken from the URLs supplied.",
+      "Exact YouTube metadata for all five videos could not be reliably retrieved during this session. Titles, descriptions, durations, and learning outcomes are intentionally generic and flagged for verification rather than fabricated.",
+      "Update each lesson title and description after reviewing the corresponding video."
+    ]
+  }
+}
