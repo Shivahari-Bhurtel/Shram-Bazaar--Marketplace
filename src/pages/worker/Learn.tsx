@@ -241,7 +241,7 @@ export default function Learn() {
       {storageWarning && <div role="status" className="mx-auto mt-4 max-w-[1480px] px-4 sm:px-6 lg:px-8"><p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{storageWarning}</p></div>}
 
       <div className="mx-auto grid max-w-[1480px] lg:grid-cols-[minmax(190px,19%)_minmax(0,1fr)]">
-        {view === "dashboard" && <aside aria-label="Main navigation" className="hidden min-h-screen border-r border-[#D7BFA4] bg-[#E9D6BC] pb-8 pt-2 lg:block">
+        {view === "dashboard" && <aside aria-label="Main navigation" className="sticky top-16 hidden h-[calc(100vh-4rem)] self-start overflow-y-auto border-r border-[#D7BFA4] bg-[#E9D6BC] pb-8 pt-2 lg:block">
           <nav>
             <LearnSidebarItem label="Home" icon="home" active onClick={() => navigate("worker-dashboard")} />
             <LearnSidebarItem label="My Career Journey" icon="journey" onClick={() => setSection("my-learning")} />
