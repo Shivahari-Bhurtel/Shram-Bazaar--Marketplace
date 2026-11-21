@@ -3,6 +3,7 @@ package com.shrambazar.dto.job;
 
 import com.shrambazar.enums.JobPostStatus;
 import com.shrambazar.enums.PaymentMethod;
+import com.shrambazar.enums.PaymentPeriod;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,12 +37,17 @@ public record JobPostResponse(
         String durationDescription,
 
         BigDecimal paymentAmount,
+        BigDecimal paymentMaxAmount,
+        boolean budgetNegotiable,
+        PaymentPeriod paymentPeriod,
         PaymentMethod paymentMethod,
 
         Integer requiredExperienceMonths,
         Integer numberOfWorkersRequired,
 
         List<String> requiredSkills,
+
+        long applicationCount,
 
         JobPostStatus status,
         LocalDateTime createdAt,

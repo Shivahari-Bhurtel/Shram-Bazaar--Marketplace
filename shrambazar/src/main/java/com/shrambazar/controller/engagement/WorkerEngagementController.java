@@ -35,6 +35,14 @@ public class WorkerEngagementController {
                 ));
     }
 
+    @PostMapping("/provider/jobs/{jobId}/workers/{seekerUserId}/request")
+    public ResponseEntity<WorkerEngagementResponse> requestWorker(
+            @PathVariable Long jobId,
+            @PathVariable Long seekerUserId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(engagementService.requestWorker(jobId, seekerUserId));
+    }
+
     // Seeker views engagements
     @GetMapping("/seeker/engagements")
     public ResponseEntity<List<WorkerEngagementResponse>> getMyEngagements() {

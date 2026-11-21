@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useApp } from "../store/AppContext"
 import type { Job } from "../types"
 import { formatNepalDate } from "../utils/dates"
+import { formatJobBudget } from "../utils/jobBudget"
 
 const categoryConfig = {
   qualified: { label: "Qualified / Professional" },
@@ -222,10 +223,7 @@ export default function JobCard({ job, compact = false }: Props) {
               job.salaryText || "Salary not listed"
             ) : (
               <>
-                NPR {job.payment.toLocaleString()}
-                <span className="font-normal text-stone-500">
-                  /{job.paymentType.replace("per-", "")}
-                </span>
+                {formatJobBudget(job)}
               </>
             )}
           </span>

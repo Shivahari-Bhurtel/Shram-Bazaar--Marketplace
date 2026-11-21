@@ -87,7 +87,14 @@ export default function AIWorkspace() {
     () => state.jobs.filter((job) => job.providerId === provider?.id),
     [state.jobs, provider?.id],
   )
-  const [tool, setTool] = useState<ToolId>(isWorker ? "profile" : "hiring")
+  const [tool, setTool] = useState<ToolId>(() => {
+    try {
+      const initialTool = sessionStorage.getItem("shram-ai-initial-tool")
+      sessionStorage.removeItem("shram-ai-initial-tool")
+      if (isWorker && initialTool === "career") return "career"
+    } catch { /* Use the default AI workspace tool. */ }
+    return isWorker ? "profile" : "hiring"
+  })
   const [goal, setGoal] = useState("")
   const [selectedJobId, setSelectedJobId] = useState(ownJobs[0]?.id || "new")
   const [draftTitle, setDraftTitle] = useState("")
@@ -223,6 +230,10 @@ export default function AIWorkspace() {
           <ShramAIRobotAnimation />
           <div className="ai-workspace-actions">
             <button type="button" onClick={() => navigate("chat")} className="ai-primary-action">Open AI chat</button>
+            {isWorker && <button type="button" onClick={() => {
+              try { sessionStorage.setItem("voice-assistant-return-page", state.currentPage) } catch { /* Voice navigation still works without session storage. */ }
+              navigate("voice-assistant")
+            }} className="ai-secondary-action">Open Voice Assistant</button>}
           </div>
         </div>
       </header>

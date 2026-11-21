@@ -42,7 +42,7 @@ import {
   type BackendAuth,
 } from "../services/backendApi"
 
-export type Page = "landing" | "login" | "register-choice" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "learn" | "settings" | "kyc-verification" | "provider-dashboard" | "provider-profile" | "provider-operations" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "admin-dashboard" | "chat" | "shram-ai" | "voice-assistant"
+export type Page = "landing" | "login" | "register-choice" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "worker-availability" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "learn" | "settings" | "kyc-verification" | "worker-help" | "provider-dashboard" | "provider-profile" | "provider-operations" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "admin-dashboard" | "chat" | "shram-ai" | "voice-assistant"
 
 type Credentials = { userId: string; password: string }
 type SavedJob = { workerId: string; jobId: string; snapshot?: Job }
@@ -150,6 +150,7 @@ const backendNotificationType = (type?: string): Notification["type"] => {
 const blankProviderLogo =
   "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200&h=200&fit=crop&auto=format"
 const backendMode = import.meta.env.VITE_DEMO_MODE !== "true"
+const localAvailabilityMode = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname)
 
 function loadData(): PersistedData {
   try {
@@ -400,10 +401,12 @@ function withMatches(jobs: Job[], worker: WorkerProfile | null) {
 const workerOnly: Page[] = [
   "worker-dashboard",
   "worker-profile",
+  "worker-availability",
   "my-applications",
   "saved-jobs",
   "learn",
   "kyc-verification",
+  "worker-help",
 ]
 const providerOnly: Page[] = [
   "provider-dashboard",
@@ -435,7 +438,7 @@ interface AppContextValue {
   loginAsProvider: () => void
   loginAsAdmin: () => void
   logout: () => void
-  applyToJob: (jobId: string) => Promise<void>
+  applyToJob: (jobId: string, offer?: { offeredAmount: number; message: string; estimatedDurationHours: number; proposedStartAt?: string }) => Promise<void>
   saveJob: (jobId: string) => void
   unsaveJob: (jobId: string) => void
   updateApplicationStatus: (
@@ -443,6 +446,8 @@ interface AppContextValue {
     status: ApplicationStatus,
     note?: string,
   ) => void
+  withdrawApplication: (applicationId: string) => Promise<string | null>
+  requestWorkerForJob: (jobId: string, worker: WorkerProfile) => Promise<string | null>
   respondToSelection: (applicationId: string, accept: boolean) => void
   updateEngagementWork: (applicationId: string, action: "start" | "confirm-completion") => void
   postJob: (
@@ -453,6 +458,7 @@ interface AppContextValue {
   markNotificationRead: (id: string) => Promise<void>
   markAllNotificationsRead: () => Promise<void>
   updateWorkerProfile: (updates: Partial<WorkerProfile>) => void
+  removeWorkerAvailability: (availabilityId: string) => Promise<void>
   notifyProfileUpdated: (message: string) => void
   updateProviderProfile: (updates: Partial<ProviderProfile>) => void
   submitProviderVerification: (fileName: string, fileData: string, backFileName?: string, backFileData?: string, identityDocumentType?: "national-id" | "citizenship", businessDocumentType?: "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE") => Promise<string | null>
@@ -650,7 +656,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const verificationFront = verificationRequest?.documents?.find((item) => item.documentType === "NID_FRONT" || item.documentType === "CITIZENSHIP_FRONT" || item.documentType === "BUSINESS_REGISTRATION" || item.documentType === "PAN_CERTIFICATE")
           const verificationBack = verificationRequest?.documents?.find((item) => item.documentType === "NID_BACK" || item.documentType === "CITIZENSHIP_BACK")
           const applicantLists = await Promise.all(mappedOwnJobs.map(async (job) => {
-            const applicants = await apiRequest<Array<{ applicationId: number; seekerUserId: number; seekerName: string; profilePictureUrl?: string; phoneNumber?: string; email?: string; bio?: string; address?: string; preferredTravelDistanceKm?: number; skills?: string[]; qualifications?: Array<{ id: number; qualificationName: string; institution?: string; fieldOfStudy?: string; credentialType?: string; startDate?: string; endDate?: string; currentlyStudying: boolean }>; workExperience?: Array<{ id: number; jobTitle: string; organizationName?: string; description?: string; startDate?: string; endDate?: string; currentlyWorking: boolean }>; availability?: Array<{ id: number; dayOfWeek?: string; startDate: string; endDate?: string; startTime: string; endTime: string; active: boolean }>; completedJobHistory?: Array<{ jobPostId: number; jobTitle: string; providerName?: string; jobDescription: string; location: string; startDate: string; endDate: string; completedAt: string; rating?: number; review?: string; reviewedAt?: string }>; verified: boolean; averageRating?: number; reviewCount: number; status: string; appliedAt: string }>>(`/api/provider/jobs/${job.id}/applications`)
+            const applicants = await apiRequest<Array<{ applicationId: number; seekerUserId: number; seekerName: string; profilePictureUrl?: string; phoneNumber?: string; email?: string; bio?: string; address?: string; preferredTravelDistanceKm?: number; skills?: string[]; qualifications?: Array<{ id: number; qualificationName: string; institution?: string; fieldOfStudy?: string; credentialType?: string; startDate?: string; endDate?: string; currentlyStudying: boolean }>; workExperience?: Array<{ id: number; jobTitle: string; organizationName?: string; description?: string; startDate?: string; endDate?: string; currentlyWorking: boolean }>; availability?: Array<{ id: number; dayOfWeek?: string; startDate: string; endDate?: string; startTime: string; endTime: string; active: boolean }>; completedJobHistory?: Array<{ jobPostId: number; jobTitle: string; providerName?: string; jobDescription: string; location: string; startDate: string; endDate: string; completedAt: string; rating?: number; review?: string; reviewedAt?: string }>; verified: boolean; averageRating?: number; reviewCount: number; status: string; appliedAt: string; offeredAmount?: number; offerMessage?: string; estimatedDurationHours?: number; proposedStartAt?: string }>>(`/api/provider/jobs/${job.id}/applications`)
             return applicants.map((app): Application => ({
               id: String(app.applicationId),
               jobId: job.id,
@@ -669,7 +675,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
               providerName: job.providerName,
               providerId: currentUser.id,
               appliedDate: (app.appliedAt || "").slice(0, 10),
-              status: app.status === "SELECTED" ? "accepted" as const : app.status === "NOT_SELECTED" || app.status === "CANCELLED" ? "rejected" as const : "pending" as const,
+              offeredAmount: app.offeredAmount == null ? undefined : Number(app.offeredAmount),
+              offerMessage: app.offerMessage,
+              estimatedDurationHours: app.estimatedDurationHours,
+              proposedStartAt: app.proposedStartAt,
+              status: app.status === "SELECTED" ? "accepted" as const : app.status === "WITHDRAWN" ? "withdrawn" as const : app.status === "NOT_SELECTED" || app.status === "CANCELLED" ? "rejected" as const : "pending" as const,
             }))
           }))
           const applicantRecords = new Map(applicantLists.flatMap((applications) => applications.map((application) => [application.workerId, application.applicantProfile] as const)))
@@ -696,7 +706,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const review = engagement && reviews.find((item) => item.engagementId === engagement.engagementId)
             return engagement ? {
               ...application,
-              status: engagement.status === "DECLINED" ? "declined" as const : application.status,
+              status: engagement.status === "DECLINED" || engagement.status === "CANCELLED" ? "declined" as const : application.status,
               engagementId: String(engagement.engagementId),
               engagementStatus: engagement.status,
               providerCompletionConfirmed: engagement.providerCompletionConfirmed,
@@ -752,7 +762,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             apiRequest<Array<{ engagementId: number; applicationId: number; status: string; providerCompletionConfirmed: boolean; seekerCompletionConfirmed: boolean }>>("/api/seeker/engagements"),
             apiRequest<Array<{ engagementId: number; direction: string; rating: number; comment?: string; createdAt: string }>>("/api/reviews/me"),
             apiRequest<Array<{ type: string; status: string; reviewNote?: string; submittedAt?: string; reviewedAt?: string; documents?: Array<{ documentType: string; originalFileName: string }> }>>("/api/verifications/me"),
-            apiRequest<Array<{ id: number; dayOfWeek?: string | null; startDate: string; endDate?: string; startTime: string; endTime: string; active: boolean }>>("/api/seeker/availability"),
+            apiRequest<Array<{ id: number; serviceListingId?: number | null; serviceTitle?: string | null; dayOfWeek?: string | null; startDate: string; endDate?: string; startTime: string; endTime: string; active: boolean }>>("/api/seeker/availability"),
             apiRequest<Array<{ id: number; qualificationName: string; institution?: string; fieldOfStudy?: string; credentialType?: string; startDate: string; endDate?: string; currentlyStudying: boolean }>>("/api/seeker/qualifications"),
             apiRequest<Array<{ id: number; jobTitle: string; organizationName?: string; description?: string; startDate: string; endDate?: string; currentlyWorking: boolean }>>("/api/seeker/experience"),
             apiRequest<Record<string, unknown>>("/api/seeker/profile"),
@@ -797,6 +807,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               preferredCategories: serverProfile.preferredCategories,
             bio: serverProfile.bio,
             verified: serverProfile.verified,
+            acceptingWork: serverProfile.acceptingWork,
             rating: Number(seekerRatingSummary.averageRating) || 0,
             totalJobs: jobHistoryRecords.length,
             workHistory: jobHistoryRecords.map((item) => ({ jobId: String(item.jobPostId), jobTitle: item.jobTitle, providerName: item.providerName || "Provider", date: item.completedAt?.slice(0, 10) || item.endDate, rating: item.rating || 0, review: item.review || "", description: item.jobDescription, location: item.location, startDate: item.startDate, endDate: item.endDate, completedAt: item.completedAt, reviewedAt: item.reviewedAt })),
@@ -829,6 +840,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 endDate: item.dayOfWeek ? undefined : item.endDate,
                 startTime: item.startTime.slice(0, 5),
                 endTime: item.endTime.slice(0, 5),
+                serviceListingId: item.serviceListingId == null ? undefined : String(item.serviceListingId),
               }
             }),
             availableDates: [...new Set([
@@ -994,7 +1006,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               if (!engagement) return application
               return {
                 ...application,
-                status: engagement.status === "DECLINED" ? "declined" as const : "accepted" as const,
+                status: engagement.status === "DECLINED" || engagement.status === "CANCELLED" ? "declined" as const : "accepted" as const,
                 engagementId: String(engagement.engagementId),
                 engagementStatus: engagement.status,
                 providerCompletionConfirmed: engagement.providerCompletionConfirmed,
@@ -1070,6 +1082,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const activate = (user: User) => {
+    // Local/demo sessions must not inherit a previous backend token from another account.
+    setBackendAuth(null)
     setSessionId(user.id)
     setCurrentPage(
       user.role === "worker"
@@ -1468,7 +1482,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activate(admin)
   }
 
-  const applyToJob = async (jobId: string) => {
+  const applyToJob = async (jobId: string, offer?: { offeredAmount: number; message: string; estimatedDurationHours: number; proposedStartAt?: string }) => {
     if (
       !currentUser ||
       !workerProfile ||
@@ -1482,10 +1496,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       (item) => item.id === jobId && item.status === "active",
     )
     if (!job) return
+    if (workerProfile.acceptingWork === false) throw new Error("Pause is on. Turn accepting work back on before submitting offers.")
     if (backendMode) {
       if (!/^\d+$/.test(jobId)) return
       const saved = await apiRequest<ApiApplication>(`/api/jobs/${jobId}/applications`, {
         method: "POST",
+        ...(offer ? { body: JSON.stringify({ ...offer, offerMessage: undefined, message: offer.message }) } : {}),
       })
       const application = {
         ...mapApiApplication(saved, currentUser, workerProfile),
@@ -1512,6 +1528,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         providerId: job.providerId,
         appliedDate: today(),
         status: "pending",
+        ...(offer ? { offeredAmount: offer.offeredAmount, offerMessage: offer.message, estimatedDurationHours: offer.estimatedDurationHours, proposedStartAt: offer.proposedStartAt } : {}),
       }
       draft.applications.push(application)
       draft.jobs = draft.jobs.map((item) =>
@@ -1665,6 +1682,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const withdrawApplication = async (applicationId: string) => {
+    const application = data.applications.find((item) => item.id === applicationId)
+    if (!workerProfile || !application || application.workerId !== workerProfile.id) return "This application is not available to your worker account."
+    if (application.status !== "pending") return "Only pending offers can be withdrawn."
+    if (backendMode) {
+      if (!/^\d+$/.test(applicationId)) return "This offer is missing its server ID."
+      try {
+        await apiRequest<void>(`/api/seeker/applications/${applicationId}/withdraw`, { method: "POST" })
+      } catch (error) {
+        return error instanceof Error ? error.message : "Unable to withdraw this offer."
+      }
+    }
+    setData((old) => ({
+      ...old,
+      applications: old.applications.map((item) => item.id === applicationId ? { ...item, status: "withdrawn" } : item),
+    }))
+    return null
+  }
+
+  const requestWorkerForJob = async (jobId: string, worker: WorkerProfile) => {
+    if (!providerProfile || !currentUser || currentUser.role !== "provider") return "Sign in with a provider account to request a worker."
+    const job = data.jobs.find((item) => item.id === jobId && item.providerId === providerProfile.id)
+    if (!job || job.status !== "active") return "Choose one of your open tasks first."
+    if (worker.acceptingWork === false) return "This worker is not accepting new requests."
+    if (data.applications.some((item) => item.jobId === jobId && item.workerId === worker.id && ["pending", "accepted"].includes(item.status))) return "This worker already has an application or request for this task."
+    if (backendMode) {
+      if (!/^\d+$/.test(jobId) || !/^\d+$/.test(worker.id)) return "This task or worker is missing a server ID."
+      try {
+        const result = await apiRequest<{ engagementId: number; applicationId: number; status: string }>(`/api/provider/jobs/${jobId}/workers/${worker.id}/request`, { method: "POST" })
+        const application: Application = {
+          id: String(result.applicationId), jobId, workerId: worker.id, workerName: worker.name, workerPhone: worker.phone, workerEmail: worker.email,
+          workerPhoto: worker.photo, workerLocation: worker.location, workerSkills: worker.skills, workerRating: worker.rating, workerTotalJobs: worker.totalJobs,
+          workerVerified: worker.verified, jobTitle: job.title, providerName: providerProfile.orgName, providerId: providerProfile.id,
+          appliedDate: today(), status: "accepted", engagementId: String(result.engagementId), engagementStatus: result.status,
+        }
+        setData((old) => ({ ...old, applications: [...old.applications.filter((item) => item.id !== application.id), application] }))
+        return null
+      } catch (error) { return error instanceof Error ? error.message : "Could not request this worker." }
+    }
+    const application: Application = {
+      id: id("app"), jobId, workerId: worker.id, workerName: worker.name, workerPhone: worker.phone, workerEmail: worker.email,
+      workerPhoto: worker.photo, workerLocation: worker.location, workerSkills: worker.skills, workerRating: worker.rating, workerTotalJobs: worker.totalJobs,
+      workerVerified: worker.verified, jobTitle: job.title, providerName: providerProfile.orgName, providerId: providerProfile.id,
+      appliedDate: today(), status: "accepted", engagementId: id("engagement"), engagementStatus: "AWAITING_RESPONSE",
+    }
+    setData((old) => {
+      const draft = structuredClone(old)
+      draft.applications.push(application)
+      const recipient = draft.users.find((user) => user.profileId === worker.id)
+      if (recipient) addNotification(draft, { userId: recipient.id, type: "selection", title: "A provider requested you", message: `${providerProfile.orgName} invited you to confirm “${job.title}”. Review the job date and respond.`, jobId, applicationId: application.id, engagementId: application.engagementId })
+      return draft
+    })
+    return null
+  }
+
   const respondToSelection = (applicationId: string, accept: boolean) => {
     const application = data.applications.find((item) => item.id === applicationId)
     if (!backendMode || !application?.engagementId) return
@@ -1726,7 +1798,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           startTime: `${job.startTime}:00`,
           endTime: `${job.endTime}:00`,
           durationDescription: job.duration,
-          paymentAmount: job.payment,
+          paymentAmount: job.budgetNegotiable ? null : job.payment,
+          paymentMaxAmount: job.paymentMax,
+          budgetNegotiable: job.budgetNegotiable === true,
+          paymentPeriod: job.paymentType === "per-hour" ? "PER_HOUR" : job.paymentType === "fixed" ? "FIXED" : "PER_DAY",
           paymentMethod: job.paymentMethod || "CASH",
           requiredExperienceMonths: parseRequiredExperienceMonths(job.experienceRequired),
           numberOfWorkersRequired: job.workersNeeded,
@@ -1797,7 +1872,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             latitude: job.latitude, longitude: job.longitude,
             startDate: job.date, endDate: job.endDate || job.date,
             startTime: `${job.startTime}:00`, endTime: `${job.endTime}:00`,
-            durationDescription: job.duration, paymentAmount: job.payment,
+            durationDescription: job.duration, paymentAmount: job.budgetNegotiable ? null : job.payment,
+            paymentMaxAmount: job.paymentMax, budgetNegotiable: job.budgetNegotiable === true,
+            paymentPeriod: job.paymentType === "per-hour" ? "PER_HOUR" : job.paymentType === "fixed" ? "FIXED" : "PER_DAY",
             paymentMethod: job.paymentMethod || "CASH",
             requiredExperienceMonths: parseRequiredExperienceMonths(job.experienceRequired),
             numberOfWorkersRequired: job.workersNeeded, requiredSkillIds: skillIds,
@@ -2513,7 +2590,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!workerProfile) return
     if (backendMode) {
       const next = { ...workerProfile, ...updates }
-      if (updates.name !== undefined || updates.phone !== undefined || updates.dateOfBirth !== undefined || updates.address !== undefined || updates.location !== undefined || updates.district !== undefined || updates.bio !== undefined || updates.skills !== undefined || updates.preferredTravelDistanceKm !== undefined || updates.preferredCategories !== undefined || Object.prototype.hasOwnProperty.call(updates, "latitude") || Object.prototype.hasOwnProperty.call(updates, "longitude")) {
+      if (updates.name !== undefined || updates.phone !== undefined || updates.dateOfBirth !== undefined || updates.address !== undefined || updates.location !== undefined || updates.district !== undefined || updates.bio !== undefined || updates.skills !== undefined || updates.preferredTravelDistanceKm !== undefined || updates.preferredCategories !== undefined || updates.acceptingWork !== undefined || Object.prototype.hasOwnProperty.call(updates, "latitude") || Object.prototype.hasOwnProperty.call(updates, "longitude")) {
         void apiRequest<Record<string, unknown>>("/api/seeker/profile", {
           method: "PUT",
           body: JSON.stringify({
@@ -2526,6 +2603,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             latitude: next.latitude,
             longitude: next.longitude,
             preferredCategories: next.preferredCategories || [],
+            acceptingWork: next.acceptingWork ?? true,
           }),
         }).catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Unable to save the worker profile."))
       }
@@ -2587,23 +2665,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         })()
       }
-      if (updates.weeklyAvailability) {
+      if (updates.weeklyAvailability && !localAvailabilityMode) {
         void (async () => {
           const previous = workerProfile.weeklyAvailability ?? []
           const nextSlots = updates.weeklyAvailability ?? []
           const requestFor = (slot: AvailabilitySlot) => {
-            const endOfYear = new Date(`${today()}T12:00:00Z`)
-            endOfYear.setUTCDate(endOfYear.getUTCDate() + 365)
             return {
               dayOfWeek: slot.date ? null : slot.day.toUpperCase(),
               startDate: slot.date || today(),
-              endDate: slot.date ? slot.endDate || slot.date : endOfYear.toISOString().slice(0, 10),
+              endDate: slot.date ? slot.endDate || slot.date : null,
               startTime: `${slot.startTime}:00`,
               endTime: `${slot.endTime}:00`,
+              serviceListingId: slot.serviceListingId ? Number(slot.serviceListingId) : null,
             }
           }
           const sameSchedule = (a: AvailabilitySlot, b: AvailabilitySlot) =>
-            a.day === b.day && a.date === b.date && a.endDate === b.endDate && a.startTime === b.startTime && a.endTime === b.endTime
+            a.day === b.day && a.date === b.date && a.endDate === b.endDate && a.startTime === b.startTime && a.endTime === b.endTime && a.serviceListingId === b.serviceListingId
           try {
             for (const oldSlot of previous.filter((slot) => /^\d+$/.test(slot.id))) {
               const replacement = nextSlots.find((slot) => slot.id === oldSlot.id)
@@ -2683,6 +2760,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ),
       }
     })
+  }
+
+  const removeWorkerAvailability = async (availabilityId: string) => {
+    if (!workerProfile) throw new Error("Worker profile is unavailable.")
+    if (backendMode && !localAvailabilityMode && /^\d+$/.test(availabilityId)) {
+      await apiRequest<void>(`/api/seeker/availability/${availabilityId}`, { method: "DELETE" })
+    }
+    setData((old) => ({
+      ...old,
+      workerProfiles: old.workerProfiles.map((profile) => profile.id === workerProfile.id ? {
+        ...profile,
+        weeklyAvailability: (profile.weeklyAvailability || []).filter((slot) => slot.id !== availabilityId),
+        availableDates: (profile.weeklyAvailability || []).filter((slot) => slot.id !== availabilityId && slot.date).map((slot) => slot.date!),
+      } : profile),
+    }))
   }
   const notifyProfileUpdated = (message: string) => {
     if (!currentUser || !workerProfile) return
@@ -2880,6 +2972,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       saveJob,
       unsaveJob,
       updateApplicationStatus,
+      withdrawApplication,
+      requestWorkerForJob,
       respondToSelection,
       updateEngagementWork,
       postJob,
@@ -2912,6 +3006,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }))
       },
       updateWorkerProfile,
+      removeWorkerAvailability,
       notifyProfileUpdated,
       updateProviderProfile,
       submitProviderVerification,

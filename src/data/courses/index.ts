@@ -57,6 +57,21 @@ const finalCourseFiles = import.meta.glob<FinalCourseSource>("./final/*.json", {
   eager: true,
   import: "default",
 })
+
+function getYouTubeVideoId(videoId?: string | null, youtubeUrl?: string | null) {
+  if (videoId && /^[A-Za-z0-9_-]{11}$/.test(videoId)) return videoId
+  if (!youtubeUrl) return undefined
+  try {
+    const url = new URL(youtubeUrl)
+    if (!["youtu.be", "www.youtu.be", "youtube.com", "www.youtube.com", "m.youtube.com", "youtube-nocookie.com", "www.youtube-nocookie.com"].includes(url.hostname)) return undefined
+    const pathId = url.pathname.match(/^\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/)?.[1]
+    const id = pathId || (url.pathname === "/watch" ? url.searchParams.get("v") : null)
+    return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : undefined
+  } catch {
+    return undefined
+  }
+}
+
 const coursesById = new Map(Object.values(mockCourseFiles).map((course) => [course.id, course]))
 for (const sourceFile of Object.values(finalCourseFiles)) {
   const source = sourceFile.course
@@ -85,14 +100,17 @@ for (const sourceFile of Object.values(finalCourseFiles)) {
       id: module.id,
       title: module.title,
       summary: module.description ?? module.summary ?? "",
-      lessons: module.lessons.map((lesson) => ({
-        id: lesson.id,
-        title: lesson.title,
-        description: lesson.description,
-        durationMinutes: lesson.durationMinutes,
-        videoId: lesson.videoId,
-        youtubeUrl: lesson.youtubeUrl,
-      })),
+      lessons: module.lessons.map((lesson) => {
+        const videoId = getYouTubeVideoId(lesson.videoId, lesson.youtubeUrl)
+        return {
+          id: lesson.id,
+          title: lesson.title,
+          description: lesson.description,
+          durationMinutes: lesson.durationMinutes,
+          videoId,
+          youtubeUrl: videoId ? `https://www.youtube.com/watch?v=${videoId}` : undefined,
+        }
+      }),
     })),
   }
   coursesById.set(existing.id, course)
@@ -101,5 +119,5 @@ for (const sourceFile of Object.values(finalCourseFiles)) {
 export const learningCourses = [...coursesById.values()]
 export const learningCategories = [...new Set(learningCourses.map((course) => course.category))]
 
-export type { CourseCategory, CourseLesson, CourseModule, CourseQuiz, CourseQuizQuestion, LearnCourse, LearningProgress } from "./courseTypes"
+export type { CertificateRecord, CourseCategory, CourseLesson, CourseModule, CourseQuiz, CourseQuizQuestion, LearnCourse, LearningProgress } from "./courseTypes"
 export { emptyLearningProgress, getCourseLessons, getCourseProgress } from "./courseTypes"

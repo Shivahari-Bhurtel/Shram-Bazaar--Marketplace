@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
+import { formatJobBudget } from "../../utils/jobBudget"
 import { useApp } from "../../store/AppContext"
 import JobCard from "../../components/JobCard"
 import DemoJobCard from "../../components/DemoJobCard"
@@ -8,7 +9,7 @@ import type { Job } from "../../types"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
 import { getRecentItJobs, getRecommendedItJobs, loadCachedItRecommendations, loadCachedRecentItJobs } from "../../services/himalayas"
 import { getRemoteItJobs, loadCachedRemoteItJobs } from "../../services/jsearch"
-import { distanceBetweenKm, filterDemoJobs, formatDemoSalary, loadDemoJobs, type DemoJob } from "../../services/demoJobs"
+import { distanceBetweenKm, formatDemoSalary, getBundledDemoJobs, loadDemoJobs, type DemoJob } from "../../services/demoJobs"
 
 function SidebarIcon({
   name,
@@ -85,14 +86,15 @@ function searchCachedItListings(jobs: Job[], query: string) {
     .map((job) => {
       const title = job.title.toLowerCase()
       const company = job.providerName.toLowerCase()
-      const details = `${job.description} ${job.location} ${job.externalCategory || ""} ${(job.externalCategories || []).join(" ")}`.toLowerCase()
+      const details = `${job.description} ${job.location} ${job.externalCategory || ""} ${(job.externalCategories || []).join(" ")} ${job.skillsRequired.join(" ")} ${job.qualificationRequired || ""} ${job.experienceRequired || ""} ${job.employmentType || ""} ${job.seniority || ""}`.toLowerCase()
+      const searchable = `${title} ${company} ${details}`
       const score = terms.reduce((total, term) => total
         + (title.includes(term) ? 4 : 0)
         + (company.includes(term) ? 2 : 0)
         + (details.includes(term) ? 1 : 0), 0)
-      return { job, score }
+      return { job, score, searchable }
     })
-    .filter((match) => match.score > 0)
+    .filter((match) => match.score > 0 && terms.every((term) => match.searchable.includes(term)))
     .sort((a, b) => b.score - a.score || (b.job.externalUpdatedAt || "").localeCompare(a.job.externalUpdatedAt || ""))
     .map(({ job }) => job)
 }
@@ -117,7 +119,7 @@ export default function WorkerDashboard() {
   const demoState = useDemoJobState(workerProfile?.id)
   const [search, setSearch] = useState("")
   const [submittedSearch, setSubmittedSearch] = useState("")
-  const [demoJobs, setDemoJobs] = useState<DemoJob[]>([])
+  const [demoJobs, setDemoJobs] = useState<DemoJob[]>(() => getBundledDemoJobs())
   const [showcaseItSearchJobs, setShowcaseItSearchJobs] = useState<Job[]>([])
   const [selectedDemoJob, setSelectedDemoJob] = useState<DemoJob | null>(null)
   const [exploreCategory, setExploreCategory] = useState("")
@@ -259,6 +261,7 @@ export default function WorkerDashboard() {
   const displayedItJobs = recommendedTab === "recent" ? recentItJobs : bestItJobs
   const displayedExternalLoading = recommendedTab === "recent" ? recentExternalLoading : recommendedExternalLoading
   const displayedExternalError = recommendedTab === "recent" ? recentExternalError : recommendedExternalError
+  const remoteSearchLoading = recommendedExternalLoading || remoteInitialLoading || recentExternalLoading
   const compareItJobs = (a: Job, b: Job) => recommendedTab !== "best"
     ? (b.externalUpdatedAt || b.postedDate).localeCompare(a.externalUpdatedAt || a.postedDate)
     : recommendedScore(b, workerProfile.skills) - recommendedScore(a, workerProfile.skills)
@@ -323,13 +326,14 @@ export default function WorkerDashboard() {
               className="pointer-events-none absolute inset-y-0 right-0 w-[36%] bg-[#42291B]/55 [clip-path:polygon(0_0,100%_0,100%_100%)]"
             />
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-              <div>
-                <h1 className="font-sans text-[1.8rem] font-semibold leading-tight tracking-[-0.035em] text-white sm:text-3xl lg:text-[2.65rem]">
+              <div className="min-w-0">
+                <p className="mb-2 font-ui text-[11px] font-bold uppercase tracking-[0.2em] text-[#E5C8AB]">Worker home</p>
+                <h1 className="font-heading text-[1.8rem] font-bold leading-tight tracking-[-0.035em] text-white sm:text-3xl lg:text-[2.65rem]">
                   {greeting()},{" "}
                   {firstName.charAt(0).toUpperCase() + firstName.slice(1)}
                 </h1>
-                <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#F0E5DA] sm:text-base lg:text-lg">
-                  Find work that fits your skills, experience, and availability.
+                <p className="mt-2 max-w-xl font-ui text-sm leading-relaxed text-[#F0E5DA] sm:text-base">
+                  Search remote IT opportunities from the connected job feeds.
                 </p>
               </div>
               <form
@@ -342,22 +346,22 @@ export default function WorkerDashboard() {
                 />
                 <input
                   type="search"
-                  aria-label="Search jobs by skill or role"
+                  aria-label="Search remote IT jobs from connected feeds by role, skill, or company"
                   value={search}
                   onChange={(event) => {
                     const value = event.target.value
                     setSearch(value)
                     if (!value.trim()) setSubmittedSearch("")
                   }}
-                  placeholder="Search IT jobs, skills, or companies..."
+                  placeholder="Search remote IT jobs, roles, skills, or companies..."
                   className="min-w-0 flex-1 border-0 bg-transparent px-1 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-400 sm:text-base"
                 />
               </form>
             </div>
           </header>
 
-          {submittedSearch && <section className="mb-8 scroll-mt-6 space-y-3" aria-live="polite" aria-label="IT job matches">
-            {showcaseItSearchJobs.length > 0 ? <div className="overflow-hidden rounded-xl border border-[#E8E2D5] bg-white"><h2 className="border-b border-stone-200 px-4 py-3 text-lg font-bold text-stone-900 sm:px-6">IT job matches</h2>{showcaseItSearchJobs.map((job) => <RecommendedJobRow key={job.id} job={job} />)}</div> : <div className="rounded-xl border border-stone-200 bg-white px-5 py-8 text-center"><p className="font-semibold text-stone-900">No matching IT jobs found</p><p className="mt-1 text-sm text-stone-500">Try another IT role, skill, or company.</p></div>}
+          {submittedSearch && <section className="mb-8 scroll-mt-6 space-y-4" aria-live="polite" aria-label="Remote IT job search results">
+            {showcaseItSearchJobs.length > 0 ? <div className="overflow-hidden rounded-xl border border-[#E8E2D5] bg-white"><h2 className="border-b border-stone-200 px-4 py-3 text-lg font-bold text-stone-900 sm:px-6">Remote IT job matches</h2>{showcaseItSearchJobs.map((job) => <RecommendedJobRow key={job.id} job={job} />)}</div> : remoteSearchLoading ? <p role="status" className="rounded-xl border border-stone-200 bg-white px-5 py-6 text-center text-sm text-stone-600">Loading remote IT listings to search…</p> : <div className="rounded-xl border border-stone-200 bg-white px-5 py-8 text-center"><p className="font-semibold text-stone-900">No matching remote IT jobs found</p><p className="mt-1 text-sm text-stone-500">Try another role, skill, or company from the available remote listings.</p></div>}
           </section>}
 
           <section className="mb-8">
@@ -794,7 +798,7 @@ function RecommendedJobRow({ job }: { job: Job }) {
               <span className="font-semibold text-stone-800">
                 {isExternal
                   ? job.salaryText || "Salary not listed"
-                  : `NPR ${job.payment.toLocaleString()} / ${job.paymentType.replace("per-", "")}`}
+                  : formatJobBudget(job)}
               </span>
             </div>
             {isExternal && job.externalUrl ? (

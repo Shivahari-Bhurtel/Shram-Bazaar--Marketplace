@@ -3,6 +3,7 @@ import { useApp } from "../store/AppContext"
 import NotificationPanel from "./NotificationPanel"
 import { LanguageSwitch } from "../i18n/LanguageContext"
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside"
+import type { Page } from "../store/AppContext"
 
 export default function Navbar() {
   const { state, navigate, logout, unreadNotificationsCount } = useApp()
@@ -28,6 +29,17 @@ export default function Navbar() {
     { label: "Discover Jobs", page: "job-discovery" as const },
     { label: "My Applications", page: "my-applications" as const },
     { label: "Saved Jobs", page: "saved-jobs" as const },
+  ]
+  const workerMobileGroups: { heading: string; items: { label: string; page: Page }[] }[] = [
+    { heading: "", items: [
+      { label: "Home", page: "worker-dashboard" }, { label: "Find Jobs", page: "job-discovery" }, { label: "Learn & Grow", page: "learn" }, { label: "Work Schedule", page: "worker-availability" },
+    ] },
+    { heading: "", items: [
+      { label: "Skills & Certificates", page: "worker-profile" }, { label: "My Applications", page: "my-applications" }, { label: "Saved Jobs", page: "saved-jobs" },
+    ] },
+    { heading: "", items: [
+      { label: "Shram AI Assistant", page: "shram-ai" }, { label: "Help & Support", page: "worker-help" },
+    ] },
   ]
 
   const providerLinks = [
@@ -237,7 +249,7 @@ export default function Navbar() {
                     onClick={() => setMobileOpen(!mobileOpen)}
                     aria-label={mobileOpen ? "Close menu" : "Open menu"}
                     aria-expanded={mobileOpen}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 lg:hidden"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -275,8 +287,14 @@ export default function Navbar() {
 
           {/* Mobile menu */}
           {currentUser && mobileOpen && (
-            <div ref={mobileMenuRef} className="md:hidden py-3 space-y-1">
-              {links.map((link) => (
+            <div ref={mobileMenuRef} className="lg:hidden max-h-[calc(100dvh-5rem)] overflow-y-auto py-3">
+              {isWorker ? workerMobileGroups.map((group) => <section key={group.items[0]?.label} className="mb-3 border-b border-stone-200 pb-2">
+                {group.heading && <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-[.12em] text-stone-500">{group.heading}</p>}
+                {group.items.map((link) => <button key={`${link.label}-${link.page}`} onClick={() => {
+                  navigate(link.page)
+                  setMobileOpen(false)
+                }} aria-current={currentPage === link.page ? "page" : undefined} className={`w-full rounded-lg border-l-2 px-3 py-2.5 text-left text-sm transition-colors ${currentPage === link.page ? "border-[#80502F] bg-[#F3E9DF] font-semibold text-[#4E342E]" : "border-transparent font-medium text-stone-700 hover:bg-stone-50"}`}>{link.label}</button>)}
+              </section>) : links.map((link) => (
                 <button
                   key={link.page}
                   onClick={() => {
@@ -284,11 +302,7 @@ export default function Navbar() {
                     setMobileOpen(false)
                   }}
                   aria-current={currentPage === link.page ? "page" : undefined}
-                  className={`w-full rounded-lg border-l-2 px-3 py-2.5 text-left text-sm transition-colors ${
-                    currentPage === link.page
-                      ? "border-primary-ink bg-primary-50/60 font-semibold text-primary-ink"
-                      : "border-transparent font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-950"
-                  }`}
+                  className={`w-full rounded-lg border-l-2 px-3 py-2.5 text-left text-sm transition-colors ${currentPage === link.page ? "border-primary-ink bg-primary-50/60 font-semibold text-primary-ink" : "border-transparent font-medium text-stone-600 hover:bg-stone-50 hover:text-stone-950"}`}
                 >
                   {link.label}
                 </button>

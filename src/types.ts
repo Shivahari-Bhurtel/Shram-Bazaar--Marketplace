@@ -1,7 +1,7 @@
 export type UserRole = "worker" | "provider" | "admin"
 export type JobCategory = string
 export type WorkType = "full-day" | "half-day" | "hourly" | "multi-day"
-export type ApplicationStatus = "pending" | "accepted" | "rejected" | "declined"
+export type ApplicationStatus = "pending" | "accepted" | "rejected" | "declined" | "withdrawn" | "completed"
 export type JobStatus = "active" | "filled" | "closed" | "draft"
 export type PaymentType = "per-day" | "per-hour" | "fixed"
 export type KycStatus = "not-verified" | "pending" | "verified" | "rejected" | "expired"
@@ -41,6 +41,7 @@ export interface AvailabilitySlot {
   endTime: string
   date?: string
   endDate?: string
+  serviceListingId?: string
 }
 
 export interface WorkHistory {
@@ -75,6 +76,8 @@ export interface WorkerProfile {
   longitude?: number
   skills: string[]
   preferredCategories?: string[]
+  acceptingWork?: boolean
+  services?: WorkerServiceListing[]
   qualifications: Qualification[]
   experience: Experience[]
   availableDates: string[]
@@ -104,6 +107,28 @@ export interface WorkerProfile {
   kycDocumentId?: string
   kycBackDocumentId?: string
   kycBackDocumentFileName?: string
+}
+
+export interface WorkerServiceListing {
+  id: string
+  category: string
+  title: string
+  description: string
+  skills: string[]
+  pricingType: "PER_HOUR" | "PER_DAY" | "FIXED" | "STARTING_AT" | "NEGOTIABLE"
+  price?: number
+  minimumDurationHours?: number
+  serviceArea?: string
+  negotiable?: boolean
+  availability?: Array<{
+    availabilityId: string | number
+    dayOfWeek?: string | null
+    startDate: string
+    endDate?: string | null
+    startTime: string
+    endTime: string
+  }>
+  active: boolean
 }
 
 export interface ProviderProfile {
@@ -174,6 +199,8 @@ export interface Job {
   latitude?: number
   longitude?: number
   payment: number
+  paymentMax?: number
+  budgetNegotiable?: boolean
   paymentType: PaymentType
   paymentMethod?: "CASH" | "BANK_TRANSFER" | "DIGITAL_WALLET" | "OTHER"
   status: JobStatus
@@ -234,6 +261,10 @@ export interface Application {
   appliedDate: string
   status: ApplicationStatus
   coverNote?: string
+  offeredAmount?: number
+  offerMessage?: string
+  estimatedDurationHours?: number
+  proposedStartAt?: string
   providerNote?: string
   providerRating?: number
   providerReview?: string

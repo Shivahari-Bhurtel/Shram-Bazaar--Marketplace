@@ -4,6 +4,7 @@ interface Props {
   confirmLabel?: string
   cancelLabel?: string
   danger?: boolean
+  confirmDisabled?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -14,6 +15,7 @@ export default function ConfirmDialog({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   danger = false,
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }: Props) {
@@ -37,11 +39,12 @@ export default function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
+            disabled={confirmDisabled}
             className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors ${
               danger
                 ? "bg-primary-dark hover:bg-primary"
                 : "bg-primary hover:bg-primary-dark"
-            }`}
+            } disabled:cursor-not-allowed disabled:opacity-60`}
           >
             {confirmLabel}
           </button>

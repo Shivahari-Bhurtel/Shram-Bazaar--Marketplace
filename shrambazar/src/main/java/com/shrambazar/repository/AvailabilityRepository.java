@@ -21,4 +21,7 @@ public interface AvailabilityRepository
             Long id,
             Long seekerProfileId
     );
+
+    List<Availability> findByWorkerServiceListingIdAndActiveTrueOrderByStartDateAscStartTimeAsc(Long workerServiceListingId);
+    List<Availability> findByWorkerServiceListingIdOrderByStartDateAscStartTimeAsc(Long workerServiceListingId);
 }

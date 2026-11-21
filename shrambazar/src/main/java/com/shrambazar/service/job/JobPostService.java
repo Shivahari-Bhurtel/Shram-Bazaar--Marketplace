@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.shrambazar.enums.ApplicationStatus;
+import com.shrambazar.enums.EngagementStatus;
 import com.shrambazar.enums.NotificationType;
 import com.shrambazar.repository.ApplicationRepository;
 import com.shrambazar.service.notification.NotificationService;
@@ -34,6 +35,7 @@ public class JobPostService {
     private final SkillRepository skillRepository;
     private final CurrentUserService currentUserService;
     private final ApplicationRepository applicationRepository;
+    private final WorkerEngagementRepository engagementRepository;
     private final NotificationService notificationService;
 
     public JobPostService(
@@ -42,6 +44,7 @@ public class JobPostService {
             SkillRepository skillRepository,
             CurrentUserService currentUserService,
             ApplicationRepository applicationRepository,
+            WorkerEngagementRepository engagementRepository,
             NotificationService notificationService) {
 
         this.jobPostRepository = jobPostRepository;
@@ -49,6 +52,7 @@ public class JobPostService {
         this.skillRepository = skillRepository;
         this.currentUserService = currentUserService;
         this.applicationRepository = applicationRepository;
+        this.engagementRepository = engagementRepository;
         this.notificationService = notificationService;
     }
 
@@ -155,7 +159,8 @@ public class JobPostService {
         JobPost job = getOwnedJob(jobId, provider.getId());
 
         if (job.getStatus() != JobPostStatus.OPEN &&
-                job.getStatus() != JobPostStatus.DRAFT) {
+                job.getStatus() != JobPostStatus.DRAFT &&
+                job.getStatus() != JobPostStatus.ASSIGNED) {
 
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
@@ -164,6 +169,14 @@ public class JobPostService {
         }
 
         job.setStatus(JobPostStatus.CANCELLED);
+        engagementRepository.findByApplicationJobPostId(jobId).forEach(engagement -> {
+            if (engagement.getStatus() == EngagementStatus.AWAITING_RESPONSE
+                    || engagement.getStatus() == EngagementStatus.CONFIRMED
+                    || engagement.getStatus() == EngagementStatus.IN_PROGRESS) {
+                engagement.setStatus(EngagementStatus.CANCELLED);
+                engagement.setCancelledAt(LocalDateTime.now());
+            }
+        });
 
         notifyApplicants(
                 job,
@@ -183,7 +196,7 @@ public class JobPostService {
             LocalDate workDate) {
 
         return jobPostRepository
-                .findByStatusOrderByCreatedAtDesc(JobPostStatus.OPEN)
+                .findByStatusInOrderByCreatedAtDesc(List.of(JobPostStatus.OPEN, JobPostStatus.ASSIGNED))
                 .stream()
 
                 .filter(job -> matchesKeyword(job, keyword))
@@ -191,10 +204,10 @@ public class JobPostService {
                 .filter(job -> district == null ||
                         containsIgnoreCase(job.getDistrict(), district))
 
-                .filter(job -> minPayment == null ||
+                .filter(job -> minPayment == null || job.getPaymentAmount() == null ||
                         job.getPaymentAmount().compareTo(minPayment) >= 0)
 
-                .filter(job -> maxPayment == null ||
+                .filter(job -> maxPayment == null || job.getPaymentAmount() == null ||
                         job.getPaymentAmount().compareTo(maxPayment) <= 0)
 
                 .filter(job -> workDate == null ||
@@ -217,7 +230,7 @@ public class JobPostService {
                         )
                 );
 
-        if (job.getStatus() != JobPostStatus.OPEN) {
+        if (job.getStatus() != JobPostStatus.OPEN && job.getStatus() != JobPostStatus.ASSIGNED) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "Job is not available"
@@ -242,6 +255,17 @@ public class JobPostService {
 
     // Helper: validate job data
     private void validateRequest(JobPostRequest request) {
+
+        boolean negotiable = Boolean.TRUE.equals(request.budgetNegotiable());
+        if (!negotiable && request.paymentAmount() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter a task budget or choose open to offers.");
+        }
+        if (request.paymentAmount() != null && request.paymentMaxAmount() != null && request.paymentMaxAmount().compareTo(request.paymentAmount()) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Maximum budget must be at least the minimum budget.");
+        }
+        if (negotiable && request.paymentMaxAmount() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Open to offers cannot include a fixed maximum budget.");
+        }
 
         if (request.endDate().isBefore(request.startDate())) {
             throw new ResponseStatusException(
@@ -309,6 +333,9 @@ public class JobPostService {
         job.setDurationDescription(request.durationDescription());
 
         job.setPaymentAmount(request.paymentAmount());
+        job.setPaymentMaxAmount(request.paymentMaxAmount());
+        job.setBudgetNegotiable(Boolean.TRUE.equals(request.budgetNegotiable()));
+        job.setPaymentPeriod(request.paymentPeriod());
         job.setPaymentMethod(request.paymentMethod());
 
 
@@ -388,12 +415,17 @@ public class JobPostService {
                 job.getDurationDescription(),
 
                 job.getPaymentAmount(),
+                job.getPaymentMaxAmount(),
+                job.isBudgetNegotiable(),
+                job.getPaymentPeriod(),
                 job.getPaymentMethod(),
 
                 job.getRequiredExperienceMonths(),
                 job.getNumberOfWorkersRequired(),
 
                 requiredSkills,
+
+                applicationRepository.countByJobPostId(job.getId()),
 
                 job.getStatus(),
                 job.getCreatedAt(),

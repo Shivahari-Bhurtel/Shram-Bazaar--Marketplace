@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useApp } from "../../store/AppContext"
 import CourseCard from "../../components/learn/CourseCard"
 import CertificateCard from "../../components/learn/CertificateCard"
+import CourseCertificate from "../../components/learn/CourseCertificate"
 import CourseDetails from "../../components/learn/CourseDetails"
 import LearningPlayer from "../../components/learn/LearningPlayer"
 import GraduationHatAnimation from "../../components/learn/GraduationHatAnimation"
@@ -16,6 +17,7 @@ import {
 } from "../../data/courses"
 import {
   enrollInCourse,
+  createCertificateId,
   loadLearningProgress,
   markLessonComplete,
   saveLearningProgress,
@@ -24,7 +26,7 @@ import {
 
 type LearnSection = "overview" | "my-learning" | "certificates"
 type LearningFilter = "all" | "in-progress" | "completed"
-type LearnView = "dashboard" | "details" | "player" | "game"
+type LearnView = "dashboard" | "details" | "player" | "game" | "certificate"
 
 const sectionLabels: Record<LearnSection, string> = {
   overview: "Overview",
@@ -68,23 +70,15 @@ function LearnSidebarHeading({ children }: { children: React.ReactNode }) {
 }
 
 function LearnCourseIcon({ courseId, active }: { courseId: string; active: boolean }) {
-  const icons: Record<string, React.ReactNode> = {
-    "carpentry-woodworking": <><path d="m14 4 6 6-3 3-6-6m-2 2-6 8 4 4 8-7M9 8l3-3" /></>,
-    "crane-operation-basics": <><path d="M4 21h17M7 21V5l4-2 4 2v16M7 6h14M15 6v9m-2 0h4m-2 0v3" /></>,
-    "basic-electrical-skills": <path d="M13 2 5 13h6l-1 9 9-12h-6l0-8Z" />,
-    "motorcycle-maintenance": <><circle cx="5" cy="17" r="3" /><circle cx="19" cy="17" r="3" /><path d="m5 17 4-6h4l4 6m-7-6 3-4h4m-5 4-3 6h8" /></>,
-    "painting-finishing": <><path d="m14 4 6 6m-4-8 6 6M4 15l10-10 5 5L9 20H4v-5Z" /><path d="M6 20c.5-2 1.5-3 3-3" /></>,
-    "plumbing-fundamentals": <path d="M5 3v6h5v3a4 4 0 0 0 4 4h3v4h4v-7h-7a1 1 0 0 1-1-1V9h5V3" />,
-  }
-
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`mt-0.5 h-[18px] w-[18px] shrink-0 ${active ? "text-[#4E342E]" : "text-[#8A6A52]"}`} aria-hidden="true">{icons[courseId] ?? <><circle cx="12" cy="12" r="8" /><path d="M12 8v8m-4-4h8" /></>}</svg>
+  void courseId
+  return <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${active ? "bg-white text-[#4E342E]" : "bg-[#F6EBDD] text-[#805B3D] group-hover:bg-white"}`} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[19px] w-[19px]"><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3.5 2.7 8.5 2.7 12 0v-5M22 9v6" /></svg></span>
 }
 
 function LearnSidebarCourse({ courseId, title, active, onClick }: { courseId: string; title: string; active: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} className={`flex w-full items-start gap-2.5 border-l-4 py-2.5 pl-11 pr-3 text-left text-[14px] leading-[1.35] transition-colors ${active ? "border-[#4E342E] bg-[#F2E4D4] font-semibold text-[#4E342E]" : "border-transparent font-medium text-[#4E342E] hover:bg-[#F2E4D4]"}`}>
+    <button type="button" onClick={onClick} aria-pressed={active} className={`group flex w-full items-center gap-2.5 border-l-4 py-2 pl-8 pr-3 text-left font-['Source_Sans_3',Inter,sans-serif] text-[15px] leading-[1.3] tracking-[-0.01em] transition-colors ${active ? "border-[#4E342E] bg-[#F2E4D4] font-bold text-[#4E342E]" : "border-transparent font-semibold text-[#543D2E] hover:bg-[#F2E4D4]"}`}>
       <LearnCourseIcon courseId={courseId} active={active} />
-      <span className="min-w-0 flex-1">{title}</span>
+      <span className={`min-w-0 flex-1 font-['Source_Sans_3','Inter',sans-serif] text-[16px] font-semibold leading-[1.35] tracking-[-0.01em] underline decoration-1 underline-offset-4 ${active ? "decoration-[#8A5B37]" : "decoration-[#C9A989] group-hover:decoration-[#6F4930]"}`}>{title}</span>
     </button>
   )
 }
@@ -107,7 +101,14 @@ export default function Learn() {
   const learnerName = state.workerProfile?.name || state.currentUser?.name || "Learner"
   const learnerId = state.workerProfile?.id || state.currentUser?.id || "learning-demo"
   const [progress, setProgress] = useState<LearningProgress>(() => loadLearningProgress(learnerId))
-  const [section, setSection] = useState<LearnSection>("overview")
+  const [section, setSection] = useState<LearnSection>(() => {
+    try {
+      const initialSection = sessionStorage.getItem("learn-initial-section")
+      sessionStorage.removeItem("learn-initial-section")
+      if (initialSection === "certificates" || initialSection === "my-learning") return initialSection
+    } catch { /* Start at the Learn overview if session storage is unavailable. */ }
+    return "overview"
+  })
   const [learningFilter, setLearningFilter] = useState<LearningFilter>("all")
   const [activeCategory, setActiveCategory] = useState<string>("All skills")
   const [search, setSearch] = useState("")
@@ -116,6 +117,7 @@ export default function Learn() {
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [storageWarning, setStorageWarning] = useState("")
+  const [completionCelebration, setCompletionCelebration] = useState(false)
 
   useEffect(() => {
     setProgress(loadLearningProgress(learnerId))
@@ -197,7 +199,53 @@ export default function Learn() {
 
   const markCurrentLessonComplete = () => {
     if (!activeCourse || !activeLesson) return
-    persist(markLessonComplete(progress, activeCourse, activeLesson.id))
+    const wasComplete = getCourseProgress(activeCourse, progress).isComplete
+    const next = markLessonComplete(progress, activeCourse, activeLesson.id)
+    const newlyCompleted = !wasComplete && activeCourse.certificateEligible !== false && getCourseProgress(activeCourse, next).isComplete
+    if (newlyCompleted && !next.certificates[activeCourse.id]) {
+      const completedAt = next.completedAt[activeCourse.id] || new Date().toISOString()
+      next.certificates = { ...next.certificates, [activeCourse.id]: {
+        courseId: activeCourse.id,
+        courseName: activeCourse.title,
+        learnerName,
+        certificateId: createCertificateId(activeCourse.id, learnerId, completedAt),
+        completedAt,
+        templateId: activeCourse.id,
+      } }
+    }
+    persist(next)
+    if (newlyCompleted) {
+      setCompletionCelebration(true)
+      window.setTimeout(() => {
+        setCompletionCelebration(false)
+        setSection("certificates")
+        setView("certificate")
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      }, 1600)
+    }
+  }
+
+  const openCertificate = (course: LearnCourse) => {
+    if (course.certificateEligible === false || !getCourseProgress(course, progress).isComplete) {
+      openCourse(course)
+      setStorageWarning("Complete every lesson in this course before opening its certificate.")
+      return
+    }
+    if (!progress.certificates[course.id]) {
+      const completedAt = progress.completedAt[course.id] || new Date().toISOString()
+      const next = { ...progress, completedAt: { ...progress.completedAt, [course.id]: completedAt }, certificates: { ...progress.certificates, [course.id]: {
+        courseId: course.id,
+        courseName: course.title,
+        learnerName,
+        certificateId: createCertificateId(course.id, learnerId, completedAt),
+        completedAt,
+        templateId: course.id,
+      } } }
+      persist(next)
+    }
+    setActiveCourseId(course.id)
+    setView("certificate")
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const changeLessonBy = (offset: number) => {
@@ -240,11 +288,11 @@ export default function Learn() {
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
             </label>
           ) : (
-            <div className="hidden min-w-0 flex-1 md:block"><p className={`truncate ${view === "player" && activeCourse?.id === "crane-operation-basics" ? "font-script text-xl font-semibold leading-tight text-blue-700" : view === "details" ? "text-base font-semibold text-blue-700" : "text-sm font-semibold text-slate-800"}`}>{view === "player" ? activeCourse?.title : view === "game" ? activeCourse?.optionalGame?.title : activeCourse?.title}</p><p style={view === "details" ? { fontFamily: "'Dancing Script', cursive" } : undefined} className={`truncate ${view === "details" ? "font-script text-lg leading-tight text-[#4E342E]" : "text-xs text-slate-500"}`}>{view === "player" ? activeLesson?.title : view === "game" ? "Optional practical module" : "Course overview"}</p></div>
+            <div className="hidden min-w-0 flex-1 md:block"><p className={`truncate ${view === "player" && activeCourse?.id === "crane-operation-basics" ? "font-script text-xl font-semibold leading-tight text-blue-700" : view === "details" ? "text-base font-semibold text-blue-700" : "text-sm font-semibold text-slate-800"}`}>{activeCourse?.title}</p><p style={view === "details" ? { fontFamily: "'Dancing Script', cursive" } : undefined} className={`truncate ${view === "details" ? "font-script text-lg leading-tight text-[#4E342E]" : "text-xs text-slate-500"}`}>{view === "player" ? activeLesson?.title : "Course overview"}</p></div>
           )}
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            {view !== "dashboard" && <button type="button" onClick={() => view === "player" ? setView("details") : view === "game" ? backToCourseOverview() : setView("dashboard")} className="hidden min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex">
+            {view !== "dashboard" && <button type="button" onClick={() => view === "player" ? setView("details") : setView("dashboard")} className="hidden min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:inline-flex">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7" /></svg>
               {view === "player" ? "Course overview" : "All courses"}
             </button>}
@@ -291,7 +339,7 @@ export default function Learn() {
             </div>
 
             <section className="mt-2" aria-labelledby="continue-learning-heading">
-              <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 id="continue-learning-heading" className="text-lg font-bold text-slate-900">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-blue-700 hover:text-blue-900">View my learning</button>}</div>
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 id="continue-learning-heading" className="text-lg font-bold text-[#4E342E]">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-[#80502F] underline decoration-[#C9A989] underline-offset-4 hover:text-[#4E342E]">View my learning</button>}</div>
               {inProgressCourses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled highlighted onView={openCourse} onContinue={startLesson} />
@@ -302,7 +350,7 @@ export default function Learn() {
             </section>
 
             <section className="mt-8" aria-labelledby="recommended-heading">
-              <div className="mb-4"><h2 id="recommended-heading" className="text-lg font-bold text-slate-900">Recommended courses</h2><p className="mt-1 text-xs text-slate-600">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
+              <div className="mb-4"><h2 id="recommended-heading" className="text-lg font-bold text-[#4E342E]">Recommended courses</h2><p className="mt-1 text-xs text-[#735B49]">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
               <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{recommendedCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} />
@@ -310,9 +358,9 @@ export default function Learn() {
             </section>
 
             <section id="explore-courses" className="mt-10 scroll-mt-24" aria-labelledby="explore-heading">
-              <div className="mb-4"><h2 id="explore-heading" className="text-lg font-bold text-slate-900">Explore courses</h2><p className="mt-1 text-xs text-slate-600">Short, self-paced introductions across five vocational skill areas.</p></div>
+              <div className="mb-4"><h2 id="explore-heading" className="text-lg font-bold text-[#4E342E]">Explore courses</h2><p className="mt-1 text-xs text-[#735B49]">Short, self-paced introductions across five vocational skill areas.</p></div>
               <div className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Filter courses by skill category">
-                {["All skills", ...learningCategories].map((category) => <button key={category} type="button" onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`min-h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition ${activeCategory === category ? "border-blue-700 bg-blue-700 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-800"}`}>{category}</button>)}
+                {["All skills", ...learningCategories].map((category) => <button key={category} type="button" onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`min-h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition ${activeCategory === category ? "border-[#4E342E] bg-[#4E342E] text-white" : "border-[#D7BFA4] bg-white text-[#5B4032] hover:border-[#A47C5A] hover:bg-[#F7F0E8] hover:text-[#4E342E]"}`}>{category}</button>)}
               </div>
               {filteredCourses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{filteredCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
@@ -337,9 +385,18 @@ export default function Learn() {
           </section>}
 
           {view === "dashboard" && section === "certificates" && <section>
-            <div className="mb-6"><p className="text-sm font-semibold text-[#D86C3A]">Your achievements</p><h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">My certificates</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Completion records are created after you finish every lesson in a course. They recognize course completion and are not accredited professional qualifications.</p></div>
-            {earnedCourses.filter(matchesCourseSearch).length ? <div className="space-y-3">{earnedCourses.filter(matchesCourseSearch).map((course) => <CertificateCard key={course.id} course={course} learnerName={learnerName} completedAt={progress.completedAt[course.id] || new Date().toISOString()} />)}</div> : <EmptyState title={normalizedSearch ? "No matching certificates" : "Your certificates will appear here"} description={normalizedSearch ? "Try a different course or skill search." : "Complete all lessons in a course to earn a course completion record. You can save it from this page."} actionLabel={normalizedSearch ? "Clear search" : "Continue learning"} onAction={normalizedSearch ? () => setSearch("") : () => { setSection("my-learning"); setLearningFilter("in-progress") }} />}
+            <div className="mb-6"><div className="flex items-center gap-3"><svg viewBox="0 0 48 48" fill="none" className="h-10 w-10 shrink-0 text-[#A8753F]" aria-hidden="true"><path d="M13 6c-5 0-8 4-8 9 0 7 8 12 12 17 4-5 12-10 12-17 0-5-3-9-8-9-2 0-4 2-4 4-1-2-2-4-4-4Z" fill="currentColor" opacity=".88"/><path d="M17 32c1 4 0 7-2 10m18-33c-4 0-6 3-6 7 0 5 6 9 9 12 3-3 8-7 8-12 0-4-2-7-6-7-2 0-3 1-3 3 0-2-1-3-2-3Z" fill="currentColor" opacity=".62"/><path d="M14 42h5m15-3 2 5m-24-26-4 1m23-8 3-3" stroke="#80502F" strokeWidth="1.8" strokeLinecap="round"/></svg><p className="font-['Dancing_Script',cursive] text-2xl font-bold leading-tight text-[#80502F] sm:text-3xl">Your achievements</p></div><h1 className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">My certificates</h1></div>
+            {earnedCourses.filter(matchesCourseSearch).length ? <div className="space-y-3">{earnedCourses.filter(matchesCourseSearch).map((course) => <CertificateCard key={course.id} course={course} learnerName={learnerName} learnerId={learnerId} completedAt={progress.completedAt[course.id] || ""} record={progress.certificates[course.id]} onView={() => openCertificate(course)} />)}</div> : <EmptyState title={normalizedSearch ? "No matching certificates" : "Your certificates will appear here"} description={normalizedSearch ? "Try a different course or skill search." : "Complete all lessons in a course to earn a course completion record. You can save it from this page."} actionLabel={normalizedSearch ? "Clear search" : "Continue learning"} onAction={normalizedSearch ? () => setSearch("") : () => { setSection("my-learning"); setLearningFilter("in-progress") }} />}
           </section>}
+
+          {view === "certificate" && activeCourse && getCourseProgress(activeCourse, progress).isComplete && activeCourse.certificateEligible !== false && <CourseCertificate
+            course={activeCourse}
+            learnerName={learnerName}
+            learnerId={learnerId}
+            completedAt={progress.completedAt[activeCourse.id] || ""}
+            record={progress.certificates[activeCourse.id]}
+            onReview={() => startLesson(activeCourse)}
+          />}
 
           {view === "details" && activeCourse && <CourseDetails
             course={activeCourse}
@@ -369,6 +426,7 @@ export default function Learn() {
           />}
         </main>
       </div>
+      {completionCelebration && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#261C14]/65 p-5" role="status" aria-live="assertive"><div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-[#D7BFA4] bg-[#FFFCF7] p-8 text-center shadow-2xl"><div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">{Array.from({ length: 24 }, (_, index) => <span key={index} className="completion-confetti absolute h-2 w-1.5 rounded-sm" style={{ left: `${(index * 41) % 100}%`, animationDelay: `${(index % 7) * 70}ms`, backgroundColor: ["#B58A49", "#80502F", "#D7BFA4", "#4E342E"][index % 4] }} />)}</div><span className="completion-success relative mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#F3E9DF] text-3xl font-bold text-[#80502F]">✓</span><h2 className="relative mt-4 text-2xl font-bold text-[#35261D]">Congratulations!</h2><p className="relative mt-2 text-lg font-semibold text-[#4E342E]">You’ve completed {activeCourse?.title}.</p><p className="relative mt-2 text-sm leading-relaxed text-[#735B49]">You’ve taken another step toward building valuable skills and creating new opportunities for yourself.</p></div></div>}
     </div>
   )
 }

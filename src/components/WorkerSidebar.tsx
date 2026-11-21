@@ -2,9 +2,10 @@ import { useRef, useState } from "react"
 import { useApp } from "../store/AppContext"
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside"
 import NotificationPanel from "./NotificationPanel"
+import type { Page } from "../store/AppContext"
 
-type WorkerPage = "worker-dashboard" | "worker-profile" | "job-discovery" | "my-applications" | "saved-jobs" | "learn" | "chat" | "shram-ai" | "voice-assistant" | "settings"
-type IconName = "home" | "search" | "applications" | "saved" | "ai" | "echo" | "learn" | "profile" | "notifications" | "logout"
+type WorkerPage = Page
+type IconName = "home" | "search" | "applications" | "saved" | "ai" | "echo" | "learn" | "profile" | "notifications" | "logout" | "settings" | "calendar" | "help"
 
 function WorkspaceIcon({ name }: { name: IconName }) {
   if (name === "ai")
@@ -12,7 +13,7 @@ function WorkspaceIcon({ name }: { name: IconName }) {
       <img
         src="/images/worker/shram-ai-logo.png"
         alt=""
-        className="h-8 w-8 object-contain"
+        className="h-6 w-6 object-contain"
       />
     )
   if (name === "echo")
@@ -23,6 +24,8 @@ function WorkspaceIcon({ name }: { name: IconName }) {
         className="h-6 w-6 object-contain"
       />
     )
+  if (name === "settings")
+    return <img src="/images/worker/settings-icon.png" alt="" className="h-5 w-5 object-contain" />
   return (
     <svg
       viewBox="0 0 24 24"
@@ -62,16 +65,28 @@ function WorkspaceIcon({ name }: { name: IconName }) {
           <path d="M21 5.5c-3.2-.9-6.2-.5-9 1.3v13c2.8-1.8 5.8-2.2 9-1.3v-13Z" />
         </>
       )}
+      {name === "calendar" && <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18M8 14h2m4 0h2m-8 3h2"/></>}
+      {name === "help" && <><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 4.3 2c-1.2 1-1.8 1.4-1.8 3m0 3v.1"/></>}
     </svg>
   )
 }
 
-const links: { label: string; page: WorkerPage; icon: IconName }[] = [
-  { label: "Home", page: "worker-dashboard", icon: "home" },
-  { label: "Find work", page: "job-discovery", icon: "search" },
-  { label: "Learn", page: "learn", icon: "learn" },
-  { label: "AI", page: "shram-ai", icon: "ai" },
-  { label: "Voice AI", page: "voice-assistant", icon: "echo" },
+const navGroups: { heading: string; items: { label: string; page: WorkerPage; icon: IconName }[] }[] = [
+  { heading: "", items: [
+    { label: "Home", page: "worker-dashboard", icon: "home" },
+    { label: "Find Jobs", page: "job-discovery", icon: "search" },
+    { label: "Learn & Grow", page: "learn", icon: "learn" },
+    { label: "Work Schedule", page: "worker-availability", icon: "calendar" },
+  ] },
+  { heading: "", items: [
+    { label: "Skills & Certificates", page: "worker-profile", icon: "profile" },
+    { label: "My Applications", page: "my-applications", icon: "applications" },
+    { label: "Saved Jobs", page: "saved-jobs", icon: "saved" },
+  ] },
+  { heading: "", items: [
+    { label: "Shram AI Assistant", page: "shram-ai", icon: "ai" },
+    { label: "Help & Support", page: "worker-help", icon: "help" },
+  ] },
 ]
 
 export default function WorkerSidebar() {
@@ -116,11 +131,12 @@ export default function WorkerSidebar() {
     { label: "Notifications", icon: "notifications", action: "notifications" },
     { label: "My applications", page: "my-applications", icon: "applications" },
     { label: "Saved jobs", page: "saved-jobs", icon: "saved" },
+    { label: "Settings", page: "settings", icon: "settings" },
   ]
 
   return (
     <aside
-      className="worker-workspace-rail fixed inset-y-0 left-0 z-30 hidden w-56 border-r border-[#E8E2D5] bg-[#D4C8AE] lg:flex"
+      className="worker-workspace-rail fixed inset-y-0 left-0 z-30 hidden w-56 border-r border-[#C4B69B] bg-[#D4C8AE] lg:flex"
       aria-label="Worker workspace"
     >
       <div className="flex h-full w-full flex-col px-3 py-4">
@@ -128,7 +144,7 @@ export default function WorkerSidebar() {
           type="button"
           onClick={() => openPage("worker-dashboard")}
           aria-label="Shram Bazaar home"
-          className="flex items-baseline gap-1 px-2 text-left leading-none"
+          className="flex min-h-12 items-baseline gap-1 px-2 text-left leading-none"
         >
           <span
             className="text-[1.8rem] font-semibold text-[#553421]"
@@ -227,66 +243,31 @@ export default function WorkerSidebar() {
           </button>
         </div>
 
-        <nav
-          className="mt-4 flex flex-col gap-1"
-          aria-label="Worker navigation"
-        >
-          {links.map((link) => {
-            const active = state.currentPage === link.page
-            const logoLink = link.icon === "ai" || link.icon === "echo"
-            return (
-              <button
-                key={link.icon}
-                type="button"
-                onClick={() => openPage(link.page)}
-                aria-current={active ? "page" : undefined}
-                className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-2.5 text-left text-[0.95rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                  logoLink
-                    ? `worker-assistant-nav ${active ? "is-active" : ""}`
-                    : active
-                      ? "bg-[#EEDFD2] font-semibold text-[#553421]"
-                      : "font-medium text-stone-700 hover:bg-white/75 hover:text-[#553421]"
-                }`}
-              >
-                <span
-                  className={`flex shrink-0 items-center justify-center [&>svg]:h-[1.35rem] [&>svg]:w-[1.35rem] ${
-                    logoLink ? "h-8 w-8" : "h-7 w-7"
-                  }`}
-                >
-                  <WorkspaceIcon name={link.icon} />
-                </span>
-                <span className={logoLink ? "font-semibold" : "font-medium"}>
-                  {link.label}
-                </span>
-              </button>
-            )
-          })}
+        <nav className="mt-5 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1" aria-label="Worker navigation">
+          {navGroups.map((group) => (
+            <section key={group.items[0]?.label} className="border-b border-[#BFAF92] pb-5 last:border-b-0 last:pb-0">
+              {group.heading && <h2 className="px-3 pb-3 pt-1 text-xs font-bold uppercase tracking-[.12em] text-[#735B49]">{group.heading}</h2>}
+              <div className="space-y-1.5">
+                {group.items.map((link) => {
+                  const active = state.currentPage === link.page
+                  const logoLink = link.icon === "ai"
+                  return <button key={`${link.label}-${link.page}`} type="button" onClick={() => openPage(link.page)} aria-current={active ? "page" : undefined} className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3.5 text-left text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#80502F]/40 ${logoLink ? `worker-assistant-nav ${active ? "is-active" : ""}` : active ? "bg-[#F2E4D4] font-bold text-[#4E342E] shadow-sm" : "font-semibold text-[#543D2E] hover:bg-white/60 hover:text-[#4E342E]"}`}>
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center [&>svg]:h-5 [&>svg]:w-5 ${logoLink ? "text-[#70472F]" : active ? "text-[#70472F]" : "text-[#80674F]"}`}><WorkspaceIcon name={link.icon} /></span>
+                    <span className="leading-snug">{link.label}</span>
+                  </button>
+                })}
+              </div>
+            </section>
+          ))}
         </nav>
 
         <div className="mt-auto space-y-3">
-          <a
-            href="mailto:support@shrama.com"
-            className="flex min-h-11 items-center gap-3 rounded-lg px-2.5 py-2 text-[0.95rem] font-medium text-stone-700 transition-colors hover:bg-white/75 hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            <img
-              src="/images/worker/help-icon.png"
-              alt=""
-              className="h-5 w-5 shrink-0 object-contain"
-            />
-            Guidance
-          </a>
-          <button
-            type="button"
-            onClick={() => openPage("settings")}
-            className="flex min-h-11 w-full items-center gap-3 rounded-lg px-2.5 py-2 text-[0.95rem] font-medium text-stone-700 transition-colors hover:bg-white/75 hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            <img
-              src="/images/worker/settings-icon.png"
-              alt=""
-              className="h-5 w-5 shrink-0 object-contain"
-            />
-            Settings
-          </button>
+          <div className="rounded-lg border border-[#C6AA89] bg-[#E9D6BC] px-3 py-2.5">
+            <p className="text-xs leading-relaxed text-[#5B4032]">Continue learning and open new work opportunities.</p>
+            <button type="button" onClick={() => openPage("learn")} className="mt-1.5 inline-flex min-h-7 items-center gap-1 text-xs font-semibold text-[#70472F] hover:text-[#4E342E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4E342E]">
+              Explore courses <span aria-hidden="true">→</span>
+            </button>
+          </div>
           {notificationsOpen && (
             <NotificationPanel
               placement="floating"

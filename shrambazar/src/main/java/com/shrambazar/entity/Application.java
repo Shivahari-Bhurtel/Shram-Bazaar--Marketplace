@@ -5,6 +5,7 @@ import com.shrambazar.enums.ApplicationStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 @Table(
@@ -35,6 +36,16 @@ public class Application {
     private LocalDateTime appliedAt;
 
     private LocalDateTime updatedAt;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal offeredAmount;
+
+    @Column(length = 1200)
+    private String offerMessage;
+
+    private Integer estimatedDurationHours;
+
+    private LocalDateTime proposedStartAt;
 
     public Application() {
     }
@@ -98,4 +109,13 @@ public class Application {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public BigDecimal getOfferedAmount() { return offeredAmount; }
+    public void setOfferedAmount(BigDecimal value) { offeredAmount = value; }
+    public String getOfferMessage() { return offerMessage; }
+    public void setOfferMessage(String value) { offerMessage = value; }
+    public Integer getEstimatedDurationHours() { return estimatedDurationHours; }
+    public void setEstimatedDurationHours(Integer value) { estimatedDurationHours = value; }
+    public LocalDateTime getProposedStartAt() { return proposedStartAt; }
+    public void setProposedStartAt(LocalDateTime value) { proposedStartAt = value; }
 }

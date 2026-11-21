@@ -3,6 +3,7 @@ package com.shrambazar.entity;
 
 import com.shrambazar.enums.JobPostStatus;
 import com.shrambazar.enums.PaymentMethod;
+import com.shrambazar.enums.PaymentPeriod;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -67,12 +68,22 @@ public class JobPost {
     @Column(length = 100)
     private String durationDescription;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(precision = 12, scale = 2)
     private BigDecimal paymentAmount;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal paymentMaxAmount;
+
+    @Column(nullable = false)
+    private boolean budgetNegotiable = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private PaymentMethod paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PaymentPeriod paymentPeriod = PaymentPeriod.PER_DAY;
 
     private Integer requiredExperienceMonths;
 
@@ -235,6 +246,11 @@ public class JobPost {
         this.paymentAmount = paymentAmount;
     }
 
+    public BigDecimal getPaymentMaxAmount() { return paymentMaxAmount; }
+    public void setPaymentMaxAmount(BigDecimal value) { paymentMaxAmount = value; }
+    public boolean isBudgetNegotiable() { return budgetNegotiable; }
+    public void setBudgetNegotiable(boolean value) { budgetNegotiable = value; }
+
     public PaymentMethod getPaymentMethod() {
         return paymentMethod;
     }
@@ -242,6 +258,9 @@ public class JobPost {
     public void setPaymentMethod(PaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
+
+    public PaymentPeriod getPaymentPeriod() { return paymentPeriod; }
+    public void setPaymentPeriod(PaymentPeriod value) { paymentPeriod = value == null ? PaymentPeriod.PER_DAY : value; }
 
     public Integer getRequiredExperienceMonths() {
         return requiredExperienceMonths;

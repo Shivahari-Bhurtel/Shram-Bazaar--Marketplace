@@ -43,11 +43,15 @@ export type DemoJobFilters = {
 }
 
 export async function loadDemoJobs(signal?: AbortSignal): Promise<DemoJob[]> {
+  if (signal?.aborted) throw new DOMException("Job loading was cancelled.", "AbortError")
+  // The localhost showcase dataset ships with the frontend. Use it immediately
+  // instead of waiting for a backend or database that the showcase does not need.
+  if (usesLocalShowcaseDataset()) return getBundledDemoJobs()
+
   const controller = new AbortController()
   const abortFromCaller = () => controller.abort()
-  if (signal?.aborted) throw new DOMException("Job loading was cancelled.", "AbortError")
   signal?.addEventListener("abort", abortFromCaller, { once: true })
-  const timeout = setTimeout(() => controller.abort(), 3500)
+  const timeout = setTimeout(() => controller.abort(), 1800)
 
   try {
     const value: unknown = await apiRequest<unknown>("/api/jobs/showcase", { signal: controller.signal })
@@ -63,31 +67,40 @@ export async function loadDemoJobs(signal?: AbortSignal): Promise<DemoJob[]> {
   }
 }
 
+export function getBundledDemoJobs(): DemoJob[] {
+  return validateDemoJobs(bundledDemoJobs)
+}
+
+function usesLocalShowcaseDataset() {
+  return import.meta.env.VITE_DEMO_MODE === "true"
+    || (typeof window !== "undefined" && ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname))
+}
+
 function validateDemoJobs(value: unknown): DemoJob[] {
   if (!Array.isArray(value)) throw new Error("The jobs service returned an invalid response.")
-  if (value.length !== 130) throw new Error(`Expected all 130 supplied job listings, but received ${value.length}. Restart the local API to reload the supplied dataset.`)
-  if (!value.every(isDemoJob)) throw new Error("Some job records are incomplete. The supplied dataset could not be fully loaded.")
-  const jobs = value as DemoJob[]
-  if (new Set(jobs.map((job) => job.id)).size !== jobs.length) throw new Error("The jobs service returned duplicate listing IDs.")
+  const jobs = Array.from(new Map(value.filter(isDemoJob).map((job) => [job.id, job])).values())
+  if (!jobs.length) throw new Error("No valid job listings are available in the showcase dataset.")
   return jobs
 }
 
 export function filterDemoJobs(jobs: DemoJob[], filters: DemoJobFilters = {}) {
-  const keyword = normalize(filters.keyword)
+  const keywords = normalize(filters.keyword).split(/\s+/).filter(Boolean)
   const category = normalize(filters.category)
   const location = normalize(filters.location)
   const city = normalize(filters.city)
   const jobType = normalize(filters.jobType)
   const experience = normalize(filters.experience)
   const salaryType = normalize(filters.salaryType)
-  const minSalary = filters.minSalary === undefined || filters.minSalary === "" ? null : Number(filters.minSalary)
-  const maxSalary = filters.maxSalary === undefined || filters.maxSalary === "" ? null : Number(filters.maxSalary)
+  const parsedMinSalary = filters.minSalary === undefined || filters.minSalary === "" ? null : Number(filters.minSalary)
+  const parsedMaxSalary = filters.maxSalary === undefined || filters.maxSalary === "" ? null : Number(filters.maxSalary)
+  const minSalary = parsedMinSalary !== null && Number.isFinite(parsedMinSalary) ? parsedMinSalary : null
+  const maxSalary = parsedMaxSalary !== null && Number.isFinite(parsedMaxSalary) ? parsedMaxSalary : null
   const [south, west, north, east] = filters.bounds ?? [-90, -180, 90, 180]
 
   return jobs.filter((job) => {
-    const searchable = normalize([job.title, job.company, job.description, job.category, job.experience, job.job_type, ...job.skills, ...job.requirements].join(" "))
+    const searchable = normalize([job.title, job.company, job.description, job.category, job.experience, job.job_type, job.location, job.address, job.city, job.salary_type, job.salary_min, job.salary_max, ...job.skills, ...job.requirements].join(" "))
     const distance = filters.userLocation ? distanceBetweenKm(filters.userLocation, job) : null
-    return (!keyword || searchable.includes(keyword))
+    return (keywords.length === 0 || keywords.every((keyword) => searchable.includes(keyword)))
       && (!category || normalize(job.category) === category)
       && (!location || normalize(`${job.location} ${job.address}`).includes(location))
       && (!city || normalize(job.city) === city)
@@ -133,8 +146,8 @@ function isDemoJob(value: unknown): value is DemoJob {
     && typeof job.location === "string" && !!job.location.trim()
     && typeof job.address === "string" && !!job.address.trim()
     && typeof job.city === "string" && !!job.city.trim()
-    && typeof job.latitude === "number" && Number.isFinite(job.latitude) && job.latitude >= 27.5 && job.latitude <= 27.9
-    && typeof job.longitude === "number" && Number.isFinite(job.longitude) && job.longitude >= 85.1 && job.longitude <= 85.6
+    && typeof job.latitude === "number" && Number.isFinite(job.latitude) && job.latitude >= -90 && job.latitude <= 90
+    && typeof job.longitude === "number" && Number.isFinite(job.longitude) && job.longitude >= -180 && job.longitude <= 180
     && typeof job.salary_min === "number" && Number.isFinite(job.salary_min) && job.salary_min > 0
     && typeof job.salary_max === "number" && Number.isFinite(job.salary_max) && job.salary_max >= job.salary_min
     && typeof job.salary_type === "string" && !!job.salary_type.trim()

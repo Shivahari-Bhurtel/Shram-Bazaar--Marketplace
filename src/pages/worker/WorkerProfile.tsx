@@ -52,6 +52,13 @@ export default function WorkerProfile() {
   const { state, updateWorkerProfile, notifyProfileUpdated, navigate } =
     useApp()
   const { workerProfile } = state
+  useEffect(() => {
+    try {
+      const target = sessionStorage.getItem("worker-profile-scroll-target")
+      sessionStorage.removeItem("worker-profile-scroll-target")
+      if (target) window.requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }))
+    } catch { /* Profile remains usable without session storage. */ }
+  }, [])
   const preferredCategoryOptions = getConfiguredJobCategories()
   const [editing, setEditing] = useState<string | null>(null)
   const [tempData, setTempData] = useState<any>({})
@@ -1437,7 +1444,7 @@ export default function WorkerProfile() {
           </div>
 
           {/* Availability */}
-          <div className="rounded-2xl border border-stone-200 bg-white p-5">
+          <div id="worker-availability" className="scroll-mt-24 rounded-2xl border border-stone-200 bg-white p-5">
             <h3 className="font-sans text-xl font-semibold tracking-tight text-stone-900">
               Availability
             </h3>

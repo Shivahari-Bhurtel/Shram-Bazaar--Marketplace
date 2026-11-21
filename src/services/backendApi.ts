@@ -33,12 +33,16 @@ export interface ApiJob {
   startTime: string
   endTime: string
   durationDescription?: string
-  paymentAmount: number
+  paymentAmount: number | null
+  paymentMaxAmount?: number
+  budgetNegotiable?: boolean
+  paymentPeriod?: "PER_HOUR" | "PER_DAY" | "FIXED"
   paymentMethod: "CASH" | "BANK_TRANSFER" | "DIGITAL_WALLET" | "OTHER"
   requiredExperienceMonths?: number
   numberOfWorkersRequired: number
   requiredSkills: string[]
-  status: "DRAFT" | "OPEN" | "CLOSED" | "CANCELLED" | "COMPLETED" | "REMOVED"
+  applicationCount?: number
+  status: "DRAFT" | "OPEN" | "ASSIGNED" | "CLOSED" | "CANCELLED" | "COMPLETED" | "REMOVED"
   createdAt?: string
   publishedAt?: string
 }
@@ -55,6 +59,10 @@ export interface ApiApplication {
   paymentMethod: ApiJob["paymentMethod"]
   status: "PENDING" | "SELECTED" | "NOT_SELECTED" | "WITHDRAWN" | "CANCELLED"
   appliedAt: string
+  offeredAmount?: number
+  offerMessage?: string
+  estimatedDurationHours?: number
+  proposedStartAt?: string
 }
 
 export function getBackendAuth(): BackendAuth | null {
@@ -93,8 +101,22 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     setBackendAuth(null)
     window.dispatchEvent(new Event("shram-bazar:session-expired"))
   }
+  const requiredRole = path.startsWith("/api/seeker/") ? "JOB_SEEKER" : path.startsWith("/api/provider/") ? "JOB_PROVIDER" : undefined
+  if (response.status === 403 && auth && requiredRole && auth.role !== requiredRole) {
+    setBackendAuth(null)
+    window.dispatchEvent(new Event("shram-bazar:session-expired"))
+  }
   if (!response.ok) {
-    let message = `Request failed (${response.status})`
+    let message = response.status === 403
+      ? requiredRole && auth?.role !== requiredRole
+        ? "Your saved sign-in belongs to a different account type. Sign in as a worker to open availability, or as a provider to manage tasks."
+        : "Your signed-in account does not have permission to view this information. Check that you are using the correct worker or provider account."
+      : `Request failed (${response.status})`
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      message = import.meta.env.DEV
+        ? "The availability service is offline. Start the Java backend and database, then try publishing again. Your availability was not published."
+        : "The availability service is temporarily offline. Your availability was not published; try again when the service is back."
+    }
     if (response.status === 404)
       message = "Backend service route not found. The Java API or its Vercel container deployment may not be running."
     try {
@@ -136,7 +158,7 @@ export function apiRoleToUserRole(role: BackendRole): User["role"] {
 }
 
 export function mapApiJob(job: ApiJob, providerId?: string): Job {
-  const paymentType = job.paymentMethod === "OTHER" ? "fixed" : "per-day"
+  const paymentType = job.paymentPeriod === "PER_HOUR" ? "per-hour" : job.paymentPeriod === "FIXED" || job.paymentMethod === "OTHER" ? "fixed" : "per-day"
   const date = job.startDate || ""
   const status = job.status === "OPEN" ? "active" : job.status === "CLOSED" ? "closed" : job.status === "CANCELLED" ? "closed" : job.status === "DRAFT" ? "draft" : "filled"
   return {
@@ -164,16 +186,18 @@ export function mapApiJob(job: ApiJob, providerId?: string): Job {
     latitude: job.latitude,
     longitude: job.longitude,
     payment: Number(job.paymentAmount) || 0,
+    paymentMax: job.paymentMaxAmount == null ? undefined : Number(job.paymentMaxAmount),
+    budgetNegotiable: job.budgetNegotiable === true,
     paymentType,
     status,
     postedDate: (job.publishedAt || job.createdAt || "").slice(0, 10),
     deadline: "",
-    applicantCount: 0,
+    applicantCount: Number(job.applicationCount) || 0,
   }
 }
 
 export function mapApiApplication(app: ApiApplication, user: User, profile?: WorkerProfile): Application {
-  const status: Application["status"] = app.status === "SELECTED" ? "accepted" : app.status === "NOT_SELECTED" || app.status === "CANCELLED" ? "rejected" : app.status === "WITHDRAWN" ? "rejected" : "pending"
+  const status: Application["status"] = app.status === "SELECTED" ? "accepted" : app.status === "NOT_SELECTED" || app.status === "CANCELLED" ? "rejected" : app.status === "WITHDRAWN" ? "withdrawn" : "pending"
   return {
     id: String(app.applicationId),
     jobId: String(app.jobId),
@@ -192,6 +216,10 @@ export function mapApiApplication(app: ApiApplication, user: User, profile?: Wor
     engagementId: undefined,
     engagementStatus: undefined,
     coverNote: "",
+    offeredAmount: app.offeredAmount == null ? undefined : Number(app.offeredAmount),
+    offerMessage: app.offerMessage || undefined,
+    estimatedDurationHours: app.estimatedDurationHours,
+    proposedStartAt: app.proposedStartAt,
   }
 }
 
@@ -209,6 +237,7 @@ export function mapSeekerProfile(value: any, user: User): WorkerProfile {
     longitude: value.longitude,
     preferredTravelDistanceKm: value.preferredTravelDistanceKm ?? 10,
     preferredCategories: value.preferredCategories || [],
+    acceptingWork: value.acceptingWork !== false,
     address,
     location: address,
     district,

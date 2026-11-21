@@ -45,29 +45,23 @@ export default function CourseDetails({ course, progress, isEnrolled, onStart, o
                 <p className="mt-4 max-w-3xl text-[15px] leading-7 text-slate-600">{course.description}</p>
               </header>
 
-              <section className="mt-7" aria-labelledby="course-objectives-heading">
-                <h2 id="course-objectives-heading" className="text-xl font-bold text-slate-900">What you will learn</h2>
-                <ul className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                  {course.objectives.map((objective) => <li key={objective} className="flex items-start gap-2.5 rounded-xl border border-[#EFE6DA] bg-[#FCFAF7] px-3.5 py-3 text-sm leading-6 text-slate-700"><span className="mt-0.5 font-bold text-[#80502F]">✓</span><span>{objective}</span></li>)}
-                </ul>
-              </section>
-
               <section className="mt-8" aria-labelledby="course-curriculum-heading">
                 <h2 id="course-curriculum-heading" className="mb-3 text-xl font-bold text-slate-900">Course curriculum</h2>
                 <ModuleAccordion modules={course.modules} courseId={course.id} progress={progress} currentLessonId={progress.currentLessons[course.id]} onSelectLesson={onSelectLesson} />
               </section>
             </div>
-            <aside className="h-fit rounded-2xl border border-[#E8DDCF] bg-white p-4 sm:p-5 lg:sticky lg:top-24">
-              <div className="border-t border-slate-200/80 pt-4">
-                <p className="text-sm font-semibold text-slate-900">Your course progress</p>
-                <div className="mt-3"><CourseProgress completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} /></div>
+            <aside className="h-fit rounded-xl border border-[#D9C6B2] bg-white p-4 font-['Source_Sans_3','Inter',sans-serif] shadow-sm sm:p-4 lg:sticky lg:top-24">
+              <div>
+                <p className="text-[17px] font-bold leading-tight tracking-[-0.015em] text-[#35261D]">Your course progress</p>
+                <div className="mt-3"><CourseProgress completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} prominent /></div>
               </div>
-              <div className="mt-5 border-t border-slate-200/80 pt-4">
-                <p className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Skills covered</p>
-                <div className="flex flex-wrap gap-2">{course.skills.map((skill) => <span key={skill} className="rounded-full border border-[#E5D9C9] bg-white px-2.5 py-1.5 text-xs font-medium text-[#5B4032]">{skill}</span>)}</div>
+              <div className="mt-4 border-t border-[#E8DDCF] pt-4">
+                <p className="mb-2 text-[16px] font-bold leading-tight tracking-[-0.01em] text-[#4E342E]">Skills covered</p>
+                <ul className="grid grid-cols-1 gap-x-3 gap-y-1.5 font-['Source_Sans_3','Inter',sans-serif] text-sm font-medium leading-snug text-[#5B4032] sm:grid-cols-2">
+                  {course.skills.map((skill) => <li key={skill} className="flex min-h-7 items-center border-b border-[#EEE5DC] px-1 pb-1">{skill}</li>)}
+                </ul>
               </div>
               <button type="button" onClick={onStart} className="mt-5 min-h-11 w-full rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-800">{metric.isComplete ? "Review lessons" : isEnrolled ? "Continue learning" : "Start learning"}</button>
-              <p className="mt-3 text-center text-xs leading-5 text-slate-500">Self-paced · progress saves on this device</p>
             </aside>
           </div>
         </div>

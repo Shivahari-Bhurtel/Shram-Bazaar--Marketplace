@@ -2,6 +2,7 @@
 package com.shrambazar.dto.job;
 
 import com.shrambazar.enums.PaymentMethod;
+import com.shrambazar.enums.PaymentPeriod;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -55,9 +56,15 @@ public record JobPostRequest(
 
         String durationDescription,
 
-        @NotNull
         @DecimalMin("0.01")
         BigDecimal paymentAmount,
+
+        @DecimalMin("0.01")
+        BigDecimal paymentMaxAmount,
+
+        Boolean budgetNegotiable,
+
+        PaymentPeriod paymentPeriod,
 
         @NotNull
         PaymentMethod paymentMethod,

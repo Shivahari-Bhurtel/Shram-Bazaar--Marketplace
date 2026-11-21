@@ -21,7 +21,9 @@ public record AvailabilityRequest(
         LocalTime startTime,
 
         @NotNull
-        LocalTime endTime
+        LocalTime endTime,
+
+        Long serviceListingId
 
 ) {
 }

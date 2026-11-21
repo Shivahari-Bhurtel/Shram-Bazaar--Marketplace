@@ -13,6 +13,8 @@ import java.util.Optional;
 public interface ApplicationRepository
         extends JpaRepository<Application, Long> {
 
+    long countByJobPostId(Long jobPostId);
+
     List<Application> findByJobPostIdOrderByAppliedAtDesc(Long jobPostId);
 
     List<Application> findBySeekerProfileIdOrderByAppliedAtDesc(

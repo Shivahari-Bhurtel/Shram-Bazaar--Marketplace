@@ -4,6 +4,7 @@ import { JobStatusBadge, CategoryBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
 import type { JobStatus } from "../../types"
 import { daysUntilNepalDate, formatNepalDate, isDateOnlyString, nepalDateString } from "../../utils/dates"
+import { formatJobBudget } from "../../utils/jobBudget"
 
 function shiftDate(value: string, days: number) {
   const date = new Date(`${value}T00:00:00.000Z`)
@@ -127,8 +128,7 @@ export default function MyJobs() {
                           ` – ${formatNepalDate(job.endDate, { month: "short", day: "numeric" })}`}
                       </span>
                       <span className="text-xs font-semibold text-stone-800 font-mono-data">
-                        NPR {job.payment.toLocaleString()}/
-                        {job.paymentType.replace("per-", "")}
+                        {formatJobBudget(job)}
                       </span>
                     </div>
                   </div>

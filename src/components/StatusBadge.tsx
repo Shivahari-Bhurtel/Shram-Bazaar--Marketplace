@@ -30,6 +30,18 @@ const applicationConfig: Record<ApplicationStatus, {
     text: "text-amber-800",
     dot: "bg-amber",
   },
+  withdrawn: {
+    label: "Withdrawn",
+    bg: "bg-stone-100",
+    text: "text-stone-600",
+    dot: "bg-stone-400",
+  },
+  completed: {
+    label: "Completed",
+    bg: "bg-green-100",
+    text: "text-green-700",
+    dot: "bg-green",
+  },
 }
 
 const jobConfig: Record<JobStatus, { label: string; bg: string; text: string }> =

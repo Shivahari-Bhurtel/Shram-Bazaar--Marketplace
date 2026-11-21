@@ -109,8 +109,6 @@ public interface WorkerEngagementRepository
             @Param("toTime") java.time.LocalTime toTime
     );
 
-    List<WorkerEngagement> findSeekerProfileById(Long seekerProfileId);
-
     @Query("""
     SELECT e
     FROM WorkerEngagement e

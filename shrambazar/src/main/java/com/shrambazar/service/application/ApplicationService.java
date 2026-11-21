@@ -50,10 +50,14 @@ public class ApplicationService {
 
     // Seeker applies for a job
     @Transactional
-    public ApplicationResponse applyForJob(Long jobId) {
+    public ApplicationResponse applyForJob(Long jobId, OfferRequest offer) {
 
         SeekerProfile seeker =
                 currentUserService.getCurrentSeekerProfile();
+
+        if (!seeker.isAcceptingWork()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "New offers are paused for your worker profile");
+        }
 
         JobPost job = jobPostRepository.findById(jobId)
                 .orElseThrow(() ->
@@ -86,6 +90,15 @@ public class ApplicationService {
         application.setJobPost(job);
         application.setSeekerProfile(seeker);
         application.setStatus(ApplicationStatus.PENDING);
+        if (offer != null) {
+            if (offer.proposedStartAt() != null && offer.proposedStartAt().toLocalDate().isBefore(LocalDate.now())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Proposed availability must be today or later");
+            }
+            application.setOfferedAmount(offer.offeredAmount());
+            application.setOfferMessage(offer.message().trim());
+            application.setEstimatedDurationHours(offer.estimatedDurationHours());
+            application.setProposedStartAt(offer.proposedStartAt());
+        }
 
         Application saved = applicationRepository.save(application);
 
@@ -259,7 +272,11 @@ public class ApplicationService {
                 job.getPaymentAmount(),
                 job.getPaymentMethod(),
                 application.getStatus(),
-                application.getAppliedAt()
+                application.getAppliedAt(),
+                application.getOfferedAmount(),
+                application.getOfferMessage(),
+                application.getEstimatedDurationHours(),
+                application.getProposedStartAt()
         );
     }
 
@@ -282,7 +299,11 @@ public class ApplicationService {
                 profile.getBio(),
                 skills,
                 application.getStatus(),
-                application.getAppliedAt()
+                application.getAppliedAt(),
+                application.getOfferedAmount(),
+                application.getOfferMessage(),
+                application.getEstimatedDurationHours(),
+                application.getProposedStartAt()
         );
     }
 }

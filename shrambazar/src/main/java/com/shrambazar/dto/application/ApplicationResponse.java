@@ -18,6 +18,10 @@ public record ApplicationResponse(
         BigDecimal paymentAmount,
         PaymentMethod paymentMethod,
         ApplicationStatus status,
-        LocalDateTime appliedAt
+        LocalDateTime appliedAt,
+        BigDecimal offeredAmount,
+        String offerMessage,
+        Integer estimatedDurationHours,
+        LocalDateTime proposedStartAt
 ) {
 }

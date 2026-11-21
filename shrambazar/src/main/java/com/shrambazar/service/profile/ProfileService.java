@@ -61,6 +61,7 @@ public class ProfileService {
                 profile.getLatitude(),
                 profile.getLongitude(),
                 profile.getPreferredCategories().stream().sorted().toList(),
+                profile.isAcceptingWork(),
                 getIsVerified(user.getId(), VerificationType.IDENTITY)
         );
     }
@@ -91,6 +92,9 @@ public class ProfileService {
             profile.setPreferredCategories(request.preferredCategories().stream()
                     .map(String::trim).filter(value -> !value.isBlank())
                     .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+        }
+        if (request.acceptingWork() != null) {
+            profile.setAcceptingWork(request.acceptingWork());
         }
 
         return getSeekerProfile();

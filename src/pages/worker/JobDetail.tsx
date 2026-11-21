@@ -3,6 +3,7 @@ import { useApp } from "../../store/AppContext"
 import { CategoryBadge, VerifiedBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
 import { formatNepalDate } from "../../utils/dates"
+import { formatJobBudget } from "../../utils/jobBudget"
 
 export default function JobDetail() {
   const {
@@ -26,6 +27,10 @@ export default function JobDetail() {
   const [submitted, setSubmitted] = useState(false)
   const [applicationError, setApplicationError] = useState("")
   const [applying, setApplying] = useState(false)
+  const [offerAmount, setOfferAmount] = useState("")
+  const [offerDuration, setOfferDuration] = useState("")
+  const [offerAvailability, setOfferAvailability] = useState("")
+  const [offerMessage, setOfferMessage] = useState("")
   const [showReport, setShowReport] = useState(false)
   const [showProviderReport, setShowProviderReport] = useState(false)
   const [providerReportReason, setProviderReportReason] = useState("FAKE_ACCOUNT")
@@ -57,12 +62,18 @@ export default function JobDetail() {
   const isWorker = currentUser?.role === "worker"
   const isExternal = job.externalSource === "himalayas" || job.externalSource === "jsearch"
   const externalSourceName = job.externalSource === "jsearch" ? "JSearch" : "Himalayas"
+  const taskBudget = formatJobBudget(job)
 
   const handleApply = async () => {
     setApplying(true)
     setApplicationError("")
     try {
-      await applyToJob(job.id)
+      await applyToJob(job.id, {
+        offeredAmount: Number(offerAmount),
+        estimatedDurationHours: Number(offerDuration),
+        proposedStartAt: offerAvailability || undefined,
+        message: offerMessage.trim(),
+      })
       setShowApplyForm(false)
       setShowConfirm(false)
       setSubmitted(true)
@@ -293,12 +304,18 @@ export default function JobDetail() {
             !applied && (
               <div className="bg-white border-2 border-primary rounded-2xl p-6 animate-fade-in">
                 <h2 className="font-semibold text-stone-900 mb-1">
-                  Your Application
+                  Make an offer
                 </h2>
                 <p className="text-stone-500 text-sm mb-4">
-                  "Your profile will be shared with the provider. You can update your skills and experience from your profile before applying."
+                  Task budget: {taskBudget}. Your normal service rate does not set this offer.
                 </p>
                 {applicationError && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{applicationError}</p>}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="text-xs font-semibold text-stone-700">Your price (NPR)<input type="number" min="1" step="1" value={offerAmount} onChange={(event) => setOfferAmount(event.target.value)} placeholder={String(job.payment || "Enter your price")} className="input-style mt-1.5 w-full" /></label>
+                  <label className="text-xs font-semibold text-stone-700">Estimated duration (hours)<input type="number" min="1" step="1" value={offerDuration} onChange={(event) => setOfferDuration(event.target.value)} placeholder="e.g. 3" className="input-style mt-1.5 w-full" /></label>
+                  <label className="text-xs font-semibold text-stone-700 sm:col-span-2">Proposed start time (Nepal time)<input type="datetime-local" min={`${job.date}T00:00`} value={offerAvailability} onChange={(event) => setOfferAvailability(event.target.value)} className="input-style mt-1.5 w-full" /></label>
+                  <label className="text-xs font-semibold text-stone-700 sm:col-span-2">Message to the provider<textarea maxLength={1200} rows={3} value={offerMessage} onChange={(event) => setOfferMessage(event.target.value)} placeholder="Share how your experience and skills fit this task." className="input-style mt-1.5 w-full" /></label>
+                </div>
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={() => setShowApplyForm(false)}
@@ -307,10 +324,17 @@ export default function JobDetail() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => setShowConfirm(true)}
+                    onClick={() => {
+                      if (!Number(offerAmount) || Number(offerAmount) <= 0 || !Number(offerDuration) || !offerMessage.trim()) {
+                        setApplicationError("Enter your price, estimated duration, and a short message to continue.")
+                        return
+                      }
+                      setApplicationError("")
+                      setShowConfirm(true)
+                    }}
                     className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors"
                   >
-                    Submit Application →
+                    Review offer →
                   </button>
                 </div>
               </div>
@@ -343,14 +367,9 @@ export default function JobDetail() {
               <div className="font-display text-3xl font-bold text-stone-900">
                 {isExternal
                   ? job.salaryText || "Salary not listed"
-                  : `NPR ${job.payment.toLocaleString()}`}
+                  : taskBudget}
               </div>
-              {!isExternal && (
-                <div className="text-stone-500 text-sm mt-0.5">
-                  per {job.paymentType.replace("per-", "")}
-                </div>
-              )}
-              {!isExternal && job.workType === "multi-day" && (
+              {!isExternal && !job.budgetNegotiable && !job.paymentMax && job.workType === "multi-day" && (
                 <div className="text-xs text-stone-400 mt-1 font-mono-data">
                   ≈ NPR{" "}
                   {(job.payment * parseInt(job.duration)).toLocaleString()}{" "}
@@ -593,9 +612,10 @@ export default function JobDetail() {
 
       {showConfirm && (
         <ConfirmDialog
-          title="Submit Application?"
-          message={`You're applying to "${job.title}" at ${job.providerName}. Your profile will be shared with the provider.`}
-          confirmLabel="Yes, Apply Now"
+          title="Submit this offer?"
+          message={`Your offer of NPR ${Number(offerAmount).toLocaleString()} for “${job.title}” will be sent to ${job.providerName}.`}
+          confirmLabel={applying ? "Sending…" : "Submit offer"}
+          confirmDisabled={applying}
                   onConfirm={() => { void handleApply() }}
           onCancel={() => setShowConfirm(false)}
         />

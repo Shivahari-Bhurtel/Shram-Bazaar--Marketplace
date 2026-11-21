@@ -14,17 +14,23 @@ const statusCards: {
   key: StatusFilter
   label: string
   className: string
-  icon: "all" | "applied" | "accepted" | "rejected"
+  icon: "all" | "applied" | "accepted" | "rejected" | "completed"
 }[] = [
   { key: "all", label: "All applications", className: "brown", icon: "all" },
   { key: "pending", label: "Applied", className: "blue", icon: "applied" },
   { key: "accepted", label: "Accepted", className: "green", icon: "accepted" },
   { key: "declined", label: "Declined", className: "gray", icon: "rejected" },
   { key: "rejected", label: "Not selected", className: "gray", icon: "rejected" },
+  { key: "withdrawn", label: "Withdrawn", className: "gray", icon: "rejected" },
+  { key: "completed", label: "Completed", className: "green", icon: "completed" },
 ]
 
 function formatDate(date: string) {
   return formatNepalDate(date, { day: "2-digit", month: "short" })
+}
+
+function getApplicationDisplayStatus(application: Application): ApplicationStatus {
+  return application.engagementStatus === "COMPLETED" ? "completed" : application.status
 }
 
 function scheduledWorkHasEnded(job?: Job) {
@@ -44,6 +50,7 @@ function StatusIcon({ name }: { name: (typeof statusCards)[number]["icon"] }) {
       {name === "all" && <><path d="M5 5h14v14H5z" /><path d="M8 9h8M8 12h8M8 15h5" /></>}
       {name === "applied" && <><path d="m4 11 16-7-6 16-3-7-7-2Z" /><path d="m11 13 4-4" /></>}
       {name === "accepted" && <path d="m5 12 4 4L19 6" />}
+      {name === "completed" && <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></>}
       {name === "rejected" && <><path d="m6 6 12 12M18 6 6 18" /></>}
     </svg>
   )
@@ -58,13 +65,15 @@ function ApplicationRow({
   job?: Job
   navigate: (page: "job-detail", jobId?: string) => void
 }) {
-  const { reviewProvider, respondToSelection, updateEngagementWork } = useApp()
+  const { reviewProvider, respondToSelection, updateEngagementWork, withdrawApplication } = useApp()
   const [providerRating, setProviderRating] = useState(5)
   const [providerReview, setProviderReview] = useState("")
   const [reviewMessage, setReviewMessage] = useState("")
   const [providerContact, setProviderContact] = useState<{ providerName: string; phoneNumber: string } | null>(null)
   const [contactError, setContactError] = useState("")
   const [contactLoading, setContactLoading] = useState(false)
+  const [withdrawLoading, setWithdrawLoading] = useState(false)
+  const [withdrawNotice, setWithdrawNotice] = useState("")
   const completed = application.engagementStatus === "COMPLETED" || (
     import.meta.env.VITE_DEMO_MODE === "true" &&
     scheduledWorkHasEnded(job)
@@ -106,7 +115,7 @@ function ApplicationRow({
         </div>
 
         <div className="flex items-center justify-between gap-3 sm:justify-end">
-          <ApplicationStatusBadge status={application.status} />
+          <ApplicationStatusBadge status={getApplicationDisplayStatus(application)} />
           <button
             type="button"
             onClick={() => navigate("job-detail", application.jobId)}
@@ -114,12 +123,29 @@ function ApplicationRow({
           >
             View details
           </button>
+          {application.status === "pending" && <button type="button" disabled={withdrawLoading} onClick={() => {
+            if (!window.confirm("Withdraw this offer? The provider will no longer be able to select it.")) return
+            setWithdrawLoading(true)
+            setWithdrawNotice("")
+            void withdrawApplication(application.id).then((error) => setWithdrawNotice(error || "Offer withdrawn.")).finally(() => setWithdrawLoading(false))
+          }} className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-stone-600 disabled:opacity-50">{withdrawLoading ? "Withdrawing…" : "Withdraw offer"}</button>}
         </div>
       </div>
+
+      {withdrawNotice && <p role="status" className="mt-3 text-xs text-stone-600">{withdrawNotice}</p>}
 
       {application.providerNote && (
         <div className="mt-4 border-t border-[#F0EBE6] pt-3">
           <p className="text-sm leading-relaxed text-stone-600"><span className="font-semibold text-stone-800">Employer update: </span>{application.providerNote}</p>
+        </div>
+      )}
+      {application.engagementStatus === "CANCELLED" && (
+        <p className="mt-4 border-t border-[#F0EBE6] pt-3 text-sm text-stone-600">The provider cancelled this task. The time is available again on your calendar.</p>
+      )}
+      {application.offeredAmount != null && (
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-2 border-t border-[#F0EBE6] pt-3">
+          <div><p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Your offer</p><p className="mt-0.5 text-sm font-bold text-[#286B50]">NPR {application.offeredAmount.toLocaleString()} · {application.estimatedDurationHours || "—"}h estimate</p>{application.offerMessage && <p className="mt-1 max-w-2xl text-sm leading-relaxed text-stone-600">{application.offerMessage}</p>}</div>
+          {application.proposedStartAt && <p className="text-xs text-stone-500">Proposed {application.proposedStartAt.replace("T", " ").slice(0, 16)} Nepal time</p>}
         </div>
       )}
       {application.engagementStatus === "AWAITING_RESPONSE" && (
@@ -191,14 +217,16 @@ export default function MyApplications() {
   const jobsById = useMemo(() => new Map<string, Job>([...state.jobs, ...state.externalJobs].map((job) => [job.id, job] as const)), [state.jobs, state.externalJobs])
   const counts = {
     all: myApplications.length,
-    pending: myApplications.filter((application) => application.status === "pending").length,
-    accepted: myApplications.filter((application) => application.status === "accepted").length,
-    declined: myApplications.filter((application) => application.status === "declined").length,
-    rejected: myApplications.filter((application) => application.status === "rejected").length,
+    pending: myApplications.filter((application) => getApplicationDisplayStatus(application) === "pending").length,
+    accepted: myApplications.filter((application) => getApplicationDisplayStatus(application) === "accepted").length,
+    declined: myApplications.filter((application) => getApplicationDisplayStatus(application) === "declined").length,
+    rejected: myApplications.filter((application) => getApplicationDisplayStatus(application) === "rejected").length,
+    withdrawn: myApplications.filter((application) => getApplicationDisplayStatus(application) === "withdrawn").length,
+    completed: myApplications.filter((application) => getApplicationDisplayStatus(application) === "completed").length,
   }
   const workTypes = [...new Set(myApplications.map((application) => jobsById.get(application.jobId)?.workType).filter((value): value is WorkType => !!value))]
   const filtered = myApplications
-    .filter((application) => activeTab === "all" || application.status === activeTab)
+    .filter((application) => activeTab === "all" || getApplicationDisplayStatus(application) === activeTab)
     .filter((application) => {
       const normalizedQuery = query.trim().toLowerCase()
       return !normalizedQuery || `${application.jobTitle} ${application.providerName}`.toLowerCase().includes(normalizedQuery)
@@ -221,7 +249,7 @@ export default function MyApplications() {
     <main className="applications-page w-full max-w-none px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <header className="mb-8">
         <h1 className="text-4xl font-extrabold tracking-tight text-stone-950 sm:text-5xl">My applications</h1>
-        <p className="mt-3 max-w-3xl text-base leading-relaxed text-stone-600 sm:text-lg">Explore current openings and your applications will be tracked here.</p>
+        <p className="mt-3 max-w-3xl text-base leading-relaxed text-stone-600 sm:text-lg">Track your applications, employer updates, and completed work in one place.</p>
       </header>
 
       {(demoApplications.length > 0 || demoLoadError) && <section className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Saved application activity">

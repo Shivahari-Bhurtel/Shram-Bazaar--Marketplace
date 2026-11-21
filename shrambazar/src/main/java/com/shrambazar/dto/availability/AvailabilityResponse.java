@@ -15,7 +15,8 @@ public record AvailabilityResponse(
         LocalTime startTime,
         LocalTime endTime,
         boolean active,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Long serviceListingId
 
 ) {
 }

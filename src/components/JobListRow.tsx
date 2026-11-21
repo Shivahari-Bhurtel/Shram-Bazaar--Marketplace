@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useApp } from "../store/AppContext"
 import type { Job } from "../types"
 import { formatNepalDate } from "../utils/dates"
+import { formatJobBudget } from "../utils/jobBudget"
 
 const categoryLabels: Record<Job["category"], string> = {
   qualified: "Professional",
@@ -164,7 +165,7 @@ export default function JobListRow({ job }: { job: Job }) {
               <span className="font-semibold text-[#343A40]">
                 {isExternal
                   ? job.salaryText || "Salary not listed"
-                  : `NPR ${job.payment.toLocaleString()} / ${job.paymentType.replace("per-", "")}`}
+                  : formatJobBudget(job)}
               </span>
               {!isExternal && job.date && (
                 <span>

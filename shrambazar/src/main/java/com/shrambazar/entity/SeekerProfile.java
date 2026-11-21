@@ -27,6 +27,9 @@ public class SeekerProfile {
 
     private Integer preferredTravelDistanceKm;
 
+    // Null on profiles created before this preference existed means enabled.
+    private Boolean acceptingWork = true;
+
     private Double latitude;
     private Double longitude;
     @ElementCollection
@@ -102,6 +105,9 @@ public class SeekerProfile {
     public void setPreferredTravelDistanceKm(Integer preferredTravelDistanceKm) {
         this.preferredTravelDistanceKm = preferredTravelDistanceKm;
     }
+
+    public boolean isAcceptingWork() { return acceptingWork == null || acceptingWork; }
+    public void setAcceptingWork(Boolean acceptingWork) { this.acceptingWork = acceptingWork; }
 
     public Double getLatitude() { return latitude; }
     public void setLatitude(Double latitude) { this.latitude = latitude; }

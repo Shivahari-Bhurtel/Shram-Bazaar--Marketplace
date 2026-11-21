@@ -5,6 +5,8 @@ const Landing = lazy(() => import("./pages/Landing"))
 const AuthPage = lazy(() => import("./pages/AuthPage"))
 const WorkerDashboard = lazy(() => import("./pages/worker/WorkerDashboard"))
 const WorkerProfile = lazy(() => import("./pages/worker/WorkerProfile"))
+const WorkerAvailability = lazy(() => import("./pages/worker/WorkerAvailability"))
+const WorkerResourcePage = lazy(() => import("./pages/worker/WorkerResourcePage"))
 const JobDiscovery = lazy(() => import("./pages/worker/JobDiscovery"))
 const JobDetail = lazy(() => import("./pages/worker/JobDetail"))
 const MyApplications = lazy(() => import("./pages/worker/MyApplications"))
@@ -131,6 +133,8 @@ export default function App() {
             <WorkerDashboard />
           )}
           {isWorker && currentPage === "worker-profile" && <WorkerProfile />}
+          {isWorker && currentPage === "worker-availability" && <WorkerAvailability />}
+          {isWorker && currentPage === "worker-help" && <WorkerResourcePage />}
           {isWorker && currentPage === "kyc-verification" && (
             <KycVerification />
           )}

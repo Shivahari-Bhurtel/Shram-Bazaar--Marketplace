@@ -4,7 +4,7 @@ import DemoJobCard from "../../components/DemoJobCard"
 import DemoJobDetailsModal from "../../components/DemoJobDetailsModal"
 import JobCard from "../../components/JobCard"
 import { useDemoJobState } from "../../hooks/useDemoJobState"
-import { distanceBetweenKm, filterDemoJobs, loadDemoJobs, type DemoJob } from "../../services/demoJobs"
+import { distanceBetweenKm, filterDemoJobs, getBundledDemoJobs, loadDemoJobs, type DemoJob } from "../../services/demoJobs"
 import { useApp } from "../../store/AppContext"
 
 const CATEGORIES = [
@@ -23,8 +23,8 @@ export default function JobDiscovery() {
   const { state, navigate } = useApp()
   const { jobs: marketplaceJobs, workerProfile } = state
   const demoState = useDemoJobState(workerProfile?.id)
-  const [allDemoJobs, setAllDemoJobs] = useState<DemoJob[]>([])
-  const [loading, setLoading] = useState(true)
+  const [allDemoJobs, setAllDemoJobs] = useState<DemoJob[]>(() => getBundledDemoJobs())
+  const [loading, setLoading] = useState(false)
   const [loadError, setLoadError] = useState("")
   const [search, setSearch] = useState(() => state.discoverySkill || "")
   const [category, setCategory] = useState("")
@@ -163,6 +163,9 @@ export default function JobDiscovery() {
       ? a.distance - b.distance
       : b.match.score - a.match.score || a.job.title.localeCompare(b.job.title)),
   [allDemoJobs, search, category, city, location, jobType, experience, salaryType, minSalary, maxSalary, skillPreference, maxDistance, demoState.userLocation, searchCurrentArea, mapBounds, workerSkills, sortOrder])
+  // Keep the map feed sourced only from the Nepal showcase dataset above.
+  // Remote IT providers and employer marketplace jobs are separate feeds and
+  // must never be merged into map markers or map search results.
   const filteredJobs = useMemo(() => matchingJobs.map((item) => item.job), [matchingJobs])
 
   const locations = useMemo(() => [...new Set(allDemoJobs.map((job) => job.location))].sort((a, b) => a.localeCompare(b)), [allDemoJobs])
@@ -298,7 +301,7 @@ export default function JobDiscovery() {
         <JobDiscoveryMap jobs={filteredJobs} selectedJobId={selectedJobId} routeJob={selectedJobId && routeDismissedJobId !== selectedJobId ? allDemoJobs.find((job) => job.id === selectedJobId) : undefined} userLocation={demoState.userLocation} focusLocation={selectedFocusJob ? { latitude: selectedFocusJob.latitude, longitude: selectedFocusJob.longitude } : null} onSelectJob={selectJob} onOpenJob={handleSelectJob} onCloseRoute={() => setRouteDismissedJobId(selectedJobId)} onRequestLocation={requestLocation} locating={locating} locationMessage={locationMessage} onBoundsChange={setMapBounds} onMapInteraction={() => setFitMap(false)} fitToJobs={fitMap && !searchCurrentArea} searchCurrentArea={searchCurrentArea} active={discoveryView === "map"} />
         <div className="pointer-events-none absolute left-4 top-5 z-[500] flex flex-wrap gap-2 rounded-xl border border-white/70 bg-white/90 p-2.5 text-[11px] font-semibold text-stone-700 shadow-md backdrop-blur" aria-label="Map marker legend"><span className="inline-flex items-center gap-2"><i className="job-map-legend-bubble">Rs.</i>Pay</span><span className="inline-flex items-center gap-2"><i className="h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" />You</span></div>
         <div className="pointer-events-none absolute left-1/2 top-5 z-[500] w-[min(92%,560px)] -translate-x-1/2">
-          <div className="job-map-search pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-5 py-3.5 shadow-[0_12px_36px_-18px_rgba(40,29,20,.55)] backdrop-blur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); if (searchCurrentArea) { setSearchCurrentArea(false); setMapBounds(null) } }} placeholder="Search jobs by title, company, or skill" aria-label="Search jobs by title, company, skill, or keyword" className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />{search && <button type="button" onClick={() => setSearch("")} aria-label="Clear job search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900">×</button>}</div>
+          <div className="job-map-search pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-5 py-3.5 shadow-[0_12px_36px_-18px_rgba(40,29,20,.55)] backdrop-blur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); if (searchCurrentArea) { setSearchCurrentArea(false); setMapBounds(null) } }} placeholder="Search Nepal jobs by title, skill, or location" aria-label="Search Nepal showcase jobs by title, skill, or location" className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" />{search && <button type="button" onClick={() => setSearch("")} aria-label="Clear job search" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900">×</button>}</div>
           <div className="mt-3 flex justify-center"><button type="button" onClick={() => { setSearchCurrentArea(true); setFitMap(false) }} className="job-map-area-button pointer-events-auto rounded-full border border-stone-200 bg-white px-5 py-2.5 text-sm font-semibold text-stone-800 shadow-lg hover:bg-[#FFFDF9]">Search this map area</button></div>
         </div>
         <div className="pointer-events-none absolute bottom-5 left-4 z-[500] rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-stone-700 shadow-md">{filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"} shown · approximate locations</div>

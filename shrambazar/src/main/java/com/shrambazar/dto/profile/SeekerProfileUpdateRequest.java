@@ -36,7 +36,9 @@ public record SeekerProfileUpdateRequest(
         Double longitude,
 
         @Size(max = 30)
-        List<@NotBlank @Size(max = 80) String> preferredCategories
+        List<@NotBlank @Size(max = 80) String> preferredCategories,
+
+        Boolean acceptingWork
 
 ) {
 }

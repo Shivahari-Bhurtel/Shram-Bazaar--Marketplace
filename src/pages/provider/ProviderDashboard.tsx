@@ -1,6 +1,7 @@
 import { useApp } from "../../store/AppContext"
 import { JobStatusBadge, VerifiedBadge } from "../../components/StatusBadge"
 import { formatNepalDate } from "../../utils/dates"
+import { formatJobBudget } from "../../utils/jobBudget"
 
 export default function ProviderDashboard() {
   const { state, navigate, myJobs, jobApplications } = useApp()
@@ -201,8 +202,7 @@ export default function ProviderDashboard() {
                             })}
                           </span>
                           <span className="font-mono-data font-semibold text-stone-700">
-                            NPR {job.payment.toLocaleString()}/
-                            {job.paymentType.replace("per-", "")}
+                            {formatJobBudget(job)}
                           </span>
                         </div>
                       </div>

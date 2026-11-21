@@ -19,6 +19,10 @@ public class Availability {
     @JoinColumn(name = "seeker_profile_id", nullable = false)
     private SeekerProfile seekerProfile;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "worker_service_listing_id")
+    private WorkerServiceListing workerServiceListing;
+
     // Null means every day within the date range.
     // Otherwise, availability repeats on this weekday.
     @Enumerated(EnumType.STRING)
@@ -71,6 +75,11 @@ public class Availability {
     public SeekerProfile getSeekerProfile() {
         return seekerProfile;
     }
+
+    public WorkerServiceListing getWorkerServiceListing() { return workerServiceListing; }
+    public void setWorkerServiceListing(WorkerServiceListing listing) { workerServiceListing = listing; }
+    public WorkerServiceListing getServiceListing() { return workerServiceListing; }
+    public void setServiceListing(WorkerServiceListing listing) { workerServiceListing = listing; }
 
     public void setSeekerProfile(SeekerProfile seekerProfile) {
         this.seekerProfile = seekerProfile;

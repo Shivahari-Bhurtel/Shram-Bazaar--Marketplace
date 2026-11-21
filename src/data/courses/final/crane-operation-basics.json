@@ -15,7 +15,7 @@
       "Recognize the importance of safe lifting practices."
     ],
     "safetyNotice": "This is an introductory educational course, not professional crane operator training or certification. Actual crane operation requires appropriate training, authorization, supervision and compliance with applicable safety regulations.",
-    "certificateEligible": false,
+    "certificateEligible": true,
     "optionalGame": {
       "id": "crane-sim",
       "title": "Crane & Structural Alignment Challenge",

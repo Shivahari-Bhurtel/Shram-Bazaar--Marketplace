@@ -79,7 +79,7 @@ public class SeekerCalendarService {
                         );
 
         List<WorkerEngagement> engagements =
-                engagementRepository.findSeekerProfileById(seekerProfileId);
+                engagementRepository.findByApplicationSeekerProfileId(seekerProfileId);
 
         List<CalendarEntryResponse> calendar = new ArrayList<>();
 
@@ -186,12 +186,23 @@ public class SeekerCalendarService {
             // 5. Add the remaining available periods
             for (TimeSlot slot : availableSlots) {
 
+                Availability source = availabilities.stream()
+                        .filter(item -> !date.isBefore(item.getStartDate())
+                                && (item.getEndDate() == null || !date.isAfter(item.getEndDate()))
+                                && (item.getDayOfWeek() == null || item.getDayOfWeek() == date.getDayOfWeek())
+                                && !slot.start().isBefore(item.getStartTime())
+                                && !slot.end().isAfter(item.getEndTime()))
+                        .findFirst().orElse(null);
+
                 calendar.add(new CalendarEntryResponse(
                         date,
                         slot.start(),
                         slot.end(),
                         "AVAILABLE",
-                        null
+                        null,
+                        source == null ? null : source.getId(),
+                        source == null || source.getServiceListing() == null ? null : source.getServiceListing().getId(),
+                        source == null || source.getServiceListing() == null ? null : source.getServiceListing().getTitle()
                 ));
             }
 
@@ -284,7 +295,7 @@ public class SeekerCalendarService {
 
         // Load the seeker's existing engagements
         List<WorkerEngagement> engagements =
-                engagementRepository.findSeekerProfileById(seekerProfileId);
+                engagementRepository.findByApplicationSeekerProfileId(seekerProfileId);
 
         LocalDate date = startDate;
 
@@ -463,21 +474,30 @@ public class SeekerCalendarService {
                         );
 
         List<WorkerEngagement> engagements =
-                engagementRepository.findSeekerProfileById(seekerProfileId);
+                engagementRepository.findByApplicationSeekerProfileId(seekerProfileId);
 
         List<TimeSlot> matchingSlots = new ArrayList<>();
 
-        // 1. Find availability slots for the requested date.
-        for (Availability availability : availabilities) {
+        // A date-specific slot overrides the recurring weekly schedule for that date.
+        List<Availability> dateSpecificSlots = availabilities.stream()
+                .filter(availability -> availability.getDayOfWeek() == null)
+                .filter(availability -> !date.isBefore(availability.getStartDate()))
+                .filter(availability -> availability.getEndDate() == null
+                        || !date.isAfter(availability.getEndDate()))
+                .toList();
 
+        List<Availability> applicableSlots = dateSpecificSlots.isEmpty()
+                ? availabilities
+                : dateSpecificSlots;
+
+        for (Availability availability : applicableSlots) {
             boolean dateMatches =
                     !date.isBefore(availability.getStartDate())
                             && (availability.getEndDate() == null
                             || !date.isAfter(availability.getEndDate()));
 
-            boolean dayMatches =
-                    availability.getDayOfWeek() == null
-                            || availability.getDayOfWeek() == date.getDayOfWeek();
+            boolean dayMatches = availability.getDayOfWeek() == null
+                    || availability.getDayOfWeek() == date.getDayOfWeek();
 
             if (dateMatches && dayMatches) {
                 matchingSlots.add(new TimeSlot(

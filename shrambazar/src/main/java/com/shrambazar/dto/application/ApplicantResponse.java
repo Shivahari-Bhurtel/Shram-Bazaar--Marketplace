@@ -3,6 +3,7 @@ package com.shrambazar.dto.application;
 import com.shrambazar.enums.ApplicationStatus;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.math.BigDecimal;
 
 public record ApplicantResponse(
         Long applicationId,
@@ -12,6 +13,10 @@ public record ApplicantResponse(
         String bio,
         List<String> skills,
         ApplicationStatus status,
-        LocalDateTime appliedAt
+        LocalDateTime appliedAt,
+        BigDecimal offeredAmount,
+        String offerMessage,
+        Integer estimatedDurationHours,
+        LocalDateTime proposedStartAt
 ) {
 }

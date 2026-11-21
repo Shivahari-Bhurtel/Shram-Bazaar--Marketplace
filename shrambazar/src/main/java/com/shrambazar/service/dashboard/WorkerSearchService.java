@@ -3,6 +3,8 @@ package com.shrambazar.service.dashboard;
 
 import com.shrambazar.dto.dashboard.WorkerSearchRequest;
 import com.shrambazar.dto.dashboard.WorkerSearchResponse;
+import com.shrambazar.dto.dashboard.ServiceAvailabilitySummaryResponse;
+import com.shrambazar.dto.dashboard.WorkerServiceSummaryResponse;
 import com.shrambazar.entity.*;
 import com.shrambazar.enums.*;
 import com.shrambazar.repository.*;
@@ -31,6 +33,8 @@ public class WorkerSearchService {
     private final VerificationRequestRepository verificationRequestRepository;
     private final CurrentUserService currentUserService;
     private final SeekerCalendarService seekerCalendarService;
+    private final WorkerServiceListingRepository workerServiceListingRepository;
+    private final AvailabilityRepository availabilityRepository;
 
     public WorkerSearchService(
             SeekerProfileRepository seekerProfileRepository,
@@ -40,7 +44,9 @@ public class WorkerSearchService {
             ReviewRepository reviewRepository,
             VerificationRequestRepository verificationRequestRepository,
             CurrentUserService currentUserService,
-            SeekerCalendarService seekerCalendarService
+            SeekerCalendarService seekerCalendarService,
+            WorkerServiceListingRepository workerServiceListingRepository,
+            AvailabilityRepository availabilityRepository
     ) {
         this.seekerProfileRepository = seekerProfileRepository;
         this.seekerSkillRepository = seekerSkillRepository;
@@ -50,6 +56,8 @@ public class WorkerSearchService {
         this.verificationRequestRepository = verificationRequestRepository;
         this.currentUserService = currentUserService;
         this.seekerCalendarService = seekerCalendarService;
+        this.workerServiceListingRepository = workerServiceListingRepository;
+        this.availabilityRepository = availabilityRepository;
     }
 
     @Transactional(readOnly = true)
@@ -454,7 +462,17 @@ public class WorkerSearchService {
                 calculateTotalExperienceYears(seeker),
                 verified,
                 averageRating,
-                reviews.size()
+                reviews.size(),
+                workerServiceListingRepository.findBySeekerProfileIdAndActiveTrue(seeker.getId()).stream()
+                        .map(service -> new WorkerServiceSummaryResponse(
+                                service.getId(), service.getCategory(), service.getTitle(), service.getDescription(),
+                                service.getPrice(), service.getPricingType(), service.getMinimumDurationHours(),
+                                service.getServiceArea(), service.isNegotiable(),
+                                availabilityRepository.findByWorkerServiceListingIdAndActiveTrueOrderByStartDateAscStartTimeAsc(service.getId()).stream()
+                                        .map(slot -> new ServiceAvailabilitySummaryResponse(slot.getId(), slot.getDayOfWeek(), slot.getStartDate(), slot.getEndDate(), slot.getStartTime(), slot.getEndTime()))
+                                        .toList()
+                        ))
+                        .toList()
         );
     }
 }

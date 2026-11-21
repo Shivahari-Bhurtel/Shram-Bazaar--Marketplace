@@ -3,6 +3,7 @@ package com.shrambazar.service.job;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,7 @@ import java.util.logging.Logger;
 
 /** Replaces the imported showcase table with the canonical simulated jobs snapshot. */
 @Component
+@ConditionalOnProperty(name = "app.dataset.import-enabled", havingValue = "true", matchIfMissing = true)
 public class ShowcaseJobImportRunner implements ApplicationRunner {
     private static final Logger log = Logger.getLogger(ShowcaseJobImportRunner.class.getName());
     private final ShowcaseJobService service;

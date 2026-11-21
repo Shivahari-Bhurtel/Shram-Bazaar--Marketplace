@@ -19,8 +19,6 @@ type GameMessage = {
 export default function ShramGamePlayer({ gameId, title, courseName, embedUrl, onBack, onScoreUpdate }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [score, setScore] = useState(0)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [fullscreenNotice, setFullscreenNotice] = useState("")
 
   useEffect(() => {
     const onMessage = (event: MessageEvent<GameMessage>) => {
@@ -35,26 +33,9 @@ export default function ShramGamePlayer({ gameId, title, courseName, embedUrl, o
         onScoreUpdate?.(data.finalScore)
       }
     }
-    const onFullscreenChange = () => setIsFullscreen(document.fullscreenElement === iframeRef.current)
     window.addEventListener("message", onMessage)
-    document.addEventListener("fullscreenchange", onFullscreenChange)
-    return () => {
-      window.removeEventListener("message", onMessage)
-      document.removeEventListener("fullscreenchange", onFullscreenChange)
-    }
+    return () => window.removeEventListener("message", onMessage)
   }, [gameId, onScoreUpdate])
-
-  const toggleFullscreen = async () => {
-    const frame = iframeRef.current
-    if (!frame) return
-    setFullscreenNotice("")
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen()
-      else await frame.requestFullscreen()
-    } catch {
-      setFullscreenNotice("Fullscreen is unavailable in this browser.")
-    }
-  }
 
   return (
     <section className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white" aria-label={`${title} game player`}>
@@ -68,19 +49,14 @@ export default function ShramGamePlayer({ gameId, title, courseName, embedUrl, o
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-lg border border-[#E5D9C9] bg-white px-3 py-2 text-xs font-bold text-[#4E342E]" aria-live="polite">Score: {score}</span>
-          <button type="button" onClick={toggleFullscreen} className="min-h-10 rounded-lg bg-[#4E342E] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#3D2924] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4E342E]" aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
-            {isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-          </button>
         </div>
       </div>
-      {fullscreenNotice && <p role="status" className="px-4 pt-3 text-xs text-amber-800">{fullscreenNotice}</p>}
       <iframe
         ref={iframeRef}
         title={`${title} — ${courseName}`}
         src={embedUrl}
         className="block min-h-0 w-full flex-1 border-0 bg-[#F8E4D4]"
-        allow="autoplay; fullscreen"
-        allowFullScreen
+        allow="autoplay"
         sandbox="allow-scripts allow-same-origin"
       />
     </section>

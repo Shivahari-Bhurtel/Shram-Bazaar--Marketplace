@@ -2,6 +2,7 @@
 package com.shrambazar.dto.dashboard;
 
 import java.util.List;
+import com.shrambazar.dto.dashboard.WorkerServiceSummaryResponse;
 
 public class WorkerSearchResponse {
 
@@ -21,6 +22,7 @@ public class WorkerSearchResponse {
     private boolean verified;
     private Double averageRating;
     private long reviewCount;
+    private List<WorkerServiceSummaryResponse> services;
 
     public WorkerSearchResponse(
             Long seekerProfileId,
@@ -36,7 +38,8 @@ public class WorkerSearchResponse {
             Double totalExperienceYears,
             boolean verified,
             Double averageRating,
-            long reviewCount
+            long reviewCount,
+            List<WorkerServiceSummaryResponse> services
     ) {
         this.seekerProfileId = seekerProfileId;
         this.userId = userId;
@@ -52,6 +55,7 @@ public class WorkerSearchResponse {
         this.verified = verified;
         this.averageRating = averageRating;
         this.reviewCount = reviewCount;
+        this.services = services;
     }
 
     public Long getSeekerProfileId() {
@@ -109,4 +113,6 @@ public class WorkerSearchResponse {
     public long getReviewCount() {
         return reviewCount;
     }
+
+    public List<WorkerServiceSummaryResponse> getServices() { return services; }
 }

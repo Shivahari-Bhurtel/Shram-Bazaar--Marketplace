@@ -12,6 +12,14 @@ function storageKey(userId: string) {
   return `${STORAGE_KEY}:${userId}`
 }
 
+export function createCertificateId(courseId: string, learnerId: string, completedAt: string) {
+  const day = new Date(completedAt)
+  const dateId = Number.isNaN(day.getTime()) ? "UNKNOWN" : day.toISOString().slice(0, 10).replace(/-/g, "")
+  const source = `${learnerId}:${courseId}:${dateId}`
+  const hash = Array.from(source).reduce((value, character) => Math.imul(value ^ character.charCodeAt(0), 16777619), 2166136261) >>> 0
+  return `SB-${courseId.toUpperCase()}-${dateId}-${hash.toString(36).toUpperCase()}`
+}
+
 export function loadLearningProgress(userId: string): LearningProgress {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(storageKey(userId)) || "null")
@@ -28,6 +36,12 @@ export function loadLearningProgress(userId: string): LearningProgress {
     const completedAt = saved.completedAt && typeof saved.completedAt === "object"
       ? Object.fromEntries(Object.entries(saved.completedAt).filter((entry): entry is [string, string] => typeof entry[1] === "string"))
       : {}
+    const certificates = saved.certificates && typeof saved.certificates === "object"
+      ? Object.fromEntries(Object.entries(saved.certificates).filter((entry): entry is [string, NonNullable<LearningProgress["certificates"][string]>] => {
+          const record = entry[1]
+          return !!record && typeof record === "object" && typeof record.courseId === "string" && typeof record.courseName === "string" && typeof record.learnerName === "string" && typeof record.certificateId === "string" && typeof record.completedAt === "string" && typeof record.templateId === "string"
+        }))
+      : {}
     const quizResults = saved.quizResults && typeof saved.quizResults === "object"
       ? Object.fromEntries(Object.entries(saved.quizResults).filter((entry): entry is [string, { score: number; total: number; attemptedAt: string }] => {
           const result = entry[1]
@@ -41,6 +55,7 @@ export function loadLearningProgress(userId: string): LearningProgress {
       completedLessons,
       currentLessons,
       completedAt,
+      certificates,
       quizResults,
     }
   } catch {

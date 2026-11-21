@@ -42,6 +42,8 @@ export default function CreateEditJob({ editJobId }: Props) {
     latitude: existingJob?.latitude,
     longitude: existingJob?.longitude,
     payment: existingJob?.payment ?? 0,
+    paymentMax: existingJob?.paymentMax ?? 0,
+    budgetMode: (existingJob?.budgetNegotiable ? "open" : existingJob?.paymentMax ? "range" : "fixed") as "fixed" | "range" | "open",
     paymentType: (existingJob?.paymentType ?? "per-day") as PaymentType,
     paymentMethod: existingJob?.paymentMethod ?? "CASH",
     deadline: existingJob?.deadline ?? "",
@@ -72,10 +74,11 @@ export default function CreateEditJob({ editJobId }: Props) {
   const handleSubmit = async () => {
     if (!validateStep(3)) return
     try {
+      const { budgetMode, ...jobPayload } = form
       if (existingJob) {
-        await updateJob(existingJob.id, form)
+        await updateJob(existingJob.id, { ...jobPayload, budgetNegotiable: budgetMode === "open" })
       } else {
-        await postJob(form)
+        await postJob({ ...jobPayload, budgetNegotiable: budgetMode === "open" })
       }
       setSubmitted(true)
     } catch (error) {
@@ -128,8 +131,10 @@ export default function CreateEditJob({ editJobId }: Props) {
         message = "Choose a valid end time."
       else if (form.workType !== "multi-day" && form.endTime <= form.startTime)
         message = "The end time must be later than the start time."
-      else if (!Number.isFinite(form.payment) || form.payment <= 0)
-        message = "Enter a payment amount greater than zero."
+      else if (form.budgetMode !== "open" && (!Number.isFinite(form.payment) || form.payment <= 0))
+        message = "Enter a task budget greater than zero."
+      else if (form.budgetMode === "range" && (!Number.isFinite(form.paymentMax) || form.paymentMax < form.payment))
+        message = "The maximum budget must be at least the minimum budget."
     }
     setFormError(message)
     return !message
@@ -596,24 +601,19 @@ export default function CreateEditJob({ editJobId }: Props) {
                 />
               </div>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="mb-4 rounded-xl border border-[#E4E9E3] bg-[#F7F8F5] p-4">
+              <label className="text-sm font-semibold text-[#202923]">Task budget format</label>
+              <select value={form.budgetMode} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, budgetMode: event.target.value as typeof previous.budgetMode, ...(event.target.value === "open" ? { payment: 0, paymentMax: 0 } : {}) })) }} className="input-style mt-1.5 w-full sm:max-w-sm"><option value="fixed">Fixed budget</option><option value="range">Budget range</option><option value="open">Open to offers</option></select>
+              <p className="mt-1.5 text-xs text-[#68736B]">Workers can propose their own price for this task. Their usual service rate is shown separately on their profile.</p>
+            </div>
+            {form.budgetMode === "open" ? <div className="mb-4 rounded-lg border border-[#E4E9E3] bg-white p-4 text-sm text-[#68736B]">No fixed budget set. Workers will submit their prices for you to compare.</div> : <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                  Payment Amount (NPR) *
+                  {form.budgetMode === "range" ? "Minimum budget (NPR) *" : "Task budget (NPR) *"}
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={form.payment || ""}
-                  onChange={(e) => {
-                    setFormError("")
-                    setForm((p) => ({ ...p, payment: Number(e.target.value) }))
-                  }}
-                  placeholder="e.g. 1500"
-                  className="input-style"
-                />
+                <input type="number" min="1" step="1" value={form.payment || ""} onChange={(e) => { setFormError(""); setForm((p) => ({ ...p, payment: Number(e.target.value) })) }} placeholder="e.g. 1500" className="input-style" />
               </div>
+              {form.budgetMode === "range" && <div><label className="text-sm font-medium text-stone-700 block mb-1.5">Maximum budget (NPR) *</label><input type="number" min={form.payment || 1} step="1" value={form.paymentMax || ""} onChange={(e) => { setFormError(""); setForm((p) => ({ ...p, paymentMax: Number(e.target.value) })) }} placeholder="e.g. 2500" className="input-style" /></div>}
               <div>
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">
                   Payment Type *
@@ -637,7 +637,7 @@ export default function CreateEditJob({ editJobId }: Props) {
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">Payment Method *</label>
                 <select value={form.paymentMethod} onChange={(event) => setForm((previous) => ({ ...previous, paymentMethod: event.target.value as typeof previous.paymentMethod }))} className="input-style"><option value="CASH">Cash</option><option value="BANK_TRANSFER">Bank transfer</option><option value="DIGITAL_WALLET">Digital wallet</option><option value="OTHER">Other</option></select>
               </div>
-            </div>
+            </div>}
 
             {/* Preview */}
             <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
@@ -657,10 +657,9 @@ export default function CreateEditJob({ editJobId }: Props) {
                     })}
                   </span>
                 )}
-                {form.payment > 0 && (
+                {form.budgetMode === "open" ? <span className="font-semibold text-[#286B50]">Open to offers</span> : form.payment > 0 && (
                   <span className="font-mono-data font-semibold text-stone-800">
-                    NPR {form.payment.toLocaleString()}/
-                    {form.paymentType.replace("per-", "")}
+                    NPR {form.payment.toLocaleString()}{form.budgetMode === "range" ? `–${form.paymentMax.toLocaleString()}` : ""} / {form.paymentType.replace("per-", "")}
                   </span>
                 )}
               </div>

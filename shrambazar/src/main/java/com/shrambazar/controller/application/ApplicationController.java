@@ -24,10 +24,11 @@ public class ApplicationController {
     // Seeker applies for a job
     @PostMapping("/jobs/{jobId}/applications")
     public ResponseEntity<ApplicationResponse> applyForJob(
-            @PathVariable Long jobId) {
+            @PathVariable Long jobId,
+            @Valid @RequestBody(required = false) OfferRequest offer) {
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(applicationService.applyForJob(jobId));
+                .body(applicationService.applyForJob(jobId, offer));
     }
 
     // Seeker views own applications

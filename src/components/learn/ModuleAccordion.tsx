@@ -20,6 +20,11 @@ export default function ModuleAccordion({ modules, courseId, progress, currentLe
 
   useEffect(() => {
     const currentModule = modules.find((module) => module.lessons.some((lesson) => lesson.id === currentLessonId))
+    setOpenModules(currentModule ? [currentModule.id] : modules[0] ? [modules[0].id] : [])
+  }, [courseId, modules])
+
+  useEffect(() => {
+    const currentModule = modules.find((module) => module.lessons.some((lesson) => lesson.id === currentLessonId))
     if (currentModule) setOpenModules((open) => open.includes(currentModule.id) ? open : [...open, currentModule.id])
   }, [currentLessonId, modules])
 

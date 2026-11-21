@@ -4,6 +4,7 @@ import { ApplicationStatusBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
 import type { ApplicationStatus } from "../../types"
 import { formatNepalDate, nepalDateString } from "../../utils/dates"
+import { formatJobBudget } from "../../utils/jobBudget"
 
 type ActionType = {
   applicationId: string
@@ -58,6 +59,7 @@ export default function ApplicantManagement() {
     accepted: apps.filter((a) => a.status === "accepted").length,
     declined: apps.filter((a) => a.status === "declined").length,
     rejected: apps.filter((a) => a.status === "rejected").length,
+    withdrawn: apps.filter((a) => a.status === "withdrawn").length,
   }
   const remainingSpots = Math.max(
     0,
@@ -85,6 +87,7 @@ export default function ApplicantManagement() {
       { key: "accepted", label: `Accepted (${counts.accepted})` },
       { key: "declined", label: `Declined (${counts.declined})` },
       { key: "rejected", label: `Not Selected (${counts.rejected})` },
+      { key: "withdrawn", label: `Withdrawn (${counts.withdrawn})` },
     ]
 
   const workerProfiles = state.allWorkerProfiles
@@ -108,7 +111,7 @@ export default function ApplicantManagement() {
       </button>
 
       {/* Job header */}
-      <div className="bg-white border border-stone-200 rounded-2xl p-5 mb-8">
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 mb-8">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="font-display text-xl font-bold text-stone-900">
@@ -124,8 +127,7 @@ export default function ApplicantManagement() {
                 })}
               </span>
               <span className="font-mono-data font-semibold text-stone-800">
-                NPR {job.payment.toLocaleString()}/
-                {job.paymentType.replace("per-", "")}
+                {formatJobBudget(job)}
               </span>
             </div>
           </div>
@@ -243,6 +245,14 @@ export default function ApplicantManagement() {
                         </div>
                         <ApplicationStatusBadge status={app.status} />
                       </div>
+
+                  <div className="mt-4 rounded-xl border border-[#D9E8DE] bg-[#F4F8F5] p-4">
+                    {app.offeredAmount != null ? <>
+                      <div className="flex flex-wrap items-baseline justify-between gap-2"><div><span className="text-xs font-semibold uppercase tracking-wide text-[#68736B]">Worker offer</span><p className="mt-0.5 text-xl font-bold text-[#286B50]">NPR {app.offeredAmount.toLocaleString()}</p><span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${job.budgetNegotiable || app.offeredAmount <= (job.paymentMax || job.payment) ? "bg-[#E2F0E7] text-[#286B50]" : "bg-[#FFF0D2] text-[#815219]"}`}>{job.budgetNegotiable ? "Provider invited offers" : app.offeredAmount > (job.paymentMax || job.payment) ? "Above budget" : "Within budget"}</span></div><p className="text-xs text-[#68736B]">Task budget: {formatJobBudget(job)} · estimate {app.estimatedDurationHours || "—"}h</p></div>
+                      {app.proposedStartAt && <p className="mt-2 text-xs text-[#202923]">Proposed time: {new Date(`${app.proposedStartAt.slice(0, 16)}+05:45`).toLocaleString("en-NP", { timeZone: "Asia/Kathmandu", dateStyle: "medium", timeStyle: "short" })} (Nepal time)</p>}
+                      {app.offerMessage && <p className="mt-2 text-sm leading-relaxed text-[#202923]">“{app.offerMessage}”</p>}
+                    </> : <p className="text-sm text-[#68736B]">No price or message was attached to this application.</p>}
+                  </div>
 
                       {/* Skills */}
                       <div className="flex flex-wrap gap-1.5 mt-2">
@@ -448,7 +458,7 @@ export default function ApplicantManagement() {
                           title={remainingSpots === 0 ? "All requested positions are filled." : undefined}
                           className="px-4 py-1.5 bg-green text-white text-sm font-medium rounded-xl hover:bg-green-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          ✓ Accept
+                          ✓ Select offer
                         </button>
                       )}
                       <button
@@ -538,9 +548,9 @@ export default function ApplicantManagement() {
       {/* Confirm Accept */}
       {pendingAction?.newStatus === "accepted" && (
         <ConfirmDialog
-          title="Accept this applicant?"
-          message={`You're accepting ${apps.find((a) => a.id === pendingAction.applicationId)?.workerName} for "${job.title}". They will be notified immediately.`}
-          confirmLabel="Yes, Accept"
+          title="Select this worker?"
+          message={`Send ${apps.find((a) => a.id === pendingAction.applicationId)?.workerName} a booking request for “${job.title}”. The task is booked after they confirm availability.`}
+          confirmLabel="Send booking request"
           onConfirm={() =>
             handleAction(pendingAction.applicationId, "accepted")
           }

@@ -4,7 +4,9 @@ package com.shrambazar.service.availability;
 import com.shrambazar.dto.availability.*;
 import com.shrambazar.entity.Availability;
 import com.shrambazar.entity.SeekerProfile;
+import com.shrambazar.entity.WorkerServiceListing;
 import com.shrambazar.repository.AvailabilityRepository;
+import com.shrambazar.repository.WorkerServiceListingRepository;
 import com.shrambazar.service.CurrentUserService;
 
 import org.springframework.http.HttpStatus;
@@ -20,13 +22,16 @@ public class AvailabilityService {
 
     private final AvailabilityRepository availabilityRepository;
     private final CurrentUserService currentUserService;
+    private final WorkerServiceListingRepository serviceListingRepository;
 
     public AvailabilityService(
             AvailabilityRepository availabilityRepository,
-            CurrentUserService currentUserService) {
+            CurrentUserService currentUserService,
+            WorkerServiceListingRepository serviceListingRepository) {
 
         this.availabilityRepository = availabilityRepository;
         this.currentUserService = currentUserService;
+        this.serviceListingRepository = serviceListingRepository;
     }
 
     @Transactional(readOnly = true)
@@ -167,6 +172,14 @@ public class AvailabilityService {
         availability.setEndDate(request.endDate());
         availability.setStartTime(request.startTime());
         availability.setEndTime(request.endTime());
+        if (request.serviceListingId() != null) {
+            SeekerProfile profile = currentUserService.getCurrentSeekerProfile();
+            WorkerServiceListing listing = serviceListingRepository.findByIdAndSeekerProfileId(request.serviceListingId(), profile.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Service listing not found"));
+            availability.setServiceListing(listing);
+        } else {
+            availability.setServiceListing(null);
+        }
     }
 
     private AvailabilityResponse mapToResponse(
@@ -180,7 +193,8 @@ public class AvailabilityService {
                 availability.getStartTime(),
                 availability.getEndTime(),
                 availability.isActive(),
-                availability.getCreatedAt()
+                availability.getCreatedAt(),
+                availability.getServiceListing() == null ? null : availability.getServiceListing().getId()
         );
     }
 }

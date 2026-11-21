@@ -70,7 +70,17 @@ export type LearningProgress = {
   completedLessons: Record<string, string[]>
   currentLessons: Record<string, string>
   completedAt: Record<string, string>
+  certificates: Record<string, CertificateRecord>
   quizResults: Record<string, { score: number; total: number; attemptedAt: string }>
+}
+
+export type CertificateRecord = {
+  courseId: string
+  courseName: string
+  learnerName: string
+  certificateId: string
+  completedAt: string
+  templateId: string
 }
 
 export const emptyLearningProgress = (): LearningProgress => ({
@@ -78,6 +88,7 @@ export const emptyLearningProgress = (): LearningProgress => ({
   completedLessons: {},
   currentLessons: {},
   completedAt: {},
+  certificates: {},
   quizResults: {},
 })
 

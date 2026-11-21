@@ -17,6 +17,7 @@ public record SeekerProfileResponse(
         Double latitude,
         Double longitude,
         java.util.List<String> preferredCategories,
+        boolean acceptingWork,
         boolean verified
 
 ) {

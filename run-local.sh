@@ -3,7 +3,8 @@ set -Eeuo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_URL="http://127.0.0.1:8080"
-WEB_URL="http://127.0.0.1:8444"
+WEB_PORT="${WEB_PORT:-8444}"
+WEB_URL="http://127.0.0.1:${WEB_PORT}"
 API_LOG="${TMPDIR:-/tmp}/shram-bazar-api.log"
 API_PID=""
 WEB_PID=""
@@ -124,6 +125,6 @@ if web_healthy; then
 fi
 
 echo "Shram Bazar is starting at $WEB_URL (API: $API_URL). Press Ctrl+C to stop services started by this script."
-(cd "$APP_DIR" && PORT=8444 FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
+(cd "$APP_DIR" && PORT="$WEB_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
 WEB_PID=$!
 wait "$WEB_PID"

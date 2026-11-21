@@ -144,6 +144,40 @@ public class WorkerEngagementService {
 
     }
 
+    // Provider directly requests a worker using the same application and engagement lifecycle.
+    @Transactional
+    public WorkerEngagementResponse requestWorker(Long jobId, Long seekerUserId) {
+        ProviderProfile provider = currentUserService.getCurrentProviderProfile();
+        JobPost job = jobPostRepository.findByIdAndProviderProfileIdForUpdate(jobId, provider.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job not found"));
+        if (job.getStatus() != JobPostStatus.OPEN) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This job is not open");
+        }
+        if (job.isBudgetNegotiable() || job.getPaymentMaxAmount() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This task needs a worker offer before a worker can be selected");
+        }
+        SeekerProfile seeker = seekerProfileRepository.findByUserId(seekerUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Worker profile not found"));
+        if (!seeker.isAcceptingWork()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This worker is not accepting new work");
+        }
+        Application application = applicationRepository.findByJobPostIdAndSeekerProfileId(jobId, seeker.getId())
+                .orElseGet(() -> {
+                    Application created = new Application();
+                    created.setJobPost(job);
+                    created.setSeekerProfile(seeker);
+                    created.setStatus(ApplicationStatus.PENDING);
+                    return applicationRepository.save(created);
+                });
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This worker already has an offer for the task");
+        }
+        if (engagementRepository.existsByApplicationId(application.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A request is already pending for this worker");
+        }
+        return selectApplicant(jobId, application.getId());
+    }
+
     // Seeker views their engagements
     @Transactional(readOnly = true)
     public List<WorkerEngagementResponse> getMyEngagements() {
@@ -196,12 +230,14 @@ public class WorkerEngagementService {
 
         // 4. Get the associated job
         JobPost job = engagement.getApplication().getJobPost();
+        job = jobPostRepository.findByIdForUpdate(job.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job not found"));
 
         // 5. Reject confirmation if the job was cancelled
-        if (job.getStatus() == JobPostStatus.CANCELLED) {
+        if (job.getStatus() == JobPostStatus.CANCELLED || job.getStatus() == JobPostStatus.CLOSED) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "This job has been cancelled"
+                    "This job is no longer available for confirmation"
             );
         }
 
@@ -211,6 +247,16 @@ public class WorkerEngagementService {
         // 7. Confirm the engagement
         engagement.setStatus(EngagementStatus.CONFIRMED);
         engagement.setRespondedAt(LocalDateTime.now());
+        engagementRepository.save(engagement);
+
+        long confirmedWorkers = engagementRepository.countByJobAndStatuses(
+                job.getId(),
+                EnumSet.of(EngagementStatus.CONFIRMED, EngagementStatus.IN_PROGRESS, EngagementStatus.COMPLETED)
+        );
+        if (confirmedWorkers >= job.getNumberOfWorkersRequired() && job.getStatus() == JobPostStatus.OPEN) {
+            job.setStatus(JobPostStatus.ASSIGNED);
+            jobPostRepository.save(job);
+        }
 
         // 8. Notify the provider
         notificationService.createNotification(
