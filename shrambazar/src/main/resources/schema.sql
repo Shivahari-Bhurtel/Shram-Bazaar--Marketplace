@@ -21,3 +21,40 @@ CREATE INDEX IF NOT EXISTS idx_worker_service_listings_seeker_updated
 
 ALTER TABLE availabilities
     ADD COLUMN IF NOT EXISTS worker_service_listing_id BIGINT;
+
+-- Keep older worker accounts compatible with current profile preferences.
+ALTER TABLE seeker_profiles
+    ADD COLUMN IF NOT EXISTS accepting_work BOOLEAN NOT NULL DEFAULT TRUE;
+
+CREATE TABLE IF NOT EXISTS seeker_preferred_categories (
+    seeker_profile_id BIGINT NOT NULL REFERENCES seeker_profiles(id) ON DELETE CASCADE,
+    category VARCHAR(80) NOT NULL,
+    PRIMARY KEY (seeker_profile_id, category)
+);
+
+-- Forward-only compatibility migration for columns added to provider-owned jobs.
+-- Provider postings and all existing rows are preserved.
+ALTER TABLE job_posts
+    ADD COLUMN IF NOT EXISTS category VARCHAR(80);
+
+ALTER TABLE job_posts
+    ADD COLUMN IF NOT EXISTS qualification_required VARCHAR(255);
+
+ALTER TABLE job_posts
+    ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+
+ALTER TABLE job_posts
+    ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+
+ALTER TABLE job_posts
+    ADD COLUMN IF NOT EXISTS payment_max_amount NUMERIC(12, 2);
+
+ALTER TABLE job_posts
+    ADD COLUMN IF NOT EXISTS budget_negotiable BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE job_posts
+    ADD COLUMN IF NOT EXISTS payment_period VARCHAR(20) NOT NULL DEFAULT 'PER_DAY';
+
+-- Negotiable postings are allowed to omit a fixed minimum amount.
+ALTER TABLE job_posts
+    ALTER COLUMN payment_amount DROP NOT NULL;

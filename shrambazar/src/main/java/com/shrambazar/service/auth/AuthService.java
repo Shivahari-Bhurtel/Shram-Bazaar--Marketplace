@@ -61,6 +61,12 @@ public class AuthService {
                 request.confirmPassword()
         );
 
+        AuthResponse retryResponse = reuseMatchingRegistration(
+                request.email(), request.password(), UserRole.JOB_SEEKER);
+        if (retryResponse != null) {
+            return retryResponse;
+        }
+
         User user = createUser(
                 request.fullName(),
                 request.email(),
@@ -87,6 +93,12 @@ public class AuthService {
                 request.password(),
                 request.confirmPassword()
         );
+
+        AuthResponse retryResponse = reuseMatchingRegistration(
+                request.email(), request.password(), UserRole.JOB_PROVIDER);
+        if (retryResponse != null) {
+            return retryResponse;
+        }
 
         if (request.hasBusiness()) {
 
@@ -193,12 +205,25 @@ public class AuthService {
             );
         }
 
-        if (userRepository.existsByEmailIgnoreCase(normalizeEmail(email))) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Email is already registered"
-            );
+    }
+
+    /**
+     * Signup is safe to retry after a lost response: the same email, role, and
+     * password returns the already-created account instead of a duplicate error.
+     * A different password or role still requires the existing account's login.
+     */
+    private AuthResponse reuseMatchingRegistration(String email, String password, UserRole role) {
+        User existing = userRepository.findByEmailIgnoreCase(normalizeEmail(email)).orElse(null);
+        if (existing == null) {
+            return null;
         }
+        if (existing.getRole() == role && passwordEncoder.matches(password, existing.getPasswordHash())) {
+            return buildAuthResponse(existing);
+        }
+        throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "This email already has an account. Sign in with its existing password."
+        );
     }
 
     private AuthResponse buildAuthResponse(User user) {

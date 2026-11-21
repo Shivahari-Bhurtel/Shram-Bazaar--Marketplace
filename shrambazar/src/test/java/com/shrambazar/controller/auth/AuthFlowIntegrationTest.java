@@ -5,11 +5,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.sql.DataSource;
 import java.util.UUID;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -22,12 +27,31 @@ class AuthFlowIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private DataSource dataSource;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void privateNotificationRequestWithoutSessionPromptsForAuthentication() throws Exception {
+        mockMvc.perform(get("/api/notifications"))
+                .andExpect(status().isUnauthorized());
+    }
 
     @Test
     void workerCanRegisterAndLogIn() throws Exception {
         String email = "worker-auth-flow@example.com";
         String password = "worker-password-123";
+
+        // Model the older profile schema that caused live worker signup to fail.
+        try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE seeker_profiles DROP COLUMN accepting_work");
+            statement.execute("DROP TABLE IF EXISTS seeker_preferred_categories");
+        }
+        new ResourceDatabasePopulator(new ClassPathResource("schema.sql")).execute(dataSource);
 
         mockMvc.perform(post("/api/auth/register/job-seeker")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -46,20 +70,64 @@ class AuthFlowIntegrationTest {
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.role").value("JOB_SEEKER"));
 
-        mockMvc.perform(post("/api/auth/login")
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"%s","password":"%s"}
-                                """.formatted(email, password)))
+                                """.formatted(email.toUpperCase(), password)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.email").value(email));
+                .andExpect(jsonPath("$.email").value(email))
+                .andReturn().getResponse().getContentAsString();
+        String token = objectMapper.readTree(loginResponse).get("accessToken").asText();
+
+        mockMvc.perform(get("/api/seeker/profile")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.acceptingWork").value(true))
+                .andExpect(jsonPath("$.preferredCategories").isArray());
+
+        // Retrying registration with the same credentials recovers the account.
+        mockMvc.perform(post("/api/auth/register/job-seeker")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "Test Worker",
+                                  "email": "%s",
+                                  "password": "%s",
+                                  "confirmPassword": "%s",
+                                  "phoneNumber": "+9779800000001",
+                                  "dateOfBirth": "1990-01-01",
+                                  "address": "Kathmandu, Bagmati"
+                                }
+                                """.formatted(email, password, password)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userId").isNotEmpty())
+                .andExpect(jsonPath("$.role").value("JOB_SEEKER"));
     }
 
     @Test
     void providerCanRegisterAndLogIn() throws Exception {
         String email = "provider-auth-flow@example.com";
         String password = "provider-password-123";
+
+        mockMvc.perform(post("/api/auth/register/job-provider")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "Test Provider",
+                                  "email": "%s",
+                                  "password": "%s",
+                                  "confirmPassword": "%s",
+                                  "phoneNumber": "+9779800000002",
+                                  "dateOfBirth": "1990-01-01",
+                                  "address": "Lalitpur, Bagmati",
+                                  "hasBusiness": false
+                                }
+                                """.formatted(email, password, password)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.role").value("JOB_PROVIDER"));
 
         mockMvc.perform(post("/api/auth/register/job-provider")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,6 +196,24 @@ class AuthFlowIntegrationTest {
                 .andExpect(jsonPath("$.applicationCount").value(0))
                 .andReturn().getResponse().getContentAsString();
         long jobId = objectMapper.readTree(taskResponse).get("id").asLong();
+
+        // Model a database that predates the latest JobPost fields, then verify
+        // the startup SQL safely restores compatibility without losing job rows.
+        try (var connection = dataSource.getConnection(); var statement = connection.createStatement()) {
+            for (String column : new String[]{"category", "qualification_required", "latitude", "longitude", "payment_max_amount", "budget_negotiable", "payment_period"}) {
+                statement.execute("ALTER TABLE job_posts DROP COLUMN " + column);
+            }
+        }
+        new ResourceDatabasePopulator(new ClassPathResource("schema.sql")).execute(dataSource);
+
+        mockMvc.perform(get("/api/jobs").param("keyword", "Repair kitchen pipe"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(jobId))
+                .andExpect(jsonPath("$[0].paymentPeriod").value("PER_DAY"))
+                .andExpect(jsonPath("$[0].applicationCount").value(0));
+        // Restore the modern fixture values needed by the rest of this flow;
+        // the preceding default assertions exercise the legacy migration.
+        jdbcTemplate.update("UPDATE job_posts SET category = 'Plumbing', budget_negotiable = TRUE, payment_period = 'FIXED' WHERE id = ?", jobId);
 
         String workerEmail = "market-worker-" + UUID.randomUUID() + "@example.com";
         String workerRegistration = mockMvc.perform(post("/api/auth/register/job-seeker")

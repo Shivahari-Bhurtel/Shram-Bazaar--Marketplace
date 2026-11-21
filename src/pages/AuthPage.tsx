@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useApp } from "../store/AppContext"
 import { DISTRICTS } from "../data/mockData"
 import { useSkillCatalog } from "../hooks/useSkillCatalog"
 import { LanguageSwitch } from "../i18n/LanguageContext"
 import { nepalDateString } from "../utils/dates"
+import { isValidEmail, isValidPhoneNumber } from "../utils/validation"
 
 type AuthMode = "login" | "register-choice" | "worker-signup" | "provider-signup"
 
@@ -11,9 +12,10 @@ interface Props {
   mode: AuthMode
 }
 
-export default function AuthPage({ mode }: Props) {
+export default function AuthPage({ mode: initialMode }: Props) {
   const { navigate, login, signupWorker, signupProvider, loginAsAdmin } =
     useApp()
+  const [mode, setMode] = useState<AuthMode>(initialMode)
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     email: "",
@@ -37,9 +39,18 @@ export default function AuthPage({ mode }: Props) {
   })
   const [skillInput, setSkillInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const submitInFlight = useRef(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const skillCatalog = useSkillCatalog()
+
+  const changeAuthMode = (nextMode: AuthMode) => {
+    setError("")
+    setStep(1)
+    setLoading(false)
+    submitInFlight.current = false
+    setMode(nextMode)
+  }
 
   const isLogin = mode === "login"
   const isRegisterChoice = mode === "register-choice"
@@ -54,14 +65,14 @@ export default function AuthPage({ mode }: Props) {
           <h1 id="register-choice-title" className="font-display text-3xl font-bold text-stone-900">Create your account</h1>
           <p className="mt-2 text-sm text-stone-600">Choose how you want to use Shram Bazzar.</p>
           <div className="mt-7 grid gap-4 sm:grid-cols-2">
-            <button type="button" onClick={() => navigate("worker-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
+            <button type="button" onClick={() => changeAuthMode("worker-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
               <span className="block text-lg font-bold text-stone-900">Job Worker</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Create a worker profile, find suitable jobs, and manage applications.</span>
             </button>
-            <button type="button" onClick={() => navigate("provider-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
+            <button type="button" onClick={() => changeAuthMode("provider-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
               <span className="block text-lg font-bold text-stone-900">Job Provider</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Create a provider account to post jobs and find workers.</span>
             </button>
           </div>
-          <p className="mt-7 text-center text-sm text-stone-600">Already have an account? <button type="button" onClick={() => navigate("login")} className="font-semibold text-primary-ink hover:underline">Sign in</button></p>
+          <p className="mt-7 text-center text-sm text-stone-600">Already have an account? <button type="button" onClick={() => changeAuthMode("login")} className="font-semibold text-primary-ink hover:underline">Sign in</button></p>
         </section>
       </main>
     )
@@ -71,11 +82,43 @@ export default function AuthPage({ mode }: Props) {
     e.preventDefault()
     setError("")
     if (isLogin) {
+      if (!isValidEmail(formData.email)) {
+        setError("Enter a valid email address.")
+        return
+      }
+      if (!formData.password) {
+        setError("Enter your password.")
+        return
+      }
+      if (submitInFlight.current) return
+      submitInFlight.current = true
       setLoading(true)
-      const result = await login(formData.email, formData.password)
-      if (result) setError(result)
-      setLoading(false)
+      try {
+        const result = await login(formData.email, formData.password)
+        if (result) setError(result)
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Sign in failed. Please try again.")
+      } finally {
+        submitInFlight.current = false
+        setLoading(false)
+      }
     } else if (step < 2) {
+      if (isWorker && !formData.name.trim()) {
+        setError("Enter your full name.")
+        return
+      }
+      if (isProvider && !formData.contactName.trim()) {
+        setError("Enter a contact person name.")
+        return
+      }
+      if (!isValidEmail(formData.email)) {
+        setError("Enter a valid email address.")
+        return
+      }
+      if (isProvider && !isValidPhoneNumber(formData.phone)) {
+        setError("Enter a phone number with 7 to 15 digits.")
+        return
+      }
       if (formData.password.length < 8) {
         setError("Use a password with at least 8 characters.")
         return
@@ -86,6 +129,8 @@ export default function AuthPage({ mode }: Props) {
       }
       setStep((s) => s + 1)
     } else {
+      if (submitInFlight.current) return
+      submitInFlight.current = true
       const resultPromise = isWorker
         ? signupWorker({
             email: formData.email,
@@ -117,9 +162,15 @@ export default function AuthPage({ mode }: Props) {
             location: formData.location,
           })
       setLoading(true)
-      const result = await resultPromise
-      if (result) setError(result)
-      setLoading(false)
+      try {
+        const result = await resultPromise
+        if (result) setError(result)
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not create your account. Please try again.")
+      } finally {
+        submitInFlight.current = false
+        setLoading(false)
+      }
     }
   }
 
@@ -273,14 +324,14 @@ export default function AuthPage({ mode }: Props) {
               <div className="mb-8 flex rounded-xl bg-stone-100 p-1">
                 <button
                   type="button"
-                  onClick={() => navigate("login")}
+                  onClick={() => changeAuthMode("login")}
                   className="flex-1 rounded-lg bg-white py-2.5 text-sm font-medium text-stone-900 shadow-sm transition-colors"
                 >
                   Sign In
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("register-choice")}
+                  onClick={() => changeAuthMode("register-choice")}
                   className="flex-1 rounded-lg py-2.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
                 >
                   Register
@@ -319,6 +370,15 @@ export default function AuthPage({ mode }: Props) {
                 className="mb-5 rounded-xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-ink"
               >
                 {error}
+                {!isLogin && /already registered|already exists/i.test(error) && (
+                  <button
+                    type="button"
+                    onClick={() => changeAuthMode("login")}
+                    className="ml-2 font-semibold underline underline-offset-2"
+                  >
+                    Go to sign in
+                  </button>
+                )}
               </div>
             )}
 
@@ -335,7 +395,7 @@ export default function AuthPage({ mode }: Props) {
               </button>
             )}
 
-            <form onSubmit={handleSubmit} className="auth-form space-y-4">
+            <form noValidate onSubmit={handleSubmit} className="auth-form space-y-4">
               {/* Login fields */}
               {isLogin && (
                 <>
@@ -716,9 +776,11 @@ export default function AuthPage({ mode }: Props) {
               {/* Submit */}
               <button
                 type="submit"
-                className="min-h-12 w-full rounded-lg bg-[#5A2A27] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27]"
+                disabled={loading}
+                aria-busy={loading}
+                className="min-h-12 w-full rounded-lg bg-[#5A2A27] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27] disabled:cursor-wait disabled:opacity-70"
               >
-                {isLogin ? (
+                {loading ? (isLogin ? "Signing in…" : "Creating account…") : isLogin ? (
                   "Sign In"
                 ) : step < 2 ? (
                   <>
@@ -748,7 +810,7 @@ export default function AuthPage({ mode }: Props) {
                 <p className="text-[13px] text-stone-600">
                   Already have an account?{" "}
                   <button
-                    onClick={() => navigate("login")}
+                    onClick={() => changeAuthMode("login")}
                     className="font-semibold text-[#5A2A27] hover:underline"
                   >
                     Sign in

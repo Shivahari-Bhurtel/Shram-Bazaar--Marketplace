@@ -20,8 +20,9 @@ export DB_PASSWORD="${DB_PASSWORD:-local-only-shrambazar}"
 export JWT_SECRET="${JWT_SECRET:-bG9jYWwtZGV2LW9ubHktc2hyYW1iYXphci1qd3Qtc2VjcmV0LW5vdC1mb3ItcHJvZHVjdGlvbi0yMDI2}"
 
 # Figma Make and Vite read .env.local for the frontend, but child processes
-# started here do not inherit those values. Import only the database variables
-# Spring needs when no explicit DB_* override was supplied in the shell.
+# started here do not inherit those values. Read managed database settings only
+# when the caller explicitly opts in; local development must not migrate a
+# shared database just because its credentials happen to be in .env.local.
 if [[ -f "$APP_DIR/.env.local" ]]; then
   while IFS='=' read -r name value; do
     case "$name" in
@@ -42,14 +43,13 @@ if [[ "$DB_URL_WAS_CONFIGURED" == x ]]; then
   if [[ "$DB_URL" != "jdbc:postgresql://127.0.0.1:5432/shrambazar" ]]; then
     managed_db_configured=true
   fi
-else
+elif [[ "${USE_MANAGED_DB:-false}" == "true" ]]; then
   db_host="${POSTGRES_HOST:-${PGHOST:-}}"
   db_name="${POSTGRES_DATABASE:-${PGDATABASE:-}}"
   db_user="${POSTGRES_USER:-${PGUSER:-}}"
   db_password="${POSTGRES_PASSWORD:-${PGPASSWORD:-}}"
 
   # Managed Postgres providers expose host/database/user/password separately.
-  # Use those values only when present; otherwise keep the local Compose defaults.
   if [[ -n "$db_host" && -n "$db_name" && -n "$db_user" && -n "$db_password" ]]; then
     export DB_URL="jdbc:postgresql://${db_host}:5432/${db_name}?sslmode=require"
     if [[ "$DB_USERNAME_WAS_CONFIGURED" != x ]]; then export DB_USERNAME="$db_user"; fi
@@ -58,14 +58,10 @@ else
   fi
 fi
 
-showcase_healthy() {
-  local base_url="$1"
-  curl -fsS --max-time 4 "$base_url/api/jobs/showcase" 2>/dev/null |
-    node -e 'const fs=require("fs"); const actual=JSON.parse(fs.readFileSync(0,"utf8")); const expected=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); const fields=["id","title","category","company","description","location","address","city","latitude","longitude","salary_min","salary_max","salary_type","job_type","experience","skills","requirements","vacancies","posted_date","deadline","is_demo","source","location_accuracy"]; const rows=new Map(Array.isArray(actual)?actual.map(j=>[j.id,j]):[]); process.exit(Array.isArray(actual)&&Array.isArray(expected)&&actual.length===80&&expected.length===80&&rows.size===80&&expected.every(source=>{const job=rows.get(source.id);return job&&fields.every(key=>JSON.stringify(job[key])===JSON.stringify(source[key]))})?0:1)' "$APP_DIR/shrambazar/src/main/resources/data/jobs.json" >/dev/null 2>&1
-}
-
 api_healthy() {
-  curl -fsS --max-time 3 "$API_URL/api/jobs" >/dev/null 2>&1 && showcase_healthy "$API_URL"
+  curl -fsS --max-time 3 "$API_URL/api/health" >/dev/null 2>&1 &&
+    curl -fsS --max-time 3 "$API_URL/api/jobs" 2>/dev/null |
+      node -e 'const fs=require("fs");let data;try{data=JSON.parse(fs.readFileSync(0,"utf8"))}catch{process.exit(1)}process.exit(Array.isArray(data)?0:1)' >/dev/null 2>&1
 }
 
 web_healthy() {
@@ -80,7 +76,8 @@ trap cleanup EXIT INT TERM
 
 if ! api_healthy; then
   if curl -sS --max-time 2 "$API_URL/" >/dev/null 2>&1; then
-    echo "The API on port 8080 is not serving the current showcase dataset. Job discovery will use its bundled dataset."
+    echo "Port 8080 is occupied by a service that is not serving the Shram Bazar API routes. Stop that service, then rerun this script."
+    exit 1
   else
     if [[ "$managed_db_configured" != true ]] && ! pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
     if command -v docker >/dev/null 2>&1; then
@@ -106,20 +103,23 @@ if ! api_healthy; then
           sleep 1
         done
         if ! api_healthy; then
-          echo "The API did not become ready. Job discovery will use its bundled dataset. Recent API log output:"
+          echo "The API did not become ready, so the frontend was not started. Recent API log output:"
           tail -40 "$API_LOG" || true
+          exit 1
         fi
       else
-        echo "The API build did not complete. Job discovery will use its bundled dataset."
+        echo "The API build did not complete, so the frontend was not started."
+        exit 1
       fi
     else
       echo "PostgreSQL is not available. Start a local database or configure POSTGRES_HOST, POSTGRES_DATABASE, POSTGRES_USER, and POSTGRES_PASSWORD to enable login and account creation."
+      exit 1
     fi
   fi
 fi
 
 if web_healthy; then
-  echo "Shram Bazar is ready at $WEB_URL. Job discovery uses the API when available and its bundled dataset otherwise."
+  echo "Shram Bazar is ready at $WEB_URL (API: $API_URL)."
   if [[ -n "$API_PID" ]]; then wait "$API_PID"; fi
   exit 0
 fi

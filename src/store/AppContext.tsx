@@ -29,6 +29,7 @@ import {
   isValidPhoneNumber,
 } from "../utils/validation"
 import {
+  BackendApiError,
   apiRequest,
   apiRoleToUserRole,
   getBackendAuth,
@@ -418,6 +419,7 @@ const providerOnly: Page[] = [
   "applicant-management",
 ]
 const adminOnly: Page[] = ["admin-dashboard"]
+const authPages: Page[] = ["login", "register-choice", "worker-signup", "provider-signup"]
 const publicOnly: Page[] = [
   "landing",
   "login",
@@ -574,7 +576,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (
       currentUser &&
       publicOnly.includes(currentPage) &&
-      currentPage !== "job-discovery"
+      currentPage !== "job-discovery" &&
+      !authPages.includes(currentPage)
     ) {
       setCurrentPage(
         currentUser.role === "worker"
@@ -964,7 +967,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (active) setStorageWarning("")
       } catch (error) {
-        if (active) setStorageWarning(error instanceof Error ? `Server sync: ${error.message}` : "The server could not be reached.")
+        if (!active) return
+        if (error instanceof BackendApiError) {
+          setStorageWarning(`Background data refresh failed for ${error.method} ${error.path} (HTTP ${error.status}). Your authentication request is separate; retry after the server issue is fixed.`)
+        } else {
+          setStorageWarning("Background data refresh failed. Your authentication request is separate; check the server connection and try again.")
+        }
       }
     }
     void syncBackend()
@@ -1034,6 +1042,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("shram-bazar:session-expired", handleExpired)
   }, [])
 
+  useEffect(() => {
+    if (backendMode && currentUser?.backendAuth && !getBackendAuth()) {
+      setSessionId("")
+      setCurrentPage("login")
+      setCurrentJobId(null)
+      setStorageWarning("")
+    }
+  }, [currentUser?.id, currentUser?.backendAuth])
+
   const addNotification = (
     draft: PersistedData,
     notification: Omit<Notification, "id" | "date" | "read">,
@@ -1047,6 +1064,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const navigate = (page: Page, jobId?: string) => {
+    // Authentication routes are intentionally reachable even when another
+    // role is signed in, so a user can register or switch accounts.
+    if (authPages.includes(page)) {
+      setCurrentPage(page)
+      setCurrentJobId(null)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      return
+    }
     if (!currentUser && !publicOnly.includes(page))
       return setCurrentPage("login")
     if (currentUser?.role === "worker" && providerOnly.includes(page))
@@ -1081,9 +1106,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const activate = (user: User) => {
+  const activate = (user: User, preserveBackendAuth = false) => {
     // Local/demo sessions must not inherit a previous backend token from another account.
-    setBackendAuth(null)
+    // A backend login has just stored its fresh token and must preserve it while
+    // switching the UI to the authenticated user's dashboard.
+    if (!preserveBackendAuth) setBackendAuth(null)
     setSessionId(user.id)
     setCurrentPage(
       user.role === "worker"
@@ -1166,7 +1193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ? [...old.providerProfiles.filter((item) => item.id !== provider!.id), provider]
         : old.providerProfiles,
     }))
-    activate(user)
+    activate(user, true)
     if (role === "worker") {
       try {
         const profile = await apiRequest<Record<string, unknown>>("/api/seeker/profile")

@@ -37,3 +37,4 @@ build/
 .env
 private-storage/
 uploads/
+.local/

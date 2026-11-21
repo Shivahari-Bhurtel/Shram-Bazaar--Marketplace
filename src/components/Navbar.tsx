@@ -222,6 +222,16 @@ export default function Navbar() {
                             role="menuitem"
                             onClick={() => {
                               setProfileOpen(false)
+                              navigate("register-choice")
+                            }}
+                            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-primary-ink"
+                          >
+                            Create another account
+                          </button>
+                          <button
+                            role="menuitem"
+                            onClick={() => {
+                              setProfileOpen(false)
                               navigate("settings")
                             }}
                             className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-primary-ink"
@@ -315,6 +325,15 @@ export default function Navbar() {
                 className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-stone-800 hover:bg-stone-100"
               >
                 Profile
+              </button>
+              <button
+                onClick={() => {
+                  navigate("register-choice")
+                  setMobileOpen(false)
+                }}
+                className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-primary-ink hover:bg-primary-50"
+              >
+                Create another account
               </button>
               <button
                 onClick={() => {

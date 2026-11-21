@@ -3,6 +3,18 @@ import type { Application, Job, ProviderProfile, User, WorkerProfile } from "../
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "")
 const AUTH_KEY = "shram-bazar-api-session-v1"
 
+export class BackendApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly path: string,
+    readonly method: string,
+  ) {
+    super(message)
+    this.name = "BackendApiError"
+  }
+}
+
 export type BackendRole = "JOB_SEEKER" | "JOB_PROVIDER" | "ADMIN"
 export interface BackendAuth {
   accessToken: string
@@ -87,6 +99,7 @@ export function setBackendAuth(auth: BackendAuth | null) {
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const auth = getBackendAuth()
+  const method = (init.method || (init.body ? "POST" : "GET")).toUpperCase()
   const headers = new Headers(init.headers)
   if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type"))
     headers.set("Content-Type", "application/json")
@@ -95,10 +108,10 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   try {
     response = await fetch(`${API_BASE}${path}`, { ...init, headers })
   } catch {
-    throw new Error("Cannot reach Shram Bazar server. Start the backend and check the API URL.")
+    throw new Error("Could not reach the Shram Bazar API. Check that the backend is running, the API URL is correct, and this website's origin is allowed by the backend.")
   }
-  if (response.status === 401 && auth) {
-    setBackendAuth(null)
+  if (response.status === 401) {
+    if (auth) setBackendAuth(null)
     window.dispatchEvent(new Event("shram-bazar:session-expired"))
   }
   const requiredRole = path.startsWith("/api/seeker/") ? "JOB_SEEKER" : path.startsWith("/api/provider/") ? "JOB_PROVIDER" : undefined
@@ -107,7 +120,13 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     window.dispatchEvent(new Event("shram-bazar:session-expired"))
   }
   if (!response.ok) {
-    let message = response.status === 403
+    let message = response.status === 401 && path === "/api/auth/login"
+      ? "Email or password is incorrect."
+      : response.status === 403 && path.startsWith("/api/auth/")
+        ? "The server refused this authentication request. Check the API deployment and security configuration."
+        : response.status === 409 && path.startsWith("/api/auth/register/")
+          ? "An account with this email already exists. Sign in instead, or use password recovery if you cannot access it."
+          : response.status === 403
       ? requiredRole && auth?.role !== requiredRole
         ? "Your saved sign-in belongs to a different account type. Sign in as a worker to open availability, or as a provider to manage tasks."
         : "Your signed-in account does not have permission to view this information. Check that you are using the correct worker or provider account."
@@ -120,14 +139,28 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     if (response.status === 404)
       message = "Backend service route not found. The Java API or its Vercel container deployment may not be running."
     try {
-      const body = await response.json()
-      if (typeof body.message === "string") message = body.message
-      else if (typeof body.detail === "string") message = body.detail
-      else if (typeof body.error === "string") message = body.error
+      const body: unknown = await response.json()
+      if (body && typeof body === "object") {
+        const errorBody = body as Record<string, unknown>
+        const serverMessage = [errorBody.detail, errorBody.message]
+          .find((value): value is string => typeof value === "string" && value.trim().length > 0)
+        if (serverMessage) message = serverMessage.trim()
+        else if (typeof errorBody.error === "string") message = errorBody.error
+      }
     } catch {
       // Keep the status based message for non-JSON errors.
     }
-    throw new Error(message)
+    if (response.status === 409 && path.startsWith("/api/auth/register/") && /conflict/i.test(message)) {
+      message = "An account with this email already exists. Sign in instead, or use password recovery if you cannot access it."
+    }
+    if (response.status === 401 && path === "/api/auth/login") {
+      message = "Email or password is incorrect."
+    } else if (response.status === 403 && path.startsWith("/api/auth/")) {
+      message = "The server refused this authentication request. Check the API deployment and security configuration."
+    } else if (response.status >= 500) {
+      message = `The server failed while processing ${method} ${path}. Please try again shortly.`
+    }
+    throw new BackendApiError(message, response.status, path, method)
   }
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
@@ -141,7 +174,7 @@ export async function apiFileRequest(path: string): Promise<Blob> {
   try {
     response = await fetch(`${API_BASE}${path}`, { headers })
   } catch {
-    throw new Error("Cannot reach Shram Bazar server. Start the backend and check the API URL.")
+    throw new Error("Could not reach the Shram Bazar API. Check that the backend is running, the API URL is correct, and this website's origin is allowed by the backend.")
   }
   if (response.status === 401 && auth) {
     setBackendAuth(null)
