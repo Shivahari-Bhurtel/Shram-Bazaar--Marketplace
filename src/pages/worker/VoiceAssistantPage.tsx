@@ -57,8 +57,8 @@ export default function VoiceAssistantPage() {
       const reply = await askProviderAssistant(text, history, language)
       providerHistoryRef.current = [
         ...history,
-        { role: "user", text },
-        { role: "assistant", text: reply.answer },
+        { role: "user" as const, text },
+        { role: "assistant" as const, text: reply.answer },
       ].slice(-12)
       return reply.answer
     },

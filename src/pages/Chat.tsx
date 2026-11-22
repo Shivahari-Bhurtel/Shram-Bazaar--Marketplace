@@ -452,7 +452,7 @@ export default function Chat() {
   const [processingResume, setProcessingResume] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [voiceError, setVoiceError] = useState("")
-  const [selectedChatJob, setSelectedChatJob] = useState<DemoJob | null>(null)
+  const [selectedChatJob, setSelectedChatJob] = useState<(DemoJob & { match_reasons?: string[] }) | null>(null)
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
   const [aiStatusUnavailable, setAiStatusUnavailable] = useState(false)
   const [providerJobs, setProviderJobs] = useState<ApiJob[]>([])
@@ -713,7 +713,6 @@ export default function Chat() {
             priorHistory.slice(-20),
             language,
             controller.signal,
-            getLatestSharedJobIds(activeThread.messages),
           )
         : await sendChatMessage(
             text,
@@ -727,9 +726,9 @@ export default function Chat() {
         role: "assistant",
         text: result.answer,
         time: formatTime(),
-        jobs: result.jobs,
+        jobs: resumeFile ? undefined : (result as ChatResponse).jobs,
       }
-      if (!resumeFile) syncStatusFromResponse(result)
+      if (!resumeFile) syncStatusFromResponse(result as ChatResponse)
       setThreads((current) =>
         current.map((thread) =>
           thread.id === activeThread.id
