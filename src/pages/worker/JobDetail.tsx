@@ -100,6 +100,12 @@ export default function JobDetail() {
     ? job.location
     : `Remote · ${job.location.replace(/^Remote\s*[·-]\s*/i, "").split(",").map((country) => country.trim()).filter(Boolean).slice(0, 2).join(", ")}`
   const externalDescription = isExternal ? splitExternalDescription(job.description || "Description not listed on the original posting.") : null
+  const providerDescription = typeof job.description === "string" && job.description.trim()
+    ? job.description
+    : "Description not listed on the original posting."
+  const providerDescriptionParagraphs = !isExternal
+    ? providerDescription.split(/\r?\n\s*\r?\n/).map((paragraph) => paragraph.trim()).filter(Boolean)
+    : []
 
   const handleApply = async () => {
     setApplying(true)
@@ -152,11 +158,11 @@ export default function JobDetail() {
   }
 
   return (
-    <div className={`w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8 ${isExternal ? "external-job-detail" : ""}`}>
+    <div className={`w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8 ${isExternal ? "external-job-detail" : "provider-job-detail"}`}>
       {/* Breadcrumb */}
       <button
         onClick={() => navigate("job-discovery")}
-        className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6 transition-colors"
+        className="mb-6 flex min-h-10 items-center gap-2 text-sm font-medium text-stone-600 transition-colors hover:text-stone-900"
       >
         <svg
           viewBox="0 0 24 24"
@@ -174,12 +180,12 @@ export default function JobDetail() {
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header */}
-          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "border-b border-stone-300 bg-white pb-6"}`}>
+          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7"}`}>
             <div className="flex items-start gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h1 className={`font-heading tracking-tight text-stone-950 leading-snug ${isExternal ? "text-2xl font-medium" : "text-3xl font-bold"}`}>
+                    <h1 className={`font-heading tracking-tight text-stone-950 leading-tight ${isExternal ? "text-2xl font-medium" : "text-3xl font-semibold sm:text-4xl"}`}>
                       {isExternal ? job.title.replace(/^#\s*/, "") : job.title}
                     </h1>
                   </div>
@@ -220,9 +226,9 @@ export default function JobDetail() {
                     </span>
                   </div>
                 ) : (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
                     <CategoryBadge category={job.category} />
-                    <span className="rounded-none bg-stone-100 px-3 py-1.5 text-sm font-semibold text-stone-700">
+                    <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm font-medium text-stone-700">
                       {job.employmentType || workTypeLabel[job.workType]}
                     </span>
                   </div>
@@ -232,23 +238,25 @@ export default function JobDetail() {
 
             {/* Simple rule-based match explanation */}
             {isWorker && job.matchScore !== undefined && (
-              <div className="mt-5 border-l-2 border-[#70472F] bg-[#F8F5F1] px-4 py-3">
-                <span className="text-base font-bold text-stone-900">
-                  Why this job may fit
-                </span>
-                <div className="space-y-1">
-                  {job.matchReasons?.map((reason, i) => (
-                    <p key={i} className="mt-2 text-sm font-medium leading-relaxed text-stone-700">
-                      {reason}
-                    </p>
-                  ))}
+              <div className="mt-6 rounded-xl border border-[#E8DED2] bg-[#FBF8F4] p-4 sm:p-5">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <h2 className="text-base font-semibold tracking-tight text-stone-900">Why this job may fit</h2>
+                  {job.matchScore !== undefined && <span className="text-sm font-medium tabular-nums text-stone-600">{job.matchScore}% profile match</span>}
                 </div>
+                {!!job.matchReasons?.length && <ul className="mt-4 grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+                  {job.matchReasons.map((reason, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm leading-5 text-stone-700">
+                      <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#986744]" />
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>}
               </div>
             )}
           </div>
 
           {/* Description */}
-          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "border-b border-stone-200 bg-white pb-6"}`}>
+          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7"}`}>
             <h2 className={`font-heading text-xl tracking-tight text-stone-950 mb-3 ${isExternal ? "font-normal" : "font-bold"}`}>
               Job Description
             </h2>
@@ -271,20 +279,24 @@ export default function JobDetail() {
                 {externalDescription.source && <p className="border-t border-stone-200 pt-3 text-xs leading-5 text-stone-500">Originally posted on {externalDescription.source}.</p>}
               </div>
             ) : (
-              <p className="text-base leading-7 text-stone-700">{job.description || "Description not listed on the original posting."}</p>
+              <div className="max-w-[76ch] space-y-3 text-[15px] leading-7 text-stone-700">
+                {providerDescriptionParagraphs.map((paragraph, index) => (
+                  <p key={`description-${index}`} className={`whitespace-pre-line ${index < 2 ? "italic" : "not-italic"}`}>{paragraph}</p>
+                ))}
+              </div>
             )}
             {job.responsibilities && <div className="mt-5 border-t border-stone-200 pt-5">
               <h3 className="font-heading text-lg font-bold text-stone-950 mb-2">Responsibilities</h3>
-              <p className="whitespace-pre-line text-base leading-7 text-stone-700">{job.responsibilities}</p>
+              <p className="max-w-[76ch] whitespace-pre-line text-[15px] leading-7 text-stone-700">{job.responsibilities}</p>
             </div>}
           </div>
 
           {/* Requirements */}
-          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "border-y border-stone-200 bg-white py-6"}`}>
+          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-7"}`}>
             <h2 className="font-heading text-xl font-bold tracking-tight text-stone-950 mb-4">
               {isExternal ? "Role details" : "Requirements"}
             </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
               {!isExternal && <div>
                 <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Payment method</h3>
                 <p className="text-sm text-stone-700">{{ CASH: "Cash", BANK_TRANSFER: "Bank transfer", DIGITAL_WALLET: "Digital wallet", OTHER: "Other" }[job.paymentMethod || "CASH"]}</p>
@@ -431,11 +443,11 @@ export default function JobDetail() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className={isExternal ? "space-y-4" : "space-y-5 lg:sticky lg:top-6 lg:self-start"}>
           {/* Quick info */}
-          <div className="bg-white border border-stone-300 rounded-none p-5">
+          <div className={isExternal ? "rounded-none border border-stone-300 bg-white p-5" : "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6"}>
             {(!isExternal || job.salaryText) && <div className="mb-4 border border-[#E7C66B] bg-[#FFF6D9] px-4 py-4 text-center">
-              <div className="font-heading text-3xl font-bold tracking-tight text-[#765016] tabular-nums">
+              <div className={`font-heading tracking-tight text-[#765016] tabular-nums ${isExternal ? "text-3xl font-bold" : "text-2xl font-semibold sm:text-[28px]"}`}>
                 {isExternal
                   ? job.salaryText
                   : taskBudget}
@@ -449,7 +461,7 @@ export default function JobDetail() {
               )}
             </div>}
 
-            <div className="space-y-3">
+            <div className={isExternal ? "space-y-3" : "grid grid-cols-2 gap-x-5 gap-y-4"}>
               {(isExternal
                 ? [
                     { label: "Location", value: externalLocation },
@@ -484,15 +496,15 @@ export default function JobDetail() {
                       label: "Time",
                       value: `${job.startTime} – ${job.endTime}`,
                     },
-                    { label: "Duration", value: job.duration },
-                    { label: "Location", value: job.location },
+                    ...(job.duration?.trim() ? [{ label: "Duration", value: job.duration }] : []),
+                    { label: "Location", value: job.address?.trim() || job.location },
                     {
                       label: "Workers Needed",
-                      value: `${job.workersNeeded} workers (${spotsLeft} spots left)`,
+                      value: `${job.workersNeeded} ${job.workersNeeded === 1 ? "worker" : "workers"} · ${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left`,
                     },
                     {
                       label: "Applications",
-                      value: `${job.applicantCount} applicants`,
+                      value: `${job.applicantCount} ${job.applicantCount === 1 ? "applicant" : "applicants"}`,
                     },
                     ...(job.deadline ? [{
                       label: "Apply By",
@@ -500,12 +512,12 @@ export default function JobDetail() {
                     }] : []),
                   ]
               ).map((item) => (
-                <div key={item.label}>
+                <div key={item.label} className={isExternal ? "" : item.label === "Location" ? "col-span-2 border-t border-stone-100 pt-3" : "min-w-0"}>
                   <div>
-                    <p className={`text-xs tracking-wide text-stone-500 uppercase ${isExternal ? "font-normal" : "font-semibold"}`}>
+                    <p className={`text-[11px] tracking-[0.12em] text-stone-500 uppercase ${isExternal ? "font-normal" : "font-semibold"}`}>
                       {item.label}
                     </p>
-                    <p title={isExternal && item.label === "Location" && job.externalLocationRestrictions?.length ? `All eligible countries: ${job.externalLocationRestrictions.join(", ")}` : undefined} className={`text-base text-stone-900 ${isExternal ? "font-normal leading-relaxed" : "font-semibold"}`}>
+                    <p title={isExternal && item.label === "Location" && job.externalLocationRestrictions?.length ? `All eligible countries: ${job.externalLocationRestrictions.join(", ")}` : undefined} className={`mt-1 break-words text-[15px] leading-5 text-stone-900 ${isExternal ? "font-normal" : "font-medium"}`}>
                       {item.value}
                     </p>
                   </div>
@@ -591,7 +603,7 @@ export default function JobDetail() {
           </div>
 
           {/* About provider */}
-          <div className="bg-white border border-stone-300 rounded-none p-5">
+          <div className={isExternal ? "rounded-none border border-stone-300 bg-white p-5" : "rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6"}>
             <h3 className={`font-heading text-lg tracking-tight text-stone-950 mb-3 ${isExternal ? "font-normal" : "font-bold"}`}>
               About the Provider
             </h3>

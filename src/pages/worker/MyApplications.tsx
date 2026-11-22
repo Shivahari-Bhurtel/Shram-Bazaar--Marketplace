@@ -33,6 +33,10 @@ function getApplicationDisplayStatus(application: Application): ApplicationStatu
   return application.engagementStatus === "COMPLETED" ? "completed" : application.status
 }
 
+function normalizeSearchText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase().trim()
+}
+
 function scheduledWorkHasEnded(job?: Job) {
   if (!job) return false
   const date = job.endDate || job.date
@@ -245,8 +249,25 @@ export default function MyApplications() {
   const filtered = myApplications
     .filter((application) => activeTab === "all" || getApplicationDisplayStatus(application) === activeTab)
     .filter((application) => {
-      const normalizedQuery = query.trim().toLowerCase()
-      return !normalizedQuery || `${application.jobTitle} ${application.providerName}`.toLowerCase().includes(normalizedQuery)
+      const normalizedQuery = normalizeSearchText(query)
+      if (!normalizedQuery) return true
+      const job = jobsById.get(application.jobId)
+      const searchableText = normalizeSearchText([
+        application.jobTitle,
+        application.providerName,
+        application.providerNote,
+        application.status,
+        job?.title,
+        job?.location,
+        job?.district,
+        job?.municipality,
+        job?.category,
+        job?.employmentType,
+        job?.workType?.replace(/-/g, " "),
+        job?.description,
+        ...(job?.skillsRequired || []),
+      ].filter(Boolean).join(" "))
+      return searchableText.includes(normalizedQuery)
     })
     .filter((application) => workType === "all" || jobsById.get(application.jobId)?.workType === workType)
     .sort((a, b) => {
@@ -264,15 +285,48 @@ export default function MyApplications() {
 
   return (
     <main className="applications-page w-full max-w-none px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      <header className="mb-8">
-        <h1 className="text-4xl font-extrabold tracking-tight text-stone-950 sm:text-5xl">My applications</h1>
-        <p className="mt-3 max-w-3xl text-base leading-relaxed text-stone-600 sm:text-lg">Track your applications, employer updates, and completed work in one place.</p>
-      </header>
+      <section className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center" aria-label="Search and filter applications">
+        <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-stone-200 bg-white px-3.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m15.6 15.6 4.6 4.6" /></svg>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search jobs, employers, location, or skills" aria-label="Search jobs, employers, location, or skills" className="w-full border-0 bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400" />
+          {query && <button type="button" onClick={() => setQuery("")} aria-label="Clear search" className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-stone-500 hover:bg-stone-100 hover:text-stone-800">Clear</button>}
+        </label>
+        <div className="grid grid-cols-2 gap-3 sm:flex">
+          <label className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-600">
+            <span className="sr-only">Sort applications</span>
+            <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as "newest" | "oldest")} className="min-w-0 flex-1 border-0 bg-transparent text-sm text-stone-700 outline-none">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+            </select>
+          </label>
+          <label className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-600">
+            <span className="sr-only">Filter by job type</span>
+            <select value={workType} onChange={(event) => setWorkType(event.target.value)} className="min-w-0 flex-1 border-0 bg-transparent text-sm text-stone-700 outline-none">
+              <option value="all">All job types</option>
+              {workTypes.map((type) => <option key={type} value={type}>{type.replace(/-/g, " ")}</option>)}
+            </select>
+          </label>
+        </div>
+      </section>
 
-      {(demoApplications.length > 0 || demoLoadError) && <section className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Saved application activity">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold text-stone-900">Saved application activity</h2><p className="mt-1 text-sm text-stone-600">{demoApplications.length} saved entr{demoApplications.length === 1 ? "y" : "ies"} · stored on this device</p></div><span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700">Not sent to employers</span></div>
-        {demoLoadError && <p role="alert" className="mt-3 text-sm text-amber-900">Job listing details could not load: {demoLoadError}</p>}
-        {demoApplications.length > 0 && <div className="mt-4 divide-y divide-stone-100">{demoApplications.map(({ application, job }) => <div key={application.jobId} className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="font-semibold text-stone-900">{job.title}</p><p className="mt-0.5 text-sm text-stone-600">{job.company} · {job.location}, {job.city}</p><p className="mt-1 text-xs text-stone-500">Saved {new Intl.DateTimeFormat("en-NP", { dateStyle: "medium" }).format(new Date(application.appliedAt))}</p></div><span className="w-fit rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-700">Saved locally</span><button type="button" onClick={() => setSelectedDemoJob(job)} className="w-fit rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50">View listing</button></div>)}</div>}
+      {(demoApplications.length > 0 || demoLoadError) && <section className="saved-application-activity mb-8" aria-label="Saved application activity">
+        <div className="mb-3">
+          <h2 className="text-xl font-semibold tracking-tight text-stone-900 sm:text-2xl">Application activity</h2>
+          <p className="mt-1 text-sm text-stone-500">{demoApplications.length} saved entr{demoApplications.length === 1 ? "y" : "ies"} <span aria-hidden="true">·</span> stored on this device</p>
+        </div>
+        <div className="rounded-2xl border border-stone-200 bg-white px-4 shadow-sm sm:px-5">
+        {demoLoadError && <p role="alert" className="py-3 text-sm text-amber-900">Job listing details could not load: {demoLoadError}</p>}
+        {demoApplications.length > 0 && <div className="divide-y divide-stone-100">{demoApplications.map(({ application, job }) => <article key={application.jobId} className="grid gap-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold leading-5 text-stone-900 sm:text-base">{job.title}</h3>
+            <p className="mt-0.5 text-xs leading-5 text-stone-600 sm:text-sm">{job.company} <span aria-hidden="true" className="px-1 text-stone-400">·</span> {job.location}, {job.city}</p>
+            <p className="mt-1.5 text-[11px] font-medium tabular-nums text-stone-500 sm:text-xs">Saved {new Intl.DateTimeFormat("en-NP", { dateStyle: "medium" }).format(new Date(application.appliedAt))}</p>
+          </div>
+          <button type="button" onClick={() => setSelectedDemoJob(job)} className="inline-flex min-h-9 w-fit items-center justify-center gap-2 rounded-lg bg-[#246B50] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#1D5942] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#246B50]">
+            View listing <span aria-hidden="true">↗</span>
+          </button>
+        </article>)}</div>}
+        </div>
       </section>}
 
       {myApplications.length ? (
@@ -297,29 +351,6 @@ export default function MyApplications() {
           })}
         </section>
       ) : null}
-
-      <section className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center" aria-label="Search and filter applications">
-        <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-stone-200 bg-white px-3.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 shrink-0 text-stone-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m15.6 15.6 4.6 4.6" /></svg>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search job title or company" aria-label="Search job title or company" className="w-full border-0 bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400" />
-        </label>
-        <div className="grid grid-cols-2 gap-3 sm:flex">
-          <label className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-600">
-            <span className="sr-only">Sort applications</span>
-            <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as "newest" | "oldest")} className="min-w-0 flex-1 border-0 bg-transparent text-sm text-stone-700 outline-none">
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-            </select>
-          </label>
-          <label className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-600">
-            <span className="sr-only">Filter by job type</span>
-            <select value={workType} onChange={(event) => setWorkType(event.target.value)} className="min-w-0 flex-1 border-0 bg-transparent text-sm text-stone-700 outline-none">
-              <option value="all">All job types</option>
-              {workTypes.map((type) => <option key={type} value={type}>{type.replace(/-/g, " ")}</option>)}
-            </select>
-          </label>
-        </div>
-      </section>
 
       <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,2.2fr)_minmax(20rem,1fr)]">
         <section className="min-h-[30rem] min-w-0 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Job applications list">

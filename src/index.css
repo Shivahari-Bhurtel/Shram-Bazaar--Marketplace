@@ -1177,6 +1177,7 @@ body {
   letter-spacing: -.055em;
   line-height: .95;
   text-wrap: balance;
+  text-shadow: 0 1px 0 rgb(255 250 244 / 42%), 0 3px 0 rgb(40 24 15 / 24%), 0 7px 14px rgb(20 10 5 / 25%);
 }
 
 .ai-workspace-description {
@@ -1185,6 +1186,7 @@ body {
   color: rgb(255 248 238 / 72%);
   font-size: .9rem;
   line-height: 1.65;
+  text-shadow: 0 1px 2px rgb(20 10 5 / 22%);
 }
 
 .ai-workspace-actions {
@@ -1201,8 +1203,10 @@ body {
   min-height: 44px;
   border-radius: 999px;
   padding: .7rem 1.1rem;
-  font-size: .82rem;
+  font-family: 'Manrope', 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  font-size: .88rem;
   font-weight: 700;
+  letter-spacing: -.015em;
   transition: 160ms ease;
 }
 
@@ -1214,15 +1218,18 @@ body {
 }
 
 .ai-secondary-action {
-  border: 1px solid rgb(255 248 238 / 35%);
-  background: rgb(255 255 255 / 7%);
+  border: 1px solid #6d4a35;
+  background: #3d281d;
   color: #fffaf4;
-  backdrop-filter: blur(8px);
 }
 
 .ai-primary-action:hover,
 .ai-secondary-action:hover {
   transform: translateY(-2px);
+}
+
+.ai-secondary-action:hover {
+  background: #2e1d14;
 }
 
 .ai-workspace-grid {
@@ -1240,23 +1247,29 @@ body {
 
 .ai-tool-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 220px));
+  justify-content: start;
   gap: 1rem;
 }
 
 .ai-tool-card {
   display: grid;
-  min-height: 104px;
-  grid-template-columns: 44px minmax(0, 1fr) 20px;
-  align-items: center;
+  aspect-ratio: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 56px minmax(0, 1fr) auto;
+  align-items: start;
   gap: .8rem;
   border: 1px solid #e4ddd5;
-  border-radius: 18px;
+  border-radius: 4px;
   background: #fff;
   padding: 1rem;
   text-align: left;
   box-shadow: 0 5px 18px -16px rgb(54 39 28 / 36%);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background 160ms ease;
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .ai-tool-card:hover {
@@ -1273,22 +1286,34 @@ body {
 
 .ai-tool-icon {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
+  grid-column: 1;
+  grid-row: 1;
   place-items: center;
   border-radius: 14px;
-  background: #f1e8dc;
+  background: transparent;
   color: #80502f;
 }
 
 .ai-tool-card.is-active .ai-tool-icon {
-  background: #553421;
   color: #fffaf4;
 }
 
+.ai-tool-card > .min-w-0 {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-self: start;
+}
+
 .ai-tool-icon svg {
-  width: 21px;
-  height: 21px;
+  width: 46px;
+  height: 46px;
+}
+
+.ai-tool-icon img {
+  width: 48px;
+  height: 48px;
 }
 
 .ai-tool-title,
@@ -1297,13 +1322,15 @@ body {
 }
 
 .ai-tool-title {
+  font-family: 'Manrope', 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
   color: #302721;
   font-size: .95rem;
-  font-weight: 750;
+  font-weight: 700;
   letter-spacing: -.01em;
 }
 
 .ai-tool-subtitle {
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
   margin-top: .22rem;
   color: #756d66;
   font-size: .78rem;
@@ -1311,28 +1338,80 @@ body {
 }
 
 .ai-tool-arrow {
+  width: 20px;
+  height: 20px;
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: end;
+  align-self: end;
   color: #a48f7a;
-  font-size: 1.1rem;
-  transition: transform 160ms ease;
+  transition: color 160ms ease, transform 160ms ease;
 }
 
-.ai-tool-card.is-active .ai-tool-arrow,
+.ai-tool-card.is-active .ai-tool-arrow {
+  transform: rotate(180deg);
+  color: #80502f;
+}
+
 .ai-tool-card:hover .ai-tool-arrow {
-  transform: translateX(3px);
   color: #80502f;
 }
 
 .ai-assistant-panel {
   border: 1px solid #e4ddd5;
-  border-radius: 22px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, .94);
   padding: clamp(1.15rem, 3vw, 1.75rem);
   box-shadow: 0 14px 38px -32px rgb(54 39 28 / 42%);
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .ai-assistant-panel h2,
 .ai-insights-column h2 {
+  font-family: 'Manrope', 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  font-weight: 700;
   letter-spacing: -.025em;
+}
+
+.ai-assistant-panel p {
+  line-height: 1.6;
+}
+
+.ai-assistant-panel strong {
+  color: #302721;
+  font-weight: 600;
+}
+
+.ai-profile-context {
+  border: 1px solid #ebe5de;
+  border-radius: 4px;
+  background: #faf9f7;
+  padding-inline: 1rem;
+}
+
+.ai-profile-context dt {
+  font-family: 'Manrope', 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  color: #766c63;
+  font-size: .82rem;
+  font-weight: 650;
+  letter-spacing: -.01em;
+  line-height: 1.4;
+}
+
+.ai-profile-context dd {
+  margin-top: .35rem;
+  color: #39332e;
+  font-size: .95rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.ai-assistant-panel button {
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  letter-spacing: -.01em;
+  border-radius: 4px;
 }
 
 .ai-assistant-panel input,
@@ -1340,7 +1419,7 @@ body {
 .ai-assistant-panel select {
   border-color: #dcd3c9;
   background: #fdfcf9;
-  border-radius: 12px;
+  border-radius: 4px;
 }
 
 .ai-insights-column > section {
@@ -1410,7 +1489,10 @@ body {
     flex: 1;
   }
 
-  .ai-tool-grid,
+  .ai-tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .ai-insights-column {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1426,6 +1508,16 @@ body {
 
 .applications-page :is(h1, h2, h3) {
   font-family: var(--font-heading);
+}
+
+.saved-application-activity {
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.saved-application-activity :is(h2, h3) {
+  font-family: 'Manrope', 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
 }
 
 .application-stat {
@@ -1748,6 +1840,18 @@ body {
   font-family: 'Neue Montreal', 'Rza', 'Outfit', 'Noto Sans Devanagari', sans-serif;
 }
 .job-detail-modal { font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif; }
+
+/* Keep provider-posted worker job details crisp and consistent with API job pages. */
+.provider-job-detail {
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  font-feature-settings: 'ss01' on;
+  -webkit-font-smoothing: antialiased;
+}
+.provider-job-detail h1,
+.provider-job-detail h2,
+.provider-job-detail h3 {
+  font-family: 'Manrope', 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+}
 .job-detail-modal .job-detail-title,
 .job-detail-modal .job-detail-section-title { font-family: 'Outfit', 'Noto Sans Devanagari', system-ui, sans-serif; }
 .job-detail-modal .job-detail-category {

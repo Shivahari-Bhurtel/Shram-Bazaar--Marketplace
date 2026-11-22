@@ -67,6 +67,10 @@ ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_location VARCHAR(255
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS experience_level VARCHAR(32);
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS introduction VARCHAR(1200);
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS shortlisted BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS offered_amount NUMERIC(12, 2);
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS offer_message VARCHAR(1200);
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS estimated_duration_hours INTEGER;
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS proposed_start_at TIMESTAMP;
 
 -- Ratings are read during profile refresh, so keep this core table present in
 -- environments where Hibernate DDL is disabled (the production default).

@@ -53,13 +53,11 @@ function matchWorker(job: Job, worker: WorkerProfile) {
 }
 
 function ToolIcon({ kind }: { kind: ToolId }) {
+  if (kind === "profile") {
+    return <img src="/images/worker/person-cv.svg" alt="" aria-hidden="true" className="h-[23px] w-[23px] object-contain" />
+  }
   if (kind === "career") {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M4 19V9m5 10V5m6 14v-7m5 7V3" />
-        <path d="m3 14 5-5 5 3 7-7" />
-      </svg>
-    )
+    return <img src="/images/worker/career-growth.svg" alt="" aria-hidden="true" className="h-[23px] w-[23px] object-contain" />
   }
   if (kind === "hiring") {
     return (
@@ -223,17 +221,17 @@ export default function AIWorkspace() {
     <main className="ai-workspace-page mx-auto w-full max-w-[84rem] px-4 py-5 sm:px-6 lg:px-8 lg:py-0">
       <header className="ai-workspace-hero mb-6">
         <div className="ai-workspace-hero-copy">
-          <h1>Practical help for<br className="hidden sm:block" /> your next step</h1>
-          <p className="ai-workspace-description">AI suggestions use the details you provide. Check facts before acting; job and wage data in this prototype may be incomplete.</p>
+          <h1>AI Assistant</h1>
+          <p className="ai-workspace-description">AI suggestions may be incomplete. Verify key details.</p>
         </div>
         <div className="ai-workspace-hero-side">
           <ShramAIRobotAnimation />
           <div className="ai-workspace-actions">
-            <button type="button" onClick={() => navigate("chat")} className="ai-primary-action">Open AI chat</button>
+            <button type="button" onClick={() => navigate("chat")} className="ai-primary-action">AI chat</button>
             {isWorker && <button type="button" onClick={() => {
               try { sessionStorage.setItem("voice-assistant-return-page", state.currentPage) } catch { /* Voice navigation still works without session storage. */ }
               navigate("voice-assistant")
-            }} className="ai-secondary-action">Open Voice Assistant</button>}
+            }} className="ai-secondary-action">Voice Assistant</button>}
           </div>
         </div>
       </header>
@@ -242,29 +240,29 @@ export default function AIWorkspace() {
         <section className="min-w-0 space-y-5">
           <div className="ai-tool-grid">
             {labels.map((item) => (
-                <button key={item.id} type="button" onClick={() => { setTool(item.id); setAnswer(""); setError("") }} className={`ai-tool-card ${tool === item.id ? "is-active" : ""}`}>
+                <button key={item.id} type="button" onClick={() => { setTool(item.id); setAnswer(""); setError("") }} aria-expanded={tool === item.id} aria-controls="ai-tool-details" className={`ai-tool-card ${tool === item.id ? "is-active" : ""}`}>
                 <span className="ai-tool-icon"><ToolIcon kind={item.id} /></span>
                 <span className="min-w-0">
                   <span className="ai-tool-title">{item.title}</span>
                   <span className="ai-tool-subtitle">{item.subtitle}</span>
                 </span>
-                <span className="ai-tool-arrow" aria-hidden="true">→</span>
+                <svg className="ai-tool-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
               </button>
             ))}
           </div>
 
-          <section className="ai-assistant-panel">
+          <section id="ai-tool-details" className="ai-assistant-panel">
             {tool === "profile" && isWorker && (
               <>
                 <h2 className="font-display text-xl font-bold text-stone-900">Improve your profile bio</h2>
-                <p className="mt-2 text-sm leading-relaxed text-stone-600">Shram AI uses your saved skills and experience to suggest a short bio. It won’t add qualifications you haven’t entered.</p>
-                <div className="mt-4 rounded-xl bg-stone-50 p-4 text-sm text-stone-700">
-                  <p><strong>Current bio:</strong> {worker?.bio || "No profile bio yet."}</p>
-                  <p className="mt-2"><strong>Skills:</strong> {worker?.skills.join(", ") || "Add skills to your profile for better suggestions."}</p>
-                  <p className="mt-1"><strong>Experience:</strong> {worker?.experience.map((item) => item.title).join(", ") || "None added"}</p>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => void runAssistant("profile")} disabled={busy || !worker?.skills.length} className="rounded-xl bg-[#553421] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Preparing suggestion…" : "Suggest a profile bio"}</button>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">Shram AI uses your saved skills and experience to suggest a short bio. It won’t add qualifications you haven’t entered.</p>
+                <dl className="ai-profile-context mt-5 grid gap-x-6 sm:grid-cols-2">
+                  <div className="py-3 sm:col-span-2"><dt>Current bio</dt><dd>{worker?.bio || "No profile bio yet."}</dd></div>
+                  <div className="py-3"><dt>Skills</dt><dd>{worker?.skills.join(", ") || "Add skills to your profile for better suggestions."}</dd></div>
+                  <div className="py-3"><dt>Experience</dt><dd>{worker?.experience.map((item) => item.title).join(", ") || "None added"}</dd></div>
+                </dl>
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={() => void runAssistant("profile")} disabled={busy || !worker?.skills.length} className="min-h-10 bg-[#553421] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#402719] disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Improving profile…" : "Improve Profile"}</button>
                   <input
                     ref={resumeInputRef}
                     type="file"
@@ -277,7 +275,7 @@ export default function AIWorkspace() {
                       event.target.value = ""
                     }}
                   />
-                  <button type="button" onClick={() => resumeInputRef.current?.click()} className="rounded-xl border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50">Add files</button>
+                  <button type="button" onClick={() => resumeInputRef.current?.click()} className="min-h-10 border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:border-stone-400 hover:bg-stone-50">Add files</button>
                 </div>
                 {resumeFiles.length > 0 && (
                   <ul className="mt-3 space-y-2" aria-label="Resume files added on this device">
@@ -296,10 +294,10 @@ export default function AIWorkspace() {
             {tool === "career" && isWorker && (
               <>
                 <h2 className="font-display text-xl font-bold text-stone-900">Career and skill guidance</h2>
-                <p className="mt-2 text-sm leading-relaxed text-stone-600">Get ideas based on your saved skills, work history, and the goal you enter.</p>
-                <label className="mt-4 block text-sm font-semibold text-stone-700" htmlFor="career-goal">What would you like to achieve?</label>
-                <textarea id="career-goal" value={goal} onChange={(event) => setGoal(event.target.value)} rows={3} maxLength={600} placeholder="For example: learn a skill that helps me find more steady work." className="mt-2 w-full resize-y rounded-xl border border-stone-300 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
-                <button type="button" onClick={() => void runAssistant("career")} disabled={busy || !worker} className="mt-3 rounded-xl bg-[#553421] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Finding practical ideas…" : "Get personalized guidance"}</button>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">Get practical career suggestions based on your skills, experience, and goals.</p>
+                <label className="mt-5 block text-[0.9375rem] font-semibold tracking-[-0.01em] text-stone-800" htmlFor="career-goal">What would you like to achieve?</label>
+                <textarea id="career-goal" value={goal} onChange={(event) => setGoal(event.target.value)} rows={3} maxLength={600} placeholder="For example: learn a skill that helps me find more steady work." className="mt-2 w-full resize-y rounded-sm border border-stone-300 px-3.5 py-3 text-[0.9375rem] leading-relaxed text-stone-800 outline-none placeholder:text-stone-400 focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                <button type="button" onClick={() => void runAssistant("career")} disabled={busy || !worker} className="mt-4 min-h-10 rounded-sm bg-[#553421] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#402719] disabled:opacity-50">{busy ? "Finding practical ideas…" : "Get personalized guidance"}</button>
               </>
             )}
             {tool === "hiring" && !isWorker && (

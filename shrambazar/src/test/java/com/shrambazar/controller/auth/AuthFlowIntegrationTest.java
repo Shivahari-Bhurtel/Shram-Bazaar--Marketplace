@@ -38,11 +38,23 @@ class AuthFlowIntegrationTest {
     @Test
     void startupSqlCreatesReviewTableWhenHibernateDdlIsDisabled() throws Exception {
         jdbcTemplate.execute("DROP TABLE IF EXISTS reviews");
+        jdbcTemplate.execute("ALTER TABLE applications DROP COLUMN IF EXISTS offered_amount");
+        jdbcTemplate.execute("ALTER TABLE applications DROP COLUMN IF EXISTS offer_message");
+        jdbcTemplate.execute("ALTER TABLE applications DROP COLUMN IF EXISTS estimated_duration_hours");
+        jdbcTemplate.execute("ALTER TABLE applications DROP COLUMN IF EXISTS proposed_start_at");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS application_skills");
 
         new ResourceDatabasePopulator(new ClassPathResource("schema.sql")).execute(dataSource);
 
         org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM reviews", Long.class)).isZero();
+        org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'applications' " +
+                        "AND column_name IN ('offered_amount', 'offer_message', 'estimated_duration_hours', 'proposed_start_at')",
+                Long.class)).isEqualTo(4L);
+        org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'application_skills'",
+                Long.class)).isEqualTo(1L);
     }
 
     @Test

@@ -123,6 +123,18 @@ export default function Learn() {
     setProgress(loadLearningProgress(learnerId))
   }, [learnerId])
 
+  useEffect(() => {
+    try {
+      const courseId = sessionStorage.getItem("learn-open-course-id")
+      if (!courseId) return
+      sessionStorage.removeItem("learn-open-course-id")
+      if (learningCourses.some((course) => course.id === courseId)) {
+        setActiveCourseId(courseId)
+        setView("details")
+      }
+    } catch { /* Open the Learn overview if session storage is unavailable. */ }
+  }, [])
+
   const activeCourse = learningCourses.find((course) => course.id === activeCourseId) || null
   const activeLessons = activeCourse ? getCourseLessons(activeCourse) : []
   const activeLesson = activeLessons.find((lesson) => lesson.id === activeLessonId) || null
@@ -313,7 +325,6 @@ export default function Learn() {
             <LearnSidebarHeading>Learn</LearnSidebarHeading>
             <LearnSidebarItem label="My Library" icon="library" onClick={() => setSection("overview")} />
             <LearnSidebarItem label="Content" icon="content" onClick={goToExplore} />
-
             <LearnSidebarItem label="Certifications" icon="certificate" onClick={() => setSection("certificates")} />
 
             <div className="flex items-center gap-2.5 px-5 pb-2 pt-6 text-base font-bold text-[#735B49]">
@@ -385,8 +396,18 @@ export default function Learn() {
           </section>}
 
           {view === "dashboard" && section === "certificates" && <section>
-            <div className="mb-6"><div className="flex items-center gap-3"><svg viewBox="0 0 48 48" fill="none" className="h-10 w-10 shrink-0 text-[#A8753F]" aria-hidden="true"><path d="M13 6c-5 0-8 4-8 9 0 7 8 12 12 17 4-5 12-10 12-17 0-5-3-9-8-9-2 0-4 2-4 4-1-2-2-4-4-4Z" fill="currentColor" opacity=".88"/><path d="M17 32c1 4 0 7-2 10m18-33c-4 0-6 3-6 7 0 5 6 9 9 12 3-3 8-7 8-12 0-4-2-7-6-7-2 0-3 1-3 3 0-2-1-3-2-3Z" fill="currentColor" opacity=".62"/><path d="M14 42h5m15-3 2 5m-24-26-4 1m23-8 3-3" stroke="#80502F" strokeWidth="1.8" strokeLinecap="round"/></svg><p className="font-['Dancing_Script',cursive] text-2xl font-bold leading-tight text-[#80502F] sm:text-3xl">Your achievements</p></div><h1 className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">My certificates</h1></div>
-            {earnedCourses.filter(matchesCourseSearch).length ? <div className="space-y-3">{earnedCourses.filter(matchesCourseSearch).map((course) => <CertificateCard key={course.id} course={course} learnerName={learnerName} learnerId={learnerId} completedAt={progress.completedAt[course.id] || ""} record={progress.certificates[course.id]} onView={() => openCertificate(course)} />)}</div> : <EmptyState title={normalizedSearch ? "No matching certificates" : "Your certificates will appear here"} description={normalizedSearch ? "Try a different course or skill search." : "Complete all lessons in a course to earn a course completion record. You can save it from this page."} actionLabel={normalizedSearch ? "Clear search" : "Continue learning"} onAction={normalizedSearch ? () => setSearch("") : () => { setSection("my-learning"); setLearningFilter("in-progress") }} />}
+            <div className="mb-6">
+              <p className="font-['Dancing_Script',cursive] text-2xl font-bold leading-tight text-[#80502F] sm:text-3xl">Your achievements</p>
+              <h1 className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">My certificates</h1>
+              <p className="mt-2 text-sm text-slate-600">Course certificates you have earned will be collected here.</p>
+            </div>
+            {earnedCourses.filter(matchesCourseSearch).length ? (
+              <div className="space-y-3">
+                {earnedCourses.filter(matchesCourseSearch).map((course) => <CertificateCard key={course.id} course={course} learnerName={learnerName} learnerId={learnerId} completedAt={progress.completedAt[course.id] || ""} record={progress.certificates[course.id]} onView={() => openCertificate(course)} />)}
+              </div>
+            ) : (
+              <EmptyState title={normalizedSearch ? "No matching certificates" : "Your certificates will appear here"} description={normalizedSearch ? "Try a different course or skill search." : "Complete every lesson in an eligible course to earn a course completion certificate."} actionLabel={normalizedSearch ? "Clear search" : "Continue learning"} onAction={normalizedSearch ? () => setSearch("") : () => { setSection("my-learning"); setLearningFilter("in-progress") }} />
+            )}
           </section>}
 
           {view === "certificate" && activeCourse && getCourseProgress(activeCourse, progress).isComplete && activeCourse.certificateEligible !== false && <CourseCertificate

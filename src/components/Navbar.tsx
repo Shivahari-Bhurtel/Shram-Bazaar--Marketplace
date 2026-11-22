@@ -35,10 +35,10 @@ export default function Navbar() {
       { label: "Home", page: "worker-dashboard" }, { label: "Find Jobs", page: "job-discovery" }, { label: "Learn & Grow", page: "learn" }, { label: "Work Schedule", page: "worker-availability" },
     ] },
     { heading: "", items: [
-      { label: "Skills & Certificates", page: "worker-profile" }, { label: "My Applications", page: "my-applications" }, { label: "Saved Jobs", page: "saved-jobs" },
+      { label: "My Applications", page: "my-applications" }, { label: "Saved Jobs", page: "saved-jobs" },
     ] },
     { heading: "", items: [
-      { label: "Shram AI Assistant", page: "shram-ai" }, { label: "Help & Support", page: "worker-help" },
+      { label: "Shram AI", page: "shram-ai" }, { label: "Help & Support", page: "worker-help" },
     ] },
   ]
 
@@ -305,7 +305,9 @@ export default function Navbar() {
                 {group.items.map((link) => <button key={`${link.label}-${link.page}`} onClick={() => {
                   navigate(link.page)
                   setMobileOpen(false)
-                }} aria-current={currentPage === link.page ? "page" : undefined} className={`w-full rounded-lg border-l-2 px-3 py-2.5 text-left text-sm tracking-[0.01em] transition-colors ${currentPage === link.page ? "border-[#80502F] bg-[#F3E9DF] font-medium text-[#4E342E]" : "border-transparent font-medium text-stone-700 hover:bg-stone-50"}`}>{link.label}</button>)}
+                }} aria-current={currentPage === link.page ? "page" : undefined} className={`w-full rounded-lg border-l-2 px-3 py-2.5 text-left text-sm tracking-[0.01em] transition-colors ${currentPage === link.page ? "border-[#80502F] bg-[#F3E9DF] font-medium text-[#4E342E]" : "border-transparent font-medium text-stone-700 hover:bg-stone-50"}`}>
+                  {link.page === "shram-ai" ? <span>Shram <span className="relative">AI<svg viewBox="0 0 20 20" className="shrama-ai-star absolute -right-3 -top-2 h-4 w-4 text-[#B8873B]" fill="currentColor" aria-hidden="true"><path d="M10 1.5 12.2 7.8 18.5 10l-6.3 2.2L10 18.5l-2.2-6.3L1.5 10l6.3-2.2L10 1.5Z"/><circle cx="16.5" cy="3.5" r="1"/></svg></span></span> : link.label}
+                </button>)}
               </section>) : links.map((link) => (
                 <button
                   key={link.page}

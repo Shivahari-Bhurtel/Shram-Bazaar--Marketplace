@@ -79,12 +79,11 @@ const navGroups: { heading: string; items: { label: string; page: WorkerPage; ic
     { label: "Work Schedule", page: "worker-availability", icon: "calendar" },
   ] },
   { heading: "", items: [
-    { label: "Skills & Certificates", page: "worker-profile", icon: "profile" },
     { label: "My Applications", page: "my-applications", icon: "applications" },
     { label: "Saved Jobs", page: "saved-jobs", icon: "saved" },
   ] },
   { heading: "", items: [
-    { label: "Shram AI Assistant", page: "shram-ai", icon: "ai" },
+    { label: "Shram AI", page: "shram-ai", icon: "ai" },
     { label: "Help & Support", page: "worker-help", icon: "help" },
   ] },
 ]
@@ -270,7 +269,7 @@ export default function WorkerSidebar() {
                   const logoLink = link.icon === "ai"
                   return <button key={`${link.label}-${link.page}`} type="button" onClick={() => openPage(link.page)} aria-current={active ? "page" : undefined} className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3.5 text-left text-[15px] tracking-[0.01em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#80502F]/40 ${logoLink ? `worker-assistant-nav ${active ? "is-active" : ""}` : active ? "bg-[#F2E4D4] font-medium text-[#4E342E] shadow-sm" : "font-medium text-[#543D2E] hover:bg-white/60 hover:text-[#4E342E]"}`}>
                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center [&>svg]:h-5 [&>svg]:w-5 ${logoLink ? "text-[#70472F]" : active ? "text-[#70472F]" : "text-[#80674F]"}`}><WorkspaceIcon name={link.icon} /></span>
-                    <span className="leading-snug">{link.label}</span>
+                    {logoLink ? <span className="leading-snug">Shram <span className="relative">AI<svg viewBox="0 0 20 20" className="shrama-ai-star absolute -right-3 -top-2 h-4 w-4 text-[#B8873B]" fill="currentColor" aria-hidden="true"><path d="M10 1.5 12.2 7.8 18.5 10l-6.3 2.2L10 18.5l-2.2-6.3L1.5 10l6.3-2.2L10 1.5Z"/><circle cx="16.5" cy="3.5" r="1"/></svg></span></span> : <span className="leading-snug">{link.label}</span>}
                   </button>
                 })}
               </div>
