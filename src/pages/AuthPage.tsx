@@ -4,6 +4,9 @@ import { DISTRICTS } from "../data/mockData"
 import { useSkillCatalog } from "../hooks/useSkillCatalog"
 import { LanguageSwitch } from "../i18n/LanguageContext"
 import { nepalDateString } from "../utils/dates"
+import { extractResumeProfile } from "../services/shramAi"
+import { mapResumeProfile } from "../utils/resumeProfile"
+import type { WorkerProfile } from "../types"
 
 type AuthMode = "login" | "register-choice" | "worker-signup" | "provider-signup"
 
@@ -39,7 +42,46 @@ export default function AuthPage({ mode }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [resumeBusy, setResumeBusy] = useState(false)
+  const [resumeName, setResumeName] = useState("")
+  const [resumeMessage, setResumeMessage] = useState("")
+  const [resumeProfile, setResumeProfile] = useState<Partial<WorkerProfile> | null>(null)
   const skillCatalog = useSkillCatalog()
+
+  const importWorkerResume = async (file?: File) => {
+    if (!file) return
+    const extension = file.name.split(".").pop()?.toLowerCase()
+    if (!file.size || file.size > 4 * 1024 * 1024 || !["pdf", "docx"].includes(extension || "")) {
+      setResumeMessage("Choose a non-empty PDF or DOCX resume no larger than 4 MB. You can also continue without one.")
+      return
+    }
+    setResumeBusy(true)
+    setResumeMessage("Reading your resume and filling in details we can identify…")
+    try {
+      const extracted = await extractResumeProfile(file)
+      const mapped = mapResumeProfile(extracted, skillCatalog)
+      const district = DISTRICTS.find((item) => item.toLowerCase() === extracted.district?.toLowerCase())
+      setFormData((current) => ({
+        ...current,
+        name: extracted.name || current.name,
+        email: extracted.email || current.email,
+        phone: extracted.phone || current.phone,
+        address: extracted.address || current.address,
+        district: district || current.district,
+        location: extracted.localAddress || extracted.address || current.location,
+        skills: [...new Set([...current.skills, ...(mapped.skills || [])])],
+      }))
+      setResumeProfile(mapped)
+      setResumeName(file.name)
+      const unmatched = extracted.skills.filter((candidate) => !skillCatalog.some((skill) => skill.toLowerCase() === candidate.toLowerCase()))
+      const missingExperienceDates = extracted.experience.filter((item) => !item.startDate || (!item.currentlyWorking && !item.endDate)).length
+      setResumeMessage(`Resume details added. Review the fields and fill any missing required information${unmatched.length ? `; ${unmatched.length} skill${unmatched.length === 1 ? " was" : "s were"} not in the current skill list` : ""}${missingExperienceDates ? `; add dates for ${missingExperienceDates} experience item${missingExperienceDates === 1 ? "" : "s"} from your profile after registration` : ""}. Your password and date of birth are never taken from a resume.`)
+    } catch (error) {
+      setResumeMessage(error instanceof Error ? `${error.message} You can continue and enter everything manually.` : "Resume import failed. You can continue and enter everything manually.")
+    } finally {
+      setResumeBusy(false)
+    }
+  }
 
   const isLogin = mode === "login"
   const isRegisterChoice = mode === "register-choice"
@@ -99,6 +141,9 @@ export default function AuthPage({ mode }: Props) {
             district: formData.district,
             location: formData.location,
             skills: formData.skills,
+            bio: resumeProfile?.bio,
+            qualifications: resumeProfile?.qualifications,
+            experience: resumeProfile?.experience,
           })
         : signupProvider({
             email: formData.email,
@@ -372,6 +417,13 @@ export default function AuthPage({ mode }: Props) {
               {/* Worker signup: email and password only */}
               {isWorker && step === 1 && (
                 <>
+                  <div className="mb-5 rounded-xl border border-primary-100 bg-primary-50/60 p-4">
+                    <label htmlFor="worker-signup-resume" className="block text-sm font-semibold text-stone-800">Optional: fill from your resume</label>
+                    <p className="mt-1 text-xs leading-relaxed text-stone-600">Upload a PDF or DOCX to prefill details. You can skip this and enter everything yourself, or import a resume later from your worker profile. Password and date of birth must be entered manually.</p>
+                    <input id="worker-signup-resume" type="file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx" disabled={resumeBusy} onChange={(event) => { void importWorkerResume(event.target.files?.[0]); event.target.value = "" }} className="mt-3 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:font-semibold file:text-stone-700" />
+                    {resumeName && <p className="mt-2 text-xs font-medium text-stone-700">Imported: {resumeName}</p>}
+                    {resumeMessage && <p role="status" className="mt-2 text-xs leading-relaxed text-stone-700">{resumeMessage}</p>}
+                  </div>
                   <Field label="Full name">
                     <input
                       type="text"
@@ -716,10 +768,13 @@ export default function AuthPage({ mode }: Props) {
               {/* Submit */}
               <button
                 type="submit"
-                className="min-h-12 w-full rounded-lg bg-[#5A2A27] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27]"
+                disabled={isWorker && step === 2 && resumeBusy}
+                className="min-h-12 w-full rounded-lg bg-[#5A2A27] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27] disabled:cursor-wait disabled:opacity-60"
               >
                 {isLogin ? (
                   "Sign In"
+                ) : isWorker && step === 2 && resumeBusy ? (
+                  "Reading resume…"
                 ) : step < 2 ? (
                   <>
                     Continue <span aria-hidden="true">→</span>

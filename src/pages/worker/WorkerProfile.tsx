@@ -21,6 +21,8 @@ import { formatNepalDate, isDateOnlyString, nepalDateString, nepalYear } from ".
 import { isValidPhoneNumber } from "../../utils/validation"
 import { getConfiguredJobCategories } from "../../utils/categories"
 import { getCurrentCoordinates } from "../../utils/geolocation"
+import { extractResumeProfile } from "../../services/shramAi"
+import { mergeResumeIntoExistingProfile } from "../../utils/resumeProfile"
 
 const presetAvatars = [
   {
@@ -64,6 +66,8 @@ export default function WorkerProfile() {
   const [photoMessage, setPhotoMessage] = useState("")
   const [photoError, setPhotoError] = useState(false)
   const [photoChoicesOpen, setPhotoChoicesOpen] = useState(false)
+  const [resumeImportBusy, setResumeImportBusy] = useState(false)
+  const [resumeImportMessage, setResumeImportMessage] = useState("")
   const [availabilityDay, setAvailabilityDay] = useState<Weekday>("monday")
   const [availabilityStart, setAvailabilityStart] = useState("18:00")
   const [availabilityEnd, setAvailabilityEnd] = useState("21:00")
@@ -82,6 +86,29 @@ export default function WorkerProfile() {
       notifyProfileUpdated(message)
       setPhotoMessage("")
     }, 2000)
+  }
+
+  const importResumeToProfile = async (file?: File) => {
+    if (!file || !workerProfile) return
+    const extension = file.name.split(".").pop()?.toLowerCase()
+    if (!file.size || file.size > 4 * 1024 * 1024 || !["pdf", "docx"].includes(extension || "")) {
+      setResumeImportMessage("Choose a non-empty PDF or DOCX resume no larger than 4 MB.")
+      return
+    }
+    setResumeImportBusy(true)
+    setResumeImportMessage("Reading your resume and adding details that are missing from your profile…")
+    try {
+      const extracted = await extractResumeProfile(file)
+      const updates = mergeResumeIntoExistingProfile(workerProfile, extracted, skillCatalog)
+      updateWorkerProfile(updates)
+      const unmatched = extracted.skills.filter((candidate) => !skillCatalog.some((skill) => skill.toLowerCase() === candidate.toLowerCase()))
+      const missingExperienceDates = extracted.experience.filter((item) => !item.startDate || (!item.currentlyWorking && !item.endDate)).length
+      setResumeImportMessage(`Resume details imported. Existing profile information was kept${unmatched.length ? `; ${unmatched.length} skill${unmatched.length === 1 ? " was" : "s were"} not in the current skill list` : ""}${missingExperienceDates ? `; complete the dates for ${missingExperienceDates} experience item${missingExperienceDates === 1 ? "" : "s"} so they can be saved` : ""}. Review your profile for accuracy.`)
+    } catch (error) {
+      setResumeImportMessage(error instanceof Error ? `${error.message} You can keep editing your profile manually.` : "Resume import failed. You can keep editing your profile manually.")
+    } finally {
+      setResumeImportBusy(false)
+    }
   }
 
   useEffect(() => {
@@ -667,6 +694,20 @@ export default function WorkerProfile() {
           <span className="text-stone-900">{photoMessage}</span>
         </div>
       )}
+
+      <section className="mb-6 rounded-2xl border border-stone-200 bg-white p-5 sm:p-6" aria-labelledby="resume-import-heading">
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(15rem,0.8fr)] sm:items-center">
+          <div>
+            <h2 id="resume-import-heading" className="font-semibold text-stone-900">Fill your profile from a resume</h2>
+            <p className="mt-1 text-sm leading-relaxed text-stone-600">Optional PDF or DOCX upload. We’ll add recognized details where your profile is blank, and keep the information you already entered.</p>
+          </div>
+          <label className="block text-sm font-medium text-stone-700">Choose resume
+            <input type="file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx" disabled={resumeImportBusy} onChange={(event) => { void importResumeToProfile(event.target.files?.[0]); event.target.value = "" }} className="mt-1.5 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-2 file:font-semibold file:text-stone-700 disabled:opacity-50" />
+          </label>
+        </div>
+        <p className="mt-3 text-xs text-stone-500">Your resume is sent to Shram AI to extract profile details. Review imported information for accuracy. Passwords and date of birth are never extracted.</p>
+        {resumeImportMessage && <p role="status" className="mt-3 text-sm text-stone-700">{resumeImportMessage}</p>}
+      </section>
 
       <div className="grid items-start gap-5 md:grid-cols-3 md:gap-6">
         <div className="space-y-5 md:col-span-2">

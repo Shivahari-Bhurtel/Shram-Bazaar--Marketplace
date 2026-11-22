@@ -91,6 +91,9 @@ export interface WorkerSignup {
   district: string
   location: string
   skills: string[]
+  bio?: string
+  qualifications?: WorkerProfile["qualifications"]
+  experience?: WorkerProfile["experience"]
 }
 export interface ProviderSignup {
   email: string
@@ -1109,11 +1112,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         location: signupProfile?.location || signupProfile?.address || "",
         district: signupProfile?.district || "",
         skills: signupProfile?.skills || [],
-        qualifications: [],
-        experience: [],
+        qualifications: signupProfile?.qualifications || [],
+        experience: signupProfile?.experience || [],
         availableDates: [],
         availability: "flexible",
-        bio: "",
+        bio: signupProfile?.bio || "",
         workHistory: [],
         rating: 0,
         totalJobs: 0,
@@ -1157,6 +1160,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const profile = await apiRequest<Record<string, unknown>>("/api/seeker/profile")
         const mapped = mapSeekerProfile(profile, user)
+        if (signupProfile?.bio) mapped.bio = signupProfile.bio
+        if (signupProfile?.qualifications?.length) mapped.qualifications = signupProfile.qualifications
+        if (signupProfile?.experience?.length) mapped.experience = signupProfile.experience
         const catalog = await apiRequest<Array<{ id: number; name: string }>>("/api/skills")
         if (signupProfile?.skills?.length) {
           const currentSkills = await apiRequest<Array<{ skillName: string }>>("/api/seeker/skills")
@@ -1170,6 +1176,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         const seekerSkills = await apiRequest<Array<{ skillName: string }>>("/api/seeker/skills")
         mapped.skills = seekerSkills.map((item) => item.skillName)
+        if (signupProfile?.bio || signupProfile?.qualifications?.length || signupProfile?.experience?.length) {
+          try {
+            if (signupProfile.bio) {
+              await apiRequest("/api/seeker/profile", { method: "PUT", body: JSON.stringify({
+                fullName: mapped.name,
+                phoneNumber: mapped.phone.replace(/[\s()-]/g, ""),
+                dateOfBirth: mapped.dateOfBirth,
+                address: [...new Set([mapped.address, mapped.location, mapped.district].map((value) => value?.trim()).filter(Boolean))].join(", "),
+                bio: signupProfile.bio,
+                preferredTravelDistanceKm: mapped.preferredTravelDistanceKm ?? 10,
+                preferredCategories: mapped.preferredCategories || [],
+              }) })
+            }
+            for (const item of signupProfile.qualifications || []) {
+              const startDate = item.startDate || `${item.year}-01-01`
+              const saved = await apiRequest<{ id: number }>("/api/seeker/qualifications", { method: "POST", body: JSON.stringify({
+                qualificationName: item.degree, institution: item.institution, fieldOfStudy: item.field,
+                credentialType: (item.credentialType || "education").toUpperCase(), startDate,
+                endDate: item.currentlyStudying ? null : item.endDate || `${item.year}-12-31`, currentlyStudying: Boolean(item.currentlyStudying),
+              }) })
+              mapped.qualifications = (mapped.qualifications || []).map((current) => current.id === item.id ? { ...current, id: String(saved.id) } : current)
+            }
+            for (const item of signupProfile.experience || []) {
+              if (!item.startDate || (!item.currentlyWorking && !item.endDate)) continue
+              const saved = await apiRequest<{ id: number }>("/api/seeker/experience", { method: "POST", body: JSON.stringify({
+                jobTitle: item.title, organizationName: item.company, description: item.description,
+                startDate: item.startDate, endDate: item.currentlyWorking ? null : item.endDate, currentlyWorking: Boolean(item.currentlyWorking),
+              }) })
+              mapped.experience = (mapped.experience || []).map((current) => current.id === item.id ? { ...current, id: String(saved.id) } : current)
+            }
+          } catch (error) {
+            setStorageWarning(error instanceof Error ? `Account created, but some resume details could not be saved: ${error.message}` : "Account created, but some resume details could not be saved.")
+          }
+        }
         const verificationRequests = await apiRequest<Array<{ type: string; status: string; reviewNote?: string; submittedAt?: string; reviewedAt?: string; documents?: Array<{ documentType: string; originalFileName: string }> }>>("/api/verifications/me")
         const identityRequest = verificationRequests.find((item) => item.type === "IDENTITY")
         if (identityRequest) {
@@ -1291,6 +1331,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             district: form.district,
             location: form.location,
             skills: form.skills,
+          bio: form.bio,
+          qualifications: form.qualifications,
+          experience: form.experience,
           })
           return null
         })
@@ -1318,11 +1361,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       location: form.location || form.district,
       district: form.district,
       skills: form.skills,
-      qualifications: [],
-      experience: [],
+      qualifications: form.qualifications || [],
+      experience: form.experience || [],
       availableDates: [],
       availability: "flexible",
-      bio: "",
+      bio: form.bio || "",
       workHistory: [],
       rating: 0,
       totalJobs: 0,
@@ -2551,7 +2594,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       if (updates.experience) {
         void (async () => {
-          const desired = updates.experience ?? []
+          const desired = (updates.experience ?? []).filter((item) => isDateOnlyString(item.startDate || "") && (item.currentlyWorking || isDateOnlyString(item.endDate || "")))
           const current = await apiRequest<Array<{ id: number }>>("/api/seeker/experience")
           const keepIds = new Set(desired.map((item) => item.id).filter((value) => /^\d+$/.test(value)))
           await Promise.all(current.filter((item) => !keepIds.has(String(item.id))).map((item) => apiRequest<void>(`/api/seeker/experience/${item.id}`, { method: "DELETE" })))
