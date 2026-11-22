@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.hamcrest.Matchers.nullValue;
 
 @SpringBootTest
@@ -34,6 +35,16 @@ class AuthFlowIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void localFrontendOnFallbackPortCanReachPublicRegistrationEndpoint() throws Exception {
+        mockMvc.perform(post("/api/auth/register/job-seeker")
+                        .header("Origin", "http://127.0.0.1:8445")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:8445"));
+    }
 
     @Test
     void startupSqlCreatesReviewTableWhenHibernateDdlIsDisabled() throws Exception {
@@ -79,6 +90,32 @@ class AuthFlowIntegrationTest {
     void privateNotificationRequestWithoutSessionPromptsForAuthentication() throws Exception {
         mockMvc.perform(get("/api/notifications"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void seekerCanRefreshOwnJobHistory() throws Exception {
+        String email = "history-" + UUID.randomUUID() + "@example.com";
+        String password = "history-password-123";
+        String registrationResponse = mockMvc.perform(post("/api/auth/register/job-seeker")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName":"History Test Worker",
+                                  "email":"%s",
+                                  "password":"%s",
+                                  "confirmPassword":"%s",
+                                  "phoneNumber":"+9779800000091",
+                                  "dateOfBirth":"1990-01-01"
+                                }
+                                """.formatted(email, password, password)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String token = objectMapper.readTree(registrationResponse).get("accessToken").asText();
+
+        mockMvc.perform(get("/api/seeker/job-history")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test

@@ -160,7 +160,13 @@ public class SecurityConfig {
                 )
         );
         configuration.setAllowedOriginPatterns(
-                List.of("https://*.vercel.app")
+                List.of(
+                        "https://*.vercel.app",
+                        // The local launcher can select another free Vite port.
+                        // Limit the wildcard to loopback origins for local development.
+                        "http://localhost:*",
+                        "http://127.0.0.1:*"
+                )
         );
 
         configuration.setAllowedMethods(

@@ -3,10 +3,14 @@ set -Eeuo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_URL="http://127.0.0.1:8080"
+AI_PORT="${AI_PORT:-8000}"
+AI_URL="http://127.0.0.1:${AI_PORT}"
 WEB_PORT="${WEB_PORT:-8444}"
 WEB_URL="http://127.0.0.1:${WEB_PORT}"
 API_LOG="${TMPDIR:-/tmp}/shram-bazar-api.log"
+AI_LOG="${TMPDIR:-/tmp}/shram-bazar-ai.log"
 API_PID=""
+AI_PID=""
 WEB_PID=""
 
 DB_URL_WAS_CONFIGURED="${DB_URL+x}"
@@ -86,11 +90,38 @@ web_healthy() {
   curl -fsS --max-time 3 "$WEB_URL/" >/dev/null 2>&1
 }
 
+ai_healthy() {
+  curl -fsS --max-time 4 "$AI_URL/api/v1/ai/status" >/dev/null 2>&1
+}
+
 cleanup() {
   if [[ -n "$WEB_PID" ]] && kill -0 "$WEB_PID" 2>/dev/null; then kill "$WEB_PID" 2>/dev/null || true; fi
+  if [[ -n "$AI_PID" ]] && kill -0 "$AI_PID" 2>/dev/null; then kill "$AI_PID" 2>/dev/null || true; fi
   if [[ -n "$API_PID" ]] && kill -0 "$API_PID" 2>/dev/null; then kill "$API_PID" 2>/dev/null || true; fi
 }
 trap cleanup EXIT INT TERM
+
+for required_command in node npm curl; do
+  if ! command -v "$required_command" >/dev/null 2>&1; then
+    echo "Required command '$required_command' was not found. Install Node.js/npm and curl, then rerun this script."
+    exit 1
+  fi
+done
+
+AI_PYTHON="${AI_PYTHON:-$APP_DIR/ai-service/.venv/bin/python}"
+if [[ ! -x "$AI_PYTHON" ]]; then AI_PYTHON="$(command -v python3 || true)"; fi
+if [[ -z "$AI_PYTHON" || ! -x "$AI_PYTHON" ]]; then
+  echo "Python 3.10+ is required for Shram AI. Create ai-service/.venv and install ai-service/requirements.txt."
+  exit 1
+fi
+if ! "$AI_PYTHON" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
+  echo "Shram AI needs Python 3.10 or newer. Set AI_PYTHON to a compatible Python executable."
+  exit 1
+fi
+if ! (cd "$APP_DIR/ai-service" && "$AI_PYTHON" -c 'import fastapi, httpx, google.genai, docx, pypdf, dotenv' >/dev/null 2>&1); then
+  echo "Shram AI dependencies are missing. Install them with: cd ai-service && python -m pip install -r requirements.txt"
+  exit 1
+fi
 
 if ! api_healthy; then
   if curl -sS --max-time 2 "$API_URL/" >/dev/null 2>&1; then
@@ -147,13 +178,46 @@ if ! api_healthy; then
   fi
 fi
 
+# FastAPI checks Ollama on startup, opens Ollama.app on macOS when needed,
+# and starts `ollama serve` only when no server process is present.
+if ! ai_healthy; then
+  if curl -sS --max-time 2 "$AI_URL/" >/dev/null 2>&1; then
+    echo "Port 8000 is occupied by a service without the Shram AI status endpoint. Stop it or correct the AI service, then rerun."
+    exit 1
+  fi
+  echo "Starting Shram AI and checking local Ollama/Qwen readiness..."
+  (
+    cd "$APP_DIR/ai-service"
+    "$AI_PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$AI_PORT"
+  ) >"$AI_LOG" 2>&1 &
+  AI_PID=$!
+
+  for _ in {1..45}; do
+    if ai_healthy; then break; fi
+    if ! kill -0 "$AI_PID" 2>/dev/null; then
+      echo "The Shram AI backend stopped during startup. Recent log output:"
+      tail -40 "$AI_LOG" || true
+      exit 1
+    fi
+    sleep 1
+  done
+  if ! ai_healthy; then
+    echo "The Shram AI backend did not become ready. Recent log output:"
+    tail -40 "$AI_LOG" || true
+    exit 1
+  fi
+fi
+
+curl -fsS --max-time 5 "$AI_URL/api/v1/ai/status" | node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{const s=JSON.parse(input);if(s.ai_ready){console.log(`Local AI ready: ${s.provider} / ${s.model}`)}else{console.log(`Shram AI fallback mode: ${s.state}. ${s.last_error||"Job search and platform guidance remain available."}`)}})'
+
 if web_healthy; then
   echo "Shram Bazar is ready at $WEB_URL (API: $API_URL)."
   if [[ -n "$API_PID" ]]; then wait "$API_PID"; fi
+  if [[ -n "$AI_PID" ]]; then wait "$AI_PID"; fi
   exit 0
 fi
 
 echo "Shram Bazar is starting at $WEB_URL (API: $API_URL). Press Ctrl+C to stop services started by this script."
-(cd "$APP_DIR" && PORT="$WEB_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
+(cd "$APP_DIR" && PORT="$WEB_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
 WEB_PID=$!
 wait "$WEB_PID"

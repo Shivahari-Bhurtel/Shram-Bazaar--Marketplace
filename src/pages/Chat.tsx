@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { useApp, type Page } from "../store/AppContext"
-import { sendChatMessage, sendResumeAnalysis } from "../services/shramAi"
+import { fetchAiStatus, sendChatMessage, sendResumeAnalysis, type AiStatus, type ChatResponse, type ChatTurn } from "../services/shramAi"
 import { useLanguage } from "../i18n/LanguageContext"
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside"
 import ConfirmDialog from "../components/ConfirmDialog"
 import ShramaAIMark from "../components/ShramaAIMark"
+import DemoJobDetailsModal from "../components/DemoJobDetailsModal"
+import { useDemoJobState } from "../hooks/useDemoJobState"
+import { distanceBetweenKm, formatDemoSalary, type DemoJob } from "../services/demoJobs"
+import { getAiStatusPresentation } from "../services/aiStatus.js"
 
 const MAX_RESUME_BYTES = 4 * 1024 * 1024
 const RESUME_TYPES: Record<string, string> = {
@@ -21,6 +25,7 @@ type Message = {
   text: string
   time: string
   attachment?: MessageAttachment
+  jobs?: Array<DemoJob & { match_reasons?: string[] }>
 }
 
 type Thread = {
@@ -133,6 +138,28 @@ function formatFileSize(size: number) {
     : `${(size / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function makeChatHistory(messages: Message[]): ChatTurn[] {
+  return messages
+    .filter((message) => !message.id.startsWith("welcome-"))
+    .map(({ role, text, jobs }) => {
+      if (role !== "assistant" || !jobs?.length) return { role, text }
+      const sharedListings = jobs.map((job) =>
+        `- ${job.title} | ${job.company} | ${job.location}, ${job.city} | NPR ${job.salary_min}–${job.salary_max} / ${job.salary_type} | skills: ${job.skills.slice(0, 4).join(", ")} | details: ${job.description.slice(0, 100)}`,
+      ).join("\n")
+      return {
+        role,
+        text: `${text}\n\nVerified showcase listings shared in this conversation:\n${sharedListings}`,
+      }
+    })
+}
+
+function getLatestSharedJobIds(messages: Message[]): string[] {
+  const latestJobMessage = [...messages].reverse().find(
+    (message) => message.role === "assistant" && message.jobs?.length,
+  )
+  return [...new Set(latestJobMessage?.jobs?.map((job) => job.id) ?? [])].slice(0, 20)
+}
+
 function makeWelcome(name: string, language: "en" | "ne"): Message {
   return {
     id: `welcome-${Date.now()}`,
@@ -236,7 +263,7 @@ function AssistantResponse({ text }: { text: string }) {
   const blocks = splitMarkdownBlocks(text)
 
   return (
-    <div className="max-w-[72ch] space-y-5 text-[15px] leading-[1.75] tracking-normal text-[#39344C] sm:text-base">
+    <div className="max-w-[68ch] space-y-5 text-base leading-8 tracking-normal text-[#39344C] sm:text-lg">
       {blocks.map((block, index) => {
         const lines = block
           .split("\n")
@@ -353,6 +380,7 @@ function AssistantResponse({ text }: { text: string }) {
 
 export default function Chat() {
   const { state, navigate } = useApp()
+  const demoState = useDemoJobState(state.workerProfile?.id)
   const { language } = useLanguage()
   const firstName = state.currentUser?.name.split(" ")[0] || ""
   const goBack = () => {
@@ -400,6 +428,9 @@ export default function Chat() {
   const [processingResume, setProcessingResume] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [voiceError, setVoiceError] = useState("")
+  const [selectedChatJob, setSelectedChatJob] = useState<DemoJob | null>(null)
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
+  const [aiStatusUnavailable, setAiStatusUnavailable] = useState(false)
   const idCounter = useRef(0)
   const sendingRef = useRef(false)
   const requestControllerRef = useRef<AbortController | null>(null)
@@ -421,6 +452,44 @@ export default function Chat() {
       ),
     }))
     .filter((group) => group.threads.length > 0)
+
+  const syncStatusFromResponse = (result: ChatResponse) => {
+    if (result.fallback_active) {
+      setAiStatus((current) => current ? { ...current, ai_ready: false, fallback_active: true, state: "fallback_mode" } : current)
+    } else if (result.mode === "ai") {
+      setAiStatus((current) => current ? { ...current, ai_ready: true, fallback_active: false, state: "ready", last_error: null } : current)
+    }
+    if (result.mode !== "job_search") {
+      void fetchAiStatus().then((status) => {
+        setAiStatus(status)
+        setAiStatusUnavailable(false)
+      }).catch(() => setAiStatusUnavailable(true))
+    }
+  }
+
+  useEffect(() => {
+    let active = true
+    const refresh = async () => {
+      const controller = new AbortController()
+      try {
+        const status = await fetchAiStatus(controller.signal)
+        if (active) {
+          setAiStatus(status)
+          setAiStatusUnavailable(false)
+        }
+      } catch {
+        if (active) setAiStatusUnavailable(true)
+      }
+    }
+    void refresh()
+    const timer = window.setInterval(() => void refresh(), 12_000)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [])
+
+  const aiStatusPresentation = getAiStatusPresentation(aiStatus, aiStatusUnavailable)
 
   useEffect(() => {
     if (!state.currentUser?.id) return
@@ -527,7 +596,7 @@ export default function Chat() {
     const displayText = text || (resumeFile ? "Please analyze my resume." : "")
 
     const userMessage: Message = {
-      id: `message-${++idCounter.current}`,
+      id: `message-${Date.now()}-${++idCounter.current}-${Math.random().toString(36).slice(2, 8)}`,
       role: "user",
       text: displayText,
       time: formatTime(),
@@ -540,9 +609,7 @@ export default function Chat() {
           }
         : undefined,
     }
-    const priorHistory = activeThread.messages
-      .filter((message) => !message.id.startsWith("welcome-"))
-      .map(({ role, text }) => ({ role, text }))
+    const priorHistory = makeChatHistory(activeThread.messages)
     setThreads((current) =>
       current.map((thread) =>
         thread.id === activeThread.id
@@ -580,6 +647,7 @@ export default function Chat() {
             priorHistory.slice(-20),
             language,
             controller.signal,
+            getLatestSharedJobIds(activeThread.messages),
           )
         : await sendChatMessage(
             text,
@@ -589,11 +657,13 @@ export default function Chat() {
             controller.signal,
           )
       const assistantMessage: Message = {
-        id: `message-${++idCounter.current}`,
+        id: `message-${Date.now()}-${++idCounter.current}-${Math.random().toString(36).slice(2, 8)}`,
         role: "assistant",
         text: result.answer,
         time: formatTime(),
+        jobs: result.jobs,
       }
+      if (!resumeFile) syncStatusFromResponse(result)
       setThreads((current) =>
         current.map((thread) =>
           thread.id === activeThread.id
@@ -617,6 +687,7 @@ export default function Chat() {
           requestError.name === "AbortError"
         )
       ) {
+        setAiStatusUnavailable(true)
         setError(
           requestError instanceof Error
             ? requestError.message
@@ -648,10 +719,7 @@ export default function Chat() {
     }
     if (userIndex < 0 || activeThread.messages[userIndex].attachment) return
     const userMessage = activeThread.messages[userIndex]
-    const history = activeThread.messages
-      .slice(0, userIndex)
-      .filter((message) => !message.id.startsWith("welcome-"))
-      .map(({ role, text }) => ({ role, text }))
+    const history = makeChatHistory(activeThread.messages.slice(0, userIndex))
     const controller = new AbortController()
     requestControllerRef.current = controller
     sendingRef.current = true
@@ -664,7 +732,9 @@ export default function Chat() {
         history,
         language,
         controller.signal,
+        getLatestSharedJobIds(activeThread.messages.slice(0, userIndex)),
       )
+      syncStatusFromResponse(result)
       setThreads((current) =>
         current.map((thread) =>
           thread.id === activeThread.id
@@ -674,7 +744,7 @@ export default function Chat() {
                 updatedAt: Date.now(),
                 messages: thread.messages.map((message, index) =>
                   index === assistantIndex
-                    ? { ...message, text: result.answer, time: formatTime() }
+                    ? { ...message, text: result.answer, jobs: result.jobs, time: formatTime() }
                     : message,
                 ),
               }
@@ -688,6 +758,7 @@ export default function Chat() {
           requestError.name === "AbortError"
         )
       )
+        setAiStatusUnavailable(true)
         setError(
           requestError instanceof Error
             ? requestError.message
@@ -992,7 +1063,7 @@ export default function Chat() {
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col border-l border-[#E5E7EB] bg-white">
-        <header className="flex h-12 shrink-0 items-center border-b border-[#E5E7EB] px-3 md:hidden">
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-[#E5E7EB] px-3">
           <button
             onClick={() => setSidebarOpen(true)}
             aria-label="Open conversation sidebar"
@@ -1010,6 +1081,15 @@ export default function Chat() {
               <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
+          <div
+            role="status"
+            aria-live="polite"
+            title={aiStatus?.last_error ?? undefined}
+            className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600"
+          >
+            <span className={`h-2 w-2 rounded-full ${aiStatusPresentation.tone}`} aria-hidden="true" />
+            <span>{aiStatusPresentation.label}</span>
+          </div>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-white px-4 py-6 sm:px-8 sm:py-8">
@@ -1034,7 +1114,7 @@ export default function Chat() {
                   Hello, {firstName || "there"}!
                 </h1>
                 <p
-                  className="welcome-reveal mx-auto mt-3 max-w-2xl text-sm leading-7 text-[#625D73] sm:text-base"
+                  className="welcome-reveal mx-auto mt-3 max-w-2xl text-base leading-7 text-[#625D73] sm:text-lg"
                   style={{ animationDelay: "1.15s" }}
                 >
                   I’m Shram AI, your assistant for jobs, applications, and
@@ -1043,7 +1123,7 @@ export default function Chat() {
               </div>
               <div className="mb-3 text-center sm:mb-4">
                 <h3
-                  className="welcome-reveal text-base font-medium leading-snug text-[#211B42]"
+                  className="welcome-reveal text-lg font-medium leading-snug text-[#211B42]"
                   style={{ animationDelay: "1.4s" }}
                 >
                   What would you like help with today?
@@ -1058,10 +1138,10 @@ export default function Chat() {
                     className="welcome-intro-card group rounded-2xl border border-[#E5E2EC] bg-white p-5 text-left shadow-sm transition-colors hover:border-[#CBBCEB] hover:bg-[#FAF9FC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7655CE] disabled:cursor-wait disabled:opacity-60 sm:p-6"
                     style={{ animationDelay: `${1.7 + index * 0.16}s` }}
                   >
-                    <span className="block text-base font-medium leading-snug text-[#211B42] group-hover:text-[#5630A8]">
+                    <span className="block text-lg font-medium leading-snug text-[#211B42] group-hover:text-[#5630A8]">
                       {suggestion.title}
                     </span>
-                    <span className="mt-1.5 block text-sm leading-relaxed text-[#625D73]">
+                    <span className="mt-1.5 block text-base leading-relaxed text-[#625D73]">
                       {suggestion.detail}
                     </span>
                   </button>
@@ -1087,9 +1167,28 @@ export default function Chat() {
                     {message.role === "assistant" ? (
                       <AssistantResponse text={message.text} />
                     ) : (
-                      <p className="whitespace-pre-wrap text-base leading-7 text-[#302A45]">
+                      <p className="whitespace-pre-wrap text-base leading-8 text-[#302A45] sm:text-lg">
                         {message.text}
                       </p>
+                    )}
+                    {message.role === "assistant" && message.jobs && message.jobs.length > 0 && (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {message.jobs.map((job) => (
+                          <article key={job.id} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+                            <p className="text-[13px] font-semibold uppercase tracking-wide text-[#265D4C]">{job.category} · {job.job_type}</p>
+                            <h3 className="mt-1 text-lg font-semibold text-stone-900">{job.title}</h3>
+                            <p className="mt-1 text-base text-stone-600">{job.company} · {job.location}, {job.city}</p>
+                            <p className="mt-2 text-base font-medium text-stone-800">{formatDemoSalary(job)}</p>
+                            <p className="mt-2 line-clamp-3 text-[15px] leading-6 text-stone-600">{job.description}</p>
+                            <p className="mt-2 text-sm text-stone-600"><span className="font-semibold">Skills:</span> {job.skills.slice(0, 3).join(", ")}</p>
+                            {job.match_reasons?.length ? <p className="mt-2 text-xs text-[#265D4C]">{job.match_reasons.join(" · ")}</p> : null}
+                            <div className="mt-3 flex gap-2">
+                              <button type="button" onClick={() => setSelectedChatJob(job)} className="rounded-md border border-[#265D4C] px-3 py-1.5 text-sm font-semibold text-[#265D4C] hover:bg-[#265D4C]/5">View details</button>
+                              {state.currentUser?.role === "worker" && <button type="button" disabled={demoState.applications.some((application) => application.jobId === job.id)} onClick={() => demoState.apply(job.id)} className="rounded-md bg-[#265D4C] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#1D493B] disabled:bg-stone-300">{demoState.applications.some((application) => application.jobId === job.id) ? "Applied" : "Apply now"}</button>}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
                     )}
                     {message.attachment && (
                       <div className="mt-3 flex max-w-full items-center gap-2.5 rounded-xl border border-primary-100 bg-white/80 px-3 py-2">
@@ -1248,6 +1347,7 @@ export default function Chat() {
             </div>
           )}
         </div>
+        {selectedChatJob && <DemoJobDetailsModal job={selectedChatJob} distance={demoState.userLocation ? distanceBetweenKm(demoState.userLocation, selectedChatJob) : null} saved={demoState.savedIds.includes(selectedChatJob.id)} applied={demoState.applications.some((application) => application.jobId === selectedChatJob.id)} matchReasons={selectedChatJob.match_reasons ?? []} onClose={() => setSelectedChatJob(null)} onViewMap={() => { setSelectedChatJob(null); navigate("job-discovery") }} onToggleSaved={demoState.toggleSaved} onApply={state.currentUser?.role === "worker" ? (jobId) => { demoState.apply(jobId); setSelectedChatJob(null) } : undefined} />}
 
         <div className="shrink-0 px-3 pb-9 pt-2 sm:px-6 sm:pb-11">
           <div className="mx-auto max-w-3xl">
@@ -1402,7 +1502,7 @@ export default function Chat() {
                 rows={1}
                 placeholder="Message Shram AI..."
                 disabled={sending}
-                className="max-h-36 min-h-12 flex-1 resize-none border-0 bg-transparent px-1 py-3 font-sans text-[15px] leading-relaxed text-[#39344C] outline-none placeholder:text-[#8C879B] sm:text-base"
+                className="max-h-36 min-h-12 flex-1 resize-none border-0 bg-transparent px-1 py-3 font-sans text-base leading-relaxed text-[#39344C] outline-none placeholder:text-[#8C879B] sm:text-lg"
               />
               <button
                 type="button"

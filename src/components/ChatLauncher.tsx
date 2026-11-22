@@ -9,8 +9,8 @@ const makeWelcome = (language: "en" | "ne"): LauncherMessage => ({
   role: "assistant",
   text:
     language === "ne"
-      ? "नमस्ते! Gemini AI सँग काम र आवेदनबारे सोध्नुहोस्।"
-      : "Hi! I'm Shrama AI, powered by Gemini. Ask me about work or applications.",
+      ? "नमस्ते! श्रम बजारका काम र आवेदनबारे सोध्नुहोस्।"
+      : "Hi! I'm Shram AI. Ask me about jobs, applications, or the platform.",
 })
 
 const quickQuestions = [
@@ -131,7 +131,7 @@ export default function ChatLauncher() {
             </div>
             <div className="relative min-w-0">
               <h2 className="text-sm font-bold tracking-wide">Shrama AI</h2>
-              <p className="mt-0.5 text-xs text-white/75">Powered by Gemini</p>
+              <p className="mt-0.5 text-xs text-white/75">Shram Bazar assistant</p>
             </div>
             <button
               type="button"

@@ -189,7 +189,9 @@ export default function VoiceAssistantPage() {
               {voice.status === "connecting" &&
                 "Preparing a secure, temporary voice session."}
               {voice.status === "listening" &&
-                "Speak naturally. English and Nepali are supported."}
+                (voice.speechDetected
+                  ? "I hear you. Tap Get answer when you finish speaking."
+                  : "Microphone is on. Speak near your device; English and Nepali are supported.")}
               {voice.status === "processing" &&
                 "Shram Bazar AI is preparing a reply."}
               {voice.status === "speaking" &&
@@ -253,6 +255,19 @@ export default function VoiceAssistantPage() {
 
           {active && (
             <div className="voice-session-controls" aria-label="Voice controls">
+              {voice.status === "listening" && (
+                <div
+                  className={`voice-mic-indicator${voice.speechDetected ? " voice-mic-detected" : ""}${voice.muted ? " voice-mic-muted" : ""}`}
+                  role="status"
+                >
+                  <span aria-hidden="true" />
+                  {voice.muted
+                    ? "Microphone muted"
+                    : voice.speechDetected
+                      ? "Voice detected"
+                      : "Microphone on · waiting for speech"}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={voice.toggleMute}
@@ -261,6 +276,15 @@ export default function VoiceAssistantPage() {
               >
                 {voice.muted ? "Unmute microphone" : "Mute microphone"}
               </button>
+              {voice.status === "listening" && voice.speechDetected && (
+                <button
+                  type="button"
+                  onClick={voice.finishTurn}
+                  className="voice-primary-action voice-answer-action"
+                >
+                  Get answer
+                </button>
+              )}
               {voice.status === "speaking" && (
                 <button
                   type="button"

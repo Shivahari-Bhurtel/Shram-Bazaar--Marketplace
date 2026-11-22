@@ -10,6 +10,7 @@ import { jsearchProxy } from "./server/jsearchProxy"
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
+  const aiServiceTarget = `http://127.0.0.1:${process.env.AI_SERVICE_PORT || "8000"}`
   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
   const emitSourcemaps = mode === "development"
 
@@ -52,7 +53,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         "/api/v1": {
-          target: "http://127.0.0.1:8000",
+          target: aiServiceTarget,
           changeOrigin: true,
         },
         "/api": {
@@ -73,7 +74,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         "/api/v1": {
-          target: "http://127.0.0.1:8000",
+          target: aiServiceTarget,
           changeOrigin: true,
         },
         "/api": {

@@ -1,8 +1,8 @@
 # Shram Bazar AI service
 
-This FastAPI service handles the existing text chatbot and resume analysis, and issues short-lived Gemini Live tokens for the browser voice assistant. Text/resume requests use `GEMINI_API_KEY`; voice token creation uses only `GEMINI_VOICE_API_KEY`. The browser receives only a one-use ephemeral voice token, never either permanent key.
+This FastAPI service handles Shram AI chat, resume analysis, and short-lived Gemini Live tokens for the browser voice assistant. Normal text chat uses local Ollama (`qwen3:4b` by default); resume analysis and the existing voice assistant continue to use their Gemini credentials. The browser never receives provider credentials.
 
-This is a prototype, not a RAG system. It is not connected to a backend job database or authenticated account API. Resume-based broad job categories are suggestions only; the assistant must say that current Shram Bazar job matches are unavailable unless the user supplies a job description. The existing app's login and sample job data are client-side, so this service cannot enforce account authorization. Do not expose this prototype publicly without adding backend authentication and abuse controls.
+Job searches use deterministic matching against `../shrambazar/src/main/resources/data/jobs.json`; Ollama does not create or select job records. The bundled file contains 130 showcase records. These are illustrative demo listings. The current app login/profile is client-side, so the AI service cannot securely read an authenticated worker profile. Do not expose this prototype publicly without adding backend authentication and abuse controls.
 
 ## Requirements
 
@@ -10,22 +10,33 @@ This is a prototype, not a RAG system. It is not connected to a backend job data
 - Separate text and voice Gemini API keys from [Google AI Studio](https://aistudio.google.com/app/apikey)
 - Node.js and npm for the existing Vite app
 
-## Configure credentials
+## Configure the local model
 
 Copy `.env.example` to `.env` if needed, then configure these backend-only values:
 
 ```dotenv
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen3:4b
+OLLAMA_CONNECT_TIMEOUT_SECONDS=2
+OLLAMA_TIMEOUT_SECONDS=45
+OLLAMA_KEEP_ALIVE=2h
+OLLAMA_STARTUP_TIMEOUT_SECONDS=20
+OLLAMA_START_COOLDOWN_SECONDS=30
+OLLAMA_NUM_CTX=4096
+OLLAMA_NUM_PREDICT=300
+# Required only for resume analysis and optional Gemini text fallback:
 GEMINI_API_KEY=your_text_and_resume_key
 GEMINI_MODEL=gemini-3.6-flash
 GEMINI_VOICE_API_KEY=your_separate_voice_project_key
 CORS_ORIGINS=http://localhost:8443,http://127.0.0.1:8443
 ```
 
-Never use a `VITE_` prefix for either permanent key. Keep `.env` out of Git and configure both keys as server-side secrets in production. `GEMINI_VOICE_API_KEY` is required only for voice; text chat and resume analysis continue using `GEMINI_API_KEY`.
+Keep `.env` out of Git. Ollama settings are read only by FastAPI. `AI_PROVIDER=gemini` selects Gemini as an optional text-chat fallback. Resume analysis still requires `GEMINI_API_KEY`; voice requires `GEMINI_VOICE_API_KEY`.
 
 ## Vercel deployment
 
-The repository's root `vercel.toml` deploys the Vite frontend and this FastAPI service together. Requests to `/api/*` are routed to the FastAPI service; all other paths are served by the frontend. The browser therefore uses same-origin API requests, and `VITE_SHRAM_AI_API_URL` should remain unset for this layout.
+The repository's root `vercel.toml` deploys the Vite frontend and this FastAPI service together. Requests to `/api/*` are routed to the FastAPI service; all other paths are served by the frontend. This local Ollama setup is for local development: a cloud function's `localhost` is not your Mac. For Vercel text chat, set `AI_PROVIDER=gemini` and configure `GEMINI_API_KEY`; the browser still uses same-origin API requests.
 
 In the linked Vercel project's **Production** environment, add these server-side variables:
 
@@ -34,7 +45,7 @@ GEMINI_API_KEY
 GEMINI_VOICE_API_KEY
 ```
 
-Set their values to the separate text/resume and voice keys. Do not name them `VITE_*`; Vite variables are bundled into browser code. Add them to **Preview** too if preview deployments need AI. New environment variables apply only after a new deployment. Keep `CORS_ORIGINS` unset for same-origin requests unless the frontend and API are later split across different domains.
+Set their values to the separate text/resume and voice keys. Do not name them `VITE_*`; Vite variables are bundled into browser code. Also set `AI_PROVIDER=gemini` for cloud chat. Add them to **Preview** too if preview deployments need AI. New environment variables apply only after a new deployment. Keep `CORS_ORIGINS` unset for same-origin requests unless the frontend and API are later split across different domains.
 
 Deploy from the linked repository with a current Vercel CLI (`vercel --prod`) or by pushing to the Vercel production branch. Verify `/health`, send a chat message, and start a browser voice session on the deployed HTTPS domain.
 
@@ -56,6 +67,10 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Check <http://localhost:8000/health>.
+
+FastAPI checks Ollama during startup. On macOS it opens the installed Ollama app when available, then checks the API with bounded retries; if no server process exists, it starts one tracked `ollama serve` child. It never downloads model data. Missing or stopped Ollama does not stop FastAPI, deterministic job search, or local platform guidance.
+
+`GET /api/v1/ai/status` reports provider/model, installation and service state, model availability/loading, readiness, last check/error, and fallback state. The check uses `/api/tags` and `/api/show`, not text generation. Chat retries a stopped service with a cooldown and requests a schema-constrained final answer so reasoning text cannot be returned to users.
 
 ## Start the frontend
 
@@ -103,6 +118,6 @@ python -m pip install -r requirements-test.txt
 python -m pytest -q
 ```
 
-The tests cover PDF/DOCX extraction, the existing text chat and resume analysis, voice token settings and credential separation, missing credentials, rate limiting, and mocked provider failures. They do not call Google APIs or test a real microphone session.
+The tests cover PDF/DOCX extraction, text chat and resume analysis, voice token settings and credential separation, missing credentials, rate limiting, Ollama detection/startup/recovery/readiness/fallback, and deterministic dataset matching. Ollama process behavior is mocked in automated tests; a separate local request is needed to verify the actual model. Tests do not call Google APIs or test a real microphone session.
 
 After configuring both backend keys, run `python -m pytest -q` from `ai-service/`. A real voice acceptance test additionally needs a browser with microphone permission and a valid `GEMINI_VOICE_API_KEY`; confirm audio is heard from Gemini before treating the complete voice path as verified.

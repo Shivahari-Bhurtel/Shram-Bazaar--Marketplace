@@ -55,6 +55,7 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
   const [status, setStatus] = useState<VoiceStatus>("idle")
   const [error, setError] = useState("")
   const [muted, setMuted] = useState(false)
+  const [speechDetected, setSpeechDetected] = useState(false)
   const [turns, setTurns] = useState<VoiceTranscriptTurn[]>([])
   const mountedRef = useRef(false)
   const socketRef = useRef<WebSocket | null>(null)
@@ -75,6 +76,8 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
   const pendingUserTextRef = useRef("")
   const pendingAssistantTextRef = useRef("")
   const suppressPlaybackRef = useRef(false)
+  const speechDetectedRef = useRef(false)
+  const responseTimeoutRef = useRef<number | null>(null)
 
   const updateStatus = useCallback((next: VoiceStatus) => {
     if (mountedRef.current) setStatus(next)
@@ -121,6 +124,9 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
     if (reconnectTimerRef.current !== null)
       window.clearTimeout(reconnectTimerRef.current)
     reconnectTimerRef.current = null
+    if (responseTimeoutRef.current !== null)
+      window.clearTimeout(responseTimeoutRef.current)
+    responseTimeoutRef.current = null
     tokenAbortRef.current?.abort()
     tokenAbortRef.current = null
     stopPlayback()
@@ -133,6 +139,8 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
     resumeHandleRef.current = null
     pendingUserTextRef.current = ""
     pendingAssistantTextRef.current = ""
+    speechDetectedRef.current = false
+    if (mountedRef.current) setSpeechDetected(false)
   }, [releaseMedia, stopMicrophoneGraph, stopPlayback])
 
   const appendCompletedTurn = useCallback(() => {
@@ -191,14 +199,40 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
     })
     const silentGain = context.createGain()
     silentGain.gain.value = 0
-    worklet.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+    worklet.port.onmessage = (
+      event: MessageEvent<{
+        audio?: ArrayBuffer
+        audioStreamEnd?: boolean
+        speechDetected?: boolean
+      }>,
+    ) => {
+      if (event.data.speechDetected) {
+        speechDetectedRef.current = true
+        if (mountedRef.current) setSpeechDetected(true)
+        return
+      }
       const socket = socketRef.current
       if (!socket || socket.readyState !== WebSocket.OPEN) return
+      if (event.data.audioStreamEnd) {
+        socket.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } }))
+        speechDetectedRef.current = false
+        if (mountedRef.current) setSpeechDetected(false)
+        updateStatus("processing")
+        if (responseTimeoutRef.current !== null)
+          window.clearTimeout(responseTimeoutRef.current)
+        responseTimeoutRef.current = window.setTimeout(() => {
+          responseTimeoutRef.current = null
+          updateError("I didn't get a reply. Please try speaking again.")
+          updateStatus("listening")
+        }, 30_000)
+        return
+      }
+      if (!event.data.audio) return
       socket.send(
         JSON.stringify({
           realtimeInput: {
             audio: {
-              data: pcmBufferToBase64(event.data),
+              data: pcmBufferToBase64(event.data.audio),
               mimeType: "audio/pcm;rate=16000",
             },
           },
@@ -211,7 +245,7 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
     inputSourceRef.current = inputSource
     workletRef.current = worklet
     silentGainRef.current = silentGain
-  }, [])
+  }, [updateError, updateStatus])
 
   const connectSocket = useCallback(
     async (generation: number, resumeHandle: string | null) => {
@@ -353,8 +387,13 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
                 }
               }
               if (content?.turnComplete || content?.generationComplete) {
+                if (responseTimeoutRef.current !== null)
+                  window.clearTimeout(responseTimeoutRef.current)
+                responseTimeoutRef.current = null
                 suppressPlaybackRef.current = false
                 appendCompletedTurn()
+                speechDetectedRef.current = false
+                if (mountedRef.current) setSpeechDetected(false)
                 updateStatus("listening")
               }
               if (message.goAway && resumeHandleRef.current) {
@@ -466,6 +505,8 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
     busyRef.current = true
     intentionalCloseRef.current = false
     reconnectAttemptsRef.current = 0
+    speechDetectedRef.current = false
+    setSpeechDetected(false)
     updateError("")
     updateStatus("connecting")
     const generation = ++generationRef.current
@@ -548,6 +589,17 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
       updateStatus("listening")
   }, [stopPlayback, updateStatus])
 
+  const finishTurn = useCallback(() => {
+    if (socketRef.current?.readyState !== WebSocket.OPEN) return
+    if (!speechDetectedRef.current) {
+      updateError("I haven't heard your question yet. Speak near the microphone, then tap Get answer.")
+      updateStatus("listening")
+      return
+    }
+    workletRef.current?.port.postMessage({ finishTurn: true })
+    updateStatus("processing")
+  }, [updateError, updateStatus])
+
   const toggleMute = useCallback(() => {
     const nextMuted = !muted
     streamRef.current?.getAudioTracks().forEach((track) => {
@@ -570,11 +622,13 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
     status,
     error,
     muted,
+    speechDetected,
     turns,
     start,
     disconnect,
     toggleMute,
     stopAudio,
+    finishTurn,
     clearTranscript,
   }
 }

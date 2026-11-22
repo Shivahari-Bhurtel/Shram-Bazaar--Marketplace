@@ -4,6 +4,23 @@ export type ChatResponse = {
   answer: string
   conversation_id: string
   source_files: string[]
+  jobs?: Array<import("./demoJobs").DemoJob & { match_reasons?: string[] }>
+  mode?: "ai" | "job_search" | "local_guidance" | "fallback"
+  fallback_active?: boolean
+}
+
+export type AiStatus = {
+  provider: string
+  model: string
+  ollama_installed: boolean | null
+  ollama_running: boolean | null
+  model_available: boolean
+  model_loading: boolean
+  ai_ready: boolean
+  state: string
+  last_health_check: string | null
+  last_error: string | null
+  fallback_active: boolean
 }
 
 export type ResumeAnalysisResponse = {
@@ -16,8 +33,9 @@ export type ChatLanguage = "en" | "ne"
 export async function fetchAiService(
   path: string,
   options: RequestInit,
+  timeoutMs = 75_000,
 ): Promise<Response> {
-  const timeoutSignal = AbortSignal.timeout(35_000)
+  const timeoutSignal = AbortSignal.timeout(timeoutMs)
   const requestSignal = options.signal
     ? AbortSignal.any([options.signal, timeoutSignal])
     : timeoutSignal
@@ -49,12 +67,19 @@ export async function fetchAiService(
       )
 }
 
+export async function fetchAiStatus(signal?: AbortSignal): Promise<AiStatus> {
+  const response = await fetchAiService("/api/v1/ai/status", { method: "GET", signal }, 8_000)
+  if (!response.ok) throw new Error(`AI status returned ${response.status}`)
+  return response.json() as Promise<AiStatus>
+}
+
 export async function sendChatMessage(
   message: string,
   conversationId: string | null,
   history: ChatTurn[],
   language: ChatLanguage = "en",
   signal?: AbortSignal,
+  contextJobIds: string[] = [],
 ): Promise<ChatResponse> {
   const response = await fetchAiService("/api/v1/chat", {
     method: "POST",
@@ -63,6 +88,7 @@ export async function sendChatMessage(
       message,
       conversation_id: conversationId,
       history,
+      context_job_ids: contextJobIds,
       language,
     }),
     signal,

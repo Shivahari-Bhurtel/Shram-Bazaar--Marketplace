@@ -9,6 +9,7 @@
     "test:auth-navigation": "node --test scripts/test-auth-navigation.mjs",
     "test:worker-dashboard": "node --test scripts/test-worker-dashboard.mjs",
     "test:job-discovery": "node --test scripts/test-job-discovery.mjs",
+    "test:ai-status": "node --test scripts/test-ai-status.mjs",
     "validate:jobs": "python3 scripts/validate-jobs.py",
     "ai": "python -m uvicorn main:app --app-dir ai-service --reload --host 0.0.0.0 --port 8000",
     "build": "vite build",
