@@ -3,13 +3,15 @@ import { useApp } from "../store/AppContext"
 import NotificationPanel from "./NotificationPanel"
 import type { Page } from "../store/AppContext"
 
-type ProviderNavItem = { label: string; page: Page; icon: "dashboard" | "jobs" | "applicants" | "user-search" | "operations" | "organisation" }
+type ProviderNavItem = { label: string; page: Page; icon: "dashboard" | "jobs" | "applicants" | "user-search" | "operations" | "organisation" | "ai" | "messages" }
 
 const primaryItems: ProviderNavItem[] = [
   { label: "Dashboard", page: "provider-dashboard", icon: "dashboard" },
+  { label: "Shram AI", page: "chat", icon: "ai" },
   { label: "Hire", page: "provider-hire", icon: "user-search" },
   { label: "My Jobs", page: "my-jobs", icon: "jobs" },
   { label: "Applicants", page: "applicant-management", icon: "applicants" },
+  { label: "Messages", page: "messages", icon: "messages" },
 ]
 
 const secondaryItems: ProviderNavItem[] = [
@@ -29,6 +31,8 @@ function ProviderIcon({ name }: { name: ProviderNavItem["icon"] | "bell" | "sett
       {name === "user-search" && <><circle cx="10" cy="8" r="3.2"/><path d="M3.5 20v-1.5A4.5 4.5 0 0 1 8 14h3M16 16l4.5 4.5M20.5 16.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/></>}
       {name === "operations" && <><path d="M4 6h6M14 6h6M4 18h6M14 18h6M10 6a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM10 18a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM8 12h12M4 12h1"/><circle cx="7" cy="12" r="2"/></>}
       {name === "organisation" && <><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M9 21v-5h6v5"/></>}
+      {name === "ai" && <><path d="M12 3v2m0 14v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M3 12h2m14 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/><circle cx="12" cy="12" r="5"/><path d="m10.5 12 1 1 2-2"/></>}
+      {name === "messages" && <><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-6a7.5 7.5 0 1 1 17-3.5Z"/><path d="M8 11h8m-8 3h5"/></>}
       {name === "bell" && <><path d="M18 9a6 6 0 0 0-12 0c0 7-3 8-3 9h18s-3-2-3-9M10 21h4"/></>}
       {name === "logout" && <><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></>}
     </svg>

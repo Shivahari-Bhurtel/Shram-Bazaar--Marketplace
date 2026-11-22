@@ -6,7 +6,8 @@ import { useDemoJobState } from "../../hooks/useDemoJobState"
 import { loadDemoJobs, type DemoJob } from "../../services/demoJobs"
 import type { Application, ApplicationStatus, Job, WorkType } from "../../types"
 import { formatNepalDate, nepalDateString } from "../../utils/dates"
-import { apiRequest } from "../../services/backendApi"
+import { openConversation } from "../../services/messaging"
+import type { Page } from "../../store/AppContext"
 
 type StatusFilter = ApplicationStatus | "all"
 
@@ -67,9 +68,9 @@ function ApplicationRow({
 }: {
   application: Application
   job?: Job
-  navigate: (page: "job-detail", jobId?: string) => void
+  navigate: (page: Page, jobId?: string) => void
 }) {
-  const { reviewProvider, respondToSelection, updateEngagementWork, withdrawApplication } = useApp()
+  const { reviewProvider, respondToSelection, updateEngagementWork, withdrawApplication, state } = useApp()
   const [providerRating, setProviderRating] = useState(5)
   const [providerReview, setProviderReview] = useState("")
   const [reviewMessage, setReviewMessage] = useState("")
@@ -78,7 +79,6 @@ function ApplicationRow({
   const [contactLoading, setContactLoading] = useState(false)
   const [withdrawLoading, setWithdrawLoading] = useState(false)
   const [withdrawNotice, setWithdrawNotice] = useState("")
-  const [message, setMessage] = useState("")
   const [messageNotice, setMessageNotice] = useState("")
   const [messageBusy, setMessageBusy] = useState(false)
   const completed = application.engagementStatus === "COMPLETED" || (
@@ -142,16 +142,7 @@ function ApplicationRow({
       {withdrawNotice && <p role="status" className="mt-3 text-xs text-stone-600">{withdrawNotice}</p>}
 
       {application.status === "pending" || application.status === "accepted" ? <div className="mt-4 border-t border-[#F0EBE6] pt-3">
-        <label className="block text-xs font-semibold text-stone-700">Message the provider<textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={1000} rows={2} placeholder="Ask a question or share an update" className="input-style mt-1.5 w-full resize-y" /></label>
-        <button type="button" disabled={messageBusy || !message.trim()} onClick={async () => {
-          setMessageBusy(true); setMessageNotice("")
-          try {
-            await apiRequest<void>(`/api/applications/${application.id}/messages`, { method: "POST", body: JSON.stringify({ message: message.trim() }) })
-            setMessage(""); setMessageNotice("Message sent to the provider.")
-          } catch (error) {
-            setMessageNotice(error instanceof Error ? error.message : "Unable to send the message.")
-          } finally { setMessageBusy(false) }
-        }} className="mt-2 rounded-lg bg-[#70472F] px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{messageBusy ? "Sending…" : "Send message"}</button>
+        <button type="button" disabled={messageBusy} onClick={async () => { setMessageBusy(true); setMessageNotice(""); try { const conversation = await openConversation(import.meta.env.VITE_DEMO_MODE === "true", application.id, state.currentUser?.role === "worker" && import.meta.env.VITE_DEMO_MODE === "true" ? "demo-worker" : state.currentUser?.id || "", state.currentUser?.name || "Worker"); sessionStorage.setItem("shram-open-conversation-id", conversation.id); navigate("messages"); } catch (error) { setMessageNotice(error instanceof Error ? error.message : "Unable to open conversation.") } finally { setMessageBusy(false) } }} className="rounded-lg bg-[#70472F] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{messageBusy ? "Opening…" : "Open conversation"}</button>
         {messageNotice && <p role="status" className="mt-2 text-xs text-stone-600">{messageNotice}</p>}
       </div> : null}
 

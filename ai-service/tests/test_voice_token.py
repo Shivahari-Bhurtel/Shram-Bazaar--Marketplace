@@ -60,6 +60,27 @@ def test_voice_token_requires_voice_key_even_when_text_key_exists(monkeypatch):
     assert response.json()["detail"].startswith("Voice AI is not configured")
 
 
+def test_provider_voice_token_uses_hiring_context_instruction(monkeypatch):
+    monkeypatch.setenv("GEMINI_VOICE_API_KEY", "voice-project-key")
+    monkeypatch.setattr(
+        main.genai,
+        "Client",
+        lambda **kwargs: type("Client", (), {
+            "auth_tokens": type("AuthTokens", (), {
+                "create": lambda self, *, config: types.AuthToken(name="temporary-provider-token")
+            })()
+        })(),
+    )
+
+    response = client.post("/api/v1/voice/token", json={"language": "en", "assistant_role": "provider"})
+
+    assert response.status_code == 200
+    instruction = response.json()["system_instruction"].lower()
+    assert "provider-side hiring voice assistant" in instruction
+    assert "worker records or provider jobs" in instruction
+    assert "work companion" not in instruction
+
+
 def test_voice_token_maps_provider_errors_safely(monkeypatch):
     monkeypatch.setenv("GEMINI_VOICE_API_KEY", "voice-project-key")
 

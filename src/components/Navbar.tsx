@@ -28,6 +28,7 @@ export default function Navbar() {
   const workerLinks = [
     { label: "Discover Jobs", page: "job-discovery" as const },
     { label: "My Applications", page: "my-applications" as const },
+    { label: "Messages", page: "messages" as const },
     { label: "Saved Jobs", page: "saved-jobs" as const },
   ]
   const workerMobileGroups: { heading: string; items: { label: string; page: Page }[] }[] = [
@@ -35,7 +36,7 @@ export default function Navbar() {
       { label: "Home", page: "worker-dashboard" }, { label: "Find Jobs", page: "job-discovery" }, { label: "Learn & Grow", page: "learn" }, { label: "Work Schedule", page: "worker-availability" },
     ] },
     { heading: "", items: [
-      { label: "My Applications", page: "my-applications" }, { label: "Saved Jobs", page: "saved-jobs" },
+      { label: "My Applications", page: "my-applications" }, { label: "Messages", page: "messages" }, { label: "Saved Jobs", page: "saved-jobs" },
     ] },
     { heading: "", items: [
       { label: "Shram AI", page: "shram-ai" }, { label: "Help & Support", page: "worker-help" },
@@ -49,6 +50,7 @@ export default function Navbar() {
     { label: "Post a Job", page: "create-job" as const },
     { label: "My Jobs", page: "my-jobs" as const },
     { label: "Applicants", page: "applicant-management" as const },
+    { label: "Messages", page: "messages" as const },
     { label: "Hire", page: "provider-hire" as const },
     { label: "Organisation", page: "provider-profile" as const },
   ]

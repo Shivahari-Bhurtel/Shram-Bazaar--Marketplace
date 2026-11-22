@@ -44,7 +44,7 @@ import {
   type BackendAuth,
 } from "../services/backendApi"
 
-export type Page = "landing" | "login" | "register-choice" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "worker-availability" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "learn" | "settings" | "kyc-verification" | "worker-help" | "provider-dashboard" | "provider-profile" | "provider-operations" | "provider-hire" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "admin-dashboard" | "chat" | "shram-ai" | "voice-assistant"
+export type Page = "landing" | "login" | "register-choice" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "worker-availability" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "learn" | "settings" | "kyc-verification" | "worker-help" | "provider-dashboard" | "provider-profile" | "provider-operations" | "provider-hire" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "admin-dashboard" | "chat" | "shram-ai" | "voice-assistant" | "messages"
 
 type Credentials = { userId: string; password: string }
 type SavedJob = { workerId: string; jobId: string; snapshot?: Job }
@@ -666,6 +666,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             jobId: note.referenceType === "JOB" ? String(note.referenceId) : undefined,
             applicationId: note.referenceType === "APPLICATION" ? String(note.referenceId) : undefined,
             engagementId: note.referenceType === "ENGAGEMENT" ? String(note.referenceId) : undefined,
+            conversationId: note.referenceType === "CONVERSATION" ? String(note.referenceId) : undefined,
           })) } : {}),
         }))
         if (currentUser?.role === "provider") {
@@ -778,6 +779,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 jobId: note.referenceType === "JOB" ? String(note.referenceId) : application?.jobId,
                 applicationId,
                 engagementId: engagement ? String(engagement.engagementId) : undefined,
+                conversationId: note.referenceType === "CONVERSATION" ? String(note.referenceId) : undefined,
               }
             }) } : {}),
           }))
@@ -896,6 +898,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 jobId: note.referenceType === "JOB" ? String(note.referenceId) : application?.jobId,
                 applicationId,
                 engagementId: engagement ? String(engagement.engagementId) : undefined,
+                conversationId: note.referenceType === "CONVERSATION" ? String(note.referenceId) : undefined,
               }
             }) } : {}),
           }))
@@ -1030,6 +1033,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               createdAt: note.createdAt, read: note.read,
               jobId: note.referenceType === "JOB" ? String(note.referenceId) : application?.jobId,
               applicationId, engagementId: engagement ? String(engagement.engagementId) : undefined,
+              conversationId: note.referenceType === "CONVERSATION" ? String(note.referenceId) : undefined,
             }
           }),
           ...(currentUser.role === "worker" || currentUser.role === "provider" ? {

@@ -308,6 +308,7 @@ export interface Notification {
   jobId?: string
   applicationId?: string
   engagementId?: string
+  conversationId?: string
 }
 
 export interface Report {

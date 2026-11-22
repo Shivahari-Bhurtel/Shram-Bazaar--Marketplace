@@ -5,6 +5,7 @@ import ConfirmDialog from "../../components/ConfirmDialog"
 import type { ApplicationStatus } from "../../types"
 import { formatNepalDate, nepalDateString } from "../../utils/dates"
 import { formatJobBudget } from "../../utils/jobBudget"
+import { openConversation } from "../../services/messaging"
 
 type ActionType = {
   applicationId: string
@@ -34,6 +35,7 @@ export default function ApplicantManagement() {
   const [reportReason, setReportReason] = useState("FAKE_ACCOUNT")
   const [reportDetails, setReportDetails] = useState("")
   const [reportMessage, setReportMessage] = useState("")
+  const [messageError, setMessageError] = useState("")
 
   if (!job) {
     return (
@@ -448,6 +450,7 @@ export default function ApplicantManagement() {
                   {(app.status === "pending" ||
                     app.status === "accepted") && (
                     <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stone-100">
+                      <button type="button" onClick={async () => { setMessageError(""); try { const demo = import.meta.env.VITE_DEMO_MODE === "true"; const id = state.currentUser?.role === "provider" && demo ? "demo-provider" : state.currentUser?.id || ""; const c = await openConversation(demo, app.id, id, state.currentUser?.name || "Provider"); sessionStorage.setItem("shram-open-conversation-id", c.id); navigate("messages") } catch (error) { setMessageError(error instanceof Error ? error.message : "Could not open conversation.") } }} className="rounded-xl border border-[#286B50]/30 px-4 py-1.5 text-sm font-semibold text-[#286B50] hover:bg-green-50">Message worker</button>
                       {app.status !== "accepted" && (
                         <button
                           onClick={() =>
@@ -476,6 +479,7 @@ export default function ApplicantManagement() {
                       </button>
                     </div>
                   )}
+                  {messageError && <p role="alert" className="mt-2 text-xs text-red-700">{messageError}</p>}
                   {app.status === "accepted" && (
                     <div className="mt-4 pt-4 border-t border-stone-100">
                       <div className="bg-green-50 border border-green-100 rounded-xl p-3 flex items-center gap-2 text-sm text-green-700">

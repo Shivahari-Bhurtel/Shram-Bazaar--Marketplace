@@ -1,4 +1,5 @@
 export type VoiceLanguage = "en" | "ne"
+export type VoiceAssistantRole = "general" | "provider"
 
 export type VoiceSessionToken = {
   token: string
@@ -12,6 +13,7 @@ export type VoiceSessionToken = {
 export async function requestVoiceSessionToken(
   language: VoiceLanguage,
   signal?: AbortSignal,
+  assistantRole: VoiceAssistantRole = "general",
 ): Promise<VoiceSessionToken> {
   const configured = (import.meta.env.VITE_SHRAM_AI_API_URL || "").replace(
     /\/$/,
@@ -27,7 +29,7 @@ export async function requestVoiceSessionToken(
       const response = await fetch(`${baseUrl}/api/v1/voice/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language }),
+        body: JSON.stringify({ language, assistant_role: assistantRole }),
         signal,
       })
       if (!response.ok) {

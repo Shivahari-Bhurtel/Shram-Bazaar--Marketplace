@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   requestVoiceSessionToken,
+  type VoiceAssistantRole,
   type VoiceLanguage,
   type VoiceSessionToken,
 } from "../services/shramVoice"
@@ -10,6 +11,11 @@ export type VoiceStatus = "idle" | "connecting" | "listening" | "processing" | "
 export type VoiceTranscriptTurn = {
   user: string
   assistant: string
+}
+
+type VoiceOptions = {
+  assistantRole?: VoiceAssistantRole
+  onProviderTurn?: (text: string) => Promise<string>
 }
 
 const LIVE_SOCKET_URL =
@@ -51,7 +57,10 @@ async function readLiveMessage(data: unknown): Promise<Record<string, any>> {
   return parsed as Record<string, any>
 }
 
-export function useGeminiLiveVoice(language: VoiceLanguage) {
+export function useGeminiLiveVoice(language: VoiceLanguage, options: VoiceOptions = {}) {
+  const assistantRole = options.assistantRole || "general"
+  const providerTurnHandlerRef = useRef(options.onProviderTurn)
+  providerTurnHandlerRef.current = options.onProviderTurn
   const [status, setStatus] = useState<VoiceStatus>("idle")
   const [error, setError] = useState("")
   const [muted, setMuted] = useState(false)
@@ -257,7 +266,7 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
       )
       let token: VoiceSessionToken
       try {
-        token = await requestVoiceSessionToken(language, abortController.signal)
+        token = await requestVoiceSessionToken(language, abortController.signal, assistantRole)
       } catch (requestError) {
         if (abortController.signal.aborted)
           throw new Error(
@@ -341,6 +350,7 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
                 }
                 reconnectAttemptsRef.current = 0
                 updateError("")
+                suppressPlaybackRef.current = assistantRole === "provider"
                 updateStatus("listening")
                 void startMicrophoneGraph().catch(() => {
                   updateError(
@@ -365,7 +375,7 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
                 pendingUserTextRef.current += content.inputTranscription.text
                 updateStatus("processing")
               }
-              if (content?.outputTranscription?.text)
+              if (assistantRole !== "provider" && content?.outputTranscription?.text)
                 pendingAssistantTextRef.current +=
                   content.outputTranscription.text
               if (content?.interrupted) {
@@ -382,7 +392,7 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
                     !suppressPlaybackRef.current
                   )
                     playPcmAudio(inlineData.data, token.output_sample_rate)
-                  if (typeof part.text === "string")
+                  if (assistantRole !== "provider" && typeof part.text === "string")
                     pendingAssistantTextRef.current += part.text
                 }
               }
@@ -390,11 +400,42 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
                 if (responseTimeoutRef.current !== null)
                   window.clearTimeout(responseTimeoutRef.current)
                 responseTimeoutRef.current = null
-                suppressPlaybackRef.current = false
-                appendCompletedTurn()
+                if (assistantRole === "provider") {
+                  const userText = pendingUserTextRef.current.trim()
+                  pendingAssistantTextRef.current = ""
+                  if (userText && providerTurnHandlerRef.current) {
+                    updateStatus("processing")
+                    try {
+                      const answer = await providerTurnHandlerRef.current(userText)
+                      pendingAssistantTextRef.current = answer
+                      appendCompletedTurn()
+                      if (answer && "speechSynthesis" in window) {
+                        const utterance = new SpeechSynthesisUtterance(answer)
+                        utterance.lang = language === "ne" ? "ne-NP" : "en-NP"
+                        utterance.onstart = () => updateStatus("speaking")
+                        utterance.onend = () => updateStatus("listening")
+                        utterance.onerror = () => updateStatus("listening")
+                        window.speechSynthesis.cancel()
+                        window.speechSynthesis.speak(utterance)
+                      } else updateStatus("listening")
+                    } catch (providerError) {
+                      const detail = providerError instanceof Error ? providerError.message : "Provider AI could not answer that voice request."
+                      updateError(detail)
+                      pendingAssistantTextRef.current = detail
+                      appendCompletedTurn()
+                      updateStatus("listening")
+                    }
+                  } else {
+                    appendCompletedTurn()
+                    updateStatus("listening")
+                  }
+                } else {
+                  suppressPlaybackRef.current = false
+                  appendCompletedTurn()
+                  updateStatus("listening")
+                }
                 speechDetectedRef.current = false
                 if (mountedRef.current) setSpeechDetected(false)
-                updateStatus("listening")
               }
               if (message.goAway && resumeHandleRef.current) {
                 updateStatus("connecting")
@@ -489,6 +530,7 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
     },
     [
       appendCompletedTurn,
+      assistantRole,
       language,
       playPcmAudio,
       releaseMedia,
@@ -574,20 +616,24 @@ export function useGeminiLiveVoice(language: VoiceLanguage) {
   ])
 
   const disconnect = useCallback(() => {
+    if (assistantRole === "provider" && "speechSynthesis" in window)
+      window.speechSynthesis.cancel()
     cleanupResources()
     if (mountedRef.current) {
       setMuted(false)
       setError("")
       setStatus("idle")
     }
-  }, [cleanupResources])
+  }, [assistantRole, cleanupResources])
 
   const stopAudio = useCallback(() => {
     suppressPlaybackRef.current = true
     stopPlayback()
+    if (assistantRole === "provider" && "speechSynthesis" in window)
+      window.speechSynthesis.cancel()
     if (socketRef.current?.readyState === WebSocket.OPEN)
       updateStatus("listening")
-  }, [stopPlayback, updateStatus])
+  }, [assistantRole, stopPlayback, updateStatus])
 
   const finishTurn = useCallback(() => {
     if (socketRef.current?.readyState !== WebSocket.OPEN) return

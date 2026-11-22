@@ -26,6 +26,7 @@ const ProviderOperations = lazy(
 )
 const ProviderHire = lazy(() => import("./pages/provider/Hire"))
 const Chat = lazy(() => import("./pages/Chat"))
+const MessagesInbox = lazy(() => import("./pages/MessagesInbox"))
 const Settings = lazy(() => import("./pages/Settings"))
 const KycVerification = lazy(() => import("./pages/worker/KycVerification"))
 import { LanguageSwitch } from "./i18n/LanguageContext"
@@ -45,6 +46,7 @@ export default function App() {
   const isWorker = currentUser?.role === "worker"
   const isProvider = currentUser?.role === "provider"
   const isAdmin = currentUser?.role === "admin"
+  const isProviderAIChat = isProvider && currentPage === "chat"
   const isWorkerAIChat = isWorker && currentPage === "chat"
   const isFullScreenJobDiscovery = isWorker && currentPage === "job-discovery"
   const isStandaloneLearn = isWorker && currentPage === "learn"
@@ -106,14 +108,14 @@ export default function App() {
           <Navbar />
         </div>
       )}
-      {isProvider && !isVoiceAssistant && <div className="lg:hidden"><Navbar /></div>}
+      {isProvider && !isVoiceAssistant && !isProviderAIChat && <div className="lg:hidden"><Navbar /></div>}
       {!isLoggedIn && !isPublicPage && <Navbar />}
       {showWorkerSidebar && <WorkerSidebar />}
-      {isProvider && !isVoiceAssistant && <ProviderSidebar />}
+      {isProvider && !isVoiceAssistant && !isProviderAIChat && <ProviderSidebar />}
       <main
         key={currentPage}
         className={`${isFullScreenJobDiscovery ? "h-[100dvh] w-full overflow-hidden" : "page-enter"} ${
-          showWorkerSidebar || (isProvider && !isVoiceAssistant) ? "lg:ml-56" : ""
+          showWorkerSidebar || (isProvider && !isVoiceAssistant && !isProviderAIChat) ? "lg:ml-56" : ""
         } ${workerTopSpacing}`}
       >
         <Suspense
@@ -153,6 +155,7 @@ export default function App() {
             <AIWorkspace />
           )}
           {(isWorker || isProvider) && currentPage === "chat" && <Chat />}
+          {(isWorker || isProvider) && currentPage === "messages" && <MessagesInbox />}
           {(isWorker || isProvider) && currentPage === "voice-assistant" && (
             <VoiceAssistantPage />
           )}

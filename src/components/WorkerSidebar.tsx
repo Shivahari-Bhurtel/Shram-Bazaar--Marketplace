@@ -5,7 +5,7 @@ import NotificationPanel from "./NotificationPanel"
 import type { Page } from "../store/AppContext"
 
 type WorkerPage = Page
-type IconName = "home" | "search" | "applications" | "saved" | "ai" | "echo" | "learn" | "profile" | "notifications" | "logout" | "settings" | "calendar" | "help"
+type IconName = "home" | "search" | "applications" | "saved" | "ai" | "echo" | "learn" | "profile" | "notifications" | "logout" | "settings" | "calendar" | "help" | "messages"
 
 function WorkspaceIcon({ name }: { name: IconName }) {
   if (name === "ai")
@@ -67,6 +67,7 @@ function WorkspaceIcon({ name }: { name: IconName }) {
       )}
       {name === "calendar" && <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18M8 14h2m4 0h2m-8 3h2"/></>}
       {name === "help" && <><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 4.3 2c-1.2 1-1.8 1.4-1.8 3m0 3v.1"/></>}
+      {name === "messages" && <><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-6a7.5 7.5 0 1 1 17-3.5Z"/><path d="M8 11h8m-8 3h5"/></>}
     </svg>
   )
 }
@@ -80,6 +81,7 @@ const navGroups: { heading: string; items: { label: string; page: WorkerPage; ic
   ] },
   { heading: "", items: [
     { label: "My Applications", page: "my-applications", icon: "applications" },
+    { label: "Messages", page: "messages", icon: "messages" },
     { label: "Saved Jobs", page: "saved-jobs", icon: "saved" },
   ] },
   { heading: "", items: [

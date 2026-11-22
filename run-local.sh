@@ -91,7 +91,8 @@ web_healthy() {
 }
 
 ai_healthy() {
-  curl -fsS --max-time 4 "$AI_URL/api/v1/ai/status" >/dev/null 2>&1
+  curl -fsS --max-time 4 "$AI_URL/api/v1/ai/status" 2>/dev/null |
+    node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{let s;try{s=JSON.parse(input)}catch{process.exit(1)}process.exit(s.provider==="ollama"&&s.chat_provider==="ollama"?0:1)})' >/dev/null 2>&1
 }
 
 cleanup() {
@@ -188,7 +189,10 @@ if ! ai_healthy; then
   echo "Starting Shram AI and checking local Ollama/Qwen readiness..."
   (
     cd "$APP_DIR/ai-service"
-    "$AI_PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$AI_PORT"
+    AI_PROVIDER=ollama \
+      OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3:4b}" \
+      OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}" \
+      "$AI_PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$AI_PORT"
   ) >"$AI_LOG" 2>&1 &
   AI_PID=$!
 

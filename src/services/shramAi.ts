@@ -11,6 +11,7 @@ export type ChatResponse = {
 
 export type AiStatus = {
   provider: string
+  chat_provider: string
   model: string
   ollama_installed: boolean | null
   ollama_running: boolean | null
@@ -29,6 +30,7 @@ export type ResumeAnalysisResponse = {
 }
 
 export type ChatLanguage = "en" | "ne"
+export type AssistantRole = "general" | "provider"
 
 export async function fetchAiService(
   path: string,
@@ -80,6 +82,8 @@ export async function sendChatMessage(
   language: ChatLanguage = "en",
   signal?: AbortSignal,
   contextJobIds: string[] = [],
+  assistantRole: AssistantRole = "general",
+  providerContext = "",
 ): Promise<ChatResponse> {
   const response = await fetchAiService("/api/v1/chat", {
     method: "POST",
@@ -90,6 +94,8 @@ export async function sendChatMessage(
       history,
       context_job_ids: contextJobIds,
       language,
+      assistant_role: assistantRole,
+      provider_context: providerContext,
     }),
     signal,
   })

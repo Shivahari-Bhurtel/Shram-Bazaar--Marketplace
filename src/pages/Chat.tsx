@@ -9,6 +9,8 @@ import DemoJobDetailsModal from "../components/DemoJobDetailsModal"
 import { useDemoJobState } from "../hooks/useDemoJobState"
 import { distanceBetweenKm, formatDemoSalary, type DemoJob } from "../services/demoJobs"
 import { getAiStatusPresentation } from "../services/aiStatus.js"
+import { askProviderAssistant, providerWorkerAvailability, providerWorkerSkills, type ProviderCandidate, type ProviderWorker } from "../services/providerAi"
+import { apiRequest, type ApiJob } from "../services/backendApi"
 
 const MAX_RESUME_BYTES = 4 * 1024 * 1024
 const RESUME_TYPES: Record<string, string> = {
@@ -26,6 +28,8 @@ type Message = {
   time: string
   attachment?: MessageAttachment
   jobs?: Array<DemoJob & { match_reasons?: string[] }>
+  candidates?: ProviderCandidate[]
+  jobId?: number | null
 }
 
 type Thread = {
@@ -79,12 +83,20 @@ const suggestions = [
   },
 ]
 
+const providerSuggestions = [
+  { title: "Find workers for my jobs", detail: "See suitable candidates for an open job", prompt: "Find the best candidates for my latest job." },
+  { title: "Find workers by skill", detail: "Search real worker profiles by trade", prompt: "Find experienced electricians." },
+  { title: "Find workers near me", detail: "Search by district and availability", prompt: "Find available workers near Kathmandu." },
+  { title: "Compare candidates", detail: "Review strengths against my job", prompt: "Compare the best candidates for my job." },
+]
+
 const CHAT_STORAGE_KEY = "shrama-ai-threads"
 
-function loadThreads(userId: string | undefined): Thread[] {
+function loadThreads(userId: string | undefined, role: "worker" | "provider"): Thread[] {
   if (!userId) return []
   try {
-    const stored = localStorage.getItem(`${CHAT_STORAGE_KEY}:${userId}`)
+    const roleKey = role === "provider" ? "shrama-ai-provider-threads" : CHAT_STORAGE_KEY
+    const stored = localStorage.getItem(`${roleKey}:${userId}`)
     if (!stored) return []
     const parsed: unknown = JSON.parse(stored)
     if (!Array.isArray(parsed)) return []
@@ -160,20 +172,29 @@ function getLatestSharedJobIds(messages: Message[]): string[] {
   return [...new Set(latestJobMessage?.jobs?.map((job) => job.id) ?? [])].slice(0, 20)
 }
 
-function makeWelcome(name: string, language: "en" | "ne"): Message {
+function makeWelcome(name: string, language: "en" | "ne", role: "worker" | "provider" = "worker"): Message {
   return {
     id: `welcome-${Date.now()}`,
     role: "assistant",
     text:
       language === "ne"
-        ? `${
-            name ? `${name}, ` : ""
-          }नमस्ते। काम, आवेदन र भर्नाबारे म सहयोग गर्छु। के जान्न चाहनुहुन्छ?`
-        : `Hello${
-            name ? `, ${name}` : ""
-          }. I can help you navigate jobs, applications, and hiring on Shram Bazzar. What would you like to work on?`,
+        ? role === "provider"
+          ? `${name ? `${name}, ` : ""}नमस्ते। म श्रम एआई हुँ। म तपाईंलाई उपयुक्त कामदार खोज्न, तुलना गर्न र निमन्त्रणा तयार गर्न सहयोग गर्छु।`
+          : `${name ? `${name}, ` : ""}नमस्ते। काम, आवेदन र भर्नाबारे म सहयोग गर्छु। के जान्न चाहनुहुन्छ?`
+        : role === "provider"
+          ? `Hello${name ? `, ${name}` : ""}. I’m Shram AI, your hiring assistant. I can help you find and compare workers for your jobs, explore skills and availability, and prepare invitations. Who are you looking for?`
+          : `Hello${
+              name ? `, ${name}` : ""
+            }. I can help you navigate jobs, applications, and hiring on Shram Bazzar. What would you like to work on?`,
     time: formatTime(),
   }
+}
+
+function formatProviderRate(worker: ProviderWorker) {
+  const service = worker.services?.find((item) => item.price != null)
+  if (!service || service.price == null) return "Rate not listed"
+  const unit = service.pricingType === "PER_HOUR" ? "/hour" : service.pricingType === "PER_DAY" ? "/day" : service.pricingType === "FIXED" ? " fixed" : ""
+  return `NPR ${Number(service.price).toLocaleString()}${unit}`
 }
 
 function renderInlineText(text: string) {
@@ -382,12 +403,15 @@ export default function Chat() {
   const { state, navigate } = useApp()
   const demoState = useDemoJobState(state.workerProfile?.id)
   const { language } = useLanguage()
+  const isProvider = state.currentUser?.role === "provider"
   const firstName = state.currentUser?.name.split(" ")[0] || ""
   const goBack = () => {
-    let destination: Page = "worker-dashboard"
+    let destination: Page = isProvider ? "provider-dashboard" : "worker-dashboard"
     try {
       const previousPage = sessionStorage.getItem("ai-chat-return-page") as Page | null
-      const allowedPages: Page[] = ["worker-dashboard", "worker-profile", "job-discovery", "my-applications", "saved-jobs"]
+      const allowedPages: Page[] = isProvider
+        ? ["provider-dashboard", "provider-profile", "my-jobs", "provider-hire", "applicant-management"]
+        : ["worker-dashboard", "worker-profile", "job-discovery", "my-applications", "saved-jobs"]
       if (previousPage && allowedPages.includes(previousPage)) destination = previousPage
       sessionStorage.removeItem("ai-chat-return-page")
     } catch {
@@ -397,14 +421,14 @@ export default function Chat() {
   }
   const initialThreadsRef = useRef<Thread[] | null>(null)
   if (!initialThreadsRef.current) {
-    const savedThreads = loadThreads(state.currentUser?.id)
+    const savedThreads = loadThreads(state.currentUser?.id, isProvider ? "provider" : "worker")
     initialThreadsRef.current = savedThreads.length
       ? savedThreads
       : [
           {
             id: "thread-start",
             title: "Untitled chat",
-            messages: [makeWelcome(firstName, language)],
+            messages: [makeWelcome(firstName, language, isProvider ? "provider" : "worker")],
             updatedAt: Date.now(),
           },
         ]
@@ -431,6 +455,11 @@ export default function Chat() {
   const [selectedChatJob, setSelectedChatJob] = useState<DemoJob | null>(null)
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
   const [aiStatusUnavailable, setAiStatusUnavailable] = useState(false)
+  const [providerJobs, setProviderJobs] = useState<ApiJob[]>([])
+  const [selectedProviderJobId, setSelectedProviderJobId] = useState("")
+  const [inviteDraft, setInviteDraft] = useState<{ worker: ProviderWorker; job: ApiJob; message: string; applicationId?: number } | null>(null)
+  const [invitingWorkerId, setInvitingWorkerId] = useState<number | null>(null)
+  const [expandedProviderWorkerId, setExpandedProviderWorkerId] = useState<number | null>(null)
   const idCounter = useRef(0)
   const sendingRef = useRef(false)
   const requestControllerRef = useRef<AbortController | null>(null)
@@ -440,6 +469,7 @@ export default function Chat() {
   const attachmentMenuRef = useRef<HTMLDivElement>(null)
   const activeThread =
     threads.find((thread) => thread.id === activeThreadId) ?? threads[0]
+  const activeSuggestions = isProvider ? providerSuggestions : suggestions
   const isWelcomeState =
     activeThread?.messages.length === 1 &&
     activeThread.messages[0].id.startsWith("welcome-")
@@ -492,16 +522,27 @@ export default function Chat() {
   const aiStatusPresentation = getAiStatusPresentation(aiStatus, aiStatusUnavailable)
 
   useEffect(() => {
+    if (!isProvider) return
+    let active = true
+    void apiRequest<ApiJob[]>("/api/provider/jobs")
+      .then((jobs) => { if (active) setProviderJobs(jobs) })
+      .catch((requestError) => {
+        if (active) setError(requestError instanceof Error ? requestError.message : "Your provider jobs could not be loaded.")
+      })
+    return () => { active = false }
+  }, [isProvider])
+
+  useEffect(() => {
     if (!state.currentUser?.id) return
     try {
       localStorage.setItem(
-        `${CHAT_STORAGE_KEY}:${state.currentUser.id}`,
+        `${isProvider ? "shrama-ai-provider-threads" : CHAT_STORAGE_KEY}:${state.currentUser.id}`,
         JSON.stringify(threads),
       )
     } catch {
       /* Keep the current session usable if storage is unavailable. */
     }
-  }, [state.currentUser?.id, threads])
+  }, [state.currentUser?.id, isProvider, threads])
 
   useEffect(() => {
     if (activeThread?.messages.length && !isWelcomeState)
@@ -522,12 +563,12 @@ export default function Chat() {
         ...thread,
         messages: thread.messages.map((message) =>
           message.id.startsWith("welcome-")
-            ? { ...message, text: makeWelcome(firstName, language).text }
+            ? { ...message, text: makeWelcome(firstName, language, isProvider ? "provider" : "worker").text }
             : message,
         ),
       })),
     )
-  }, [firstName, language])
+  }, [firstName, isProvider, language])
 
   const startNewChat = () => {
     const id = `thread-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -535,7 +576,7 @@ export default function Chat() {
       {
         id,
         title: "Untitled chat",
-        messages: [makeWelcome(firstName, language)],
+        messages: [makeWelcome(firstName, language, isProvider ? "provider" : "worker")],
         updatedAt: Date.now(),
       },
       ...current,
@@ -557,7 +598,7 @@ export default function Chat() {
         {
           id,
           title: "Untitled chat",
-          messages: [makeWelcome(firstName, language)],
+          messages: [makeWelcome(firstName, language, isProvider ? "provider" : "worker")],
           updatedAt: Date.now(),
         },
       ])
@@ -639,6 +680,31 @@ export default function Chat() {
     const controller = new AbortController()
     requestControllerRef.current = controller
     try {
+      if (isProvider) {
+        const jobId = selectedProviderJobId && /^\d+$/.test(selectedProviderJobId)
+          ? Number(selectedProviderJobId)
+          : null
+        const reply = await askProviderAssistant(
+          text,
+          priorHistory.slice(-20),
+          language,
+          jobId,
+          controller.signal,
+        )
+        setProviderJobs(reply.matches.jobs)
+        const assistantMessage: Message = {
+          id: `message-${Date.now()}-${++idCounter.current}-${Math.random().toString(36).slice(2, 8)}`,
+          role: "assistant",
+          text: reply.answer,
+          time: formatTime(),
+          candidates: reply.matches.candidates,
+          jobId: reply.matches.selectedJob?.id ?? jobId,
+        }
+        setThreads((current) => current.map((thread) => thread.id === activeThread.id
+          ? { ...thread, updatedAt: Date.now(), messages: [...thread.messages, assistantMessage] }
+          : thread))
+        return
+      }
       const result = resumeFile
         ? await sendResumeAnalysis(
             resumeFile,
@@ -726,6 +792,26 @@ export default function Chat() {
     setSending(true)
     setError("")
     try {
+      if (isProvider) {
+        const reply = await askProviderAssistant(
+          userMessage.text,
+          history,
+          language,
+          assistantMessage.jobId ?? null,
+          controller.signal,
+        )
+        setProviderJobs(reply.matches.jobs)
+        setThreads((current) => current.map((thread) => thread.id === activeThread.id
+          ? {
+              ...thread,
+              updatedAt: Date.now(),
+              messages: thread.messages.map((message, index) => index === assistantIndex
+                ? { ...message, text: reply.answer, candidates: reply.matches.candidates, jobId: reply.matches.selectedJob?.id ?? assistantMessage.jobId, time: formatTime() }
+                : message),
+            }
+          : thread))
+        return
+      }
       const result = await sendChatMessage(
         userMessage.text,
         activeThread.conversationId ?? null,
@@ -801,6 +887,47 @@ export default function Chat() {
 
   const sendSuggestion = (suggestion: typeof suggestions[number]) => {
     void sendMessage(undefined, suggestion.prompt)
+  }
+
+  const prepareProviderInvite = (worker: ProviderWorker, jobId: number | null | undefined, reasons: string[]) => {
+    const job = providerJobs.find((item) => item.id === jobId)
+    if (!job || job.status !== "OPEN") {
+      setError("Choose one of your open jobs before inviting a worker.")
+      return
+    }
+    const details = [job.address || job.district, job.paymentAmount != null ? `NPR ${Number(job.paymentAmount).toLocaleString()}${job.paymentPeriod ? ` / ${job.paymentPeriod.toLowerCase()}` : ""}` : "", job.startDate ? `Schedule: ${job.startDate}${job.startTime ? ` at ${job.startTime}` : ""}` : ""].filter(Boolean)
+    setInviteDraft({
+      worker,
+      job,
+      message: `Hello ${worker.fullName},\n\nI’m reaching out about our ${job.title} opportunity${job.district ? ` in ${job.district}` : ""}. ${reasons[0] ? `Your profile stood out because ${reasons[0].toLowerCase()}. ` : ""}${details.length ? `The listed details are ${details.join("; ")}. ` : ""}Would you be interested in discussing this work?\n\nThank you.`,
+    })
+  }
+
+  const sendProviderInvite = async () => {
+    if (!inviteDraft || !activeThread) return
+    const { worker, job, message } = inviteDraft
+    setInvitingWorkerId(worker.userId)
+    setError("")
+    let requestPlaced = Boolean(inviteDraft.applicationId)
+    try {
+      let applicationId = inviteDraft.applicationId
+      if (!applicationId) {
+        const engagement = await apiRequest<{ applicationId: number }>(`/api/provider/jobs/${job.id}/workers/${worker.userId}/request`, { method: "POST" })
+        applicationId = engagement.applicationId
+        requestPlaced = true
+        setInviteDraft((current) => current ? { ...current, applicationId } : current)
+      }
+      await apiRequest(`/api/applications/${applicationId}/messages`, { method: "POST", body: JSON.stringify({ message }) })
+      setThreads((current) => current.map((thread) => thread.id === activeThread.id
+        ? { ...thread, updatedAt: Date.now(), messages: [...thread.messages, { id: `message-${Date.now()}-${++idCounter.current}`, role: "assistant" as const, text: `Your invitation to ${worker.fullName} for “${job.title}” was sent. They need to confirm before the engagement is final.`, time: formatTime() }] }
+        : thread))
+      setInviteDraft(null)
+    } catch (requestError) {
+      const prefix = requestPlaced ? "The worker request was placed, but the message could not be delivered. You can retry sending the message." : "The worker request could not be sent."
+      setError(`${prefix} ${requestError instanceof Error ? requestError.message : "Please try again."}`)
+    } finally {
+      setInvitingWorkerId(null)
+    }
   }
 
   const handleFileSelection = (file?: File) => {
@@ -1063,7 +1190,7 @@ export default function Chat() {
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col border-l border-[#E5E7EB] bg-white">
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-[#E5E7EB] px-3">
+        <header className="flex min-h-12 shrink-0 items-center justify-between gap-2 border-b border-[#E5E7EB] px-3 py-1.5">
           <button
             onClick={() => setSidebarOpen(true)}
             aria-label="Open conversation sidebar"
@@ -1081,14 +1208,24 @@ export default function Chat() {
               <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div
-            role="status"
-            aria-live="polite"
-            title={aiStatus?.last_error ?? undefined}
-            className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600"
-          >
-            <span className={`h-2 w-2 rounded-full ${aiStatusPresentation.tone}`} aria-hidden="true" />
-            <span>{aiStatusPresentation.label}</span>
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            {isProvider && <>
+              <label className="sr-only" htmlFor="provider-chat-job">Choose a provider job</label>
+              <select id="provider-chat-job" value={selectedProviderJobId} onChange={(event) => setSelectedProviderJobId(event.target.value)} className="min-h-9 max-w-44 rounded-xl border border-[#E5E2EC] bg-white px-2 text-xs text-[#49445A] sm:max-w-60 sm:px-3 sm:text-sm">
+                <option value="">Choose a job</option>
+                {providerJobs.map((job) => <option key={job.id} value={job.id}>{job.title} · {job.status.toLowerCase()}</option>)}
+              </select>
+              <button type="button" onClick={() => { try { sessionStorage.setItem("voice-assistant-return-page", "chat") } catch {} navigate("voice-assistant") }} className="min-h-9 whitespace-nowrap rounded-xl border border-[#E5E2EC] bg-white px-2.5 text-xs font-semibold text-[#5630A8] hover:bg-[#F8F7FB] sm:px-3 sm:text-sm">Voice assistant</button>
+            </>}
+            <div
+              role="status"
+              aria-live="polite"
+              title={aiStatus?.last_error ?? undefined}
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600"
+            >
+              <span className={`h-2 w-2 rounded-full ${aiStatusPresentation.tone}`} aria-hidden="true" />
+              <span>{aiStatusPresentation.label}</span>
+            </div>
           </div>
         </header>
 
@@ -1117,8 +1254,9 @@ export default function Chat() {
                   className="welcome-reveal mx-auto mt-3 max-w-2xl text-base leading-7 text-[#625D73] sm:text-lg"
                   style={{ animationDelay: "1.15s" }}
                 >
-                  I’m Shram AI, your assistant for jobs, applications, and
-                  platform guidance.
+                  {isProvider
+                    ? "I’m Shram AI, your hiring assistant. I can help you find and compare workers for your jobs, review skills and availability, and prepare invitations."
+                    : "I’m Shram AI, your assistant for jobs, applications, and platform guidance."}
                 </p>
               </div>
               <div className="mb-3 text-center sm:mb-4">
@@ -1130,7 +1268,7 @@ export default function Chat() {
                 </h3>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {suggestions.map((suggestion, index) => (
+                {activeSuggestions.map((suggestion, index) => (
                   <button
                     key={suggestion.title}
                     onClick={() => sendSuggestion(suggestion)}
@@ -1147,6 +1285,11 @@ export default function Chat() {
                   </button>
                 ))}
               </div>
+              {isProvider && providerJobs.every((job) => job.status !== "OPEN") && (
+                <p className="welcome-reveal mx-auto mt-5 max-w-2xl text-center text-sm leading-6 text-[#625D73]">
+                  No open jobs were found for this account. You can still search using skills and location, or tell me what kind of worker you need.
+                </p>
+              )}
             </div>
           ) : (
             <div className="mx-auto max-w-3xl space-y-8">
@@ -1186,6 +1329,41 @@ export default function Chat() {
                               <button type="button" onClick={() => setSelectedChatJob(job)} className="rounded-md border border-[#265D4C] px-3 py-1.5 text-sm font-semibold text-[#265D4C] hover:bg-[#265D4C]/5">View details</button>
                               {state.currentUser?.role === "worker" && <button type="button" disabled={demoState.applications.some((application) => application.jobId === job.id)} onClick={() => demoState.apply(job.id)} className="rounded-md bg-[#265D4C] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#1D493B] disabled:bg-stone-300">{demoState.applications.some((application) => application.jobId === job.id) ? "Applied" : "Apply now"}</button>}
                             </div>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                    {isProvider && message.role === "assistant" && message.candidates && message.candidates.length > 0 && (
+                      <div className="mt-5 grid gap-4">
+                        {message.candidates.map(({ worker, matchScore, matchReasons }) => (
+                          <article key={worker.userId} className="overflow-hidden rounded-2xl border border-[#E5E2EC] bg-white shadow-sm">
+                            <div className="flex items-start gap-3 p-4 sm:p-5">
+                              {worker.profilePictureUrl
+                                ? <img src={worker.profilePictureUrl} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
+                                : <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#F1EDFF] text-lg font-semibold text-[#5630A8]">{worker.fullName.charAt(0)}</span>}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                  <h3 className="font-semibold text-[#211B42]">{worker.fullName}</h3>
+                                  {matchScore !== null && <span className="rounded-full bg-[#F1EDFF] px-2.5 py-1 text-xs font-semibold text-[#5630A8]">{matchScore}% indicative fit</span>}
+                                </div>
+                                <p className="mt-1 text-sm text-[#625D73]">{worker.address || "Location not listed"} · {worker.totalExperienceYears == null ? "Experience not listed" : `${worker.totalExperienceYears} years experience`}</p>
+                                <p className="mt-1 text-sm font-medium text-[#39344C]">{providerWorkerSkills(worker).slice(0, 5).join(" · ") || "Skills not listed"}</p>
+                                <p className="mt-1 text-sm text-[#625D73]">{worker.averageRating == null ? "No rating listed" : `★ ${worker.averageRating.toFixed(1)} (${worker.reviewCount} reviews)`} · {formatProviderRate(worker)}</p>
+                                <p className="mt-1 text-sm text-[#625D73]">Availability: {providerWorkerAvailability(worker)}</p>
+                                {matchReasons.length > 0 && <p className="mt-2 text-sm leading-6 text-[#4D6659]">{matchReasons.join(" · ")}</p>}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#F0EDF5] px-4 py-3 sm:px-5">
+                              <button type="button" onClick={() => setExpandedProviderWorkerId((current) => current === worker.userId ? null : worker.userId)} aria-expanded={expandedProviderWorkerId === worker.userId} className="text-sm font-semibold text-[#5630A8] underline underline-offset-2">{expandedProviderWorkerId === worker.userId ? "Hide profile" : "View profile"}</button>
+                              <button type="button" onClick={() => prepareProviderInvite(worker, message.jobId, matchReasons)} disabled={!providerJobs.some((job) => job.id === message.jobId && job.status === "OPEN")} className="min-h-10 rounded-xl bg-[#5630A8] px-4 text-sm font-semibold text-white hover:bg-[#48268F] disabled:cursor-not-allowed disabled:bg-[#E8E5ED] disabled:text-[#9994A5]">Prepare invitation</button>
+                            </div>
+                            {expandedProviderWorkerId === worker.userId && <div className="space-y-2 border-t border-[#F0EDF5] bg-[#FCFBFE] px-4 py-3 text-sm leading-6 text-[#625D73] sm:px-5">
+                              {worker.bio && <p>{worker.bio}</p>}
+                              {worker.qualifications?.length ? <p><strong>Qualifications:</strong> {worker.qualifications.join(" · ")}</p> : null}
+                              {worker.workExperiences?.length ? <p><strong>Work history:</strong> {worker.workExperiences.join(" · ")}</p> : null}
+                              {!worker.bio && !worker.qualifications?.length && !worker.workExperiences?.length && <p>Additional profile details are not listed.</p>}
+                              <p className="text-xs text-[#8B829C]">Compatibility is indicative and is not a hiring outcome.</p>
+                            </div>}
                           </article>
                         ))}
                       </div>
@@ -1351,7 +1529,7 @@ export default function Chat() {
 
         <div className="shrink-0 px-3 pb-9 pt-2 sm:px-6 sm:pb-11">
           <div className="mx-auto max-w-3xl">
-            {selectedFile && (
+            {!isProvider && selectedFile && (
               <div className="mb-2 flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-2.5 shadow-sm">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-[10px] font-bold text-primary-ink">
                   {selectedFile.name.split(".").pop()?.toUpperCase()}
@@ -1411,7 +1589,7 @@ export default function Chat() {
                 {voiceError}
               </div>
             )}
-            <input
+            {!isProvider && <input
               ref={fileInputRef}
               type="file"
               accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -1421,7 +1599,7 @@ export default function Chat() {
                 handleFileSelection(event.target.files?.[0])
                 event.target.value = ""
               }}
-            />
+            />}
             <form
               onSubmit={sendMessage}
               className="chat-composer-enter chat-composer-glow flex items-end gap-2 rounded-3xl border border-[#E5E2EC] bg-white px-3 py-2 shadow-sm transition-all focus-within:border-[#7655CE] focus-within:ring-2 focus-within:ring-[#7655CE]/15 focus-within:shadow-[0_4px_18px_rgba(86,48,168,0.1)] sm:px-4"
@@ -1455,6 +1633,10 @@ export default function Chat() {
                     role="menu"
                     className="absolute bottom-full left-0 z-20 mb-2 w-52 rounded-xl border border-[#E5E2EC] bg-white p-1.5 shadow-lg"
                   >
+                    {isProvider ? <>
+                      <button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); sendMessage(undefined, "Find the best candidates for my latest job.") }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#49445A] hover:bg-[#F8F7FB]">Find workers for my latest job</button>
+                      <button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); sendMessage(undefined, "Find available workers near Kathmandu.") }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#49445A] hover:bg-[#F8F7FB]">Find available workers</button>
+                    </> : <>
                     <button
                       type="button"
                       role="menuitem"
@@ -1483,6 +1665,7 @@ export default function Chat() {
                     <p className="px-3 pb-1 pt-0.5 text-[10px] text-[#8C879B]">
                       PDF, DOC, or DOCX · max 10 MB
                     </p>
+                    </>}
                   </div>
                 )}
               </div>
@@ -1500,7 +1683,7 @@ export default function Chat() {
                   }
                 }}
                 rows={1}
-                placeholder="Message Shram AI..."
+                placeholder={isProvider ? "Describe the workers you need…" : "Message Shram AI..."}
                 disabled={sending}
                 className="max-h-36 min-h-12 flex-1 resize-none border-0 bg-transparent px-1 py-3 font-sans text-base leading-relaxed text-[#39344C] outline-none placeholder:text-[#8C879B] sm:text-lg"
               />
@@ -1557,11 +1740,12 @@ export default function Chat() {
               </button>
             </form>
             <p className="mt-2 text-center text-xs leading-relaxed text-[#8B829C]">
-              Shram AI can make mistakes. Verify important info.
+              {isProvider ? "Worker profiles and your jobs come from authenticated Shram Bazar records." : "Shram AI can make mistakes. Verify important info."}
             </p>
           </div>
         </div>
       </section>
+      {inviteDraft && <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !invitingWorkerId) setInviteDraft(null) }}><section role="dialog" aria-modal="true" aria-labelledby="provider-invite-title" className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl"><h2 id="provider-invite-title" className="text-lg font-bold text-[#211B42]">Review worker invitation</h2><p className="mt-1 text-sm text-[#625D73]">Edit the message before sending it to {inviteDraft.worker.fullName} about {inviteDraft.job.title}.</p><label htmlFor="provider-invite-message" className="mt-4 block text-sm font-semibold text-[#39344C]">Message</label><textarea id="provider-invite-message" value={inviteDraft.message} onChange={(event) => setInviteDraft((current) => current ? { ...current, message: event.target.value } : current)} maxLength={1000} rows={8} className="mt-2 w-full rounded-xl border border-[#E5E2EC] p-3 text-sm leading-6 text-[#39344C] outline-none focus:border-[#7655CE]" /><div className="mt-4 flex justify-end gap-2"><button type="button" disabled={invitingWorkerId !== null} onClick={() => setInviteDraft(null)} className="min-h-10 rounded-xl border border-[#E5E2EC] px-4 text-sm font-semibold text-[#49445A]">Cancel</button><button type="button" disabled={invitingWorkerId !== null || !inviteDraft.message.trim()} onClick={() => void sendProviderInvite()} className="min-h-10 rounded-xl bg-[#5630A8] px-4 text-sm font-semibold text-white disabled:opacity-50">{invitingWorkerId ? "Sending…" : "Confirm and send"}</button></div></section></div>}
       {pendingDeleteId && (
         <ConfirmDialog
           title="Delete this conversation?"

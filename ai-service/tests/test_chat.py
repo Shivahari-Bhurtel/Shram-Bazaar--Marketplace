@@ -339,11 +339,20 @@ def test_how_to_apply_is_answered_as_a_process_not_a_job_search(monkeypatch):
 
 
 def test_ai_status_endpoint_returns_provider_state(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
     expected = {"provider": "ollama", "model": "qwen3:4b", "ai_ready": False, "state": "model_missing"}
     monkeypatch.setattr(main.ollama_runtime, "check", lambda: expected)
     response = client.get("/api/v1/ai/status")
     assert response.status_code == 200
-    assert response.json() == expected
+    assert response.json() == {**expected, "chat_provider": "ollama"}
+
+
+def test_ai_status_reports_when_chat_is_misconfigured_for_gemini(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "gemini")
+    monkeypatch.setattr(main.ollama_runtime, "check", lambda: {"provider": "ollama", "model": "qwen3:4b"})
+    response = client.get("/api/v1/ai/status")
+    assert response.status_code == 200
+    assert response.json()["chat_provider"] == "gemini"
 
 
 @pytest.mark.parametrize("payload", [

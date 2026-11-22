@@ -29,6 +29,11 @@ export default function NotificationPanel({
   const openNotification = (notif: Notification) => {
     void markNotificationRead(notif.id)
     onClose()
+    if (notif.conversationId) {
+      try { sessionStorage.setItem("shram-open-conversation-id", notif.conversationId) } catch { /* Inbox still opens. */ }
+      navigate("messages")
+      return
+    }
     if (state.currentUser?.role === "worker" && (notif.engagementId || notif.applicationId || notif.type === "selection" || notif.type === "rejection")) {
       navigate("my-applications")
     } else if (notif.jobId && state.currentUser?.role === "worker") {

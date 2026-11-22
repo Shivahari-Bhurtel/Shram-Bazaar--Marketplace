@@ -3,6 +3,8 @@ import { useApp, type Page } from "../../store/AppContext"
 import { useLanguage } from "../../i18n/LanguageContext"
 import { useGeminiLiveVoice } from "../../hooks/useGeminiLiveVoice"
 import type { VoiceStatus } from "../../hooks/useGeminiLiveVoice"
+import { askProviderAssistant } from "../../services/providerAi"
+import type { ChatTurn } from "../../services/shramAi"
 
 const returnPages: Page[] = [
   "worker-dashboard",
@@ -44,9 +46,23 @@ const statusText: Record<VoiceStatus, string> = {
 }
 
 export default function VoiceAssistantPage() {
-  const { navigate } = useApp()
+  const { navigate, state } = useApp()
   const { language } = useLanguage()
-  const voice = useGeminiLiveVoice(language)
+  const isProvider = state.currentUser?.role === "provider"
+  const providerHistoryRef = useRef<ChatTurn[]>([])
+  const voice = useGeminiLiveVoice(language, isProvider ? {
+    assistantRole: "provider",
+    onProviderTurn: async (text) => {
+      const history = providerHistoryRef.current.slice(-12)
+      const reply = await askProviderAssistant(text, history, language)
+      providerHistoryRef.current = [
+        ...history,
+        { role: "user", text },
+        { role: "assistant", text: reply.answer },
+      ].slice(-12)
+      return reply.answer
+    },
+  } : {})
   const active = ["listening", "processing", "speaking"].includes(voice.status)
   const canStart = ["idle", "error", "disconnected"].includes(voice.status)
   const introRef = useRef<HTMLDivElement>(null)
@@ -132,7 +148,7 @@ export default function VoiceAssistantPage() {
         <div className="voice-content">
           <div ref={introRef} className="voice-intro">
             <h1>YOUR WORK COMPANION</h1>
-            <p className="voice-description">Echo</p>
+          <p className="voice-description">{isProvider ? "Shram AI · Hiring assistant" : "Echo"}</p>
           </div>
 
           <div className={`voice-orb-stage voice-orb-stage-${voice.status}`}>
@@ -313,7 +329,7 @@ export default function VoiceAssistantPage() {
             >
               <div className="voice-transcript-heading">
                 <div>
-                  <h2>Stream</h2>
+              <h2>{isProvider ? "Shram AI conversation" : "Stream"}</h2>
                 </div>
                 <button
                   type="button"
@@ -341,7 +357,7 @@ export default function VoiceAssistantPage() {
                     <span className="voice-transcript-empty-wave" aria-hidden="true">
                       <i /><i /><i /><i /><i />
                     </span>
-                    <p>Start speaking to begin the conversation.</p>
+                    <p>{isProvider ? "Ask Shram AI to find or compare workers for your jobs." : "Start speaking to begin the conversation."}</p>
                   </div>
                 )}
                 {voice.turns.map((turn, index) => (
@@ -358,7 +374,7 @@ export default function VoiceAssistantPage() {
                           <span className="voice-ai-speaker" aria-label="Echo">
                             <i /><i /><i /><i />
                           </span>
-                          <span>Echo</span>
+                          <span>{isProvider ? "Shram AI" : "Echo"}</span>
                         </div>
                         <p>{turn.assistant}</p>
                       </article>
