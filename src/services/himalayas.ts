@@ -62,7 +62,7 @@ const IT_RECOMMENDATIONS_CACHE_TTL = 24 * 60 * 60 * 1000
 const itRolePattern = /\b(software|developer|programmer|frontend|front-end|backend|back-end|full[- ]stack|devops|data analyst|data engineer|machine learning|ai engineer|cybersecurity|security engineer|it support|systems administrator|network engineer|qa engineer|quality assurance|product designer|ux designer|technical writer|cloud architect|database administrator|mobile developer|ios developer|android developer|technical support|software engineer|web engineer|platform engineer|site reliability engineer)\b/i
 const itCategoryPattern = /\b(technology|information technology|software development|web development|data science|cybersecurity|cloud computing|it & services)\b/i
 
-function isItOpportunity(job: Job) {
+export function isItOpportunity(job: Job) {
   return itRolePattern.test(job.title) ||
     itCategoryPattern.test([job.externalCategory, ...(job.externalCategories || [])].join(" "))
 }

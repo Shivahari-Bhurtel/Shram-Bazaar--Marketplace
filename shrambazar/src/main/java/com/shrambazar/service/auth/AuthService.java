@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class AuthService {
@@ -106,9 +107,6 @@ public class AuthService {
                 throw new IllegalArgumentException("Business name is required.");
             }
 
-            if (request.businessLocation() == null || request.businessLocation().isBlank()) {
-                throw new IllegalArgumentException("Business location is required.");
-            }
         }
 
         User user = createUser(
@@ -202,6 +200,13 @@ public class AuthService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Passwords do not match"
+            );
+        }
+
+        if (password.getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Password must be 72 UTF-8 bytes or fewer"
             );
         }
 

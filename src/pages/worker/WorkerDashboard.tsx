@@ -7,8 +7,8 @@ import DemoJobDetailsModal from "../../components/DemoJobDetailsModal"
 import { useDemoJobState } from "../../hooks/useDemoJobState"
 import type { Job } from "../../types"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
-import { getRecentItJobs, getRecommendedItJobs, loadCachedItRecommendations, loadCachedRecentItJobs } from "../../services/himalayas"
-import { getRemoteItJobs, loadCachedRemoteItJobs } from "../../services/jsearch"
+import { getRecentItJobs, getRecommendedItJobs, isItOpportunity, loadCachedItRecommendations, loadCachedRecentItJobs, searchHimalayasJobs } from "../../services/himalayas"
+import { getRemoteItJobs, loadCachedRemoteItJobs, searchRemoteItJobs } from "../../services/jsearch"
 import { distanceBetweenKm, formatDemoSalary, getBundledDemoJobs, loadDemoJobs, type DemoJob } from "../../services/demoJobs"
 
 function SidebarIcon({
@@ -119,6 +119,8 @@ export default function WorkerDashboard() {
   const demoState = useDemoJobState(workerProfile?.id)
   const [search, setSearch] = useState("")
   const [submittedSearch, setSubmittedSearch] = useState("")
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState("")
   const [demoJobs, setDemoJobs] = useState<DemoJob[]>(() => getBundledDemoJobs())
   const [showcaseItSearchJobs, setShowcaseItSearchJobs] = useState<Job[]>([])
   const [selectedDemoJob, setSelectedDemoJob] = useState<DemoJob | null>(null)
@@ -221,13 +223,60 @@ export default function WorkerDashboard() {
   useEffect(() => {
     if (!submittedSearch) {
       setShowcaseItSearchJobs([])
+      setSearchLoading(false)
+      setSearchError("")
       return
     }
-    setShowcaseItSearchJobs(searchCachedItListings(
+    const controller = new AbortController()
+    const cachedJobs = searchCachedItListings(
       [...recommendedExternalJobs, ...recentExternalJobs, ...remoteItJobs, ...externalJobs],
       submittedSearch,
-    ))
-  }, [submittedSearch, recommendedExternalJobs, recentExternalJobs, remoteItJobs, externalJobs])
+    )
+    const timeout = window.setTimeout(() => {
+      controller.abort()
+      setSearchLoading(false)
+      setSearchError(cachedJobs.length
+        ? "Search timed out; showing available cached IT jobs."
+        : "The IT job feeds took too long to respond. Please try again.")
+    }, 12_000)
+    setShowcaseItSearchJobs(cachedJobs)
+    setSearchError("")
+    setSearchLoading(true)
+
+    Promise.allSettled([
+      searchHimalayasJobs({ q: submittedSearch, sort: "relevant", page: 1 }, controller.signal)
+        .then((result) => result.jobs.filter(isItOpportunity)),
+      searchRemoteItJobs(submittedSearch, controller.signal),
+    ]).then((results) => {
+      if (controller.signal.aborted) return
+      const fulfilled = results.filter((result): result is PromiseFulfilledResult<Job[]> => result.status === "fulfilled")
+      const liveJobs = fulfilled.flatMap((result) => result.value)
+      const jobsById = new Map<string, Job>()
+      for (const job of [...liveJobs, ...cachedJobs]) {
+        if ((job.externalSource === "himalayas" || job.externalSource === "jsearch") && !jobsById.has(job.id)) {
+          jobsById.set(job.id, job)
+        }
+      }
+      setShowcaseItSearchJobs([...jobsById.values()])
+      if (liveJobs.length) {
+        setExternalJobs(Array.from(new Map(
+          [...externalJobs, ...liveJobs].map((job) => [job.id, job]),
+        ).values()))
+      }
+      if (!fulfilled.length && !cachedJobs.length) {
+        setSearchError("The IT job feeds are temporarily unavailable. Please try again.")
+      } else if (fulfilled.length < results.length) {
+        setSearchError("Some job feeds are temporarily unavailable; showing available IT jobs.")
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) setSearchLoading(false)
+    })
+
+    return () => {
+      window.clearTimeout(timeout)
+      controller.abort()
+    }
+  }, [submittedSearch])
 
   if (!workerProfile) return null
 
@@ -261,7 +310,6 @@ export default function WorkerDashboard() {
   const displayedItJobs = recommendedTab === "recent" ? recentItJobs : bestItJobs
   const displayedExternalLoading = recommendedTab === "recent" ? recentExternalLoading : recommendedExternalLoading
   const displayedExternalError = recommendedTab === "recent" ? recentExternalError : recommendedExternalError
-  const remoteSearchLoading = recommendedExternalLoading || remoteInitialLoading || recentExternalLoading
   const compareItJobs = (a: Job, b: Job) => recommendedTab !== "best"
     ? (b.externalUpdatedAt || b.postedDate).localeCompare(a.externalUpdatedAt || a.postedDate)
     : recommendedScore(b, workerProfile.skills) - recommendedScore(a, workerProfile.skills)
@@ -327,7 +375,6 @@ export default function WorkerDashboard() {
             />
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
               <div className="min-w-0">
-                <p className="mb-2 font-ui text-[11px] font-bold uppercase tracking-[0.2em] text-[#E5C8AB]">Worker home</p>
                 <h1 className="font-heading text-[1.8rem] font-bold leading-tight tracking-[-0.035em] text-white sm:text-3xl lg:text-[2.65rem]">
                   {greeting()},{" "}
                   {firstName.charAt(0).toUpperCase() + firstName.slice(1)}
@@ -360,42 +407,28 @@ export default function WorkerDashboard() {
             </div>
           </header>
 
-          {submittedSearch && <section className="mb-8 scroll-mt-6 space-y-4" aria-live="polite" aria-label="Remote IT job search results">
-            {showcaseItSearchJobs.length > 0 ? <div className="overflow-hidden rounded-xl border border-[#E8E2D5] bg-white"><h2 className="border-b border-stone-200 px-4 py-3 text-lg font-bold text-stone-900 sm:px-6">Remote IT job matches</h2>{showcaseItSearchJobs.map((job) => <RecommendedJobRow key={job.id} job={job} />)}</div> : remoteSearchLoading ? <p role="status" className="rounded-xl border border-stone-200 bg-white px-5 py-6 text-center text-sm text-stone-600">Loading remote IT listings to search…</p> : <div className="rounded-xl border border-stone-200 bg-white px-5 py-8 text-center"><p className="font-semibold text-stone-900">No matching remote IT jobs found</p><p className="mt-1 text-sm text-stone-500">Try another role, skill, or company from the available remote listings.</p></div>}
+          {submittedSearch && <section className="mb-8 scroll-mt-6 space-y-3" aria-live="polite" aria-label="Remote IT job search results">
+            {showcaseItSearchJobs.length > 0 ? (
+              <>
+                <div className="overflow-hidden rounded-xl border border-[#E8E2D5] bg-white">
+                  {showcaseItSearchJobs.map((job) => <RecommendedJobRow key={job.id} job={job} />)}
+                </div>
+                {searchError && <p role="status" className="text-sm text-amber-900">{searchError}</p>}
+              </>
+            ) : searchLoading ? (
+              <p role="status" className="rounded-xl border border-stone-200 bg-white px-5 py-6 text-center text-sm text-stone-600">Searching the IT job feeds…</p>
+            ) : searchError ? (
+              <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-6 text-center text-sm text-amber-900">{searchError}</p>
+            ) : (
+              <p className="rounded-xl border border-stone-200 bg-white px-5 py-6 text-center text-sm text-stone-600">No IT jobs match “{submittedSearch}”.</p>
+            )}
           </section>}
 
           <section className="mb-8">
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-2">
-                <h2 className="font-heading text-2xl font-bold tracking-tight text-stone-950">
-                  Remote work
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => navigate("job-discovery")}
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#E8E2D5] bg-[#EFECE6] px-3 py-2 text-sm font-semibold text-[#70472F] transition-colors hover:bg-[#EAE3D5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
-                aria-label="Open job discovery filters"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-4 w-4"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 6h16M7 12h10m-7 6h4"
-                  />
-                  <circle cx="8" cy="6" r="1.5" fill="currentColor" />
-                  <circle cx="15" cy="12" r="1.5" fill="currentColor" />
-                  <circle cx="11" cy="18" r="1.5" fill="currentColor" />
-                </svg>
-                Filters
-              </button>
+            <div className="mb-4">
+              <h2 className="font-heading text-2xl font-bold tracking-tight text-stone-950">
+                Remote work
+              </h2>
             </div>
             <div
               className="mb-3 flex items-center gap-6 overflow-x-auto border-b border-stone-200"

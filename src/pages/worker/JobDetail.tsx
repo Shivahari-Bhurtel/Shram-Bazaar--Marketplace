@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { useApp } from "../../store/AppContext"
+import { isValidEmail, isValidPhoneNumber } from "../../utils/validation"
+import type { ApiApplication } from "../../services/backendApi"
 import { CategoryBadge, VerifiedBadge } from "../../components/StatusBadge"
-import ConfirmDialog from "../../components/ConfirmDialog"
 import { formatNepalDate } from "../../utils/dates"
 import { formatJobBudget } from "../../utils/jobBudget"
 
@@ -23,14 +24,19 @@ export default function JobDetail() {
     jobs.find((j) => j.id === state.currentJobId) ||
     externalJobs.find((j) => j.id === state.currentJobId)
   const [showApplyForm, setShowApplyForm] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [applicationError, setApplicationError] = useState("")
   const [applying, setApplying] = useState(false)
-  const [offerAmount, setOfferAmount] = useState("")
-  const [offerDuration, setOfferDuration] = useState("")
-  const [offerAvailability, setOfferAvailability] = useState("")
-  const [offerMessage, setOfferMessage] = useState("")
+  const [applicationStep, setApplicationStep] = useState<1 | 2>(1)
+  const [reviewingApplication, setReviewingApplication] = useState(false)
+  const [applicantName, setApplicantName] = useState(workerProfile?.name || currentUser?.name || "")
+  const [applicantEmail, setApplicantEmail] = useState(workerProfile?.email || currentUser?.email || "")
+  const [applicantPhone, setApplicantPhone] = useState(workerProfile?.phone || "")
+  const [applicantLocation, setApplicantLocation] = useState(workerProfile?.location || workerProfile?.district || "")
+  const [applicationSkills, setApplicationSkills] = useState(workerProfile?.skills.join(", ") || "")
+  const [experienceLevel, setExperienceLevel] = useState<"No Experience" | "Beginner" | "Experienced">("No Experience")
+  const [introduction, setIntroduction] = useState("")
+  const [applicationResult, setApplicationResult] = useState<ApiApplication | null>(null)
   const [showReport, setShowReport] = useState(false)
   const [showProviderReport, setShowProviderReport] = useState(false)
   const [providerReportReason, setProviderReportReason] = useState("FAKE_ACCOUNT")
@@ -68,20 +74,41 @@ export default function JobDetail() {
     setApplying(true)
     setApplicationError("")
     try {
-      await applyToJob(job.id, {
-        offeredAmount: Number(offerAmount),
-        estimatedDurationHours: Number(offerDuration),
-        proposedStartAt: offerAvailability || undefined,
-        message: offerMessage.trim(),
+      const result = await applyToJob(job.id, {
+        applicantName: applicantName.trim(),
+        applicantEmail: applicantEmail.trim(),
+        applicantPhone: applicantPhone.trim(),
+        applicantLocation: applicantLocation.trim(),
+        skills: applicationSkills.split(/[,;\n]/).map((skill) => skill.trim()).filter(Boolean),
+        experienceLevel,
+        introduction: introduction.trim(),
       })
+      setApplicationResult(result)
       setShowApplyForm(false)
-      setShowConfirm(false)
       setSubmitted(true)
     } catch (error) {
       setApplicationError(error instanceof Error ? error.message : "Unable to submit your application. Please try again.")
     } finally {
       setApplying(false)
     }
+  }
+
+  const isNepalMobile = (value: string) => /^(?:\+?977[- ]?)?9\d{9}$/.test(value.trim())
+  const validatePersonalDetails = () => {
+    if (!applicantName.trim()) return "Enter your full name."
+    if (!isValidEmail(applicantEmail)) return "Enter a valid email address."
+    if (!isValidPhoneNumber(applicantPhone) || !isNepalMobile(applicantPhone)) return "Enter a valid Nepali mobile number, such as 98XXXXXXXX."
+    if (!applicantLocation.trim()) return "Enter your current city or location."
+    return ""
+  }
+  const parsedApplicationSkills = applicationSkills.split(/[,;\n]/).map((skill) => skill.trim()).filter(Boolean).slice(0, 20)
+  const validateApplicationDetails = () => {
+    if (!parsedApplicationSkills.length) return "Add at least one skill relevant to this job."
+    if (parsedApplicationSkills.some((skill) => skill.length > 80)) return "Keep each skill under 80 characters."
+    if (applicationSkills.split(/[,;\n]/).filter((skill) => skill.trim()).length > 20) return "Add no more than 20 skills."
+    if (introduction.trim().length < 20) return "Write a short introduction of at least 20 characters."
+    if (introduction.trim().length > 1200) return "Keep your introduction under 1,200 characters."
+    return ""
   }
 
   const spotsLeft = job.workersNeeded - job.workersHired
@@ -302,59 +329,53 @@ export default function JobDetail() {
             !isExternal &&
             showApplyForm &&
             !applied && (
-              <div className="bg-white border-2 border-primary rounded-2xl p-6 animate-fade-in">
-                <h2 className="font-semibold text-stone-900 mb-1">
-                  Make an offer
-                </h2>
-                <p className="text-stone-500 text-sm mb-4">
-                  Task budget: {taskBudget}. Your normal service rate does not set this offer.
-                </p>
-                {applicationError && <p role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{applicationError}</p>}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="text-xs font-semibold text-stone-700">Your price (NPR)<input type="number" min="1" step="1" value={offerAmount} onChange={(event) => setOfferAmount(event.target.value)} placeholder={String(job.payment || "Enter your price")} className="input-style mt-1.5 w-full" /></label>
-                  <label className="text-xs font-semibold text-stone-700">Estimated duration (hours)<input type="number" min="1" step="1" value={offerDuration} onChange={(event) => setOfferDuration(event.target.value)} placeholder="e.g. 3" className="input-style mt-1.5 w-full" /></label>
-                  <label className="text-xs font-semibold text-stone-700 sm:col-span-2">Proposed start time (Nepal time)<input type="datetime-local" min={`${job.date}T00:00`} value={offerAvailability} onChange={(event) => setOfferAvailability(event.target.value)} className="input-style mt-1.5 w-full" /></label>
-                  <label className="text-xs font-semibold text-stone-700 sm:col-span-2">Message to the provider<textarea maxLength={1200} rows={3} value={offerMessage} onChange={(event) => setOfferMessage(event.target.value)} placeholder="Share how your experience and skills fit this task." className="input-style mt-1.5 w-full" /></label>
+              <section aria-labelledby="application-form-title" className="bg-white border-2 border-primary rounded-2xl p-5 sm:p-6 animate-fade-in">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div><h2 id="application-form-title" className="font-semibold text-stone-900">Apply for {job.title}</h2><p className="mt-1 text-sm text-stone-600">{job.providerName}</p></div>
+                  <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-ink">Step {reviewingApplication ? 2 : applicationStep} of 2{reviewingApplication ? " · Review" : ""}</span>
                 </div>
-                <div className="flex gap-3 mt-4">
-                  <button
-                    onClick={() => setShowApplyForm(false)}
-                    className="px-4 py-2 border border-stone-200 rounded-xl text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (!Number(offerAmount) || Number(offerAmount) <= 0 || !Number(offerDuration) || !offerMessage.trim()) {
-                        setApplicationError("Enter your price, estimated duration, and a short message to continue.")
-                        return
-                      }
-                      setApplicationError("")
-                      setShowConfirm(true)
-                    }}
-                    className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors"
-                  >
-                    Review offer →
-                  </button>
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-stone-100"><div className={`h-full bg-primary transition-all ${applicationStep === 1 && !reviewingApplication ? "w-1/2" : "w-full"}`} /></div>
+                {applicationError && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{applicationError}</p>}
+
+                {!reviewingApplication && applicationStep === 1 && <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <label className="text-xs font-semibold text-stone-700">Full name<input autoComplete="name" maxLength={120} value={applicantName} onChange={(event) => setApplicantName(event.target.value)} className="input-style mt-1.5 w-full" /></label>
+                  <label className="text-xs font-semibold text-stone-700">Email address<input type="email" autoComplete="email" maxLength={254} value={applicantEmail} onChange={(event) => setApplicantEmail(event.target.value)} className="input-style mt-1.5 w-full" /></label>
+                  <label className="text-xs font-semibold text-stone-700">Phone number<input type="tel" autoComplete="tel" maxLength={32} value={applicantPhone} onChange={(event) => setApplicantPhone(event.target.value)} placeholder="98XXXXXXXX" className="input-style mt-1.5 w-full" /></label>
+                  <label className="text-xs font-semibold text-stone-700">Current city or location<input autoComplete="address-level2" maxLength={255} value={applicantLocation} onChange={(event) => setApplicantLocation(event.target.value)} placeholder="e.g. Kathmandu" className="input-style mt-1.5 w-full" /></label>
+                </div>}
+
+                {!reviewingApplication && applicationStep === 2 && <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <label className="text-xs font-semibold text-stone-700 sm:col-span-2">Relevant skills<input maxLength={1700} value={applicationSkills} onChange={(event) => setApplicationSkills(event.target.value)} placeholder="Separate skills with commas" className="input-style mt-1.5 w-full" /><span className="mt-1 block font-normal text-stone-500">Add up to 20 skills relevant to this job.</span></label>
+                  <label className="text-xs font-semibold text-stone-700">Experience level<select value={experienceLevel} onChange={(event) => setExperienceLevel(event.target.value as typeof experienceLevel)} className="input-style mt-1.5 w-full"><option>No Experience</option><option>Beginner</option><option>Experienced</option></select></label>
+                  <label className="text-xs font-semibold text-stone-700 sm:col-span-2">Short introduction<textarea rows={4} maxLength={1200} value={introduction} onChange={(event) => setIntroduction(event.target.value)} placeholder="Briefly explain why you are suitable for this job." className="input-style mt-1.5 w-full" /><span className="mt-1 block text-right font-normal text-stone-500">{introduction.length}/1200</span></label>
+                </div>}
+
+                {reviewingApplication && <dl className="mt-5 grid gap-3 rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm sm:grid-cols-2">
+                  <div><dt className="text-xs font-medium text-stone-500">Full name</dt><dd className="mt-0.5 font-medium text-stone-900">{applicantName}</dd></div>
+                  <div><dt className="text-xs font-medium text-stone-500">Email</dt><dd className="mt-0.5 break-all font-medium text-stone-900">{applicantEmail}</dd></div>
+                  <div><dt className="text-xs font-medium text-stone-500">Phone</dt><dd className="mt-0.5 font-medium text-stone-900">{applicantPhone}</dd></div>
+                  <div><dt className="text-xs font-medium text-stone-500">Location</dt><dd className="mt-0.5 font-medium text-stone-900">{applicantLocation}</dd></div>
+                  <div><dt className="text-xs font-medium text-stone-500">Experience</dt><dd className="mt-0.5 font-medium text-stone-900">{experienceLevel}</dd></div>
+                  <div className="sm:col-span-2"><dt className="text-xs font-medium text-stone-500">Skills</dt><dd className="mt-0.5 font-medium text-stone-900">{parsedApplicationSkills.join(", ")}</dd></div>
+                  <div className="sm:col-span-2"><dt className="text-xs font-medium text-stone-500">Introduction</dt><dd className="mt-0.5 whitespace-pre-wrap font-medium text-stone-900">{introduction}</dd></div>
+                </dl>}
+
+                <div className="mt-5 flex flex-wrap justify-between gap-3">
+                  <button type="button" disabled={applying} onClick={() => { setApplicationError(""); if (reviewingApplication) { setReviewingApplication(false); setApplicationStep(2) } else if (applicationStep === 2) setApplicationStep(1); else setShowApplyForm(false) }} className="rounded-lg border border-stone-300 px-4 py-2.5 text-sm font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50">{reviewingApplication || applicationStep === 2 ? "Back" : "Cancel"}</button>
+                  {!reviewingApplication && applicationStep === 1 && <button type="button" onClick={() => { const error = validatePersonalDetails(); setApplicationError(error); if (!error) { setApplicationError(""); setApplicationStep(2) } }} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark">Continue</button>}
+                  {!reviewingApplication && applicationStep === 2 && <button type="button" onClick={() => { const error = validateApplicationDetails(); setApplicationError(error); if (!error) { setApplicationError(""); setReviewingApplication(true) } }} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark">Review application</button>}
+                  {reviewingApplication && <button type="button" disabled={applying} onClick={() => { void handleApply() }} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:cursor-wait disabled:opacity-60">{applying ? "Submitting…" : "Submit application"}</button>}
                 </div>
-              </div>
+              </section>
             )}
 
           {submitted && (
-            <div className="bg-green-50 border border-green-100 rounded-2xl p-6 text-center animate-fade-in">
-              <h3 className="font-semibold text-green-800 mb-1">
-                Application Submitted!
-              </h3>
-              <p className="text-green-700 text-sm">
-                You'll receive a notification once the provider reviews your
-                profile.
-              </p>
-              <button
-                onClick={() => navigate("my-applications")}
-                className="mt-4 text-sm text-green-700 font-medium hover:underline"
-              >
-                View My Applications →
-              </button>
+            <div className="border border-green-200 bg-green-50 p-6 text-center animate-fade-in">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-800" aria-hidden="true">✓</div>
+              <h3 className="font-semibold text-green-900">Application Submitted Successfully</h3>
+              <dl className="mx-auto mt-4 grid max-w-md gap-2 text-left text-sm sm:grid-cols-2"><div><dt className="text-xs text-green-800/70">Job</dt><dd className="font-medium text-green-950">{job.title}</dd></div><div><dt className="text-xs text-green-800/70">Employer</dt><dd className="font-medium text-green-950">{job.providerName}</dd></div><div><dt className="text-xs text-green-800/70">Application ID</dt><dd className="font-medium text-green-950">{applicationResult?.applicationId ?? "—"}</dd></div><div><dt className="text-xs text-green-800/70">Status</dt><dd className="font-medium text-green-950">Pending</dd></div></dl>
+              {applicationResult?.confirmationEmailSent ? <p className="mt-4 text-sm text-green-800">Confirmation email sent to <strong>{applicationResult.applicantEmail || applicantEmail}</strong>.</p> : <p role="status" className="mt-4 text-sm text-amber-900">Your application is saved, but a confirmation email could not be delivered. Please check back in My Applications.</p>}
+              <div className="mt-5 flex flex-wrap justify-center gap-3"><button type="button" onClick={() => navigate("my-applications")} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white">View My Applications</button><button type="button" onClick={() => navigate("job-discovery")} className="rounded-lg border border-green-300 bg-white px-4 py-2.5 text-sm font-semibold text-green-900">Back to Jobs</button></div>
             </div>
           )}
         </div>
@@ -610,16 +631,6 @@ export default function JobDetail() {
         </div>
       </div>
 
-      {showConfirm && (
-        <ConfirmDialog
-          title="Submit this offer?"
-          message={`Your offer of NPR ${Number(offerAmount).toLocaleString()} for “${job.title}” will be sent to ${job.providerName}.`}
-          confirmLabel={applying ? "Sending…" : "Submit offer"}
-          confirmDisabled={applying}
-                  onConfirm={() => { void handleApply() }}
-          onCancel={() => setShowConfirm(false)}
-        />
-      )}
     </div>
   )
 }

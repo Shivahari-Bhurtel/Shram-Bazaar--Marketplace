@@ -1,5 +1,6 @@
-import { apiRequest } from "./backendApi"
 import bundledDemoJobs from "../../shrambazar/src/main/resources/data/jobs.json"
+
+const EXPECTED_BUNDLED_DEMO_JOB_COUNT = 130
 
 export type DemoJob = {
   id: string
@@ -44,36 +45,17 @@ export type DemoJobFilters = {
 
 export async function loadDemoJobs(signal?: AbortSignal): Promise<DemoJob[]> {
   if (signal?.aborted) throw new DOMException("Job loading was cancelled.", "AbortError")
-  // The localhost showcase dataset ships with the frontend. Use it immediately
-  // instead of waiting for a backend or database that the showcase does not need.
-  if (usesLocalShowcaseDataset()) return getBundledDemoJobs()
-
-  const controller = new AbortController()
-  const abortFromCaller = () => controller.abort()
-  signal?.addEventListener("abort", abortFromCaller, { once: true })
-  const timeout = setTimeout(() => controller.abort(), 1800)
-
-  try {
-    const value: unknown = await apiRequest<unknown>("/api/jobs/showcase", { signal: controller.signal })
-    return validateDemoJobs(value)
-  } catch {
-    if (signal?.aborted) throw new DOMException("Job loading was cancelled.", "AbortError")
-    // The frontend and backend share the same checked-in JSON source, so job
-    // discovery remains usable when an API or database is not running locally.
-    return validateDemoJobs(bundledDemoJobs)
-  } finally {
-    clearTimeout(timeout)
-    signal?.removeEventListener("abort", abortFromCaller)
-  }
+  // This showcase dataset is bundled with the app and is the canonical source
+  // for worker demo listings, so results never depend on a stale API copy.
+  return getBundledDemoJobs()
 }
 
 export function getBundledDemoJobs(): DemoJob[] {
-  return validateDemoJobs(bundledDemoJobs)
-}
-
-function usesLocalShowcaseDataset() {
-  return import.meta.env.VITE_DEMO_MODE === "true"
-    || (typeof window !== "undefined" && ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname))
+  const jobs = validateDemoJobs(bundledDemoJobs)
+  if (jobs.length < EXPECTED_BUNDLED_DEMO_JOB_COUNT) {
+    throw new Error(`The bundled showcase dataset must contain at least ${EXPECTED_BUNDLED_DEMO_JOB_COUNT} unique valid jobs; found ${jobs.length}.`)
+  }
+  return jobs
 }
 
 function validateDemoJobs(value: unknown): DemoJob[] {

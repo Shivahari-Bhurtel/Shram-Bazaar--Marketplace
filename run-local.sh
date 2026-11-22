@@ -21,8 +21,8 @@ export JWT_SECRET="${JWT_SECRET:-bG9jYWwtZGV2LW9ubHktc2hyYW1iYXphci1qd3Qtc2VjcmV
 
 # Figma Make and Vite read .env.local for the frontend, but child processes
 # started here do not inherit those values. Read managed database settings only
-# when the caller explicitly opts in; local development must not migrate a
-# shared database just because its credentials happen to be in .env.local.
+# when explicitly requested, and load email credentials only from the backend's
+# private .env so they are never placed in frontend variables.
 if [[ -f "$APP_DIR/.env.local" ]]; then
   while IFS='=' read -r name value; do
     case "$name" in
@@ -38,7 +38,25 @@ if [[ -f "$APP_DIR/.env.local" ]]; then
   done < "$APP_DIR/.env.local"
 fi
 
+# Keep email credentials in the backend's private environment file. These
+# variables are inherited by Spring Boot but are never prefixed for Vite.
+if [[ -f "$APP_DIR/shrambazar/.env" ]]; then
+  while IFS='=' read -r name value; do
+    case "$name" in
+      RESEND_API_KEY|RESEND_FROM_EMAIL)
+        if [[ -n "${!name+x}" ]]; then continue; fi
+        value="${value%$'\r'}"
+        if [[ "$value" == \"*\" ]]; then value="${value:1:${#value}-2}"; fi
+        if [[ "$value" == \'*\' ]]; then value="${value:1:${#value}-2}"; fi
+        printf -v "$name" '%s' "$value"
+        export "$name"
+        ;;
+    esac
+  done < "$APP_DIR/shrambazar/.env"
+fi
+
 managed_db_configured=false
+local_h2_configured=false
 if [[ "$DB_URL_WAS_CONFIGURED" == x ]]; then
   if [[ "$DB_URL" != "jdbc:postgresql://127.0.0.1:5432/shrambazar" ]]; then
     managed_db_configured=true
@@ -80,7 +98,7 @@ if ! api_healthy; then
     exit 1
   else
     if [[ "$managed_db_configured" != true ]] && ! pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
-    if command -v docker >/dev/null 2>&1; then
+      if command -v docker >/dev/null 2>&1; then
         if docker compose -f "$APP_DIR/shrambazar/compose.yaml" up -d database; then
           for _ in {1..30}; do
             pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1 && break
@@ -88,8 +106,19 @@ if ! api_healthy; then
           done
         fi
       fi
+      if ! pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
+        mkdir -p "$APP_DIR/shrambazar/.local"
+        export DB_URL="jdbc:h2:file:$APP_DIR/shrambazar/.local/shrambazar;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE"
+        export DB_USERNAME="sa"
+        export DB_PASSWORD=""
+        export DB_DRIVER="org.h2.Driver"
+        export SPRING_JPA_HIBERNATE_DDL_AUTO="update"
+        export SPRING_SQL_INIT_MODE="never"
+        local_h2_configured=true
+        echo "PostgreSQL is unavailable; using the persistent local H2 database at shrambazar/.local/shrambazar."
+      fi
     fi
-    if pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1 || [[ "$managed_db_configured" == true ]]; then
+    if pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1 || [[ "$managed_db_configured" == true || "$local_h2_configured" == true ]]; then
       if (cd "$APP_DIR/shrambazar" && sh ./mvnw -DskipTests package); then
         (
           cd "$APP_DIR/shrambazar"
@@ -112,7 +141,7 @@ if ! api_healthy; then
         exit 1
       fi
     else
-      echo "PostgreSQL is not available. Start a local database or configure POSTGRES_HOST, POSTGRES_DATABASE, POSTGRES_USER, and POSTGRES_PASSWORD to enable login and account creation."
+      echo "The configured database is not available. Start it or correct DB_URL, DB_USERNAME, and DB_PASSWORD before launching Shram Bazar."
       exit 1
     fi
   fi

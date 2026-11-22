@@ -58,3 +58,17 @@ ALTER TABLE job_posts
 -- Negotiable postings are allowed to omit a fixed minimum amount.
 ALTER TABLE job_posts
     ALTER COLUMN payment_amount DROP NOT NULL;
+
+-- Preserve applicant details as an application-time snapshot.
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_name VARCHAR(120);
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_email VARCHAR(254);
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_phone VARCHAR(32);
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_location VARCHAR(255);
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS experience_level VARCHAR(32);
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS introduction VARCHAR(1200);
+
+CREATE TABLE IF NOT EXISTS application_skills (
+    application_id BIGINT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    skill VARCHAR(80) NOT NULL,
+    PRIMARY KEY (application_id, skill)
+);

@@ -107,6 +107,14 @@ export default function WorkerSidebar() {
     .map((part) => part[0])
     .join("")
     .toUpperCase()
+  const profileFields = workerProfile
+    ? [workerProfile.name, workerProfile.phone, workerProfile.email, workerProfile.photo, workerProfile.location, workerProfile.bio, workerProfile.skills?.length, workerProfile.qualifications?.length, workerProfile.experience?.length, workerProfile.availableDates?.length]
+    : []
+  const profileCompletion = profileFields.length
+    ? Math.round(profileFields.filter((value) => Array.isArray(value) ? value.length > 0 : Boolean(value?.toString().trim())).length / profileFields.length * 100)
+    : 0
+  const applicationCount = state.applications.filter((application) => application.workerId === workerProfile?.id).length
+  const savedJobCount = state.savedJobIds.length
   const openPage = (page: WorkerPage) => {
     if (page === "voice-assistant") {
       try {
@@ -161,29 +169,36 @@ export default function WorkerSidebar() {
           {profileOpen && (
             <section
               role="dialog"
-              className="absolute left-[calc(100%+1rem)] top-0 z-50 w-[19rem] max-w-[calc(100vw-18rem)] rounded-2xl border border-[#E1DAD3] bg-[#FFFEFC] p-4 text-stone-800 shadow-[0_16px_40px_rgba(83,52,33,0.14)]"
+              className="absolute left-[calc(100%+1rem)] top-0 z-50 w-[20rem] max-w-[calc(100vw-18rem)] rounded-xl border border-[#E1DAD3] bg-[#FFFEFC] p-2 text-stone-800 shadow-[0_16px_40px_rgba(83,52,33,0.14)] [font-family:Inter,'Noto_Sans_Devanagari',system-ui,sans-serif] antialiased"
               aria-label="Profile menu"
             >
-              <div className="flex items-center gap-3 border-b border-[#ECE7E1] pb-4">
+              <div className="flex items-center gap-3 rounded-lg px-2.5 py-2.5">
+                <span className="relative h-12 w-12 shrink-0 rounded-full p-[2px]" style={{ background: `conic-gradient(#80502F ${profileCompletion}%, #E8DED3 ${profileCompletion}% 100%)` }} role="progressbar" aria-label="Profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={profileCompletion}>
+                  <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-[2px]">
                 {workerProfile?.photo ? (
                   <img
                     src={workerProfile.photo}
                     alt=""
-                    className="h-12 w-12 rounded-full object-cover"
+                    className="h-full w-full rounded-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#96613A] text-sm font-bold text-white">
+                  <span className="flex h-full w-full items-center justify-center rounded-full bg-[#80502F] text-sm font-bold tracking-wide text-white">
                     {initials}
                   </span>
                 )}
+                  </span>
+                </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-stone-900">
+                  <p className="truncate text-base font-semibold tracking-[-0.02em] text-stone-950">
                     {userName}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs font-medium text-stone-500">
+                    {workerProfile?.verified ? "Verified Worker" : "Worker"} <span aria-hidden="true">·</span> Profile {profileCompletion}%
                   </p>
                 </div>
               </div>
               <nav
-                className="space-y-1 py-3"
+                className="space-y-0.5 py-1"
                 aria-label="Profile navigation"
               >
                 {accountLinks.map((item) => (
@@ -193,19 +208,21 @@ export default function WorkerSidebar() {
                     onClick={() => item.action === "notifications" ? setNotificationsOpen((open) => !open) : item.page && openPage(item.page)}
                     aria-current={item.page && state.currentPage === item.page ? "page" : undefined}
                     aria-expanded={item.action === "notifications" ? notificationsOpen : undefined}
-                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${item.page === state.currentPage ? "bg-[#F7F1EB] font-semibold text-[#553421]" : "font-medium text-stone-700 hover:bg-[#F7F1EB] hover:text-[#553421]"}`}
+                    className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left text-[15px] leading-5 tracking-[-0.01em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#80502F]/40 ${item.page === state.currentPage ? "bg-[#F7F3EE] font-semibold text-[#553421]" : "font-medium text-stone-700 hover:bg-[#F7F3EE] hover:text-[#553421]"}`}
                   >
                     <span className={`flex h-5 w-5 shrink-0 items-center justify-center ${item.page === state.currentPage ? "text-[#70472F]" : item.action === "notifications" && unreadNotificationsCount > 0 ? "text-[#80502F]" : "text-stone-500"}`}><WorkspaceIcon name={item.icon} /></span>
                     <span className="flex-1">{item.label}</span>
-                    {item.action === "notifications" && unreadNotificationsCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#80502F] px-1.5 text-[10px] font-bold text-white">{unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}</span>}
+                    {item.action === "notifications" && unreadNotificationsCount > 0 && <span className="ml-auto min-w-5 text-right text-xs font-semibold tabular-nums text-[#80502F]">{unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}</span>}
+                    {item.page === "my-applications" && applicationCount > 0 && <span className="ml-auto min-w-5 text-right text-xs font-semibold tabular-nums text-stone-500">{applicationCount}</span>}
+                    {item.page === "saved-jobs" && savedJobCount > 0 && <span className="ml-auto min-w-5 text-right text-xs font-semibold tabular-nums text-stone-500">{savedJobCount}</span>}
                   </button>
                 ))}
               </nav>
-              <div className="border-t border-[#ECE7E1] pt-3">
+              <div className="mt-1 border-t border-[#ECE7E1] pt-1">
                 <button
                   type="button"
                   onClick={logout}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-700 transition-colors hover:bg-[#FBEFEC]"
+                  className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left text-[15px] font-semibold leading-5 tracking-[-0.01em] text-[#B91C1C] transition-colors hover:bg-[#FEF2F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B91C1C]/30"
                 >
                   <span className="flex h-5 w-5 items-center justify-center"><WorkspaceIcon name="logout" /></span>
                   Log out
@@ -251,7 +268,7 @@ export default function WorkerSidebar() {
                 {group.items.map((link) => {
                   const active = state.currentPage === link.page
                   const logoLink = link.icon === "ai"
-                  return <button key={`${link.label}-${link.page}`} type="button" onClick={() => openPage(link.page)} aria-current={active ? "page" : undefined} className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3.5 text-left text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#80502F]/40 ${logoLink ? `worker-assistant-nav ${active ? "is-active" : ""}` : active ? "bg-[#F2E4D4] font-bold text-[#4E342E] shadow-sm" : "font-semibold text-[#543D2E] hover:bg-white/60 hover:text-[#4E342E]"}`}>
+                  return <button key={`${link.label}-${link.page}`} type="button" onClick={() => openPage(link.page)} aria-current={active ? "page" : undefined} className={`flex min-h-[3.25rem] w-full items-center gap-3 rounded-xl px-3.5 text-left text-[15px] tracking-[0.01em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#80502F]/40 ${logoLink ? `worker-assistant-nav ${active ? "is-active" : ""}` : active ? "bg-[#F2E4D4] font-medium text-[#4E342E] shadow-sm" : "font-medium text-[#543D2E] hover:bg-white/60 hover:text-[#4E342E]"}`}>
                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center [&>svg]:h-5 [&>svg]:w-5 ${logoLink ? "text-[#70472F]" : active ? "text-[#70472F]" : "text-[#80674F]"}`}><WorkspaceIcon name={link.icon} /></span>
                     <span className="leading-snug">{link.label}</span>
                   </button>

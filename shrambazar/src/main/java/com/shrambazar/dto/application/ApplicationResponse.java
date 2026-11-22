@@ -6,6 +6,7 @@ import com.shrambazar.enums.PaymentMethod;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ApplicationResponse(
         Long applicationId,
@@ -22,6 +23,14 @@ public record ApplicationResponse(
         BigDecimal offeredAmount,
         String offerMessage,
         Integer estimatedDurationHours,
-        LocalDateTime proposedStartAt
+        LocalDateTime proposedStartAt,
+        String applicantName,
+        String applicantEmail,
+        String applicantPhone,
+        String applicantLocation,
+        List<String> skills,
+        String experienceLevel,
+        String introduction,
+        boolean confirmationEmailSent
 ) {
 }

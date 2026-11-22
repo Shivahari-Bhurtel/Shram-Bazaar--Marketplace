@@ -10,6 +10,10 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 }
 
+export function isValidAuthPasswordLength(password: string): boolean {
+  return new TextEncoder().encode(password).length <= 72
+}
+
 export function isValidNepalPan(pan: string): boolean {
   return /^\d{9}$/.test(pan.trim())
 }

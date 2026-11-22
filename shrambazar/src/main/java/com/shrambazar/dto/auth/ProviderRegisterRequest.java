@@ -30,7 +30,6 @@ public record ProviderRegisterRequest(
         @Past
         LocalDate dateOfBirth,
 
-        @NotBlank
         @Size(max = 255)
         String address,
 

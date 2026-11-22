@@ -12,15 +12,12 @@ import { useApp } from "../../store/AppContext"
 import { DISTRICTS } from "../../data/mockData"
 import { useSkillCatalog } from "../../hooks/useSkillCatalog"
 import type {
-  AvailabilitySlot,
   Experience,
   Qualification,
-  Weekday,
 } from "../../types"
 import { formatNepalDate, isDateOnlyString, nepalDateString, nepalYear } from "../../utils/dates"
 import { isValidPhoneNumber } from "../../utils/validation"
 import { getConfiguredJobCategories } from "../../utils/categories"
-import { getCurrentCoordinates } from "../../utils/geolocation"
 
 const presetAvatars = [
   {
@@ -35,16 +32,6 @@ const presetAvatars = [
     src: "/images/profile-avatars/worker-avatar-3.jpeg",
     label: "Long hair portrait",
   },
-]
-
-const weekdays: { value: Weekday; label: string }[] = [
-  { value: "sunday", label: "Sunday" },
-  { value: "monday", label: "Monday" },
-  { value: "tuesday", label: "Tuesday" },
-  { value: "wednesday", label: "Wednesday" },
-  { value: "thursday", label: "Thursday" },
-  { value: "friday", label: "Friday" },
-  { value: "saturday", label: "Saturday" },
 ]
 
 export default function WorkerProfile() {
@@ -63,22 +50,12 @@ export default function WorkerProfile() {
   const [editing, setEditing] = useState<string | null>(null)
   const [tempData, setTempData] = useState<any>({})
   const [skillInput, setSkillInput] = useState("")
-  const [dateInput, setDateInput] = useState("")
-  const [dateEndInput, setDateEndInput] = useState("")
   const [saved, setSaved] = useState(false)
   const [editError, setEditError] = useState("")
-  const [locationMessage, setLocationMessage] = useState("")
   const [photoMessage, setPhotoMessage] = useState("")
   const [photoError, setPhotoError] = useState(false)
   const [photoChoicesOpen, setPhotoChoicesOpen] = useState(false)
-  const [availabilityDay, setAvailabilityDay] = useState<Weekday>("monday")
-  const [availabilityStart, setAvailabilityStart] = useState("18:00")
-  const [availabilityEnd, setAvailabilityEnd] = useState("21:00")
-  const [dateAvailabilityStart, setDateAvailabilityStart] = useState("09:00")
-  const [dateAvailabilityEnd, setDateAvailabilityEnd] = useState("17:00")
-  const [editingAvailabilityId, setEditingAvailabilityId] =
-    useState<string | null>(null)
-  const [availabilityError, setAvailabilityError] = useState("")
+  const [publicPreviewOpen, setPublicPreviewOpen] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const photoPickerRef = useRef<HTMLDivElement>(null)
 
@@ -90,6 +67,15 @@ export default function WorkerProfile() {
       setPhotoMessage("")
     }, 2000)
   }
+
+  useEffect(() => {
+    if (!publicPreviewOpen) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPublicPreviewOpen(false)
+    }
+    document.addEventListener("keydown", closeOnEscape)
+    return () => document.removeEventListener("keydown", closeOnEscape)
+  }, [publicPreviewOpen])
 
   useEffect(() => {
     if (!photoChoicesOpen) return
@@ -296,104 +282,6 @@ export default function WorkerProfile() {
       ),
   ).slice(0, 15)
   const kycStatus = workerProfile.kycStatus ?? "not-verified"
-  const todayInKathmandu = nepalDateString()
-
-  const addWeeklyAvailability = () => {
-    if (availabilityEnd <= availabilityStart) {
-      setAvailabilityError("End time must be later than start time.")
-      return
-    }
-    const slots = workerProfile.weeklyAvailability ?? []
-    const start = availabilityStart
-      .split(":")
-      .reduce(
-        (hours, part, index) => hours + Number(part) * (index === 0 ? 60 : 1),
-        0,
-      )
-    const end = availabilityEnd
-      .split(":")
-      .reduce(
-        (hours, part, index) => hours + Number(part) * (index === 0 ? 60 : 1),
-        0,
-      )
-    const overlaps = slots.some((slot) => {
-      if (slot.date || slot.id === editingAvailabilityId || slot.day !== availabilityDay)
-        return false
-      const existingStart = slot.startTime
-        .split(":")
-        .reduce(
-          (hours, part, index) => hours + Number(part) * (index === 0 ? 60 : 1),
-          0,
-        )
-      const existingEnd = slot.endTime
-        .split(":")
-        .reduce(
-          (hours, part, index) => hours + Number(part) * (index === 0 ? 60 : 1),
-          0,
-        )
-      return start < existingEnd && end > existingStart
-    })
-    if (overlaps) {
-      setAvailabilityError("This overlaps another time slot on that day.")
-      return
-    }
-    const nextSlots: AvailabilitySlot[] = [
-      ...slots.filter((slot) => slot.id !== editingAvailabilityId),
-      {
-        id: editingAvailabilityId ?? `availability-${Date.now()}`,
-        day: availabilityDay,
-        startTime: availabilityStart,
-        endTime: availabilityEnd,
-      },
-    ].sort(
-      (a, b) =>
-        weekdays.findIndex((day) => day.value === a.day) -
-          weekdays.findIndex((day) => day.value === b.day) ||
-        a.startTime.localeCompare(b.startTime),
-    )
-    updateWorkerProfile({ weeklyAvailability: nextSlots })
-    setEditingAvailabilityId(null)
-    setAvailabilityError("")
-    showProfileUpdate(
-      `Weekly hours ${editingAvailabilityId ? "updated" : "added"}.`,
-    )
-  }
-
-  const addDateAvailability = () => {
-    const endDate = dateEndInput || dateInput
-    if (!dateInput || dateInput < todayInKathmandu || endDate < dateInput) {
-      setAvailabilityError("Choose a valid date range starting today or later.")
-      return
-    }
-    if (dateAvailabilityEnd <= dateAvailabilityStart) {
-      setAvailabilityError("End time must be later than start time.")
-      return
-    }
-    const slots = workerProfile.weeklyAvailability ?? []
-    const overlaps = slots.some((slot) => {
-      if (!slot.date || endDate < slot.date || dateInput > (slot.endDate || slot.date)) return false
-      return dateAvailabilityStart < slot.endTime && dateAvailabilityEnd > slot.startTime
-    })
-    if (overlaps) {
-      setAvailabilityError("This overlaps another available time on that date.")
-      return
-    }
-    const date = new Date(`${dateInput}T12:00:00`)
-    const day = weekdays[date.getDay()]?.value || "monday"
-    updateWorkerProfile({ weeklyAvailability: [...slots, {
-      id: `availability-${Date.now()}`,
-      day,
-      date: dateInput,
-      endDate: endDate === dateInput ? undefined : endDate,
-      startTime: dateAvailabilityStart,
-      endTime: dateAvailabilityEnd,
-    }] })
-    showProfileUpdate("Date and time availability saved.")
-    setDateInput("")
-    setDateEndInput("")
-    setAvailabilityError("")
-  }
-
   const handleProfilePhoto = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -425,32 +313,27 @@ export default function WorkerProfile() {
   }
 
   return (
-    <div className="worker-profile-page w-full max-w-[1600px] px-4 py-7 font-sans sm:px-6 sm:py-8 lg:px-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="font-sans text-3xl font-semibold tracking-tight text-stone-950 mb-1">
-            My Profile
-          </h1>
-        </div>
-        {saved && (
+    <div className="worker-profile-page mx-auto w-full max-w-[1600px] px-4 py-7 font-sans sm:px-6 sm:py-8 lg:px-8">
+      {saved && (
+        <div className="mb-4 flex justify-end">
           <span className="text-sm font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100 animate-fade-in">
             ✓ Saved
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Profile hero */}
-      <div className="mb-6 flex flex-wrap items-stretch justify-between gap-5 rounded-2xl bg-gradient-to-r from-[#553421] to-[#80502F] px-6 py-7 sm:px-7 sm:py-8">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-5">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-6 rounded-sm border border-stone-200 bg-white px-6 py-7 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:px-8 sm:py-9">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-5 sm:gap-7">
           <div ref={photoPickerRef} className="group relative shrink-0">
             {workerProfile.photo ? (
               <img
                 src={workerProfile.photo}
                 alt={`${workerProfile.name} profile`}
-                className="h-24 w-24 rounded-full border border-white/20 object-cover bg-stone-700"
+                className="h-28 w-28 rounded-full border-4 border-[#553421]/10 object-cover bg-stone-100 shadow-sm sm:h-32 sm:w-32"
               />
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/20 bg-white/10 font-sans text-2xl font-semibold text-white">
+              <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-[#553421]/10 bg-[#f4eee9] font-sans text-3xl font-semibold text-[#553421] sm:h-32 sm:w-32">
                 {workerProfile.name.slice(0, 1).toUpperCase()}
               </div>
             )}
@@ -554,9 +437,9 @@ export default function WorkerProfile() {
               </div>
             )}
           </div>
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h2 className="font-sans text-[1.7rem] font-semibold leading-tight tracking-[-0.025em] text-white">
+              <h2 className="font-sans text-3xl font-semibold leading-tight tracking-[-0.03em] text-stone-950 sm:text-4xl">
                 {workerProfile.name}
               </h2>
               {kycStatus === "verified" && (
@@ -564,7 +447,7 @@ export default function WorkerProfile() {
                   role="img"
                   title="Verified account"
                   aria-label="Verified account"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-300/10 text-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.25)] ring-1 ring-emerald-200/20"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
                 >
                   <svg
                     viewBox="0 0 20 20"
@@ -582,15 +465,19 @@ export default function WorkerProfile() {
               )}
             </div>
             {workerProfile.professionalTitle && (
-              <p className="mt-1 text-base font-medium text-white/80">
+              <p className="mt-2 text-base font-medium text-stone-600">
                 {workerProfile.professionalTitle}
               </p>
             )}
-            <p className="mt-1 text-base text-white/60">
-              {workerProfile.location}
+            <p className="mt-2 inline-flex items-center gap-2 text-base text-stone-600">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-[#80502F]" aria-hidden="true">
+                <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" />
+                <circle cx="12" cy="10" r="2.2" />
+              </svg>
+              <span>{workerProfile.location}</span>
             </p>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm">
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-white/85">
+            <div className="mt-4 flex flex-wrap items-center justify-start gap-x-4 gap-y-2 text-sm">
+              <span className="inline-flex items-center gap-2 text-sm font-medium text-stone-700">
                 <span
                   className="inline-flex items-center gap-0.5"
                   aria-label={`${
@@ -606,7 +493,7 @@ export default function WorkerProfile() {
                       className={`h-4 w-4 ${
                         index < Math.round(workerProfile.rating)
                           ? "fill-amber-300 text-amber-300"
-                          : "fill-none text-white/55"
+                          : "fill-none text-stone-300"
                       }`}
                       aria-hidden="true"
                     >
@@ -625,41 +512,115 @@ export default function WorkerProfile() {
                   : "No ratings yet"}
               </span>
               {kycStatus !== "verified" && (
-                <button
-                  type="button"
-                  onClick={() => navigate("kyc-verification")}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-sm py-1 text-base font-medium text-white/90 transition-colors hover:text-white hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-                >
-                  {kycStatus === "pending" ? "Check status" : "Verify identity"}
-                  <svg
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                    aria-hidden="true"
-                  >
-                    <path d="M4.5 11.5 11.5 4.5M5 4.5h6.5V11" />
-                  </svg>
-                </button>
+                <span className="inline-flex min-h-7 items-center gap-1.5 border border-red-200 bg-red-50 px-2.5 text-xs font-semibold text-red-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden="true" />
+                  {kycStatus === "pending" ? "Verification Pending" : "Account Unverified"}
+                </span>
               )}
             </div>
-            {kycStatus !== "verified" && (
-              <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-red-200/90">
-                <span
-                  className="h-1.5 w-1.5 rounded-full bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.5)]"
-                  aria-hidden="true"
-                />
-                {kycStatus === "pending"
-                  ? "Verification Pending"
-                  : "Account Unverified"}
-              </p>
-            )}
           </div>
         </div>
+        <div className="flex w-full shrink-0 flex-col gap-2 self-center sm:w-48">
+          {kycStatus !== "verified" && (
+            <button
+              type="button"
+              onClick={() => navigate("kyc-verification")}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border border-[#553421]/25 bg-[#f8f4f1] px-4 font-sans text-[0.95rem] font-semibold tracking-[-0.01em] text-[#553421] transition-colors hover:border-[#553421] hover:bg-[#f1e8e1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
+            >
+              {kycStatus === "pending" ? "Check status" : "Verify identity"}
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+                <path d="M4.5 11.5 11.5 4.5M5 4.5h6.5V11" />
+              </svg>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setPublicPreviewOpen(true)}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border border-stone-300 bg-white px-4 font-sans text-[0.95rem] font-semibold tracking-[-0.01em] text-stone-700 transition-colors hover:border-[#553421] hover:bg-stone-50 hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+              <path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z" />
+              <circle cx="12" cy="12" r="2.5" />
+            </svg>
+            <span className="whitespace-nowrap">Public Preview</span>
+          </button>
+        </div>
       </div>
+      {publicPreviewOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-stone-950/55 p-3 backdrop-blur-[2px] sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setPublicPreviewOpen(false)
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="Public profile preview"
+            className="relative my-3 w-full max-w-5xl border border-slate-300 bg-white shadow-2xl sm:my-8"
+          >
+            <header className="relative flex flex-wrap items-center gap-5 border-b border-slate-200 px-6 py-6 pr-16 sm:gap-6 sm:px-8 sm:py-8 sm:pr-20">
+              {workerProfile.photo ? (
+                <img src={workerProfile.photo} alt={`${workerProfile.name} profile`} className="h-20 w-20 shrink-0 rounded-full object-cover sm:h-24 sm:w-24" />
+              ) : (
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-slate-200 text-2xl font-medium text-slate-700 sm:h-24 sm:w-24">{workerProfile.name.slice(0, 1).toUpperCase()}</div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="font-sans text-xl font-medium leading-tight tracking-[-0.03em] text-stone-950 sm:text-2xl">{workerProfile.name}</h2>
+                  {kycStatus === "verified" && (
+                    <span title="Verified profile" aria-label="Verified profile" className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200">
+                      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="m4 10 4 4 8-8" /></svg>
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 inline-flex items-center gap-2 text-xs text-slate-600 sm:text-sm">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" /><circle cx="12" cy="10" r="2.2" /></svg>
+                  {workerProfile.location}{workerProfile.district && workerProfile.district !== workerProfile.location ? `, ${workerProfile.district}` : ""}
+                </p>
+                <p className="mt-2 text-xs text-slate-600 sm:text-sm">{workerProfile.rating > 0 ? `★ ${workerProfile.rating.toFixed(1)} rating` : "No ratings yet"}</p>
+              </div>
+              <button type="button" onClick={() => setPublicPreviewOpen(false)} aria-label="Close public profile preview" className="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 bg-white text-2xl leading-none text-slate-700 transition-colors hover:border-[#553421] hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421] sm:right-8 sm:top-8">×</button>
+            </header>
+
+            <div className="grid lg:grid-cols-[minmax(220px,0.82fr)_minmax(0,1.72fr)]">
+              <aside className="space-y-6 px-6 py-6 sm:px-8 sm:py-7 lg:border-r lg:border-slate-200">
+                <section>
+                  <p className="text-base text-slate-700">{{ morning: "Mornings only", afternoon: "Afternoons", "full-day": "Full day", flexible: "Flexible" }[workerProfile.availability]}</p>
+                </section>
+                {(workerProfile.preferredCategories || []).length > 0 && (
+                  <section className="border-t border-slate-200 pt-6">
+                    <div className="flex flex-wrap gap-2">
+                      {preferredCategoryOptions.filter((category) => workerProfile.preferredCategories?.includes(category.value)).map((category) => <span key={category.value} className="border border-slate-200 bg-slate-100 px-3 py-1.5 text-base text-slate-800">{category.label}</span>)}
+                    </div>
+                  </section>
+                )}
+                {(workerProfile.qualifications || []).length > 0 && (
+                  <PreviewSection title="Education">
+                    <div className="space-y-4">{workerProfile.qualifications.map((qualification) => <div key={qualification.id}><p className="text-lg font-medium text-stone-900">{qualification.degree}</p><p className="mt-1 text-base leading-relaxed text-slate-600">{qualification.field}{qualification.field && qualification.institution ? " · " : ""}{qualification.institution}</p><p className="mt-1 text-sm text-slate-500">{qualification.year}</p></div>)}</div>
+                  </PreviewSection>
+                )}
+              </aside>
+
+              <div className="min-w-0 px-6 py-6 sm:px-8 sm:py-7">
+                {(workerProfile.professionalTitle || workerProfile.experience[0]?.title || workerProfile.skills.length > 0 || workerProfile.bio) && (
+                  <section className="pb-6">
+                    {(workerProfile.professionalTitle || workerProfile.experience[0]?.title || workerProfile.skills.length > 0) && <h3 className="font-sans text-2xl font-medium leading-tight tracking-[-0.03em] text-stone-950 sm:text-3xl">{workerProfile.professionalTitle || workerProfile.experience[0]?.title || workerProfile.skills.slice(0, 2).join(" · ")}</h3>}
+                    {workerProfile.bio && <p className="mt-4 whitespace-pre-line text-base leading-7 text-slate-800">{workerProfile.bio}</p>}
+                  </section>
+                )}
+                {workerProfile.skills.length > 0 && (
+                  <section className="flex flex-wrap gap-2.5 border-t border-slate-200 py-6">
+                    {workerProfile.skills.map((skill) => <span key={skill} className="border border-slate-200 bg-slate-100 px-3 py-1.5 text-sm text-slate-800">{skill}</span>)}
+                  </section>
+                )}
+                {(workerProfile.experience || []).length > 0 && <PreviewSection title="Work experience"><div className="space-y-5">{workerProfile.experience.map((experience) => <div key={experience.id} className="border-t border-slate-200 pt-4 first:border-0 first:pt-0"><p className="text-lg font-medium text-stone-900">{experience.title}</p><p className="mt-1 text-base text-slate-600">{experience.company}{experience.company && experience.duration ? " · " : ""}{experience.duration}</p>{experience.description && <p className="mt-3 text-base leading-relaxed text-slate-700">{experience.description}</p>}</div>)}</div></PreviewSection>}
+                {(workerProfile.workHistory || []).length > 0 && <PreviewSection title="Work history"><div className="space-y-5">{workerProfile.workHistory.map((work) => <div key={work.jobId} className="border-t border-slate-200 pt-4 first:border-0 first:pt-0"><p className="text-lg font-medium text-stone-900">{work.jobTitle}</p><p className="mt-1 text-base text-slate-600">{work.providerName}</p>{work.review && <p className="mt-3 text-base italic leading-relaxed text-slate-700">“{work.review}”</p>}</div>)}</div></PreviewSection>}
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
       {photoError && photoMessage && (
         <div
           role="alert"
@@ -675,8 +636,8 @@ export default function WorkerProfile() {
         </div>
       )}
 
-      <div className="grid items-start gap-5 md:grid-cols-3 md:gap-6">
-        <div className="space-y-5 md:col-span-2">
+      <div className="grid items-start gap-5 lg:grid-cols-3 lg:gap-6">
+        <div className="space-y-5 lg:col-span-2">
           {/* Basic Info */}
           <Section
             title="Basic Information"
@@ -805,14 +766,6 @@ export default function WorkerProfile() {
                 <Field label="Maximum travel distance (km)">
                   <input type="number" min="0" max="500" value={tempData.preferredTravelDistanceKm} onChange={(e) => setTempData((p: any) => ({ ...p, preferredTravelDistanceKm: e.target.value }))} className="input-style" />
                 </Field>
-                <div className="sm:col-span-2 rounded-xl border border-stone-200 bg-stone-50 p-3">
-                  <p className="text-sm font-semibold text-stone-800">Distance-based job matching</p>
-                  <p className="mt-1 text-xs text-stone-600">Share your approximate device location to compare job distance with your travel limit. This is optional and only requested when you tap the button.</p>
-                  <button type="button" onClick={() => { setLocationMessage("Getting location…"); void getCurrentCoordinates().then((coordinates) => { setTempData((previous: any) => ({ ...previous, ...coordinates })); setLocationMessage("Location added. Save your profile to use it for matching.") }).catch((error: unknown) => setLocationMessage(error instanceof Error ? error.message : "Could not get location.")) }} className="mt-3 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100">Use current location</button>
-                  {Number.isFinite(tempData.latitude) && Number.isFinite(tempData.longitude) && <button type="button" onClick={() => { setTempData((previous: any) => ({ ...previous, latitude: undefined, longitude: undefined })); setLocationMessage("Location removed. Save your profile to apply the change.") }} className="ml-2 mt-3 rounded-lg px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Clear location</button>}
-                  {locationMessage && <p role="status" className="mt-2 text-xs text-stone-600">{locationMessage}</p>}
-                  {Number.isFinite(tempData.latitude) && Number.isFinite(tempData.longitude) && <p className="mt-1 text-xs text-teal-800">Location coordinates are set for matching.</p>}
-                </div>
                 <Field label="Availability">
                   <select
                     value={tempData.availability}
@@ -926,7 +879,7 @@ export default function WorkerProfile() {
                       type="button"
                       onClick={() => toggleSkill(s)}
                       aria-label={`Remove skill ${s}`}
-                      className="text-sm px-3 py-1.5 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1 hover:bg-primary-100"
+                      className="text-sm px-3 py-1.5 bg-primary-50 text-primary-ink rounded-sm border border-primary-100 flex items-center gap-1 hover:bg-primary-100"
                     >
                       {s}
                       <span aria-hidden="true" className="font-bold">
@@ -944,7 +897,7 @@ export default function WorkerProfile() {
                         toggleSkill(s)
                         setSkillInput("")
                       }}
-                      className="text-sm px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full border border-stone-200 hover:bg-stone-200 transition-colors"
+                      className="text-sm px-3 py-1.5 bg-stone-100 text-stone-700 rounded-sm border border-stone-200 hover:bg-stone-200 transition-colors"
                     >
                       + {s}
                     </button>
@@ -964,7 +917,7 @@ export default function WorkerProfile() {
                           toggleSkill(skillInput.trim())
                           setSkillInput("")
                         }}
-                        className="text-sm px-3 py-1.5 bg-primary-50 text-primary-ink rounded-full border border-primary-100 hover:bg-primary-100"
+                        className="text-sm px-3 py-1.5 bg-primary-50 text-primary-ink rounded-sm border border-primary-100 hover:bg-primary-100"
                       >
                         + Add “{skillInput.trim()}”
                       </button>
@@ -977,7 +930,7 @@ export default function WorkerProfile() {
                   workerProfile.skills.map((s) => (
                     <span
                       key={s}
-                      className="text-base px-3 py-1.5 bg-stone-100 text-stone-700 rounded-full border border-stone-200"
+                      className="text-base px-3 py-1.5 bg-stone-100 text-stone-700 rounded-sm border border-stone-200"
                     >
                       {s}
                     </span>
@@ -986,7 +939,7 @@ export default function WorkerProfile() {
                   <button
                     type="button"
                     onClick={() => startEdit("skills")}
-                    className="inline-flex items-center gap-2 text-base font-normal text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-black hover:decoration-black"
+                    className="inline-flex items-center gap-2 text-lg font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-black hover:decoration-black"
                   >
                     <span className="text-lg" aria-hidden="true">
                       +
@@ -998,16 +951,25 @@ export default function WorkerProfile() {
             )}
           </Section>
 
-          <section className="rounded-2xl border border-stone-200 bg-white p-5">
-            <h3 className="font-sans text-xl font-semibold tracking-tight text-stone-900">Preferred work categories</h3>
-            <p className="mt-1 text-sm text-stone-500">Choose the kinds of work you want. These preferences improve your recommendations.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
+          <section className="rounded-sm border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(28,25,23,0.04)] sm:p-6">
+            <h3 className="font-display text-2xl font-medium tracking-[-0.03em] text-stone-900">Preferred work category</h3>
+            <p className="mt-1 text-base leading-relaxed text-stone-600">Choose one category to tailor your recommendations.</p>
+            <div role="radiogroup" aria-label="Preferred work category" className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {preferredCategoryOptions.map((category) => {
-                const selected = (workerProfile.preferredCategories || []).includes(category.value)
-                return <label key={category.value} className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2 text-sm ${selected ? "border-primary bg-primary-50 text-primary-ink" : "border-stone-200 text-stone-700 hover:bg-stone-50"}`}>
-                  <input type="checkbox" checked={selected} onChange={(event) => updateWorkerProfile({ preferredCategories: event.target.checked ? [...new Set([...(workerProfile.preferredCategories || []), category.value])] : (workerProfile.preferredCategories || []).filter((value) => value !== category.value) })} />
-                  {category.label}
-                </label>
+                const selected = workerProfile.preferredCategories?.[0] === category.value
+                return (
+                  <label key={category.value} className={`inline-flex min-h-12 cursor-pointer items-center gap-3 border px-4 py-3 font-heading text-base font-medium tracking-[-0.01em] transition-colors ${selected ? "border-[#553421] bg-[#f8f4f1] text-[#553421]" : "border-stone-200 bg-white text-stone-700 hover:border-stone-400 hover:bg-stone-50"}`}>
+                    <input
+                      type="radio"
+                      name="worker-preferred-category"
+                      value={category.value}
+                      checked={selected}
+                      onChange={() => updateWorkerProfile({ preferredCategories: [category.value] })}
+                      className="h-4 w-4 shrink-0 accent-[#553421]"
+                    />
+                    <span>{category.label}</span>
+                  </label>
+                )
               })}
             </div>
           </section>
@@ -1027,10 +989,10 @@ export default function WorkerProfile() {
                   (qualification, index) => (
                     <div
                       key={qualification.id}
-                      className="relative rounded-xl border border-stone-200 bg-stone-50/70 p-4"
+                      className="relative rounded-sm border border-stone-200 bg-stone-50/70 p-4"
                     >
                       <div className="mb-3 flex items-center justify-between">
-                        <p className="text-sm font-semibold text-stone-800">
+                        <p className="text-base font-medium text-stone-800">
                           Qualification {index + 1}
                         </p>
                         <button
@@ -1045,7 +1007,7 @@ export default function WorkerProfile() {
                             }))
                           }
                           aria-label={`Remove qualification ${index + 1}`}
-                          className="rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+                          className="rounded-sm px-2 py-1 text-base font-medium text-red-700 hover:bg-red-50"
                         >
                           Remove
                         </button>
@@ -1171,7 +1133,7 @@ export default function WorkerProfile() {
                       ],
                     }))
                   }
-                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50"
+                  className="rounded-lg border border-stone-300 px-4 py-2.5 text-base font-semibold text-primary-ink hover:bg-primary-50"
                 >
                   + Add another qualification
                 </button>
@@ -1195,7 +1157,7 @@ export default function WorkerProfile() {
               <button
                 type="button"
                 onClick={() => startEdit("qualifications")}
-                className="inline-flex items-center gap-2 text-base font-normal text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-black hover:decoration-black"
+                className="inline-flex items-center gap-2 text-lg font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-black hover:decoration-black"
               >
                 <span className="text-lg" aria-hidden="true">
                   +
@@ -1220,10 +1182,10 @@ export default function WorkerProfile() {
                   (experience, index) => (
                     <div
                       key={experience.id}
-                      className="rounded-xl border border-stone-200 bg-stone-50/70 p-4"
+                      className="rounded-sm border border-stone-200 bg-stone-50/70 p-4"
                     >
                       <div className="mb-3 flex items-center justify-between">
-                        <p className="text-sm font-semibold text-stone-800">
+                        <p className="text-base font-medium text-stone-800">
                           Experience {index + 1}
                         </p>
                         <button
@@ -1237,7 +1199,7 @@ export default function WorkerProfile() {
                             }))
                           }
                           aria-label={`Remove experience ${index + 1}`}
-                          className="rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+                          className="rounded-sm px-2 py-1 text-base font-medium text-red-700 hover:bg-red-50"
                         >
                           Remove
                         </button>
@@ -1354,7 +1316,7 @@ export default function WorkerProfile() {
                       ],
                     }))
                   }
-                  className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50"
+                  className="rounded-lg border border-stone-300 px-4 py-2.5 text-base font-semibold text-primary-ink hover:bg-primary-50"
                 >
                   + Add another role
                 </button>
@@ -1379,7 +1341,7 @@ export default function WorkerProfile() {
               <button
                 type="button"
                 onClick={() => startEdit("experience")}
-                className="inline-flex items-center gap-2 text-base font-normal text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-black hover:decoration-black"
+                className="inline-flex items-center gap-2 text-lg font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-black hover:decoration-black"
               >
                 <span className="text-lg" aria-hidden="true">
                   +
@@ -1391,10 +1353,10 @@ export default function WorkerProfile() {
         </div>
 
         {/* Sidebar */}
-        <div className="grid content-start gap-5 sm:grid-cols-2 md:grid-cols-1">
+        <div className="grid content-start gap-5 sm:grid-cols-2 lg:grid-cols-1">
           {/* Work history */}
-          <div className="min-h-52 rounded-2xl border border-stone-200 bg-white p-5">
-            <h3 className="mb-4 font-sans text-xl font-semibold tracking-tight text-stone-900">
+          <div className="min-h-52 min-w-0 rounded-sm border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(28,25,23,0.04)] sm:p-6">
+            <h3 className="mb-4 font-display text-2xl font-medium tracking-[-0.03em] text-stone-900">
               Work History
             </h3>
             {workerProfile.workHistory.length > 0 ? (
@@ -1443,230 +1405,19 @@ export default function WorkerProfile() {
             )}
           </div>
 
-          {/* Availability */}
-          <div id="worker-availability" className="scroll-mt-24 rounded-2xl border border-stone-200 bg-white p-5">
-            <h3 className="font-sans text-xl font-semibold tracking-tight text-stone-900">
-              Availability
-            </h3>
-            <p className="mt-1 text-sm leading-relaxed text-stone-500">
-              Add regular weekly hours and optional dates when you can take
-              work. Matching jobs use your weekly hours.
-            </p>
 
-            <div className="mt-4 rounded-xl bg-stone-50 p-3.5">
-              <h4 className="text-sm font-semibold text-stone-800">
-                Weekly hours
-              </h4>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <label className="col-span-2 text-xs font-medium text-stone-600">
-                  Day
-                  <select
-                    value={availabilityDay}
-                    onChange={(event) =>
-                      setAvailabilityDay(event.target.value as Weekday)
-                    }
-                    className="input-style mt-1"
-                  >
-                    {weekdays.map((day) => (
-                      <option key={day.value} value={day.value}>
-                        {day.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-xs font-medium text-stone-600">
-                  From
-                  <input
-                    type="time"
-                    value={availabilityStart}
-                    onChange={(event) =>
-                      setAvailabilityStart(event.target.value)
-                    }
-                    className="input-style mt-1"
-                  />
-                </label>
-                <label className="text-xs font-medium text-stone-600">
-                  Until
-                  <input
-                    type="time"
-                    value={availabilityEnd}
-                    onChange={(event) => setAvailabilityEnd(event.target.value)}
-                    className="input-style mt-1"
-                  />
-                </label>
-              </div>
-              {availabilityError && (
-                <p role="alert" className="mt-2 text-xs text-red-700">
-                  {availabilityError}
-                </p>
-              )}
-              <div className="mt-3 flex gap-2">
-                {editingAvailabilityId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingAvailabilityId(null)
-                      setAvailabilityError("")
-                      setAvailabilityDay("monday")
-                      setAvailabilityStart("18:00")
-                      setAvailabilityEnd("21:00")
-                    }}
-                    className="rounded-lg border border-stone-300 px-3 py-2.5 text-sm font-semibold text-stone-700 hover:bg-white"
-                  >
-                    Cancel
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={addWeeklyAvailability}
-                  className="flex-1 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
-                >
-                  {editingAvailabilityId ? "Save changes" : "Add weekly hours"}
-                </button>
-              </div>
-            </div>
-
-            {(workerProfile.weeklyAvailability ?? []).length > 0 ? (
-              <ul
-                className="mt-3 space-y-2"
-                aria-label="Weekly availability schedule"
-              >
-                {(workerProfile.weeklyAvailability ?? []).filter((slot) => !slot.date).map((slot) => (
-                  <li
-                    key={slot.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm"
-                  >
-                    <span className="font-medium text-stone-700">
-                      {weekdays.find((day) => day.value === slot.day)?.label}:{" "}
-                      <span className="font-normal text-stone-500">
-                        {slot.startTime}–{slot.endTime}
-                      </span>
-                    </span>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingAvailabilityId(slot.id)
-                          setAvailabilityDay(slot.day)
-                          setAvailabilityStart(slot.startTime)
-                          setAvailabilityEnd(slot.endTime)
-                          setAvailabilityError("")
-                        }}
-                        aria-label={`Edit ${slot.day} ${slot.startTime} to ${slot.endTime}`}
-                        className="rounded-md px-2 py-1 text-xs font-semibold text-primary-ink hover:bg-primary-50"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateWorkerProfile({
-                            weeklyAvailability: (
-                              workerProfile.weeklyAvailability ?? []
-                            ).filter((item) => item.id !== slot.id),
-                          })
-                          if (editingAvailabilityId === slot.id)
-                            setEditingAvailabilityId(null)
-                          showProfileUpdate(
-                            "Your weekly availability was updated.",
-                          )
-                        }}
-                        aria-label={`Remove ${slot.day} ${slot.startTime} to ${slot.endTime}`}
-                        className="rounded-md px-2 py-1 text-xs font-semibold text-stone-500 hover:bg-red-50 hover:text-red-700"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 rounded-lg border border-dashed border-stone-300 px-3 py-3 text-sm text-stone-500">
-                No weekly hours saved yet.
-              </p>
-            )}
-
-            <div className="mt-5 border-t border-stone-100 pt-4">
-              <h4 className="text-sm font-semibold text-stone-800">
-                Specific available dates or ranges
-              </h4>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                <input
-                  type="date"
-                  min={todayInKathmandu}
-                  value={dateInput}
-                  onChange={(event) => setDateInput(event.target.value)}
-                  aria-label="Available from date"
-                  className="input-style min-w-0"
-                />
-                <input type="date" min={dateInput || todayInKathmandu} value={dateEndInput} onChange={(event) => setDateEndInput(event.target.value)} aria-label="Available through date (optional)" className="input-style min-w-0" />
-                <label className="text-xs font-medium text-stone-600">From
-                  <input type="time" value={dateAvailabilityStart} onChange={(event) => setDateAvailabilityStart(event.target.value)} className="input-style mt-1" />
-                </label>
-                <label className="text-xs font-medium text-stone-600">Until
-                  <input type="time" value={dateAvailabilityEnd} onChange={(event) => setDateAvailabilityEnd(event.target.value)} className="input-style mt-1" />
-                </label>
-                <button
-                  type="button"
-                  disabled={
-                    !dateInput ||
-                    dateInput < todayInKathmandu ||
-                    (dateEndInput && dateEndInput < dateInput) ||
-                    dateAvailabilityEnd <= dateAvailabilityStart
-                  }
-                  onClick={() => {
-                    if (!dateInput || dateInput < todayInKathmandu || (dateEndInput && dateEndInput < dateInput) || dateAvailabilityEnd <= dateAvailabilityStart) return
-                    addDateAvailability()
-                    updateWorkerProfile({ availableDates: [...new Set([...workerProfile.availableDates, dateInput])].sort() })
-                  }}
-                  className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Add time
-                </button>
-              </div>
-              {availabilityError && <p role="alert" className="mt-2 text-xs text-red-700">{availabilityError}</p>}
-              {(workerProfile.weeklyAvailability ?? []).filter((slot) => slot.date).length > 0 && <ul className="mt-3 space-y-2" aria-label="Date-specific available hours">
-                {(workerProfile.weeklyAvailability ?? []).filter((slot) => slot.date).map((slot) => <li key={slot.id} className="flex items-center justify-between gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm"><span>{formatNepalDate(slot.date!, { month: "short", day: "numeric" })}{slot.endDate && slot.endDate !== slot.date ? ` – ${formatNepalDate(slot.endDate, { month: "short", day: "numeric" })}` : ""} · {slot.startTime}–{slot.endTime}</span><button type="button" onClick={() => updateWorkerProfile({ weeklyAvailability: (workerProfile.weeklyAvailability ?? []).filter((item) => item.id !== slot.id) })} aria-label={`Remove availability from ${slot.date} to ${slot.endDate || slot.date}`} className="rounded-md px-2 py-1 text-xs font-semibold text-stone-500 hover:bg-red-50 hover:text-red-700">Remove</button></li>)}
-              </ul>}
-              {workerProfile.availableDates.length ? (
-                <ul
-                  className="mt-3 flex flex-wrap gap-2"
-                  aria-label="Specific available dates"
-                >
-                  {workerProfile.availableDates.map((date) => (
-                    <li key={date}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateWorkerProfile({
-                            availableDates: workerProfile.availableDates.filter(
-                              (item) => item !== date,
-                            ),
-                            weeklyAvailability: (workerProfile.weeklyAvailability ?? []).filter((slot) => slot.date !== date),
-                          })
-                          showProfileUpdate(
-                            "Your available dates were updated.",
-                          )
-                        }}
-                        className="rounded-full border border-primary-100 bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-ink hover:border-primary"
-                        aria-label={`Remove available date ${date}`}
-                      >
-                        {formatNepalDate(date, { month: "short", day: "numeric" })}{" "}
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-2 text-xs text-stone-500">
-                  Add exact dates with their start and end times. Weekly hours stay separate.
-                </p>
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>
+  )
+}
+
+function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="border-t border-slate-200 py-7 first:border-t-0">
+      <h3 className="mb-4 font-sans text-2xl font-medium tracking-[-0.025em] text-stone-900">{title}</h3>
+      {children}
+    </section>
   )
 }
 
@@ -1690,9 +1441,9 @@ function Section({
   editable?: boolean
 }) {
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl p-5">
+    <div className="min-w-0 rounded-sm border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(28,25,23,0.04)] sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-sans text-xl font-semibold tracking-tight text-stone-900">
+        <h3 className="font-display text-2xl font-medium tracking-[-0.03em] text-stone-900">
           {title}
         </h3>
         {!editing ? (
@@ -1702,7 +1453,7 @@ function Section({
               onClick={onEdit}
               aria-label={`Edit ${title.toLowerCase()}`}
               title={`Edit ${title.toLowerCase()}`}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-600 transition-colors hover:border-stone-300 hover:bg-stone-50 hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-sm border border-[#553421]/25 bg-white px-4 font-heading text-base font-medium tracking-[-0.01em] text-[#553421] transition-colors hover:border-[#553421] hover:bg-[#553421]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1716,19 +1467,20 @@ function Section({
               >
                 <path d="m14 5 5 5M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z" />
               </svg>
+              <span>Edit</span>
             </button>
           )
         ) : (
           <div className="flex gap-2">
             <button
               onClick={onCancel}
-              className="text-[13px] text-stone-600 hover:text-stone-900"
+              className="min-h-10 rounded-sm px-3 font-heading text-base font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500"
             >
               Cancel
             </button>
             <button
               onClick={onSave}
-              className="rounded-lg bg-primary px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-primary-dark"
+              className="min-h-10 rounded-sm bg-primary px-4 py-2 font-heading text-base font-medium tracking-[-0.01em] text-white transition-colors hover:bg-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               Save
             </button>
@@ -1751,8 +1503,8 @@ function Section({
 function Info({ label, value }: { label: string; value: string | undefined }) {
   return (
     <div>
-      <p className="mb-1.5 text-base font-normal text-stone-500">{label}</p>
-      <p className="text-lg font-normal leading-7 text-zinc-800">
+      <p className="mb-1.5 font-heading text-base font-normal tracking-[0.005em] text-stone-600">{label}</p>
+      <p className="font-sans text-lg font-normal leading-7 text-stone-900">
         {value ?? "—"}
       </p>
     </div>
@@ -1776,7 +1528,7 @@ function Field({
     <div className={className}>
       <label
         htmlFor={fieldId}
-        className="mb-1.5 block text-base font-medium text-stone-700"
+        className="mb-1.5 block font-heading text-base font-normal tracking-[0.005em] text-stone-800"
       >
         {label}
       </label>

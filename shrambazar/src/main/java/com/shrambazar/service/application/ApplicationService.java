@@ -30,6 +30,7 @@ public class ApplicationService {
     private final SeekerSkillRepository seekerSkillRepository;
     private final CurrentUserService currentUserService;
     private final NotificationService notificationService;
+    private final ApplicationConfirmationEmailService confirmationEmailService;
 
     private static final Logger log =
             LoggerFactory.getLogger(ApplicationService.class);
@@ -39,13 +40,15 @@ public class ApplicationService {
             JobPostRepository jobPostRepository,
             SeekerSkillRepository seekerSkillRepository,
             CurrentUserService currentUserService,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            ApplicationConfirmationEmailService confirmationEmailService) {
 
         this.applicationRepository = applicationRepository;
         this.jobPostRepository = jobPostRepository;
         this.seekerSkillRepository = seekerSkillRepository;
         this.currentUserService = currentUserService;
         this.notificationService = notificationService;
+        this.confirmationEmailService = confirmationEmailService;
     }
 
     // Seeker applies for a job
@@ -94,11 +97,41 @@ public class ApplicationService {
             if (offer.proposedStartAt() != null && offer.proposedStartAt().toLocalDate().isBefore(LocalDate.now())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Proposed availability must be today or later");
             }
+            if ((offer.offeredAmount() == null) != (offer.estimatedDurationHours() == null)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provide both an offer amount and estimated duration, or leave both blank.");
+            }
             application.setOfferedAmount(offer.offeredAmount());
-            application.setOfferMessage(offer.message().trim());
+            application.setOfferMessage(offer.message() == null ? null : offer.message().trim());
             application.setEstimatedDurationHours(offer.estimatedDurationHours());
             application.setProposedStartAt(offer.proposedStartAt());
         }
+
+        String name = clean(offer == null ? null : offer.applicantName(), seeker.getUser().getFullName(), 120);
+        String email = clean(offer == null ? null : offer.applicantEmail(), seeker.getUser().getEmail(), 254);
+        String phone = clean(offer == null ? null : offer.applicantPhone(), seeker.getUser().getPhoneNumber(), 32);
+        String location = clean(offer == null ? null : offer.applicantLocation(), seeker.getAddress(), 255);
+        String introduction = clean(offer == null ? null : offer.introduction(), offer == null ? null : offer.message(), 1200);
+        List<String> skills = offer != null && offer.skills() != null && !offer.skills().isEmpty()
+                ? offer.skills().stream().map(String::trim).filter(value -> !value.isBlank()).distinct().limit(20).toList()
+                : seekerSkillRepository.findBySeekerProfileId(seeker.getId()).stream()
+                    .map(seekerSkill -> seekerSkill.getSkill().getName()).distinct().limit(20).toList();
+        String experience = clean(offer == null ? null : offer.experienceLevel(), "No Experience", 32);
+        boolean applicationDetailsProvided = offer != null && (offer.applicantName() != null || offer.applicantEmail() != null
+                || offer.applicantPhone() != null || offer.applicantLocation() != null || offer.skills() != null
+                || offer.experienceLevel() != null || offer.introduction() != null);
+        if (name.isBlank() || !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
+                || !phone.matches("^(?:\\+?977[- ]?)?9[0-9]{9}$") || location.isBlank()
+                || introduction.isBlank() || (applicationDetailsProvided && skills.isEmpty())
+                || !List.of("No Experience", "Beginner", "Experienced").contains(experience)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Complete valid name, email, Nepali mobile number, location, skills, experience, and introduction before applying.");
+        }
+        application.setApplicantName(name);
+        application.setApplicantEmail(email);
+        application.setApplicantPhone(phone);
+        application.setApplicantLocation(location);
+        application.setApplicantSkills(skills);
+        application.setExperienceLevel(experience);
+        application.setIntroduction(introduction);
 
         Application saved = applicationRepository.save(application);
 
@@ -112,7 +145,8 @@ public class ApplicationService {
                 saved.getId()
         );
 
-        return mapToResponse(saved);
+        boolean emailSent = confirmationEmailService.sendApplicationConfirmation(saved);
+        return mapToResponse(saved, emailSent);
     }
 
     // Seeker views all own applications
@@ -258,6 +292,10 @@ public class ApplicationService {
     }
 
     private ApplicationResponse mapToResponse(Application application) {
+        return mapToResponse(application, false);
+    }
+
+    private ApplicationResponse mapToResponse(Application application, boolean confirmationEmailSent) {
 
         JobPost job = application.getJobPost();
 
@@ -276,8 +314,21 @@ public class ApplicationService {
                 application.getOfferedAmount(),
                 application.getOfferMessage(),
                 application.getEstimatedDurationHours(),
-                application.getProposedStartAt()
+                application.getProposedStartAt(),
+                application.getApplicantName(),
+                application.getApplicantEmail(),
+                application.getApplicantPhone(),
+                application.getApplicantLocation(),
+                application.getApplicantSkills(),
+                application.getExperienceLevel(),
+                application.getIntroduction(),
+                confirmationEmailSent
         );
+    }
+
+    private static String clean(String value, String fallback, int maxLength) {
+        String cleaned = value == null || value.isBlank() ? (fallback == null ? "" : fallback.trim()) : value.trim();
+        return cleaned.length() <= maxLength ? cleaned : cleaned.substring(0, maxLength);
     }
 
     private ApplicantResponse mapToApplicantResponse(
@@ -297,13 +348,20 @@ public class ApplicationService {
                 profile.getUser().getFullName(),
                 profile.getProfilePictureUrl(),
                 profile.getBio(),
-                skills,
+                application.getApplicantSkills() == null || application.getApplicantSkills().isEmpty() ? skills : application.getApplicantSkills(),
                 application.getStatus(),
                 application.getAppliedAt(),
                 application.getOfferedAmount(),
                 application.getOfferMessage(),
                 application.getEstimatedDurationHours(),
-                application.getProposedStartAt()
+                application.getProposedStartAt(),
+                application.getApplicantName(),
+                application.getApplicantEmail(),
+                application.getApplicantPhone(),
+                application.getApplicantLocation(),
+                application.getApplicantSkills(),
+                application.getExperienceLevel(),
+                application.getIntroduction()
         );
     }
 }

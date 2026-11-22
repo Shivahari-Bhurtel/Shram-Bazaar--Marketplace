@@ -36,6 +36,24 @@ class AuthFlowIntegrationTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
+    void registrationRejectsPasswordLongerThanBcryptLimitWithHelpfulError() throws Exception {
+        String longPassword = "a".repeat(73);
+        mockMvc.perform(post("/api/auth/register/job-seeker")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName":"Long Password Worker",
+                                  "email":"long-password-worker@example.com",
+                                  "password":"%s",
+                                  "confirmPassword":"%s",
+                                  "phoneNumber":"+9779800000059",
+                                  "dateOfBirth":"1990-01-01"
+                                }
+                                """.formatted(longPassword, longPassword)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void privateNotificationRequestWithoutSessionPromptsForAuthentication() throws Exception {
         mockMvc.perform(get("/api/notifications"))
                 .andExpect(status().isUnauthorized());
@@ -62,8 +80,7 @@ class AuthFlowIntegrationTest {
                                   "password": "%s",
                                   "confirmPassword": "%s",
                                   "phoneNumber": "+9779800000001",
-                                  "dateOfBirth": "1990-01-01",
-                                  "address": "Kathmandu, Bagmati"
+                                  "dateOfBirth": "1990-01-01"
                                 }
                                 """.formatted(email, password, password)))
                 .andExpect(status().isCreated())
@@ -121,7 +138,6 @@ class AuthFlowIntegrationTest {
                                   "confirmPassword": "%s",
                                   "phoneNumber": "+9779800000002",
                                   "dateOfBirth": "1990-01-01",
-                                  "address": "Lalitpur, Bagmati",
                                   "hasBusiness": false
                                 }
                                 """.formatted(email, password, password)))
@@ -272,6 +288,15 @@ class AuthFlowIntegrationTest {
                         .header("Authorization", "Bearer " + providerToken))
                 .andExpect(status().isConflict());
 
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/jobs/{jobId}/applications", jobId)
+                        .header("Authorization", "Bearer " + workerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"applicantName":"Test Worker","applicantEmail":"not-an-email","applicantPhone":"+9779800000400","applicantLocation":"Kathmandu","skills":["Pipe fitting"],"experienceLevel":"Experienced","introduction":"I have experience with plumbing repair tasks."}
+                                """))
+                .andExpect(status().isBadRequest());
+
         String offerResponse = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .post("/api/jobs/{jobId}/applications", jobId)
                         .header("Authorization", "Bearer " + workerToken)
@@ -281,20 +306,49 @@ class AuthFlowIntegrationTest {
                                   "offeredAmount":1800,
                                   "message":"I can inspect the leak and replace the damaged section.",
                                   "estimatedDurationHours":1,
-                                  "proposedStartAt":"2026-11-22T08:00:00"
+                                  "proposedStartAt":"2026-11-22T08:00:00",
+                                  "applicantName":"Test Worker",
+                                  "applicantEmail":"worker-flow@example.com",
+                                  "applicantPhone":"+9779800000400",
+                                  "applicantLocation":"Kathmandu",
+                                  "skills":["Pipe fitting","Repair"],
+                                  "experienceLevel":"Experienced",
+                                  "introduction":"I have hands-on plumbing repair experience and can complete this task safely."
                                 }
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.offeredAmount").value(1800))
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.applicantEmail").value("worker-flow@example.com"))
+                .andExpect(jsonPath("$.skills[0]").value("Pipe fitting"))
+                .andExpect(jsonPath("$.confirmationEmailSent").value(false))
                 .andReturn().getResponse().getContentAsString();
         long applicationId = objectMapper.readTree(offerResponse).get("applicationId").asLong();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/jobs/{jobId}/applications", jobId)
+                        .header("Authorization", "Bearer " + workerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/seeker/applications")
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].applicationId").value(applicationId))
+                .andExpect(jsonPath("$[0].jobId").value(jobId))
+                .andExpect(jsonPath("$[0].applicantEmail").value("worker-flow@example.com"));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/provider/jobs/{jobId}/applications", jobId)
                         .header("Authorization", "Bearer " + providerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].offeredAmount").value(1800))
-                .andExpect(jsonPath("$[0].offerMessage").value("I can inspect the leak and replace the damaged section."));
+                .andExpect(jsonPath("$[0].offerMessage").value("I can inspect the leak and replace the damaged section."))
+                .andExpect(jsonPath("$[0].applicantEmail").value("worker-flow@example.com"))
+                .andExpect(jsonPath("$[0].applicationSkills[0]").value("Pipe fitting"))
+                .andExpect(jsonPath("$[0].introduction").value("I have hands-on plumbing repair experience and can complete this task safely."));
 
         String engagementResponse = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .post("/api/provider/jobs/{jobId}/applications/{applicationId}/select", jobId, applicationId)

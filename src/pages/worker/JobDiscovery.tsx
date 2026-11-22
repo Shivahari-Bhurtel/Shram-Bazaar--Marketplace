@@ -173,15 +173,18 @@ export default function JobDiscovery() {
   const selectedFocusJob = useMemo(() => allDemoJobs.find((job) => job.location === location && (!city || job.city === city)) || allDemoJobs.find((job) => job.city === city), [allDemoJobs, location, city])
 
   const demoApplications = demoState.applications
+  const minimumPay = minSalary.trim() ? Number(minSalary) : null
+  const maximumPay = maxSalary.trim() ? Number(maxSalary) : null
   const marketplaceResults = useMemo(() => marketplaceJobs.filter((job) => {
     if (job.status !== "active") return false
     const searchText = `${job.title} ${job.providerName} ${job.description} ${job.location} ${job.district} ${job.skillsRequired.join(" ")}`.toLowerCase()
     return (!search.trim() || searchText.includes(search.trim().toLowerCase()))
       && (!city || `${job.location} ${job.district}`.toLowerCase().includes(city.toLowerCase()))
       && (!location || `${job.location} ${job.district}`.toLowerCase().includes(location.toLowerCase()))
-      && (!minSalary || job.payment >= Number(minSalary))
-      && (!maxSalary || job.payment <= Number(maxSalary))
-  }), [marketplaceJobs, search, city, location, minSalary, maxSalary])
+      && (minimumPay === null || !Number.isFinite(minimumPay) || job.payment >= minimumPay)
+      && (maximumPay === null || !Number.isFinite(maximumPay) || job.payment <= maximumPay)
+  }), [marketplaceJobs, search, city, location, minimumPay, maximumPay])
+  const totalResults = filteredJobs.length + marketplaceResults.length
 
   const selectJob = useCallback((job: DemoJob) => {
     setSelectedJobId(job.id)
@@ -197,8 +200,7 @@ export default function JobDiscovery() {
   const closeDetails = useCallback(() => setSelectedJob(null), [])
   const saveJob = useCallback((jobId: string) => {
     demoState.toggleSaved(jobId)
-    setNotice(demoState.savedIds.includes(jobId) ? "Removed from saved jobs." : "Saved on this device.")
-  }, [demoState.toggleSaved, demoState.savedIds])
+  }, [demoState.toggleSaved])
   const applyToJob = useCallback((jobId: string) => {
     if (demoApplications.some((item) => item.jobId === jobId)) return
     demoState.apply(jobId)
@@ -244,7 +246,7 @@ export default function JobDiscovery() {
           <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <div className="flex min-w-0 items-baseline gap-2.5">
               <h1 className="job-panel-heading text-lg font-semibold text-stone-900">Jobs</h1>
-              <p className="text-xs text-stone-500"><strong className="font-semibold text-stone-700">{filteredJobs.length}</strong> results</p>
+              <p className="text-xs text-stone-500"><strong className="font-semibold text-stone-700">{totalResults}</strong> results</p>
             </div>
           </div>
           <div className="job-discovery-filters mt-2.5 flex gap-1.5 overflow-x-auto pb-1" aria-label="Filters and job categories">
@@ -256,7 +258,7 @@ export default function JobDiscovery() {
             {CATEGORIES.map((item) => <button key={item.value} type="button" aria-pressed={category === item.value} onClick={() => setCategory(category === item.value ? "" : item.value)} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${category === item.value ? "border-[#265D4C] bg-[#265D4C] text-white" : "border-stone-200 bg-white text-stone-700 hover:bg-stone-50"}`}>{item.label}</button>)}
           </div>
           <div className="mt-1 flex items-center">
-            <button type="button" onClick={requestLocation} disabled={locating} className="group inline-flex min-h-10 max-w-full items-center gap-2 rounded-lg border border-[#265D4C] bg-[#265D4C] px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_12px_-5px_rgba(38,93,76,.7)] transition-all hover:-translate-y-0.5 hover:bg-[#1D493B] hover:shadow-[0_7px_16px_-6px_rgba(38,93,76,.65)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#265D4C] disabled:cursor-wait disabled:opacity-75" aria-label="Locate me">
+            <button type="button" onClick={requestLocation} disabled={locating} className="group inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-[2px] border border-[#265D4C] bg-[#265D4C] px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1D493B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#265D4C] disabled:cursor-wait disabled:opacity-75" aria-label="Locate me">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`h-[18px] w-[18px] shrink-0 ${locating ? "animate-pulse" : "transition-transform group-hover:scale-110"}`} aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/></svg>
               <span className="truncate">{locating ? "Finding you…" : "Locate me"}</span>
             </button>
@@ -291,8 +293,8 @@ export default function JobDiscovery() {
           {notice && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">{notice}</p>}
           {loading && <p role="status" className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600">Loading jobs…</p>}
           {loadError && <div role="alert" className="rounded-lg border border-amber-300 bg-white px-4 py-4 text-sm text-amber-950"><p className="font-semibold">Jobs could not be loaded</p><p className="mt-1">{loadError}</p><button type="button" onClick={() => { setLoading(true); setLoadError(""); void loadDemoJobs().then(setAllDemoJobs).catch((error: unknown) => setLoadError(error instanceof Error ? error.message : "Please try again.")).finally(() => setLoading(false)) }} className="mt-3 rounded-lg bg-[#80502F] px-3 py-2 text-xs font-semibold text-white">Try again</button></div>}
-          {!loading && !loadError && filteredJobs.length === 0 && <div className="rounded-xl border border-dashed border-stone-300 bg-white p-7 text-center"><p className="font-semibold text-stone-800">No jobs match these filters</p><p className="mt-1 text-sm text-stone-500">Try a nearby locality, broader pay range, or clear filters.</p><button type="button" onClick={clearFilters} className="mt-4 rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700">Clear filters</button></div>}
-          {matchingJobs.map(({ job }) => <DemoJobCard key={job.id} job={job} selected={selectedJobId === job.id} saved={demoState.savedIds.includes(job.id)} applied={appliedIds.has(job.id)} onOpen={handleSelectJob} onToggleSaved={saveJob} onApply={applyToJob} />)}
+          {!loading && !loadError && totalResults === 0 && <div className="rounded-xl border border-dashed border-stone-300 bg-white p-7 text-center"><p className="font-semibold text-stone-800">No jobs match these filters</p><p className="mt-1 text-sm text-stone-500">Try a nearby locality, broader pay range, or clear filters.</p><button type="button" onClick={clearFilters} className="mt-4 rounded-lg border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-700">Clear filters</button></div>}
+          {matchingJobs.map(({ job }) => <DemoJobCard key={job.id} job={job} selected={selectedJobId === job.id} saved={demoState.savedIds.includes(job.id)} applied={appliedIds.has(job.id)} inlineSaveAction onOpen={handleSelectJob} onToggleSaved={saveJob} onApply={applyToJob} />)}
           {marketplaceResults.length > 0 && <section className="space-y-3 border-t border-stone-200 pt-4" aria-label="Employer-posted jobs"><div><h2 className="text-sm font-bold text-stone-900">Employer-posted jobs</h2><p className="mt-1 text-xs text-stone-500">Recently posted through Shram Bazar.</p></div>{marketplaceResults.map((job) => <JobCard key={`marketplace-${job.id}`} job={job} compact />)}</section>}
         </div>
       </aside>

@@ -2,6 +2,7 @@ import type { Application, Job, ProviderProfile, User, WorkerProfile } from "../
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "")
 const AUTH_KEY = "shram-bazar-api-session-v1"
+let memoryAuth: BackendAuth | null | undefined
 
 export class BackendApiError extends Error {
   constructor(
@@ -75,9 +76,18 @@ export interface ApiApplication {
   offerMessage?: string
   estimatedDurationHours?: number
   proposedStartAt?: string
+  applicantName?: string
+  applicantEmail?: string
+  applicantPhone?: string
+  applicantLocation?: string
+  skills?: string[]
+  experienceLevel?: "No Experience" | "Beginner" | "Experienced"
+  introduction?: string
+  confirmationEmailSent?: boolean
 }
 
 export function getBackendAuth(): BackendAuth | null {
+  if (memoryAuth !== undefined) return memoryAuth
   try {
     const raw = sessionStorage.getItem(AUTH_KEY)
     if (!raw) return null
@@ -89,11 +99,12 @@ export function getBackendAuth(): BackendAuth | null {
 }
 
 export function setBackendAuth(auth: BackendAuth | null) {
+  memoryAuth = auth
   try {
     if (auth) sessionStorage.setItem(AUTH_KEY, JSON.stringify(auth))
     else sessionStorage.removeItem(AUTH_KEY)
   } catch {
-    throw new Error("This browser could not store the sign-in session. Enable session storage and try again.")
+    // Keep auth usable for this page session when browser storage is blocked.
   }
 }
 
@@ -235,10 +246,12 @@ export function mapApiApplication(app: ApiApplication, user: User, profile?: Wor
     id: String(app.applicationId),
     jobId: String(app.jobId),
     workerId: user.role === "worker" ? user.profileId : "",
-    workerName: user.name,
+    workerName: app.applicantName || user.name,
+    workerPhone: app.applicantPhone || profile?.phone || "",
+    workerEmail: app.applicantEmail || user.email,
     workerPhoto: profile?.photo || "",
-    workerLocation: profile?.location || app.jobAddress || "",
-    workerSkills: profile?.skills || [],
+    workerLocation: app.applicantLocation || profile?.location || app.jobAddress || "",
+    workerSkills: app.skills || profile?.skills || [],
     workerRating: profile?.rating || 0,
     workerTotalJobs: profile?.totalJobs || 0,
     jobTitle: app.jobTitle,
@@ -248,9 +261,9 @@ export function mapApiApplication(app: ApiApplication, user: User, profile?: Wor
     status,
     engagementId: undefined,
     engagementStatus: undefined,
-    coverNote: "",
+    coverNote: app.introduction || "",
     offeredAmount: app.offeredAmount == null ? undefined : Number(app.offeredAmount),
-    offerMessage: app.offerMessage || undefined,
+    offerMessage: app.offerMessage || app.introduction || undefined,
     estimatedDurationHours: app.estimatedDurationHours,
     proposedStartAt: app.proposedStartAt,
   }

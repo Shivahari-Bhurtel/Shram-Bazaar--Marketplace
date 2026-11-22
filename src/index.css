@@ -113,6 +113,14 @@
   translate: 0 1px;
 }
 
+/* Visibility controls are absolutely aligned inside password inputs; never lift or drop them. */
+.auth-form .password-visibility-button:is(button):not(:disabled):hover,
+.auth-form .password-visibility-button:is(button):not(:disabled):active {
+  translate: 0 -50%;
+  transform: none;
+  filter: none;
+}
+
 :is(button, a[role="button"]).bg-primary:hover,
 :is(button, a[role="button"]).bg-primary-dark:hover,
 :is(button, a[role="button"])[class~="hover:bg-primary"]:hover,
@@ -635,7 +643,7 @@ body {
 .voice-ai-message-footer button:hover { background: rgb(255 255 255 / 12%); }
 .voice-ai-message-footer svg { width: .9rem; height: .9rem; }
 .worker-workspace-rail { font-family: var(--font-sans); }
-.worker-assistant-nav { color: #553421; font-weight: 650; text-shadow: 0 1px 0 #FFF9F2, 0 2px 0 #E0CCB8, 0 3px 5px rgb(58 35 20 / .18); }
+.worker-assistant-nav { color: #553421; font-weight: 500; letter-spacing: .01em; text-shadow: none; }
 .worker-assistant-nav:hover { background: #F7F1EB; }
 .worker-assistant-nav.is-active { background: #EEDFD2; color: #553421; }
 @keyframes voiceRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -1317,8 +1325,21 @@ body {
 }
 
 .worker-profile-page .input-style {
+  min-height: 3.25rem;
   padding: .8rem 1rem;
+  border: 1px solid #cfc5bb;
+  border-radius: 0;
   font-size: 1rem;
+}
+
+.worker-profile-page .input-style:focus {
+  border-color: #553421;
+  box-shadow: 0 0 0 2px rgb(85 52 33 / 16%);
+  outline: none;
+}
+
+.worker-profile-page textarea.input-style {
+  min-height: 7rem;
 }
 
 .job-discovery-sidebar {
@@ -1798,4 +1819,41 @@ body {
     height: 100% !important;
     object-fit: contain !important;
   }
+}
+
+.kyc-verification-page .input-style {
+  min-height: 3.25rem;
+  padding: .8rem 1rem;
+  border: 1px solid #cfc5bb;
+  border-radius: 0;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+}
+
+.kyc-verification-page .input-style:focus {
+  border-color: #553421;
+  box-shadow: 0 0 0 2px rgb(85 52 33 / 16%);
+  outline: none;
+}
+
+.kyc-verification-page input[type="file"].input-style {
+  min-height: 3.5rem;
+  padding: .45rem;
+  background: #fff;
+}
+
+.kyc-verification-page input[type="file"].input-style::file-selector-button {
+  min-height: 2.5rem;
+  margin-right: .75rem;
+  border: 1px solid #553421;
+  background: #553421;
+  padding: .5rem .85rem;
+  color: #fff;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.kyc-verification-page input[type="file"].input-style::file-selector-button:hover {
+  background: #80502f;
 }

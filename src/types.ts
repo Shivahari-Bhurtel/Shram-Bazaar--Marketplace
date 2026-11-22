@@ -243,6 +243,8 @@ export interface Application {
     profilePictureUrl?: string
     bio?: string
     address?: string
+    applicationExperienceLevel?: "No Experience" | "Beginner" | "Experienced"
+    applicationIntroduction?: string
     preferredTravelDistanceKm?: number
     skills?: string[]
     qualifications?: Array<{ id: number; qualificationName: string; institution?: string; fieldOfStudy?: string; credentialType?: string; startDate?: string; endDate?: string; currentlyStudying: boolean }>
@@ -261,6 +263,7 @@ export interface Application {
   appliedDate: string
   status: ApplicationStatus
   coverNote?: string
+  experienceLevel?: "No Experience" | "Beginner" | "Experienced"
   offeredAmount?: number
   offerMessage?: string
   estimatedDurationHours?: number

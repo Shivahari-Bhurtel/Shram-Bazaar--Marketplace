@@ -33,6 +33,12 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
+        // Use Lottie's light player: the app's vector animations do not need
+        // expressions, and the full player contains eval-based expression code.
+        "lottie-web": path.resolve(
+          __dirname,
+          "./node_modules/lottie-web/build/player/lottie_light.js",
+        ),
         "@": path.resolve(__dirname, "./src"),
       },
     },

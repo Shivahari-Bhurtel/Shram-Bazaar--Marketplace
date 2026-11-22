@@ -238,9 +238,9 @@ export async function getRemoteItJobs(signal?: AbortSignal, onProgress?: (jobs: 
   return cached.jobs.slice(0, 100)
 }
 
-export function searchRemoteItJobs(query: string, _signal?: AbortSignal): Promise<Job[]> {
+export async function searchRemoteItJobs(query: string, signal?: AbortSignal): Promise<Job[]> {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  if (!terms.length) return Promise.resolve([])
+  if (!terms.length) return []
 
   const matches = loadCachedRemoteItJobs().map((job) => {
     const title = job.title.toLowerCase()
@@ -251,9 +251,18 @@ export function searchRemoteItJobs(query: string, _signal?: AbortSignal): Promis
       + (company.includes(term) ? 2 : 0)
       + (details.includes(term) ? 1 : 0), 0)
     return { job, score }
-  }).filter((result) => result.score > 0)
+  }).filter((result) => result.score > 0 && terms.every((term) =>
+    `${result.job.title} ${result.job.providerName} ${result.job.description} ${result.job.location}`.toLowerCase().includes(term),
+  ))
     .sort((a, b) => b.score - a.score || (b.job.externalUpdatedAt || "").localeCompare(a.job.externalUpdatedAt || ""))
     .map(({ job }) => job)
 
-  return Promise.resolve(matches)
+  try {
+    const liveJobs = await requestRemoteItPage(`remote ${query.trim()}`, 1, signal)
+    return liveJobs.length ? liveJobs : matches
+  } catch (error) {
+    if (signal?.aborted) throw error
+    if (matches.length) return matches
+    throw error
+  }
 }

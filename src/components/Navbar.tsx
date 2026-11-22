@@ -303,7 +303,7 @@ export default function Navbar() {
                 {group.items.map((link) => <button key={`${link.label}-${link.page}`} onClick={() => {
                   navigate(link.page)
                   setMobileOpen(false)
-                }} aria-current={currentPage === link.page ? "page" : undefined} className={`w-full rounded-lg border-l-2 px-3 py-2.5 text-left text-sm transition-colors ${currentPage === link.page ? "border-[#80502F] bg-[#F3E9DF] font-semibold text-[#4E342E]" : "border-transparent font-medium text-stone-700 hover:bg-stone-50"}`}>{link.label}</button>)}
+                }} aria-current={currentPage === link.page ? "page" : undefined} className={`w-full rounded-lg border-l-2 px-3 py-2.5 text-left text-sm tracking-[0.01em] transition-colors ${currentPage === link.page ? "border-[#80502F] bg-[#F3E9DF] font-medium text-[#4E342E]" : "border-transparent font-medium text-stone-700 hover:bg-stone-50"}`}>{link.label}</button>)}
               </section>) : links.map((link) => (
                 <button
                   key={link.page}

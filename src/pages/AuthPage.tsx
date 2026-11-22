@@ -1,10 +1,12 @@
 import { useRef, useState } from "react"
 import { useApp } from "../store/AppContext"
 import { DISTRICTS } from "../data/mockData"
-import { useSkillCatalog } from "../hooks/useSkillCatalog"
 import { LanguageSwitch } from "../i18n/LanguageContext"
 import { nepalDateString } from "../utils/dates"
-import { isValidEmail, isValidPhoneNumber } from "../utils/validation"
+import { isValidAuthPasswordLength, isValidEmail, isValidPhoneNumber } from "../utils/validation"
+import LoginIllustration from "../components/LoginIllustration"
+import WorkerSignupIllustration from "../components/WorkerSignupIllustration"
+import ProviderSignupIllustration from "../components/ProviderSignupIllustration"
 
 type AuthMode = "login" | "register-choice" | "worker-signup" | "provider-signup"
 
@@ -24,10 +26,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
     name: "",
     phone: "",
     dateOfBirth: "",
-    gender: "",
-    address: "",
     district: "",
-    location: "",
     orgName: "",
     pan: "",
     industry: "",
@@ -35,14 +34,12 @@ export default function AuthPage({ mode: initialMode }: Props) {
     businessWebsite: "",
     contactName: "",
     providerType: "individual" as "individual" | "business" | "organization",
-    skills: [] as string[],
   })
   const [skillInput, setSkillInput] = useState("")
   const [loading, setLoading] = useState(false)
   const submitInFlight = useRef(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const skillCatalog = useSkillCatalog()
 
   const changeAuthMode = (nextMode: AuthMode) => {
     setError("")
@@ -60,19 +57,22 @@ export default function AuthPage({ mode: initialMode }: Props) {
   if (isRegisterChoice) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-cream px-4 py-12">
-        <section className="w-full max-w-xl rounded-3xl bg-white p-7 shadow-sm sm:p-10" aria-labelledby="register-choice-title">
-          <button type="button" onClick={() => navigate("landing")} className="mb-8 text-sm font-medium text-stone-600 hover:text-stone-900">← Back to homepage</button>
-          <h1 id="register-choice-title" className="font-display text-3xl font-bold text-stone-900">Create your account</h1>
-          <p className="mt-2 text-sm text-stone-600">Choose how you want to use Shram Bazzar.</p>
-          <div className="mt-7 grid gap-4 sm:grid-cols-2">
-            <button type="button" onClick={() => changeAuthMode("worker-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
-              <span className="block text-lg font-bold text-stone-900">Job Worker</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Create a worker profile, find suitable jobs, and manage applications.</span>
+        <section className="w-full max-w-5xl rounded-sm bg-[#5A2A27] px-7 py-11 text-white shadow-lg sm:px-14 sm:py-14" aria-labelledby="register-choice-title">
+          <header className="mx-auto max-w-2xl text-center">
+            <h1 id="register-choice-title" className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">Create your account</h1>
+            <p className="mt-4 font-serif text-base italic leading-relaxed text-[#F7E9D7] sm:text-lg">Choose how you want to use Shram Bazzar.</p>
+          </header>
+          <div className="mt-9 grid sm:mt-12 sm:grid-cols-2">
+            <button type="button" onClick={() => changeAuthMode("worker-signup")} className="group flex min-h-48 flex-col items-center justify-center border-b border-white/25 px-4 py-8 text-center transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:border-b-0 sm:border-r sm:px-8">
+              <span className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#E8C7A8] sm:text-sm">I’m looking for work</span>
+              <span className="font-display text-4xl font-bold leading-tight tracking-tight text-white transition group-hover:text-amber-200 sm:text-5xl">Job Seeker</span>
             </button>
-            <button type="button" onClick={() => changeAuthMode("provider-signup")} className="rounded-2xl border border-stone-200 p-5 text-left transition hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary">
-              <span className="block text-lg font-bold text-stone-900">Job Provider</span><span className="mt-2 block text-sm leading-relaxed text-stone-600">Create a provider account to post jobs and find workers.</span>
+            <button type="button" onClick={() => changeAuthMode("provider-signup")} className="group flex min-h-48 flex-col items-center justify-center px-4 py-8 text-center transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:px-8">
+              <span className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#E8C7A8] sm:text-sm">I’m hiring</span>
+              <span className="font-display text-4xl font-bold leading-tight tracking-tight text-white transition group-hover:text-amber-200 sm:text-5xl">Employer</span>
             </button>
           </div>
-          <p className="mt-7 text-center text-sm text-stone-600">Already have an account? <button type="button" onClick={() => changeAuthMode("login")} className="font-semibold text-primary-ink hover:underline">Sign in</button></p>
+          <p className="mt-9 border-t border-white/30 pt-7 text-center text-base font-semibold text-[#F7E9D7]">Already have an account? <button type="button" onClick={() => changeAuthMode("login")} className="font-bold text-white underline-offset-4 hover:text-amber-200 hover:underline">Sign in</button></p>
         </section>
       </main>
     )
@@ -123,6 +123,10 @@ export default function AuthPage({ mode: initialMode }: Props) {
         setError("Use a password with at least 8 characters.")
         return
       }
+      if (!isValidAuthPasswordLength(formData.password)) {
+        setError("Use a password of 72 UTF-8 bytes or fewer.")
+        return
+      }
       if (formData.password !== formData.confirmPassword) {
         setError("Passwords do not match.")
         return
@@ -138,12 +142,10 @@ export default function AuthPage({ mode: initialMode }: Props) {
             name: formData.name.trim(),
             phone: formData.phone.trim(),
             dateOfBirth: formData.dateOfBirth,
-            gender: (formData.gender ||
-              undefined) as "female" | "male" | "non-binary" | "prefer-not-to-say" | undefined,
-            address: formData.address.trim(),
+            address: formData.district,
             district: formData.district,
-            location: formData.location,
-            skills: formData.skills,
+            location: formData.district,
+            skills: parseSkillInput(skillInput),
           })
         : signupProvider({
             email: formData.email,
@@ -151,7 +153,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
             contactName: formData.contactName,
             providerType: formData.providerType,
             dateOfBirth: formData.dateOfBirth,
-            address: formData.address,
+            address: formData.district,
             phone: formData.phone,
             orgName: formData.orgName || formData.contactName,
             pan: formData.pan,
@@ -159,7 +161,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
             description: formData.businessDescription,
             website: formData.businessWebsite,
             district: formData.district,
-            location: formData.location,
+            location: formData.district,
           })
       setLoading(true)
       try {
@@ -173,21 +175,6 @@ export default function AuthPage({ mode: initialMode }: Props) {
       }
     }
   }
-
-  const toggleSkill = (skill: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      skills: prev.skills.includes(skill)
-        ? prev.skills.filter((s) => s !== skill)
-        : [...prev.skills, skill],
-    }))
-  }
-
-  const filteredSkills = skillCatalog.filter(
-    (s) =>
-      s.toLowerCase().includes(skillInput.toLowerCase()) &&
-      !formData.skills.includes(s),
-  ).slice(0, 12)
 
   if (loading) {
     return (
@@ -211,31 +198,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-br from-[#302825] to-[#49403C]"
         />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-30 mix-blend-overlay"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=800&h=1200&fit=crop&auto=format')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-        <div className="absolute left-12 top-12 z-10">
-          <button
-            onClick={() => navigate("landing")}
-            className="flex items-center gap-2"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5A2A27]">
-              <span className="font-brand text-white text-lg font-semibold">
-                S
-              </span>
-            </div>
-            <span className="font-brand text-2xl text-white font-semibold">
-              Shrama
-            </span>
-          </button>
-        </div>
-        <div className="relative my-auto w-full">
+        <div className="relative my-auto w-full -translate-y-3 lg:-translate-y-8">
           <h2 className="font-display text-4xl font-bold text-white mb-4 leading-tight">
             {isLogin
               ? "Welcome back to Shrama"
@@ -250,42 +213,13 @@ export default function AuthPage({ mode: initialMode }: Props) {
                 ? "Thousands of flexible jobs across Nepal. Match your skills and availability with the right opportunity."
                 : "Post jobs, review qualified applicants, and build your flexible workforce with confidence."}
           </p>
-          <div className="mt-8 space-y-2">
-            {(isWorker
-              ? [
-                  "Discover jobs matched to your skills",
-                  "Track all your applications in one place",
-                  "Build your work history and rating",
-                ]
-              : isProvider
-                ? [
-                    "Verified provider badge builds trust",
-                    "Review ranked applicant profiles",
-                    "Manage all hirings from your dashboard",
-                  ]
-                : [
-                    "Your profile and applications",
-                    "New matching jobs in your district",
-                    "Messages from providers",
-                  ]
-            ).map((item) => (
-              <div
-                key={item}
-                className="flex items-center gap-3 py-1 text-sm text-white/85"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  className="h-4 w-4 flex-shrink-0 text-emerald-400"
-                >
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-                {item}
-              </div>
-            ))}
-          </div>
+          {isLogin ? (
+            <LoginIllustration />
+          ) : isWorker ? (
+            <WorkerSignupIllustration />
+          ) : (
+            <ProviderSignupIllustration />
+          )}
         </div>
       </div>
 
@@ -351,17 +285,6 @@ export default function AuthPage({ mode: initialMode }: Props) {
                       ? "Create Provider Account"
                       : "Organisation Details"}
               </h1>
-              {!isLogin && (
-                <p className="text-stone-500 text-sm leading-relaxed">
-                  {isWorker
-                    ? step === 1
-                      ? "Add your full name, email address, and password to get started."
-                      : "Step 2 of 2 · Contact, location, and skills. This helps us match you with relevant work nearby."
-                    : `Step ${step} of 2 — ${
-                        step === 1 ? "Contact information" : "Business details"
-                      }`}
-                </p>
-              )}
             </div>
 
             {error && (
@@ -382,17 +305,13 @@ export default function AuthPage({ mode: initialMode }: Props) {
               </div>
             )}
 
-            {!isLogin && step === 2 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setError("")
-                  setStep(1)
-                }}
-                className="mb-3 text-sm font-medium text-stone-600 underline-offset-2 hover:text-stone-900 hover:underline"
-              >
-                ← Back to account details
-              </button>
+            {!isLogin && isWorker && step === 2 && (
+              <p className="mb-4 text-sm text-stone-600">
+                Already have an account?{" "}
+                <button type="button" onClick={() => changeAuthMode("login")} className="font-semibold text-[#5A2A27] hover:underline">
+                  Sign in
+                </button>
+              </p>
             )}
 
             <form noValidate onSubmit={handleSubmit} className="auth-form space-y-4">
@@ -440,7 +359,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
                         setFormData((p) => ({ ...p, name: e.target.value }))
                       }
                       placeholder="e.g. Hariom Sharma"
-                      className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      className="w-full rounded-md border border-stone-300 bg-white px-4 py-3.5 text-base transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                       autoComplete="name"
                       required
                     />
@@ -453,7 +372,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
                         setFormData((p) => ({ ...p, email: e.target.value }))
                       }
                       placeholder="you@example.com"
-                      className="w-full px-4 py-3 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      className="w-full rounded-md border border-stone-300 bg-white px-4 py-3.5 text-base transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                       autoComplete="email"
                       required
                     />
@@ -467,7 +386,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
                         setFormData((p) => ({ ...p, password: e.target.value }))
                       }
                       placeholder="At least 8 characters"
-                      className="w-full px-4 py-3 pr-12 border border-stone-200 rounded-xl text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                      className="w-full rounded-md border border-stone-300 bg-white px-4 py-3.5 pr-12 text-base transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                       autoComplete="new-password"
                       minLength={8}
                       required
@@ -482,7 +401,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
                         value={formData.confirmPassword}
                         onChange={(e) => setFormData((p) => ({ ...p, confirmPassword: e.target.value }))}
                         placeholder="Re-enter your password"
-                        className="w-full px-4 py-2.5 pr-12 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                        className="w-full rounded-md border border-stone-300 bg-white px-4 py-3.5 pr-12 text-base transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                         autoComplete="new-password"
                         minLength={8}
                         required
@@ -509,35 +428,6 @@ export default function AuthPage({ mode: initialMode }: Props) {
                       }
                       className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                       required
-                    />
-                  </Field>
-                  <Field label="Gender (optional)">
-                    <select
-                      value={formData.gender}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, gender: e.target.value }))
-                      }
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                    >
-                      <option value="">Prefer not to say</option>
-                      <option value="female">Female</option>
-                      <option value="male">Male</option>
-                      <option value="non-binary">Non-binary</option>
-                      <option value="prefer-not-to-say">
-                        Prefer not to say
-                      </option>
-                    </select>
-                  </Field>
-                  <Field label="Street, ward, or tole address">
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, address: e.target.value }))
-                      }
-                      placeholder="Optional; not shown to employers"
-                      autoComplete="street-address"
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
                     />
                   </Field>
                   <Field label="Phone number">
@@ -573,60 +463,26 @@ export default function AuthPage({ mode: initialMode }: Props) {
                       ))}
                     </select>
                   </Field>
-                  <Field label="Local address">
-                    <input
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, location: e.target.value }))
-                      }
-                      placeholder="e.g. Baneshwor, Kathmandu"
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                      required
-                    />
-                  </Field>
-                  <Field label="Your skills" hint="Select all that apply">
+                  <Field label="Your skills" hint="Type skills; press Enter to separate them">
                     <input
                       type="text"
                       value={skillInput}
                       onChange={(e) => setSkillInput(e.target.value)}
-                      placeholder="Search skills…"
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white mb-2"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault()
+                          setSkillInput((value) => {
+                            const trimmed = value.trimEnd()
+                            if (!trimmed || trimmed.endsWith(",")) return trimmed
+                            return `${trimmed}, `
+                          })
+                        }
+                      }}
+                      placeholder="e.g. Frontend development, plumbing"
+                      aria-label="Type your skills, separated by commas"
+                      autoComplete="off"
+                      className="w-full rounded-md border border-stone-300 bg-white px-4 py-3 text-base transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
-                    {formData.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-2">
-                        {formData.skills.map((s) => (
-                          <span
-                            key={s}
-                            className="text-xs px-2 py-1 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1"
-                          >
-                            {s}
-                            <button
-                              type="button"
-                              onClick={() => toggleSkill(s)}
-                              className="text-primary-ink/60 hover:text-primary-ink"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-1.5">
-                      {filteredSkills.map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => {
-                            toggleSkill(s)
-                            setSkillInput("")
-                          }}
-                          className="text-xs px-2 py-1 bg-stone-100 text-stone-700 rounded-full border border-stone-200 hover:bg-stone-200 transition-colors"
-                        >
-                          + {s}
-                        </button>
-                      ))}
-                    </div>
                   </Field>
                 </>
               )}
@@ -744,24 +600,9 @@ export default function AuthPage({ mode: initialMode }: Props) {
                       ))}
                     </select>
                   </Field>
-                  <Field label="Street, ward, or tole address">
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) =>
-                        setFormData((p) => ({ ...p, address: e.target.value }))
-                      }
-                      placeholder="e.g. Shiva Chowk"
-                      className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white"
-                      required
-                    />
-                  </Field>
                   {formData.providerType !== "individual" && <>
                     <Field label={formData.providerType === "business" ? "Business name" : "Organization name"}>
                       <input type="text" value={formData.orgName} onChange={(e) => setFormData((p) => ({ ...p, orgName: e.target.value }))} placeholder="e.g. HimTech Solutions Pvt. Ltd." className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
-                    </Field>
-                    <Field label="Business or organization address">
-                      <input type="text" value={formData.location} onChange={(e) => setFormData((p) => ({ ...p, location: e.target.value }))} placeholder="e.g. New Baneshwor" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" required />
                     </Field>
                     <Field label="Business description">
                       <textarea value={formData.businessDescription} onChange={(e) => setFormData((p) => ({ ...p, businessDescription: e.target.value }))} rows={3} maxLength={1000} placeholder="What does your organization do?" className="w-full px-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all bg-white" />
@@ -778,7 +619,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
                 type="submit"
                 disabled={loading}
                 aria-busy={loading}
-                className="min-h-12 w-full rounded-lg bg-[#5A2A27] px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27] disabled:cursor-wait disabled:opacity-70"
+                className="min-h-14 w-full rounded-md bg-[#5A2A27] px-6 py-4 text-base font-semibold tracking-wide text-white transition-colors hover:bg-[#451f1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5A2A27] disabled:cursor-wait disabled:opacity-70"
               >
                 {loading ? (isLogin ? "Signing in…" : "Creating account…") : isLogin ? (
                   "Sign In"
@@ -805,7 +646,7 @@ export default function AuthPage({ mode: initialMode }: Props) {
             )}
 
             {/* Footer links */}
-            {!isLogin && (
+            {!isLogin && !(isWorker && step === 2) && (
               <div className="mt-6 text-center">
                 <p className="text-[13px] text-stone-600">
                   Already have an account?{" "}
@@ -827,14 +668,32 @@ export default function AuthPage({ mode: initialMode }: Props) {
 
 function PasswordVisibilityButton({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
   return (
-    <button type="button" onClick={onToggle} aria-label={visible ? "Hide password" : "Show password"} aria-pressed={visible} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-stone-500 hover:bg-stone-100 hover:text-stone-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={visible ? "Hide password" : "Show password"}
+      aria-pressed={visible}
+      title={visible ? "Hide password" : "Show password"}
+      className="password-visibility-button absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-stone-600 transition-colors hover:bg-[#F7F3EE] hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
       {visible ? (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="M3 3l18 18" /><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" /><path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9 7 9 7a15.7 15.7 0 0 1-3.1 3.8M6.2 6.2C4.1 7.6 3 10 3 12c0 0 3.5 7 9 7 1 0 1.9-.2 2.8-.6" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-[1.2rem] w-[1.2rem]" aria-hidden="true"><path d="M3 3l18 18" /><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" /><path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9 7 9 7a15.7 15.7 0 0 1-3.1 3.8M6.2 6.2C4.1 7.6 3 10 3 12c0 0 3.5 7 9 7 1 0 1.9-.2 2.8-.6" /></svg>
       ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-[1.2rem] w-[1.2rem]" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
       )}
     </button>
   )
+}
+
+function parseSkillInput(value: string): string[] {
+  const seen = new Set<string>()
+  return value.split(",").map((skill) => skill.trim()).filter((skill) => {
+    if (!skill) return false
+    const key = skill.toLocaleLowerCase()
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 function Field({

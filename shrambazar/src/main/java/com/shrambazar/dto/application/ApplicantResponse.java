@@ -17,6 +17,13 @@ public record ApplicantResponse(
         BigDecimal offeredAmount,
         String offerMessage,
         Integer estimatedDurationHours,
-        LocalDateTime proposedStartAt
+        LocalDateTime proposedStartAt,
+        String applicantName,
+        String applicantEmail,
+        String applicantPhone,
+        String applicantLocation,
+        List<String> applicationSkills,
+        String experienceLevel,
+        String introduction
 ) {
 }
