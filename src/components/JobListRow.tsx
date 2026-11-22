@@ -21,9 +21,7 @@ function locationLabel(job: Job) {
     .filter(Boolean)
   if (countries.some((country) => country.toLowerCase() === "nepal"))
     return "Remote · Nepal"
-  if (countries.length > 2)
-    return `Remote · ${countries.slice(0, 2).join(", ")} +${countries.length - 2}`
-  return `Remote · ${countries.join(", ")}`
+  return `Remote · ${countries.slice(0, 2).join(", ")}`
 }
 
 export default function JobListRow({ job }: { job: Job }) {
@@ -74,9 +72,9 @@ export default function JobListRow({ job }: { job: Job }) {
               <button
                 type="button"
                 onClick={openJob}
-                className="font-heading text-left text-lg font-semibold leading-snug text-[#1C1C1C] underline decoration-black underline-offset-4 transition-colors hover:text-[#70472F] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#986744] sm:text-xl"
+                className={`font-heading text-left ${isExternal ? "text-base font-medium" : "text-lg font-semibold sm:text-xl"} leading-snug text-[#1C1C1C] underline decoration-black underline-offset-4 transition-colors hover:text-[#70472F] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#986744]`}
               >
-                {job.title}
+                {isExternal ? job.title.replace(/^#\s*/, "") : job.title}
               </button>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[#646B73]">
                 <span className="font-medium text-[#343A40]">
@@ -89,7 +87,7 @@ export default function JobListRow({ job }: { job: Job }) {
                 )}
                 {isExternal && (
                   <span className="rounded-full bg-[#F1F3F5] px-2 py-0.5 text-xs font-medium text-[#646B73]">
-                    {job.externalSource === "jsearch" ? "JSearch" : "Himalayas"}
+                    {job.externalSource === "jsearch" ? "OpenWebNinja" : "Himalayas"}
                   </span>
                 )}
               </div>
@@ -162,11 +160,9 @@ export default function JobListRow({ job }: { job: Job }) {
                 </svg>
                 {locationLabel(job)}
               </span>
-              <span className="font-semibold text-[#343A40]">
-                {isExternal
-                  ? job.salaryText || "Salary not listed"
-                  : formatJobBudget(job)}
-              </span>
+              {(!isExternal || job.salaryText) && <span className={`${isExternal ? "font-medium text-sm" : "font-semibold"} text-[#343A40]`}>
+                {isExternal ? job.salaryText : formatJobBudget(job)}
+              </span>}
               {!isExternal && job.date && (
                 <span>
                   {formatNepalDate(job.date, {

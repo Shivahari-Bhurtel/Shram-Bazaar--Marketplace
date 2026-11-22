@@ -84,6 +84,7 @@ export interface ApiApplication {
   experienceLevel?: "No Experience" | "Beginner" | "Experienced"
   introduction?: string
   confirmationEmailSent?: boolean
+  shortlisted?: boolean
 }
 
 export function getBackendAuth(): BackendAuth | null {
@@ -266,6 +267,7 @@ export function mapApiApplication(app: ApiApplication, user: User, profile?: Wor
     offerMessage: app.offerMessage || app.introduction || undefined,
     estimatedDurationHours: app.estimatedDurationHours,
     proposedStartAt: app.proposedStartAt,
+    shortlisted: app.shortlisted === true,
   }
 }
 

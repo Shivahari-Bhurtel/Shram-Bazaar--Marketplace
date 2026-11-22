@@ -3,9 +3,11 @@ package com.shrambazar.controller.notification;
 import com.shrambazar.dto.notification.ProviderMessageRequest;
 import com.shrambazar.entity.Application;
 import com.shrambazar.entity.ProviderProfile;
+import com.shrambazar.entity.SeekerProfile;
 import com.shrambazar.entity.User;
 import com.shrambazar.enums.ApplicationStatus;
 import com.shrambazar.enums.NotificationType;
+import com.shrambazar.enums.UserRole;
 import com.shrambazar.repository.ApplicationRepository;
 import com.shrambazar.service.CurrentUserService;
 import com.shrambazar.service.notification.NotificationService;
@@ -18,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/applications")
-@PreAuthorize("hasRole('JOB_PROVIDER')")
+@PreAuthorize("hasAnyRole('JOB_PROVIDER','JOB_SEEKER')")
 public class ProviderMessageController {
 
     private final ApplicationRepository applicationRepository;
@@ -38,10 +40,14 @@ public class ProviderMessageController {
     public ResponseEntity<Void> sendMessage(
             @PathVariable Long applicationId,
             @Valid @RequestBody ProviderMessageRequest request) {
-        ProviderProfile provider = currentUserService.getCurrentProviderProfile();
+        User sender = currentUserService.getCurrentUser();
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
-        if (!application.getJobPost().getProviderProfile().getId().equals(provider.getId())) {
+        boolean providerSender = sender.getRole() == UserRole.JOB_PROVIDER;
+        boolean ownsApplication = providerSender
+                ? application.getJobPost().getProviderProfile().getUser().getId().equals(sender.getId())
+                : sender.getRole() == UserRole.JOB_SEEKER && application.getSeekerProfile().getUser().getId().equals(sender.getId());
+        if (!ownsApplication) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found");
         }
         if (application.getStatus() == ApplicationStatus.NOT_SELECTED
@@ -49,13 +55,17 @@ public class ProviderMessageController {
                 || application.getStatus() == ApplicationStatus.CANCELLED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This application is no longer active");
         }
-        User recipient = application.getSeekerProfile().getUser();
+        User recipient = providerSender
+                ? application.getSeekerProfile().getUser()
+                : application.getJobPost().getProviderProfile().getUser();
+        String senderName = providerSender
+                ? (application.getJobPost().getProviderProfile().getBusinessName() == null || application.getJobPost().getProviderProfile().getBusinessName().isBlank()
+                    ? sender.getFullName() : application.getJobPost().getProviderProfile().getBusinessName())
+                : sender.getFullName();
         notificationService.createNotification(
                 recipient,
                 NotificationType.MESSAGE,
-                "Message from " + (provider.getBusinessName() == null || provider.getBusinessName().isBlank()
-                        ? provider.getUser().getFullName()
-                        : provider.getBusinessName()),
+                "Message from " + senderName,
                 request.message().trim(),
                 "APPLICATION",
                 applicationId);

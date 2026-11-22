@@ -76,7 +76,10 @@ public record JobPostRequest(
         @Min(1)
         Integer numberOfWorkersRequired,
 
-        List<@NotNull @Positive Long> requiredSkillIds
+        List<@NotNull @Positive Long> requiredSkillIds,
+
+        @Size(max = 40)
+        List<@NotBlank @Size(max = 100) String> requiredSkills
 
 ) {
 }

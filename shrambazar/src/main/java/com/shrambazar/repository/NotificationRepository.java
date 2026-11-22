@@ -26,7 +26,8 @@ public interface NotificationRepository
             Long userId
     );
 
-    long countByUserIdAndReadFalse(Long userId);
+    @Query("select count(n) from Notification n where n.user.id = :userId and n.read = false")
+    long countByUserIdAndReadFalse(@Param("userId") Long userId);
 
     @Modifying
     @Query("""

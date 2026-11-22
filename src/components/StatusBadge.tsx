@@ -70,10 +70,12 @@ export function ApplicationStatusBadge({
 
 export function JobStatusBadge({ status }: { status: JobStatus }) {
   const cfg = jobConfig[status]
+  const dot = status === "active" ? "bg-[#236B4B]" : status === "filled" ? "bg-teal" : status === "draft" ? "bg-amber-600" : "bg-stone-500"
   return (
     <span
-      className={`inline-flex min-h-8 items-center text-[13px] font-semibold px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text}`}
+      className={`inline-flex min-h-9 items-center gap-2 rounded-md border px-3.5 py-1.5 text-sm font-bold tracking-[0.01em] ${cfg.bg} ${cfg.text} ${status === "active" ? "border-green-200" : status === "filled" ? "border-teal-200" : status === "draft" ? "border-amber-200" : "border-stone-200"}`}
     >
+      <span className={`h-2.5 w-2.5 rounded-full ${dot}`} aria-hidden="true" />
       {cfg.label}
     </span>
   )

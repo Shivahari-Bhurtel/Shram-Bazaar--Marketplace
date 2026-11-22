@@ -74,6 +74,9 @@ function ApplicationRow({
   const [contactLoading, setContactLoading] = useState(false)
   const [withdrawLoading, setWithdrawLoading] = useState(false)
   const [withdrawNotice, setWithdrawNotice] = useState("")
+  const [message, setMessage] = useState("")
+  const [messageNotice, setMessageNotice] = useState("")
+  const [messageBusy, setMessageBusy] = useState(false)
   const completed = application.engagementStatus === "COMPLETED" || (
     import.meta.env.VITE_DEMO_MODE === "true" &&
     scheduledWorkHasEnded(job)
@@ -133,6 +136,20 @@ function ApplicationRow({
       </div>
 
       {withdrawNotice && <p role="status" className="mt-3 text-xs text-stone-600">{withdrawNotice}</p>}
+
+      {application.status === "pending" || application.status === "accepted" ? <div className="mt-4 border-t border-[#F0EBE6] pt-3">
+        <label className="block text-xs font-semibold text-stone-700">Message the provider<textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={1000} rows={2} placeholder="Ask a question or share an update" className="input-style mt-1.5 w-full resize-y" /></label>
+        <button type="button" disabled={messageBusy || !message.trim()} onClick={async () => {
+          setMessageBusy(true); setMessageNotice("")
+          try {
+            await apiRequest<void>(`/api/applications/${application.id}/messages`, { method: "POST", body: JSON.stringify({ message: message.trim() }) })
+            setMessage(""); setMessageNotice("Message sent to the provider.")
+          } catch (error) {
+            setMessageNotice(error instanceof Error ? error.message : "Unable to send the message.")
+          } finally { setMessageBusy(false) }
+        }} className="mt-2 rounded-lg bg-[#70472F] px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{messageBusy ? "Sending…" : "Send message"}</button>
+        {messageNotice && <p role="status" className="mt-2 text-xs text-stone-600">{messageNotice}</p>}
+      </div> : null}
 
       {application.providerNote && (
         <div className="mt-4 border-t border-[#F0EBE6] pt-3">

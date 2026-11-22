@@ -32,7 +32,7 @@ export default function DemoJobDetailsModal({ job, distance, saved = false, appl
 
   const modal = (
     <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-stone-950/55 p-3 backdrop-blur-[2px] sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="demo-job-title" className="job-detail-modal flex max-h-[min(92dvh,900px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-stone-200 bg-[#fffefa] shadow-[0_32px_100px_-36px_rgba(0,0,0,.65)]">
+      <section role="dialog" aria-modal="true" aria-labelledby="demo-job-title" className="job-detail-modal flex max-h-[min(92dvh,900px)] w-full max-w-4xl flex-col overflow-hidden rounded-none border border-stone-300 bg-[#fffefa] shadow-[0_32px_100px_-36px_rgba(0,0,0,.45)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-200 px-4 py-2.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-3"><button type="button" onClick={onClose} className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-stone-700 hover:text-[#70472F]"><span aria-hidden="true">←</span> Back</button><span aria-hidden="true" className="h-4 w-px shrink-0 bg-stone-300" /><span className="job-detail-category truncate text-base font-semibold text-[#2E6F56]">{job.category}</span></div>
           <button type="button" onClick={onClose} aria-label="Close job details" className="flex h-9 w-9 shrink-0 items-center justify-center text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12" /></svg></button>
@@ -41,14 +41,13 @@ export default function DemoJobDetailsModal({ job, distance, saved = false, appl
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-5 sm:px-7">
           <div>
             <h2 id="demo-job-title" className="job-detail-title mt-0.5 text-[26px] font-bold leading-[1.2] tracking-[-0.02em] text-[#141715] sm:text-[30px]">{job.title}</h2>
-            <p className="mt-1.5 text-base font-medium text-stone-700">{job.company}</p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <p className="job-detail-salary text-base font-semibold tabular-nums sm:text-lg">{formatDemoSalary(job)}</p>
               {beginnerBadge && <span className="rounded-full bg-[#EAF2EE] px-3 py-1.5 text-sm font-semibold text-[#1E4D3B]">{beginnerBadge}</span>}
             </div>
           </div>
 
-          <section className="overflow-hidden rounded-xl border border-[#dedbd2] bg-white">
+          <section className="overflow-hidden rounded-none border border-[#dedbd2] bg-white">
             <h3 className="job-detail-section-title px-5 pt-5 text-[25px] font-semibold text-[#1E4D3B] sm:px-6 sm:pt-6">Job overview</h3>
             <div className="grid grid-cols-2 gap-x-6 gap-y-7 p-5 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-8 sm:p-6">
               <OverviewItem icon="employment" label="Employment" value={job.job_type} />
@@ -84,8 +83,8 @@ export default function DemoJobDetailsModal({ job, distance, saved = false, appl
         </div>
 
         {(onToggleSaved || onApply) && <footer className="sticky bottom-0 flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-[#EAE7E0] bg-white px-4 py-3 shadow-[0_-6px_16px_-16px_rgba(25,35,30,.35)] sm:px-7">
-          {onToggleSaved && <button type="button" aria-pressed={saved} onClick={() => onToggleSaved(job.id)} className="rounded-[10px] border border-stone-300 px-5 py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50">{saved ? "Saved job" : "Save job"}</button>}
-          {onApply && <button type="button" disabled={applied} onClick={() => onApply(job.id)} className={`demo-job-apply-button rounded-[10px] px-5 py-2.5 text-sm font-semibold text-white transition-colors ${applied ? "cursor-default bg-[#80502F]" : "bg-[#1E4D3B] hover:bg-[#173C2E]"}`}>{applied ? "Applied" : "Apply now"}</button>}
+          {onToggleSaved && <button type="button" aria-pressed={saved} onClick={() => onToggleSaved(job.id)} className="rounded-none border border-stone-400 px-5 py-2.5 text-sm font-semibold text-stone-800 hover:bg-stone-50">{saved ? "Saved job" : "Save job"}</button>}
+          {onApply && <button type="button" disabled={applied} onClick={() => onApply(job.id)} className={`demo-job-apply-button rounded-none px-5 py-2.5 text-sm font-bold text-white transition-colors ${applied ? "cursor-default bg-[#80502F]" : "bg-[#1E4D3B] hover:bg-[#173C2E]"}`}>{applied ? "Applied" : "Apply now"}</button>}
         </footer>}
       </section>
     </div>
@@ -107,7 +106,7 @@ function OverviewIcon({ icon }: { icon: "employment" | "experience" | "deadline"
     {icon === "employment" && <><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2"/></>}
     {icon === "experience" && <><path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 12v5c3 2 7 2 10 0v-5M21 9v6"/><path d="m19 4 .5 1.2L21 6l-1.5.8L19 8l-.5-1.2L17 6l1.5-.8L19 4Z"/></>}
     {icon === "deadline" && <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></>}
-    {icon === "payment" && <><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v4c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 10v4c0 1.7 3.6 3 8 3M4 14v4c0 1.7 3.6 3 8 3"/><path d="M16 15v6M19 16.5h-4.5a1.5 1.5 0 0 0 0 3h3a1.5 1.5 0 0 1 0 3H13"/></>}
+    {icon === "payment" && <><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v4c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 10v4c0 1.7 3.6 3 8 3s8-1.3 8-3M4 14v4c0 1.7 3.6 3 8 3s8-1.3 8-3v-4"/></>}
     {icon === "openings" && <><circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M18 8v6M15 11h6"/></>}
   </svg>
 }

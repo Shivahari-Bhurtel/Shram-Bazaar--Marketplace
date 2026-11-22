@@ -34,6 +34,9 @@ public class Application {
     @Column(nullable = false, length = 30)
     private ApplicationStatus status = ApplicationStatus.PENDING;
 
+    @Column(nullable = false)
+    private boolean shortlisted = false;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime appliedAt;
 
@@ -118,6 +121,9 @@ public class Application {
     public void setStatus(ApplicationStatus status) {
         this.status = status;
     }
+
+    public boolean isShortlisted() { return shortlisted; }
+    public void setShortlisted(boolean shortlisted) { this.shortlisted = shortlisted; }
 
     public LocalDateTime getAppliedAt() {
         return appliedAt;

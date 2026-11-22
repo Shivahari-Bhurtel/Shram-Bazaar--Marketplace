@@ -24,6 +24,7 @@ public record ApplicantResponse(
         String applicantLocation,
         List<String> applicationSkills,
         String experienceLevel,
-        String introduction
+        String introduction,
+        boolean shortlisted
 ) {
 }

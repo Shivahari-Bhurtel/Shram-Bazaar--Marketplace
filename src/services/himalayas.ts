@@ -341,6 +341,12 @@ export function mapHimalayasJob(job: HimalayasApiJob, index: number): Job {
     seniority,
     publishedDate,
     externalUpdatedAt: toDateTime(job.pubDate),
+    externalIsRemote: true,
+    externalLocationRestrictions: allowedCountries,
+    externalTimezoneRestrictions: (job.timezoneRestrictions || []).map((zone) => {
+      const numericZone = Number(zone)
+      return Number.isFinite(numericZone) ? `UTC${numericZone >= 0 ? "+" : ""}${numericZone}` : String(zone)
+    }),
   }
 }
 

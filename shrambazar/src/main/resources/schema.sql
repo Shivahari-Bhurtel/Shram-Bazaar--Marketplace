@@ -66,6 +66,37 @@ ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_phone VARCHAR(32);
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS applicant_location VARCHAR(255);
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS experience_level VARCHAR(32);
 ALTER TABLE applications ADD COLUMN IF NOT EXISTS introduction VARCHAR(1200);
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS shortlisted BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Ratings are read during profile refresh, so keep this core table present in
+-- environments where Hibernate DDL is disabled (the production default).
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGSERIAL PRIMARY KEY,
+    engagement_id BIGINT NOT NULL REFERENCES worker_engagements(id) ON DELETE CASCADE,
+    reviewer_id BIGINT NOT NULL REFERENCES users(id),
+    reviewee_id BIGINT NOT NULL REFERENCES users(id),
+    direction VARCHAR(30) NOT NULL,
+    rating INTEGER NOT NULL,
+    comment TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_reviews_engagement_direction UNIQUE (engagement_id, direction)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_reviewee_created_at
+    ON reviews (reviewee_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS engagement_payments (
+    id BIGSERIAL PRIMARY KEY,
+    engagement_id BIGINT NOT NULL UNIQUE REFERENCES worker_engagements(id) ON DELETE CASCADE,
+    amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+    method VARCHAR(24) NOT NULL,
+    payment_date DATE NOT NULL,
+    transaction_reference VARCHAR(120),
+    note VARCHAR(1000),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_engagement_payments_date ON engagement_payments (payment_date DESC);
 
 CREATE TABLE IF NOT EXISTS application_skills (
     application_id BIGINT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,

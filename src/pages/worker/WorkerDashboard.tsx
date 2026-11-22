@@ -77,6 +77,16 @@ function formatExperienceLabel(value: string) {
   return /no experience required|fresh workers welcome|training provided/i.test(value) ? "Entry-level" : value
 }
 
+function formatRemoteLocation(value: string) {
+  if (value.toLowerCase() === "worldwide remote") return value
+  const countries = value
+    .replace(/^Remote\s*[·-]\s*/i, "")
+    .split(",")
+    .map((country) => country.trim())
+    .filter(Boolean)
+  return `Remote · ${countries.slice(0, 2).join(", ")}`
+}
+
 function searchCachedItListings(jobs: Job[], query: string) {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
   if (!terms.length) return []
@@ -116,6 +126,10 @@ function recommendedScore(job: Job, skills: string[]) {
 export default function WorkerDashboard() {
   const { state, navigate, myApplications, setExternalJobs } = useApp()
   const { workerProfile, jobs, externalJobs } = state
+  const newlyPostedJobs = jobs
+    .filter((job) => job.status === "active" && !job.externalSource)
+    .sort((a, b) => (b.postedDate || "").localeCompare(a.postedDate || ""))
+    .slice(0, 6)
   const demoState = useDemoJobState(workerProfile?.id)
   const [search, setSearch] = useState("")
   const [submittedSearch, setSubmittedSearch] = useState("")
@@ -131,7 +145,6 @@ export default function WorkerDashboard() {
   const [nearbyLocationMessage, setNearbyLocationMessage] = useState("")
   const [recommendedTab, setRecommendedTab] =
     useState<"best" | "recent" | "saved">("best")
-  const [remoteJobsExpanded, setRemoteJobsExpanded] = useState(false)
   const [recommendedExternalJobs, setRecommendedExternalJobs] = useState<Job[]>(loadCachedItRecommendations)
   const [recentExternalJobs, setRecentExternalJobs] = useState<Job[]>(loadCachedRecentItJobs)
   const [remoteItJobs, setRemoteItJobs] = useState<Job[]>(loadCachedRemoteItJobs)
@@ -196,7 +209,7 @@ export default function WorkerDashboard() {
   }, [workerProfile?.id, recommendedRequest])
 
   useEffect(() => {
-    if (!workerProfile || !remoteJobsExpanded || recommendedTab !== "recent") return
+    if (!workerProfile || recommendedTab !== "recent") return
     const controller = new AbortController()
     setRecentExternalLoading(recentExternalJobs.length === 0)
     getRecentItJobs(controller.signal)
@@ -218,7 +231,7 @@ export default function WorkerDashboard() {
         if (!controller.signal.aborted) setRecentExternalLoading(false)
       })
     return () => controller.abort()
-  }, [workerProfile?.id, remoteJobsExpanded, recommendedTab, recentRequest])
+  }, [workerProfile?.id, recommendedTab, recentRequest])
 
   useEffect(() => {
     if (!submittedSearch) {
@@ -445,15 +458,8 @@ export default function WorkerDashboard() {
                   type="button"
                   role="tab"
                   aria-selected={recommendedTab === tab}
-                  aria-expanded={recommendedTab === tab && remoteJobsExpanded}
                   aria-controls="remote-work-listings"
-                  onClick={() => {
-                    if (recommendedTab === tab) setRemoteJobsExpanded((expanded) => !expanded)
-                    else {
-                      setRecommendedTab(tab)
-                      setRemoteJobsExpanded(true)
-                    }
-                  }}
+                  onClick={() => setRecommendedTab(tab)}
                   className={`-mb-px shrink-0 rounded-t-lg border-b-2 px-3 pb-3 pt-2 text-sm font-semibold transition-colors ${
                     recommendedTab === tab
                       ? "border-[#70472F] bg-[#EAE3D5] text-[#70472F]"
@@ -466,11 +472,10 @@ export default function WorkerDashboard() {
                       {itJobs.filter((job) => state.savedJobIds.includes(job.id)).length}
                     </span>
                   )}
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`ml-1 inline h-3.5 w-3.5 transition-transform ${recommendedTab === tab && remoteJobsExpanded ? "rotate-180" : ""}`} aria-hidden="true"><path d="m5 7.5 5 5 5-5" /></svg>
                 </button>
               ))}
             </div>
-            {remoteJobsExpanded && <div id="remote-work-listings" className="space-y-5">
+            <div id="remote-work-listings" className="space-y-5">
             {recommendedTab === "best" ? (
               <>
                 <div className="overflow-hidden rounded-xl border border-[#E8E2D5] bg-white" aria-label="IT job listings">
@@ -547,11 +552,12 @@ export default function WorkerDashboard() {
                 </button>
               </div>
             )}
-            </div>}
+            </div>
           </section>
 
-          <section className="mb-8 rounded-2xl border border-[#E8E2D5] bg-white p-5 shadow-sm sm:p-6" aria-label="Kathmandu Valley job discovery">
-            <h2 className="font-heading text-xl font-bold text-stone-950">Explore work across Kathmandu Valley</h2>
+          <section className="mb-8" aria-label="Kathmandu Valley job discovery">
+            <h2 className="mb-3 font-heading text-2xl font-bold tracking-tight text-stone-950">Explore work across Kathmandu Valley</h2>
+            <div className="rounded-2xl border border-[#E8E2D5] bg-white p-5 shadow-sm sm:p-6">
             <button type="button" onClick={() => navigate("job-discovery")} aria-label="Find your work on map" className="group relative mt-4 flex h-32 w-full items-center overflow-hidden rounded-xl text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#265D4C] sm:h-36">
               <img src="/images/worker/find-work-map-banner.svg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
               <span className="absolute inset-0 bg-[#265D4C]/60 transition-colors group-hover:bg-[#265D4C]/65" />
@@ -577,11 +583,31 @@ export default function WorkerDashboard() {
               <div className="mt-6 grid auto-rows-fr gap-5 lg:grid-cols-3 lg:gap-6">{exploreJobs.slice(0, exploreJobLimit).map((job) => <DemoJobCard key={job.id} job={job} homeStyle matchReasons={workerProfile.skills.filter((skill) => job.skills.some((required) => required.toLowerCase() === skill.toLowerCase())).slice(0, 1).map((skill) => `Matches your skill: ${skill}`)} saved={demoState.savedIds.includes(job.id)} applied={demoAppliedIds.has(job.id)} onOpen={selectDemoJob} onToggleSaved={demoState.toggleSaved} onApply={demoState.apply} />)}</div>
               {exploreJobs.length > exploreJobLimit && <div className="mt-5 flex justify-center"><button type="button" onClick={() => setExploreJobLimit((limit) => limit + 12)} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-[#171717] transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800">Show More <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true"><path d="m5 8 7 7 7-7" /></svg></button></div>}
             </> : <p className="mt-6 rounded-xl border border-dashed border-stone-300 bg-[#FAF8F5] p-6 text-center text-sm text-stone-600">{exploreNearby ? "No jobs found within 5 km of your location." : "No jobs in this category yet."}</p>}
+            </div>
+          </section>
+
+          <section className="mb-8" aria-label="New provider jobs">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="font-heading text-2xl font-bold tracking-tight text-stone-950">New Jobs</h2>
+                <p className="mt-1 text-sm text-stone-600">Fresh opportunities posted by local providers.</p>
+              </div>
+              <button type="button" onClick={() => navigate("job-discovery")} className="rounded-lg px-2 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-50">View all jobs <span aria-hidden="true">→</span></button>
+            </div>
+            {newlyPostedJobs.length > 0 ? (
+              <div className="grid auto-rows-fr gap-5 lg:grid-cols-3 lg:gap-6">
+                {newlyPostedJobs.map((job) => <JobCard key={job.id} job={job} compact />)}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-stone-300 bg-white px-5 py-7 text-center text-sm text-stone-600">
+                New provider jobs will appear here when they are posted.
+              </div>
+            )}
           </section>
 
           <section className="mb-8">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-sans text-2xl font-semibold tracking-tight text-stone-950">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-heading text-2xl font-bold tracking-tight text-stone-950">
                 Saved jobs
               </h2>
               <button
@@ -633,44 +659,40 @@ export default function WorkerDashboard() {
             )}
           </section>
 
-          {demoState.applications.length > 0 && <section className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Recent application activity">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight text-stone-900">Recent application activity</h2>
-              </div>
-            </div>
-            <div className="mt-4">
+          {demoState.applications.length > 0 && <section className="mb-8 font-ui antialiased" aria-label="Recent application activity">
+            <h2 className="mb-3 font-heading text-2xl font-bold tracking-tight text-stone-950">Recent application activity</h2>
+            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
               {demoState.applications.slice(0, 3).map((application) => {
                 const job = demoJobs.find((item) => item.id === application.jobId)
                 if (!job) return null
-                return <article key={application.jobId} className="grid grid-cols-1 gap-x-6 gap-y-3 border-b border-stone-200 py-4 first:pt-0 sm:grid-cols-[minmax(0,1fr)_auto]">
+                return <article key={application.jobId} className="grid grid-cols-1 gap-x-6 gap-y-3 border-b border-stone-200 py-4 first:pt-0 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <div className="min-w-0">
-                    <button type="button" onClick={() => selectDemoJob(job)} className="block max-w-full text-left text-base font-semibold leading-snug text-stone-900 hover:text-[#70472F] focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#80502F]">{job.title}</button>
-                    <p className="mt-1 truncate text-sm font-medium text-stone-700">{job.company}</p>
+                    <button type="button" onClick={() => selectDemoJob(job)} className="block max-w-full text-left text-[15px] font-semibold leading-5 tracking-[-0.01em] text-[#202521] hover:text-[#70472F] focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#80502F]">{job.title}</button>
+                    <p className="mt-1 truncate text-sm font-normal leading-5 text-[#58615B]">{job.company}</p>
                   </div>
                   <div className="flex flex-col items-start gap-1 sm:items-end">
-                    <span className="whitespace-nowrap text-xs text-stone-500">Applied {formatApplicationDate(application.appliedAt)}</span>
-                    <span className="whitespace-nowrap text-sm font-semibold tabular-nums text-stone-800">{formatDemoSalary(job)}</span>
+                    <span className="whitespace-nowrap text-xs font-normal tabular-nums text-[#6E756F]">Applied {formatApplicationDate(application.appliedAt)}</span>
+                    <span className="whitespace-nowrap text-sm font-medium tabular-nums tracking-tight text-[#303832]">{formatDemoSalary(job)}</span>
                   </div>
-                  <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-stone-600">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs leading-5 text-[#5D655F]">
                     <span className="rounded-full bg-[#F5F2EE] px-2.5 py-1 font-medium">{job.job_type}</span>
                     <span className="rounded-full bg-[#F5F2EE] px-2.5 py-1 font-medium">{formatExperienceLabel(job.experience)}</span>
                     <span className="inline-flex items-center gap-1.5 px-1 py-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-3.5 w-3.5 shrink-0" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg>{job.location}, {job.city}</span>
                   </div>
-                  <button type="button" onClick={() => selectDemoJob(job)} className="inline-flex min-h-9 items-center justify-center gap-1.5 justify-self-start rounded-lg bg-[#80502F] px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#70472F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#80502F] sm:justify-self-end">View job <span aria-hidden="true">↗</span></button>
+                  <button type="button" onClick={() => selectDemoJob(job)} className="inline-flex min-h-9 items-center justify-center gap-1.5 justify-self-start rounded-lg bg-[#80502F] px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#70472F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#80502F] sm:justify-self-end">View job <span aria-hidden="true">↗</span></button>
                 </article>
               })}
             </div>
           </section>}
 
-          {recentDemoJobs.length > 0 && <section className="mb-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6" aria-label="Recently viewed jobs">
-            <div className="mb-4"><h2 className="font-sans text-xl font-semibold tracking-tight text-stone-950">Recently viewed jobs</h2></div>
+          {recentDemoJobs.length > 0 && <section className="mb-8" aria-label="Recently viewed jobs">
+            <h2 className="mb-3 font-heading text-2xl font-bold tracking-tight text-stone-950">Recently viewed jobs</h2>
             <div className="grid auto-rows-fr gap-5 lg:grid-cols-3 lg:gap-6">{recentDemoJobs.map((job) => <DemoJobCard key={job.id} job={job} homeStyle saved={demoState.savedIds.includes(job.id)} applied={demoAppliedIds.has(job.id)} onOpen={selectDemoJob} onToggleSaved={demoState.toggleSaved} onApply={demoState.apply} />)}</div>
           </section>}
 
-          <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-sans text-xl font-semibold tracking-tight text-stone-950">
+          <section className="mb-8" aria-label="Recent applications">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="font-heading text-2xl font-bold tracking-tight text-stone-950">
                 Recent applications
               </h2>
               <button
@@ -680,6 +702,7 @@ export default function WorkerDashboard() {
                 View all
               </button>
             </div>
+            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
             {recentApplications.length ? (
               <div className="divide-y divide-stone-100">
                 {recentApplications.map((application) => (
@@ -730,6 +753,7 @@ export default function WorkerDashboard() {
                 </button>
               </div>
             )}
+            </div>
           </section>
         </main>
       </div>
@@ -740,39 +764,22 @@ export default function WorkerDashboard() {
 
 function RecommendedJobRow({ job }: { job: Job }) {
   const { navigate, isSaved, saveJob, unsaveJob } = useApp()
-  const [logoFailed, setLogoFailed] = useState(false)
   const saved = isSaved(job.id)
   const isExternal = job.externalSource === "himalayas" || job.externalSource === "jsearch"
 
   return (
     <article className="border-b border-stone-200 px-4 py-5 last:border-b-0 sm:px-6 sm:py-6">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-stone-200 bg-white text-sm font-semibold text-primary-ink">
-          {job.providerLogo && !logoFailed ? (
-            <img
-              src={job.providerLogo}
-              alt=""
-              loading="lazy"
-              onError={() => setLogoFailed(true)}
-              className="h-full w-full object-contain p-1"
-            />
-          ) : (
-            job.providerName.trim().slice(0, 1).toUpperCase()
-          )}
-        </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div>
               <button
                 type="button"
                 onClick={() => navigate("job-detail", job.id)}
-                className="font-heading text-left text-lg font-semibold leading-snug text-stone-950 underline decoration-black underline-offset-4 hover:text-primary-ink hover:decoration-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className={`font-heading text-left ${isExternal ? "text-lg font-medium underline decoration-stone-400 underline-offset-4 hover:decoration-primary-ink" : "text-xl font-bold"} tracking-tight leading-snug text-stone-950 hover:text-primary-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`}
               >
-                {job.title}
+                {isExternal ? job.title.replace(/^#\s*/, "") : job.title}
               </button>
-              <p className="mt-0.5 text-sm text-stone-600">
-                {job.providerName}
-              </p>
             </div>
             <button
               type="button"
@@ -802,8 +809,9 @@ function RecommendedJobRow({ job }: { job: Job }) {
             </button>
           </div>
 
-          <p className="mt-2 font-ui text-sm font-medium capitalize text-stone-600">
+          <p className={`mt-2 font-ui text-sm ${isExternal ? "font-medium" : "font-semibold"} capitalize text-stone-700`}>
             {[
+              job.externalCategory || job.category,
               job.employmentType || job.workType.replace("-", " "),
               job.seniority || job.experienceRequired,
               job.duration,
@@ -826,13 +834,11 @@ function RecommendedJobRow({ job }: { job: Job }) {
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
-                {job.location}
+                {isExternal ? formatRemoteLocation(job.location) : job.location}
               </span>
-              <span className="font-semibold text-stone-800">
-                {isExternal
-                  ? job.salaryText || "Salary not listed"
-                  : formatJobBudget(job)}
-              </span>
+              {(!isExternal || job.salaryText) && <span className={`font-heading text-sm ${isExternal ? "font-medium" : "font-bold"} tracking-tight text-stone-950 tabular-nums`}>
+                {isExternal ? job.salaryText : formatJobBudget(job)}
+              </span>}
             </div>
             {isExternal && job.externalUrl ? (
               <a
@@ -859,7 +865,7 @@ function RecommendedJobRow({ job }: { job: Job }) {
               <button
                 type="button"
                 onClick={() => navigate("job-detail", job.id)}
-                className="inline-flex min-h-10 items-center rounded-lg border border-[#E4D3C3] bg-[#F0E5DB] px-4 text-sm font-semibold text-[#70472F] transition-colors hover:bg-[#E7D7C8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
+                className="inline-flex min-h-10 items-center rounded-none border border-[#70472F] bg-[#70472F] px-4 text-sm font-bold text-white transition-colors hover:bg-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
               >
                 View job
               </button>

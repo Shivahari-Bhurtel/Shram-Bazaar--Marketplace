@@ -32,6 +32,14 @@ const presetAvatars = [
     src: "/images/profile-avatars/worker-avatar-3.jpeg",
     label: "Long hair portrait",
   },
+  { src: "/avatars/dara.svg", label: "Dara illustration" },
+  { src: "/avatars/ilse.svg", label: "Ilse illustration" },
+  { src: "/avatars/caspar.svg", label: "Caspar illustration" },
+  { src: "/avatars/erik.svg", label: "Erik illustration" },
+  { src: "/avatars/berta.svg", label: "Berta illustration" },
+  { src: "/avatars/emil.svg", label: "Emil illustration" },
+  { src: "/avatars/alia.svg", label: "Alia illustration" },
+  { src: "/avatars/regina.svg", label: "Regina illustration" },
 ]
 
 export default function WorkerProfile() {
@@ -439,7 +447,7 @@ export default function WorkerProfile() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h2 className="font-sans text-3xl font-semibold leading-tight tracking-[-0.03em] text-stone-950 sm:text-4xl">
+              <h2 className="font-sans text-2xl font-semibold leading-tight tracking-[-0.025em] text-stone-950 sm:text-3xl">
                 {workerProfile.name}
               </h2>
               {kycStatus === "verified" && (
@@ -465,18 +473,18 @@ export default function WorkerProfile() {
               )}
             </div>
             {workerProfile.professionalTitle && (
-              <p className="mt-2 text-base font-medium text-stone-600">
+              <p className="mt-1.5 text-sm font-medium text-stone-600">
                 {workerProfile.professionalTitle}
               </p>
             )}
-            <p className="mt-2 inline-flex items-center gap-2 text-base text-stone-600">
+            <p className="mt-1.5 inline-flex items-center gap-2 text-sm text-stone-600">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-[#80502F]" aria-hidden="true">
                 <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" />
                 <circle cx="12" cy="10" r="2.2" />
               </svg>
               <span>{workerProfile.location}</span>
             </p>
-            <div className="mt-4 flex flex-wrap items-center justify-start gap-x-4 gap-y-2 text-sm">
+            <div className="mt-3 flex flex-wrap items-center justify-start gap-x-3 gap-y-1.5 text-xs">
               <span className="inline-flex items-center gap-2 text-sm font-medium text-stone-700">
                 <span
                   className="inline-flex items-center gap-0.5"
@@ -525,7 +533,7 @@ export default function WorkerProfile() {
             <button
               type="button"
               onClick={() => navigate("kyc-verification")}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border border-[#553421]/25 bg-[#f8f4f1] px-4 font-sans text-[0.95rem] font-semibold tracking-[-0.01em] text-[#553421] transition-colors hover:border-[#553421] hover:bg-[#f1e8e1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
+              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-sm border border-[#553421]/25 bg-[#f8f4f1] px-3 font-sans text-sm font-medium tracking-[-0.005em] text-[#553421] transition-colors hover:border-[#553421] hover:bg-[#f1e8e1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
             >
               {kycStatus === "pending" ? "Check status" : "Verify identity"}
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
@@ -536,7 +544,7 @@ export default function WorkerProfile() {
           <button
             type="button"
             onClick={() => setPublicPreviewOpen(true)}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border border-stone-300 bg-white px-4 font-sans text-[0.95rem] font-semibold tracking-[-0.01em] text-stone-700 transition-colors hover:border-[#553421] hover:bg-stone-50 hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
+            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-sm border border-stone-300 bg-white px-3 font-sans text-sm font-medium tracking-[-0.005em] text-stone-700 transition-colors hover:border-[#553421] hover:bg-stone-50 hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
               <path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z" />
@@ -930,7 +938,7 @@ export default function WorkerProfile() {
                   workerProfile.skills.map((s) => (
                     <span
                       key={s}
-                      className="text-base px-3 py-1.5 bg-stone-100 text-stone-700 rounded-sm border border-stone-200"
+                      className="text-sm px-2.5 py-1 bg-stone-100 text-stone-700 rounded-sm border border-stone-200"
                     >
                       {s}
                     </span>
@@ -939,9 +947,9 @@ export default function WorkerProfile() {
                   <button
                     type="button"
                     onClick={() => startEdit("skills")}
-                    className="inline-flex items-center gap-2 text-lg font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-black hover:decoration-black"
+                    className="inline-flex items-center gap-2 text-base font-medium text-stone-700 underline decoration-stone-300 underline-offset-4 hover:text-black hover:decoration-black"
                   >
-                    <span className="text-lg" aria-hidden="true">
+                    <span className="text-base" aria-hidden="true">
                       +
                     </span>
                     Add key skills
@@ -952,13 +960,13 @@ export default function WorkerProfile() {
           </Section>
 
           <section className="rounded-sm border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(28,25,23,0.04)] sm:p-6">
-            <h3 className="font-display text-2xl font-medium tracking-[-0.03em] text-stone-900">Preferred work category</h3>
-            <p className="mt-1 text-base leading-relaxed text-stone-600">Choose one category to tailor your recommendations.</p>
+            <h3 className="font-display text-xl font-medium tracking-[-0.025em] text-stone-900">Preferred work category</h3>
+            <p className="mt-1 text-sm leading-5 text-stone-600">Choose one category to tailor your recommendations.</p>
             <div role="radiogroup" aria-label="Preferred work category" className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {preferredCategoryOptions.map((category) => {
                 const selected = workerProfile.preferredCategories?.[0] === category.value
                 return (
-                  <label key={category.value} className={`inline-flex min-h-12 cursor-pointer items-center gap-3 border px-4 py-3 font-heading text-base font-medium tracking-[-0.01em] transition-colors ${selected ? "border-[#553421] bg-[#f8f4f1] text-[#553421]" : "border-stone-200 bg-white text-stone-700 hover:border-stone-400 hover:bg-stone-50"}`}>
+                  <label key={category.value} className={`inline-flex min-h-10 cursor-pointer items-center gap-2.5 border px-3 py-2 font-heading text-sm font-medium tracking-[0.005em] transition-colors ${selected ? "border-[#553421] bg-[#f8f4f1] text-[#553421]" : "border-stone-200 bg-white text-stone-700 hover:border-stone-400 hover:bg-stone-50"}`}>
                     <input
                       type="radio"
                       name="worker-preferred-category"
@@ -1356,7 +1364,7 @@ export default function WorkerProfile() {
         <div className="grid content-start gap-5 sm:grid-cols-2 lg:grid-cols-1">
           {/* Work history */}
           <div className="min-h-52 min-w-0 rounded-sm border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(28,25,23,0.04)] sm:p-6">
-            <h3 className="mb-4 font-display text-2xl font-medium tracking-[-0.03em] text-stone-900">
+            <h3 className="mb-3 font-display text-xl font-medium tracking-[-0.025em] text-stone-900">
               Work History
             </h3>
             {workerProfile.workHistory.length > 0 ? (
@@ -1399,7 +1407,7 @@ export default function WorkerProfile() {
                 ))}
               </div>
             ) : (
-              <p className="py-4 text-base leading-relaxed text-stone-600">
+              <p className="py-4 text-sm leading-5 text-stone-600">
                 Completed jobs and provider feedback will appear here.
               </p>
             )}
@@ -1415,7 +1423,7 @@ export default function WorkerProfile() {
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-slate-200 py-7 first:border-t-0">
-      <h3 className="mb-4 font-sans text-2xl font-medium tracking-[-0.025em] text-stone-900">{title}</h3>
+      <h3 className="mb-3 font-sans text-xl font-medium tracking-[-0.02em] text-stone-900">{title}</h3>
       {children}
     </section>
   )
@@ -1443,7 +1451,7 @@ function Section({
   return (
     <div className="min-w-0 rounded-sm border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(28,25,23,0.04)] sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display text-2xl font-medium tracking-[-0.03em] text-stone-900">
+        <h3 className="font-display text-xl font-medium tracking-[-0.025em] text-stone-900">
           {title}
         </h3>
         {!editing ? (
@@ -1453,7 +1461,7 @@ function Section({
               onClick={onEdit}
               aria-label={`Edit ${title.toLowerCase()}`}
               title={`Edit ${title.toLowerCase()}`}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-sm border border-[#553421]/25 bg-white px-4 font-heading text-base font-medium tracking-[-0.01em] text-[#553421] transition-colors hover:border-[#553421] hover:bg-[#553421]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-sm border border-[#553421]/25 bg-white px-3 font-heading text-sm font-medium tracking-[0.005em] text-[#553421] transition-colors hover:border-[#553421] hover:bg-[#553421]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1474,13 +1482,13 @@ function Section({
           <div className="flex gap-2">
             <button
               onClick={onCancel}
-              className="min-h-10 rounded-sm px-3 font-heading text-base font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500"
+              className="min-h-9 rounded-sm px-3 font-heading text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500"
             >
               Cancel
             </button>
             <button
               onClick={onSave}
-              className="min-h-10 rounded-sm bg-primary px-4 py-2 font-heading text-base font-medium tracking-[-0.01em] text-white transition-colors hover:bg-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="min-h-9 rounded-sm bg-primary px-3 py-1.5 font-heading text-sm font-medium tracking-[0.005em] text-white transition-colors hover:bg-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               Save
             </button>
@@ -1503,8 +1511,8 @@ function Section({
 function Info({ label, value }: { label: string; value: string | undefined }) {
   return (
     <div>
-      <p className="mb-1.5 font-heading text-base font-normal tracking-[0.005em] text-stone-600">{label}</p>
-      <p className="font-sans text-lg font-normal leading-7 text-stone-900">
+      <p className="mb-1 font-heading text-sm font-normal tracking-[0.01em] text-stone-600">{label}</p>
+      <p className="font-sans text-base font-normal leading-6 text-stone-900">
         {value ?? "—"}
       </p>
     </div>

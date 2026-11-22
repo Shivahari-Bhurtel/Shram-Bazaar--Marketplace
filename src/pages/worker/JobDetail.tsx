@@ -6,6 +6,33 @@ import { CategoryBadge, VerifiedBadge } from "../../components/StatusBadge"
 import { formatNepalDate } from "../../utils/dates"
 import { formatJobBudget } from "../../utils/jobBudget"
 
+function splitExternalDescription(value: string) {
+  const sourceMatch = value.match(/Originally posted on ([^.]+)\.?/i)
+  const content = value
+    .replace(/Originally posted on [^.]+\.?/i, "")
+    .replace(/’/g, "'")
+    .replace(/(?:^|\n)\s*#{1,6}\s*(?=What you'll do|Requirements)/gi, "\n")
+    .trim()
+  const whatIndex = content.search(/What you'll do/i)
+  const requirementsIndex = content.search(/Requirements/i)
+  const sectionIndexes = [whatIndex, requirementsIndex].filter((index) => index >= 0)
+  const introEnd = sectionIndexes.length ? Math.min(...sectionIndexes) : content.length
+  const intro = content.slice(0, introEnd).trim()
+  const getSection = (start: number, end: number) => {
+    if (start < 0) return { lead: "", bullets: [] as string[] }
+    const labelMatch = content.slice(start).match(/^(What you'll do|Requirements)/i)
+    const body = content.slice(start + (labelMatch?.[0].length ?? 0), end).trim()
+    const pieces = body.split(/(?:\n\s*[-*•]\s+|\s*•\s*)/).map((part) => part.trim()).filter(Boolean)
+    return {
+      lead: pieces.length ? pieces[0] : body,
+      bullets: pieces.length > 1 ? pieces.slice(1).map((item) => item.replace(/[.;]+$/, "")) : [],
+    }
+  }
+  const what = getSection(whatIndex, requirementsIndex >= 0 ? requirementsIndex : content.length)
+  const requirements = getSection(requirementsIndex, content.length)
+  return { intro, what, requirements, source: sourceMatch?.[1]?.trim() }
+}
+
 export default function JobDetail() {
   const {
     state,
@@ -67,8 +94,12 @@ export default function JobDetail() {
   const saved = isSaved(job.id)
   const isWorker = currentUser?.role === "worker"
   const isExternal = job.externalSource === "himalayas" || job.externalSource === "jsearch"
-  const externalSourceName = job.externalSource === "jsearch" ? "JSearch" : "Himalayas"
+  const externalSourceName = job.externalSource === "jsearch" ? "OpenWebNinja" : "Himalayas"
   const taskBudget = formatJobBudget(job)
+  const externalLocation = job.location === "Worldwide remote"
+    ? job.location
+    : `Remote · ${job.location.replace(/^Remote\s*[·-]\s*/i, "").split(",").map((country) => country.trim()).filter(Boolean).slice(0, 2).join(", ")}`
+  const externalDescription = isExternal ? splitExternalDescription(job.description || "Description not listed on the original posting.") : null
 
   const handleApply = async () => {
     setApplying(true)
@@ -121,7 +152,7 @@ export default function JobDetail() {
   }
 
   return (
-    <div className="w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+    <div className={`w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8 ${isExternal ? "external-job-detail" : ""}`}>
       {/* Breadcrumb */}
       <button
         onClick={() => navigate("job-discovery")}
@@ -139,35 +170,18 @@ export default function JobDetail() {
         Back to jobs
       </button>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid gap-8 lg:grid-cols-3">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-6">
+          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "border-b border-stone-300 bg-white pb-6"}`}>
             <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 flex-shrink-0">
-                {job.providerLogo ? (
-                  <img
-                    src={job.providerLogo}
-                    alt={job.providerName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center font-display text-xl font-bold text-stone-500">
-                    {job.providerName.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h1 className="font-display text-2xl font-bold text-stone-900 leading-snug">
-                      {job.title}
+                    <h1 className={`font-heading tracking-tight text-stone-950 leading-snug ${isExternal ? "text-2xl font-medium" : "text-3xl font-bold"}`}>
+                      {isExternal ? job.title.replace(/^#\s*/, "") : job.title}
                     </h1>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="text-stone-600">{job.providerName}</span>
-                      {job.providerVerified && <VerifiedBadge small />}
-                    </div>
                   </div>
                   {isWorker && (
                     <button
@@ -193,35 +207,38 @@ export default function JobDetail() {
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {isExternal ? (
-                    <span className="text-xs font-medium px-2.5 py-1 rounded-full border border-primary-100 bg-primary-50 text-primary-ink">
+                {isExternal ? (
+                  <div className="mt-3 flex flex-col items-start gap-0.5">
+                    <span className="font-script text-xl leading-tight text-[#70472F]">
                       External Opportunity
                     </span>
-                  ) : (
-                    <CategoryBadge category={job.category} />
-                  )}
-                  <span className="text-xs font-medium px-2.5 py-1 bg-stone-100 text-stone-600 rounded-full">
-                    {job.employmentType || workTypeLabel[job.workType]}
-                  </span>
-                  {isExternal && (
-                    <span className="text-xs font-mono-data text-stone-500 px-2.5 py-1">
+                    <span className="font-script text-xl leading-tight text-stone-700">
+                      {job.employmentType || workTypeLabel[job.workType]}
+                    </span>
+                    <span className="mt-1 text-xs text-stone-500">
                       Source: {externalSourceName}
                     </span>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <CategoryBadge category={job.category} />
+                    <span className="rounded-none bg-stone-100 px-3 py-1.5 text-sm font-semibold text-stone-700">
+                      {job.employmentType || workTypeLabel[job.workType]}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Simple rule-based match explanation */}
             {isWorker && job.matchScore !== undefined && (
-              <div className="mt-4 rounded-xl p-4 border bg-stone-50 border-stone-200">
-                <span className="text-sm font-semibold text-stone-800">
+              <div className="mt-5 border-l-2 border-[#70472F] bg-[#F8F5F1] px-4 py-3">
+                <span className="text-base font-bold text-stone-900">
                   Why this job may fit
                 </span>
                 <div className="space-y-1">
                   {job.matchReasons?.map((reason, i) => (
-                    <p key={i} className="text-sm text-stone-600 mt-2">
+                    <p key={i} className="mt-2 text-sm font-medium leading-relaxed text-stone-700">
                       {reason}
                     </p>
                   ))}
@@ -231,23 +248,40 @@ export default function JobDetail() {
           </div>
 
           {/* Description */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-6">
-            <h2 className="font-semibold text-stone-900 mb-3">
+          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "border-b border-stone-200 bg-white pb-6"}`}>
+            <h2 className={`font-heading text-xl tracking-tight text-stone-950 mb-3 ${isExternal ? "font-normal" : "font-bold"}`}>
               Job Description
             </h2>
-            <p className="text-stone-700 leading-relaxed text-sm">
-              {job.description ||
-                "Description not listed on the original posting."}
-            </p>
+            {isExternal && externalDescription ? (
+              <div className="max-w-prose space-y-5 text-base font-normal leading-7 tracking-[0.005em] text-[#48443F]">
+                {externalDescription.intro.split(/\n\s*\n/).map((paragraph, index) => paragraph.trim() && <p key={`intro-${index}`}>{paragraph.trim()}</p>)}
+                {externalDescription.what.lead && <section>
+                  <h3 className="mb-1 text-base font-medium text-stone-900">What you’ll do</h3>
+                  <p>{externalDescription.what.lead}</p>
+                  {externalDescription.what.bullets.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 marker:text-[#986744]">
+                    {externalDescription.what.bullets.map((item, index) => <li key={`what-${index}`}>{item}</li>)}
+                  </ul>}
+                </section>}
+                {externalDescription.requirements.lead && <section>
+                  <h3 className="mb-1 text-base font-medium text-stone-900">Requirements</h3>
+                  {externalDescription.requirements.bullets.length > 0 ? <ul className="list-disc space-y-1 pl-5 marker:text-[#986744]">
+                    {externalDescription.requirements.bullets.map((item, index) => <li key={`requirement-${index}`}>{item}</li>)}
+                  </ul> : <p>{externalDescription.requirements.lead}</p>}
+                </section>}
+                {externalDescription.source && <p className="border-t border-stone-200 pt-3 text-xs leading-5 text-stone-500">Originally posted on {externalDescription.source}.</p>}
+              </div>
+            ) : (
+              <p className="text-base leading-7 text-stone-700">{job.description || "Description not listed on the original posting."}</p>
+            )}
+            {job.responsibilities && <div className="mt-5 border-t border-stone-200 pt-5">
+              <h3 className="font-heading text-lg font-bold text-stone-950 mb-2">Responsibilities</h3>
+              <p className="whitespace-pre-line text-base leading-7 text-stone-700">{job.responsibilities}</p>
+            </div>}
           </div>
-          {job.responsibilities && <div className="bg-white border border-stone-200 rounded-2xl p-6">
-            <h2 className="font-semibold text-stone-900 mb-3">Responsibilities</h2>
-            <p className="whitespace-pre-line text-stone-700 leading-relaxed text-sm">{job.responsibilities}</p>
-          </div>}
 
           {/* Requirements */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-6">
-            <h2 className="font-semibold text-stone-900 mb-4">
+          <div className={`${isExternal ? "rounded-sm border border-stone-200 bg-white p-5 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:p-6" : "border-y border-stone-200 bg-white py-6"}`}>
+            <h2 className="font-heading text-xl font-bold tracking-tight text-stone-950 mb-4">
               {isExternal ? "Role details" : "Requirements"}
             </h2>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -262,14 +296,9 @@ export default function JobDetail() {
                 <div className="flex flex-wrap gap-2">
                   {isExternal ? (
                     job.externalCategories?.length ? (
-                      job.externalCategories.map((category) => (
-                        <span
-                          key={category}
-                          className="rounded-full border border-stone-200 bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700"
-                        >
-                          {category}
-                        </span>
-                      ))
+                      <p className="text-sm font-normal leading-6 text-stone-600">
+                        {job.externalCategories.join(" · ")}
+                      </p>
                     ) : (
                       <p className="text-sm text-stone-500">
                         No categories listed.
@@ -303,25 +332,46 @@ export default function JobDetail() {
               </div>
               <div className="space-y-3">
                 <div>
-                  <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">
+                  <h3 className={`text-xs text-stone-500 uppercase tracking-wider mb-1 ${isExternal ? "font-normal" : "font-semibold"}`}>
                     Qualification
                   </h3>
-                  <p className="text-sm text-stone-700">
+                  <p className={`text-sm text-stone-700 ${isExternal ? "font-normal leading-relaxed" : ""}`}>
                     {job.qualificationRequired ||
                       (isExternal ? "See original listing" : "Not specified")}
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">
+                  <h3 className={`text-xs text-stone-500 uppercase tracking-wider mb-1 ${isExternal ? "font-normal" : "font-semibold"}`}>
                     Experience
                   </h3>
-                  <p className="text-sm text-stone-700">
+                  <p className={`text-sm text-stone-700 ${isExternal ? "font-normal leading-relaxed" : ""}`}>
                     {job.experienceRequired ||
                       (isExternal ? "See original listing" : "Not specified")}
                   </p>
                 </div>
               </div>
             </div>
+            {isExternal && (job.externalPublisher || job.externalPostedLabel || job.externalTimezoneRestrictions?.length || job.externalBenefits?.length || job.externalIsRemote !== undefined) && (
+              <dl className="mt-5 grid gap-x-6 gap-y-4 border-t border-stone-200 pt-4 text-sm sm:grid-cols-2">
+                {job.externalIsRemote !== undefined && <div><dt className="text-xs uppercase tracking-wide text-stone-500">Work arrangement</dt><dd className="mt-1 font-normal text-stone-700">{job.externalIsRemote ? "Remote" : "Not marked as remote"}</dd></div>}
+                {job.externalDirectApply !== undefined && <div><dt className="text-xs uppercase tracking-wide text-stone-500">Application route</dt><dd className="mt-1 font-normal text-stone-700">{job.externalDirectApply ? "Direct application" : "External application site"}</dd></div>}
+                {(job.externalCity || job.externalRegion || job.externalCountry) && <div><dt className="text-xs uppercase tracking-wide text-stone-500">Location details</dt><dd className="mt-1 font-normal text-stone-700">{[job.externalCity, job.externalRegion, job.externalCountry].filter(Boolean).join(", ")}</dd></div>}
+                {job.externalPublisher && <div><dt className="text-xs uppercase tracking-wide text-stone-500">Listed on</dt><dd className="mt-1 font-normal text-stone-700">{job.externalPublisher}</dd></div>}
+                {job.externalPostedLabel && <div><dt className="text-xs uppercase tracking-wide text-stone-500">Posted</dt><dd className="mt-1 font-normal text-stone-700">{job.externalPostedLabel}</dd></div>}
+                {job.externalTimezoneRestrictions?.length ? <div><dt className="text-xs uppercase tracking-wide text-stone-500">Time zone eligibility</dt><dd className="mt-1 font-normal text-stone-700">{job.externalTimezoneRestrictions.join(", ")}</dd></div> : null}
+                {job.externalBenefits?.length ? <div className="sm:col-span-2"><dt className="text-xs uppercase tracking-wide text-stone-500">Benefits</dt><dd className="mt-1 font-normal leading-6 text-stone-700">{job.externalBenefits.join(" · ")}</dd></div> : null}
+              </dl>
+            )}
+            {isExternal && job.externalHighlights && Object.entries(job.externalHighlights).some(([, items]) => items?.length) && (
+              <div className="mt-5 space-y-4 border-t border-stone-200 pt-4">
+                {Object.entries(job.externalHighlights).filter(([, items]) => items?.length).map(([heading, items]) => (
+                  <section key={heading}>
+                    <h3 className="text-sm font-medium text-stone-800">{heading}</h3>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm font-normal leading-6 text-stone-600 marker:text-[#986744]">{items.map((item, index) => <li key={`${heading}-${index}`}>{item}</li>)}</ul>
+                  </section>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Apply form */}
@@ -329,9 +379,9 @@ export default function JobDetail() {
             !isExternal &&
             showApplyForm &&
             !applied && (
-              <section aria-labelledby="application-form-title" className="bg-white border-2 border-primary rounded-2xl p-5 sm:p-6 animate-fade-in">
+              <section aria-labelledby="application-form-title" className="bg-white border-2 border-primary rounded-none p-5 sm:p-6 animate-fade-in">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div><h2 id="application-form-title" className="font-semibold text-stone-900">Apply for {job.title}</h2><p className="mt-1 text-sm text-stone-600">{job.providerName}</p></div>
+                <div><h2 id="application-form-title" className="font-semibold text-stone-900">Apply for {job.title}</h2></div>
                   <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-ink">Step {reviewingApplication ? 2 : applicationStep} of 2{reviewingApplication ? " · Review" : ""}</span>
                 </div>
                 <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-stone-100"><div className={`h-full bg-primary transition-all ${applicationStep === 1 && !reviewingApplication ? "w-1/2" : "w-full"}`} /></div>
@@ -373,7 +423,7 @@ export default function JobDetail() {
             <div className="border border-green-200 bg-green-50 p-6 text-center animate-fade-in">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-800" aria-hidden="true">✓</div>
               <h3 className="font-semibold text-green-900">Application Submitted Successfully</h3>
-              <dl className="mx-auto mt-4 grid max-w-md gap-2 text-left text-sm sm:grid-cols-2"><div><dt className="text-xs text-green-800/70">Job</dt><dd className="font-medium text-green-950">{job.title}</dd></div><div><dt className="text-xs text-green-800/70">Employer</dt><dd className="font-medium text-green-950">{job.providerName}</dd></div><div><dt className="text-xs text-green-800/70">Application ID</dt><dd className="font-medium text-green-950">{applicationResult?.applicationId ?? "—"}</dd></div><div><dt className="text-xs text-green-800/70">Status</dt><dd className="font-medium text-green-950">Pending</dd></div></dl>
+              <dl className="mx-auto mt-4 grid max-w-md gap-2 text-left text-sm sm:grid-cols-2"><div><dt className="text-xs text-green-800/70">Job</dt><dd className="font-medium text-green-950">{job.title}</dd></div><div><dt className="text-xs text-green-800/70">Application ID</dt><dd className="font-medium text-green-950">{applicationResult?.applicationId ?? "—"}</dd></div><div><dt className="text-xs text-green-800/70">Status</dt><dd className="font-medium text-green-950">Pending</dd></div></dl>
               {applicationResult?.confirmationEmailSent ? <p className="mt-4 text-sm text-green-800">Confirmation email sent to <strong>{applicationResult.applicantEmail || applicantEmail}</strong>.</p> : <p role="status" className="mt-4 text-sm text-amber-900">Your application is saved, but a confirmation email could not be delivered. Please check back in My Applications.</p>}
               <div className="mt-5 flex flex-wrap justify-center gap-3"><button type="button" onClick={() => navigate("my-applications")} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white">View My Applications</button><button type="button" onClick={() => navigate("job-discovery")} className="rounded-lg border border-green-300 bg-white px-4 py-2.5 text-sm font-semibold text-green-900">Back to Jobs</button></div>
             </div>
@@ -383,26 +433,26 @@ export default function JobDetail() {
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Quick info */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-5">
-            <div className="text-center border-b border-stone-100 pb-4 mb-4">
-              <div className="font-display text-3xl font-bold text-stone-900">
+          <div className="bg-white border border-stone-300 rounded-none p-5">
+            {(!isExternal || job.salaryText) && <div className="mb-4 border border-[#E7C66B] bg-[#FFF6D9] px-4 py-4 text-center">
+              <div className="font-heading text-3xl font-bold tracking-tight text-[#765016] tabular-nums">
                 {isExternal
-                  ? job.salaryText || "Salary not listed"
+                  ? job.salaryText
                   : taskBudget}
               </div>
               {!isExternal && !job.budgetNegotiable && !job.paymentMax && job.workType === "multi-day" && (
-                <div className="text-xs text-stone-400 mt-1 font-mono-data">
+                <div className="mt-1 font-mono-data text-xs text-[#8A6A2B]">
                   ≈ NPR{" "}
                   {(job.payment * parseInt(job.duration)).toLocaleString()}{" "}
                   total
                 </div>
               )}
-            </div>
+            </div>}
 
             <div className="space-y-3">
               {(isExternal
                 ? [
-                    { label: "Location", value: job.location },
+                    { label: "Location", value: externalLocation },
                     ...(job.seniority
                       ? [{ label: "Seniority", value: job.seniority }]
                       : []),
@@ -422,7 +472,7 @@ export default function JobDetail() {
                 : [
                     {
                       label: "Date",
-                      value: job.endDate
+                      value: job.endDate && job.endDate !== job.date
                         ? `${formatNepalDate(job.date, { month: "short", day: "numeric" })} – ${formatNepalDate(job.endDate, { month: "short", day: "numeric" })}`
                         : formatNepalDate(job.date, {
                             weekday: "short",
@@ -444,21 +494,18 @@ export default function JobDetail() {
                       label: "Applications",
                       value: `${job.applicantCount} applicants`,
                     },
-                    {
+                    ...(job.deadline ? [{
                       label: "Apply By",
-                      value: formatNepalDate(job.deadline, {
-                        month: "short",
-                        day: "numeric",
-                      }),
-                    },
+                      value: formatNepalDate(job.deadline, { month: "short", day: "numeric" }),
+                    }] : []),
                   ]
               ).map((item) => (
                 <div key={item.label}>
                   <div>
-                    <p className="text-[11px] text-stone-400 font-mono-data uppercase">
+                    <p className={`text-xs tracking-wide text-stone-500 uppercase ${isExternal ? "font-normal" : "font-semibold"}`}>
                       {item.label}
                     </p>
-                    <p className="text-sm text-stone-800 font-medium">
+                    <p title={isExternal && item.label === "Location" && job.externalLocationRestrictions?.length ? `All eligible countries: ${job.externalLocationRestrictions.join(", ")}` : undefined} className={`text-base text-stone-900 ${isExternal ? "font-normal leading-relaxed" : "font-semibold"}`}>
                       {item.value}
                     </p>
                   </div>
@@ -470,11 +517,11 @@ export default function JobDetail() {
             {isWorker && !isExternal && (
               <div className="mt-5">
                 {applied ? (
-                  <div className="w-full py-2.5 bg-teal-50 text-teal text-sm font-semibold rounded-xl text-center border border-teal-100">
+                  <div className="w-full py-2.5 bg-teal-50 text-teal text-sm font-semibold rounded-none text-center border border-teal-100">
                     ✓ Application Submitted
                   </div>
                 ) : job.status === "filled" ? (
-                  <div className="w-full py-2.5 bg-stone-100 text-stone-500 text-sm font-medium rounded-xl text-center">
+                  <div className="w-full py-2.5 bg-stone-100 text-stone-500 text-sm font-medium rounded-none text-center">
                     Position Filled
                   </div>
                 ) : (
@@ -490,7 +537,7 @@ export default function JobDetail() {
                         setShowKycRequirement(true)
                       }
                     }}
-                    className="w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors"
+                    className="w-full py-3 bg-primary text-white text-base font-bold rounded-none hover:bg-primary-dark transition-colors"
                   >
                     Apply for this Job
                   </button>
@@ -521,20 +568,31 @@ export default function JobDetail() {
                   href={job.externalUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-5 block w-full rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+                  className="mt-5 block w-full rounded-xl bg-[#2F6B45] px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-[#27583A]"
                 >
-                  View Original Job / Apply on {externalSourceName}
+                  View Original Job / Apply
                 </a>
               ) : (
                 <p className="mt-5 rounded-xl bg-stone-100 px-4 py-2.5 text-center text-sm text-stone-500">
                   Original application link not listed.
                 </p>
               ))}
+            {isExternal && job.externalApplyOptions?.some((option) => option.link !== job.externalUrl) && (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs uppercase tracking-wide text-stone-500">Other application links</p>
+                {job.externalApplyOptions.filter((option) => option.link !== job.externalUrl).map((option) => (
+                  <a key={option.link} href={option.link} target="_blank" rel="noreferrer" className="block text-sm font-normal text-[#2F6B45] underline decoration-[#B7D2BE] underline-offset-4 hover:text-[#27583A]">
+                    {option.publisher || "Apply through listing source"}{option.isDirect ? " · Direct application" : ""}
+                  </a>
+                ))}
+              </div>
+            )}
+            {isExternal && job.externalGoogleUrl && <a href={job.externalGoogleUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-xs text-stone-500 underline underline-offset-2 hover:text-stone-700">View Google Jobs result</a>}
           </div>
 
           {/* About provider */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-5">
-            <h3 className="font-semibold text-stone-900 mb-3">
+          <div className="bg-white border border-stone-300 rounded-none p-5">
+            <h3 className={`font-heading text-lg tracking-tight text-stone-950 mb-3 ${isExternal ? "font-normal" : "font-bold"}`}>
               About the Provider
             </h3>
             <div className="flex items-center gap-3 mb-3">
@@ -546,19 +604,19 @@ export default function JobDetail() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-full w-full items-center justify-center font-display font-bold text-stone-500">
+                  <span className={`flex h-full w-full items-center justify-center font-display text-stone-500 ${isExternal ? "font-normal" : "font-bold"}`}>
                     {job.providerName.slice(0, 1).toUpperCase()}
                   </span>
                 )}
               </div>
               <div>
-                <p className="font-medium text-stone-900 text-sm">
-                  {job.providerName}
+                <p className={`font-heading text-base text-stone-950 ${isExternal ? "font-medium" : "font-bold"}`}>
+                  {job.externalEmployerWebsite ? <a href={job.externalEmployerWebsite} target="_blank" rel="noreferrer" className="underline decoration-stone-300 underline-offset-4 hover:text-[#2F6B45]">{job.providerName}</a> : job.providerName}
                 </p>
                 {job.providerVerified && <VerifiedBadge small />}
               </div>
             </div>
-            <div className="text-xs text-stone-500 flex items-center gap-1">
+            <div className={`flex items-center gap-1.5 text-sm text-stone-700 ${isExternal ? "font-normal" : "font-medium"}`}>
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -569,23 +627,17 @@ export default function JobDetail() {
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              {job.district}
+              {isExternal ? externalLocation : job.district}
             </div>
-            <div className="mt-3 p-3 bg-stone-50 rounded-lg">
-              <p className="text-xs text-stone-500 leading-relaxed">
-                {isExternal
-                  ? `This opportunity is hosted on ${externalSourceName}. Review the original listing before applying.`
-                  : "Jobs posted by verified providers include PAN registration and business verification for worker trust and safety."}
-              </p>
-            </div>
+            {isExternal && <p className="mt-3 text-sm font-normal leading-relaxed text-stone-600">This opportunity is hosted on {externalSourceName}. Review the original listing before applying.</p>}
             {isWorker && !isExternal && (
-              <div className="mt-3 flex flex-wrap gap-4">
-                <button onClick={() => setShowReport((value) => !value)} className="text-xs text-stone-500 hover:text-primary-ink">Report this job</button>
-                <button onClick={() => setShowProviderReport((value) => !value)} className="text-xs text-stone-500 hover:text-red-700">Report provider</button>
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-stone-200 pt-4">
+                <button onClick={() => setShowReport((value) => !value)} className="min-h-10 rounded-none border border-stone-400 px-3.5 text-sm font-semibold text-stone-800 hover:border-stone-700 hover:bg-stone-50">Report this job</button>
+                <button onClick={() => setShowProviderReport((value) => !value)} className="min-h-10 rounded-none border border-red-300 px-3.5 text-sm font-semibold text-red-800 hover:border-red-500 hover:bg-red-50">Report provider</button>
               </div>
             )}
             {showProviderReport && isWorker && (
-              <div className="mt-3 space-y-2 rounded-xl border border-red-100 bg-red-50/50 p-3">
+              <div className="mt-3 space-y-2 rounded-none border border-red-200 bg-red-50/50 p-3">
                 <label className="block text-xs font-semibold text-stone-700">Reason<select value={providerReportReason} onChange={(event) => setProviderReportReason(event.target.value)} className="input-style mt-1 w-full"><option value="SUSPICIOUS_JOB">Suspicious job or activity</option><option value="FAKE_ACCOUNT">Fake account</option><option value="MISCONDUCT">Misconduct</option><option value="HARASSMENT">Harassment</option><option value="PAYMENT_ISSUE">Payment issue</option><option value="OTHER">Other</option></select></label>
                 <label className="block text-xs font-semibold text-stone-700">Description<textarea value={providerReportDetails} onChange={(event) => setProviderReportDetails(event.target.value)} maxLength={2000} rows={3} className="input-style mt-1 w-full" placeholder="Briefly explain the concern" /></label>
                 <button type="button" disabled={!providerReportDetails.trim()} onClick={() => { void reportUser(job.providerId, providerReportReason, providerReportDetails).then((error) => { setProviderReportMessage(error || "Report submitted for review."); if (!error) { setShowProviderReport(false); setProviderReportDetails("") } }) }} className="rounded-lg bg-red-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">Submit report</button>

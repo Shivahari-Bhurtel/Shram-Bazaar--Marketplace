@@ -123,5 +123,6 @@ public interface WorkerEngagementRepository
             @Param("status") EngagementStatus status
     );
 
-    long countByStatus(EngagementStatus status);
+    @Query("select count(e) from WorkerEngagement e where e.status = :status")
+    long countByStatus(@Param("status") EngagementStatus status);
 }

@@ -291,6 +291,19 @@ public class ApplicationService {
         );
     }
 
+    @Transactional
+    public void setShortlisted(Long jobId, Long applicationId, boolean shortlisted) {
+        ProviderProfile provider = currentUserService.getCurrentProviderProfile();
+        jobPostRepository.findByIdAndProviderProfileId(jobId, provider.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job not found"));
+        Application application = applicationRepository.findByIdAndJobPostId(applicationId, jobId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only pending applications can be shortlisted");
+        }
+        application.setShortlisted(shortlisted);
+    }
+
     private ApplicationResponse mapToResponse(Application application) {
         return mapToResponse(application, false);
     }
@@ -322,7 +335,8 @@ public class ApplicationService {
                 application.getApplicantSkills(),
                 application.getExperienceLevel(),
                 application.getIntroduction(),
-                confirmationEmailSent
+                confirmationEmailSent,
+                application.isShortlisted()
         );
     }
 
@@ -361,7 +375,8 @@ public class ApplicationService {
                 application.getApplicantLocation(),
                 application.getApplicantSkills(),
                 application.getExperienceLevel(),
-                application.getIntroduction()
+                application.getIntroduction(),
+                application.isShortlisted()
         );
     }
 }

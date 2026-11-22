@@ -13,7 +13,10 @@ import java.util.Optional;
 public interface ApplicationRepository
         extends JpaRepository<Application, Long> {
 
-    long countByJobPostId(Long jobPostId);
+    // Keep this count explicit: the generated count-query path failed to
+    // resolve its query creator in the running API while serializing new jobs.
+    @Query("select count(a) from Application a where a.jobPost.id = :jobPostId")
+    long countByJobPostId(@Param("jobPostId") Long jobPostId);
 
     List<Application> findByJobPostIdOrderByAppliedAtDesc(Long jobPostId);
 

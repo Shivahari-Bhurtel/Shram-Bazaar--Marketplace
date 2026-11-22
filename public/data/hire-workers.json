@@ -1,0 +1,419 @@
+{
+  "meta": {
+    "title": "Shram Bazaar Hire Marketplace",
+    "description": "Demonstration worker profiles for the Nepal marketplace.",
+    "isDemoData": true,
+    "currency": "NPR"
+  },
+  "workers": [
+    {
+      "id": "hire-worker-001",
+      "name": "Sujan Maharjan",
+      "profileImage": "/avatars/dara.svg",
+      "avatarSeed": "Dara",
+      "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Dara",
+      "profession": "Electrician",
+      "category": "Electrical Work",
+      "location": {
+        "city": "Lalitpur",
+        "district": "Lalitpur",
+        "country": "Nepal"
+      },
+      "description": "Experienced electrician based in Lalitpur, specializing in residential wiring, electrical repairs and household appliance installation. Available for short-term maintenance and installation work.",
+      "skills": [
+        "Residential Wiring",
+        "Electrical Repairs",
+        "Appliance Installation",
+        "Fault Finding",
+        "Inverter Setup"
+      ],
+      "experience": {
+        "years": 6,
+        "level": "Experienced"
+      },
+      "pricing": {
+        "amount": 1400,
+        "currency": "NPR",
+        "type": "daily",
+        "display": "NPR 1,400/day"
+      },
+      "availability": {
+        "status": "available",
+        "statusLabel": "Available now",
+        "days": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday"
+        ],
+        "hours": "9:00 AM - 5:00 PM",
+        "preference": "Short-term maintenance and installation jobs"
+      },
+      "workTypes": [
+        "Part-time",
+        "Temporary",
+        "Contract"
+      ],
+      "isPublished": true,
+      "isDemo": true
+    },
+    {
+      "id": "hire-worker-002",
+      "name": "Prakash Bhandari",
+      "profileImage": "/avatars/ilse.svg",
+      "avatarSeed": "Ilse",
+      "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Ilse",
+      "profession": "Plumber",
+      "category": "Plumbing",
+      "location": {
+        "city": "Bhaktapur",
+        "district": "Bhaktapur",
+        "country": "Nepal"
+      },
+      "description": "Reliable plumber from Bhaktapur handling pipe fitting, leak repairs and bathroom fixture installation. Known for tidy work and quick response on household jobs.",
+      "skills": [
+        "Pipe Fitting",
+        "Leak Repair",
+        "Bathroom Fixtures",
+        "Water Tank Setup",
+        "Drain Cleaning"
+      ],
+      "experience": {
+        "years": 5,
+        "level": "Experienced"
+      },
+      "pricing": {
+        "amount": 1100,
+        "currency": "NPR",
+        "type": "daily",
+        "display": "NPR 1,100/day"
+      },
+      "availability": {
+        "status": "busy",
+        "statusLabel": "Busy this week",
+        "days": [
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ],
+        "hours": "8:00 AM - 4:00 PM",
+        "preference": "Full-day repair and installation work"
+      },
+      "workTypes": [
+        "Temporary",
+        "Contract",
+        "One-time Job"
+      ],
+      "isPublished": true,
+      "isDemo": true
+    },
+    {
+      "id": "hire-worker-003",
+      "name": "Sunita Tamang",
+      "profileImage": "/avatars/caspar.svg",
+      "avatarSeed": "Caspar",
+      "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Caspar",
+      "profession": "House Cleaner",
+      "category": "Cleaning Services",
+      "location": {
+        "city": "Kathmandu",
+        "district": "Kathmandu",
+        "country": "Nepal"
+      },
+      "description": "Careful and punctual house cleaner in Kathmandu offering regular home cleaning and deep cleaning before festivals or moving in. Comfortable working in apartments and family homes.",
+      "skills": [
+        "Deep Cleaning",
+        "Kitchen Cleaning",
+        "Bathroom Sanitizing",
+        "Floor Polishing",
+        "Laundry Help"
+      ],
+      "experience": {
+        "years": 4,
+        "level": "Intermediate"
+      },
+      "pricing": {
+        "amount": 900,
+        "currency": "NPR",
+        "type": "daily",
+        "display": "NPR 900/day"
+      },
+      "availability": {
+        "status": "available",
+        "statusLabel": "Available now",
+        "days": [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Thursday",
+          "Friday"
+        ],
+        "hours": "8:00 AM - 3:00 PM",
+        "preference": "Weekly and festival-season cleaning"
+      },
+      "workTypes": [
+        "Part-time",
+        "Temporary",
+        "Recurring"
+      ],
+      "isPublished": true,
+      "isDemo": true
+    },
+    {
+      "id": "hire-worker-004",
+      "name": "Anil Thapa",
+      "profileImage": "/avatars/erik.svg",
+      "avatarSeed": "Erik",
+      "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Erik",
+      "profession": "Delivery Rider",
+      "category": "Delivery & Logistics",
+      "location": {
+        "city": "Pokhara",
+        "district": "Kaski",
+        "country": "Nepal"
+      },
+      "description": "Motorbike rider based in Pokhara delivering parcels, food and documents around the Lakeside and city areas. Knows local routes well and focuses on on-time delivery.",
+      "skills": [
+        "Motorbike Riding",
+        "Route Knowledge",
+        "Parcel Handling",
+        "Customer Communication"
+      ],
+      "experience": {
+        "years": 3,
+        "level": "Intermediate"
+      },
+      "pricing": {
+        "amount": 160,
+        "currency": "NPR",
+        "type": "hourly",
+        "display": "NPR 160/hour"
+      },
+      "availability": {
+        "status": "available_soon",
+        "statusLabel": "Available from Monday",
+        "days": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ],
+        "hours": "11:00 AM - 8:00 PM",
+        "preference": "Flexible evening and peak-hour shifts"
+      },
+      "workTypes": [
+        "Part-time",
+        "Shift-based",
+        "Temporary"
+      ],
+      "isPublished": true,
+      "isDemo": true
+    },
+    {
+      "id": "hire-worker-005",
+      "name": "Gita Karki",
+      "profileImage": "/avatars/berta.svg",
+      "avatarSeed": "Berta",
+      "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Berta",
+      "profession": "Painter",
+      "category": "Painting & Finishing",
+      "location": {
+        "city": "Bharatpur",
+        "district": "Chitwan",
+        "country": "Nepal"
+      },
+      "description": "Skilled painter in Chitwan experienced in interior and exterior wall painting, putty work and surface preparation. Takes room-by-room projects with clean, even finishes.",
+      "skills": [
+        "Interior Painting",
+        "Exterior Painting",
+        "Wall Putty",
+        "Surface Preparation",
+        "Color Matching"
+      ],
+      "experience": {
+        "years": 7,
+        "level": "Experienced"
+      },
+      "pricing": {
+        "amount": 12000,
+        "currency": "NPR",
+        "type": "fixed",
+        "display": "NPR 12,000/project"
+      },
+      "availability": {
+        "status": "available_soon",
+        "statusLabel": "Available in 5 days",
+        "days": [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday"
+        ],
+        "hours": "8:00 AM - 5:00 PM",
+        "preference": "Fixed-price room and house projects"
+      },
+      "workTypes": [
+        "Contract",
+        "Fixed Project",
+        "Temporary"
+      ],
+      "isPublished": true,
+      "isDemo": true
+    },
+    {
+      "id": "hire-worker-006",
+      "name": "Rajan Pariyar",
+      "profileImage": "/avatars/emil.svg",
+      "avatarSeed": "Emil",
+      "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Emil",
+      "profession": "Construction Helper",
+      "category": "Construction Support",
+      "location": {
+        "city": "Butwal",
+        "district": "Rupandehi",
+        "country": "Nepal"
+      },
+      "description": "Hardworking construction helper from Butwal assisting masons and contractors with site preparation, material carrying and mixing. Dependable on long site days.",
+      "skills": [
+        "Material Handling",
+        "Concrete Mixing",
+        "Site Cleaning",
+        "Scaffolding Assist"
+      ],
+      "experience": {
+        "years": 2,
+        "level": "Intermediate"
+      },
+      "pricing": {
+        "amount": 950,
+        "currency": "NPR",
+        "type": "daily",
+        "display": "NPR 950/day"
+      },
+      "availability": {
+        "status": "available",
+        "statusLabel": "Available now",
+        "days": [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday"
+        ],
+        "hours": "7:00 AM - 4:00 PM",
+        "preference": "Daily site work, multi-day projects"
+      },
+      "workTypes": [
+        "Temporary",
+        "Daily Wage",
+        "Contract"
+      ],
+      "isPublished": true,
+      "isDemo": true
+    },
+    {
+      "id": "hire-worker-007",
+      "name": "Mina Rai",
+      "profileImage": "/avatars/alia.svg",
+      "avatarSeed": "Alia",
+      "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Alia",
+      "profession": "Kitchen Assistant",
+      "category": "Food & Hospitality",
+      "location": {
+        "city": "Kathmandu",
+        "district": "Kathmandu",
+        "country": "Nepal"
+      },
+      "description": "Kitchen assistant in Kathmandu with experience in restaurants and catering kitchens, supporting prep, dishwashing and food safety. Works well in busy, fast-paced teams.",
+      "skills": [
+        "Food Preparation",
+        "Vegetable Cutting",
+        "Kitchen Hygiene",
+        "Dishwashing",
+        "Catering Support"
+      ],
+      "experience": {
+        "years": 3,
+        "level": "Intermediate"
+      },
+      "pricing": {
+        "amount": 850,
+        "currency": "NPR",
+        "type": "daily",
+        "display": "NPR 850/day"
+      },
+      "availability": {
+        "status": "busy",
+        "statusLabel": "Busy until Friday",
+        "days": [
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "hours": "10:00 AM - 7:00 PM",
+        "preference": "Weekend restaurant and catering shifts"
+      },
+      "workTypes": [
+        "Part-time",
+        "Shift-based",
+        "Event-based"
+      ],
+      "isPublished": true,
+      "isDemo": true
+    },
+    {
+      "id": "hire-worker-008",
+      "name": "Kritika Adhikari",
+      "profileImage": "/avatars/regina.svg",
+      "avatarSeed": "Regina",
+      "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Regina",
+      "profession": "Event Assistant",
+      "category": "Events & Hospitality",
+      "location": {
+        "city": "Lalitpur",
+        "district": "Lalitpur",
+        "country": "Nepal"
+      },
+      "description": "Friendly event assistant in Lalitpur helping with guest reception, setup and coordination at weddings, birthday parties and corporate events. Newer to the field but eager and well organized.",
+      "skills": [
+        "Guest Reception",
+        "Event Setup",
+        "Serving Support",
+        "Crowd Guidance"
+      ],
+      "experience": {
+        "years": 1,
+        "level": "Beginner"
+      },
+      "pricing": {
+        "amount": 750,
+        "currency": "NPR",
+        "type": "daily",
+        "display": "NPR 750/day"
+      },
+      "availability": {
+        "status": "available",
+        "statusLabel": "Available now",
+        "days": [
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "hours": "10:00 AM - 9:00 PM",
+        "preference": "Weekend and festival-season events"
+      },
+      "workTypes": [
+        "Part-time",
+        "Event-based",
+        "Temporary"
+      ],
+      "isPublished": true,
+      "isDemo": true
+    }
+  ]
+}

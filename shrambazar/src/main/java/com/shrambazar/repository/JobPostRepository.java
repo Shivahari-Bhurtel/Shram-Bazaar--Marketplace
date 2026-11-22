@@ -61,18 +61,18 @@ public interface JobPostRepository extends JpaRepository<JobPost, Long> {
     );
 
     // Dashboard: count all posts
-    long countByProviderProfileId(Long providerId);
+    @Query("select count(j) from JobPost j where j.providerProfile.id = :providerId")
+    long countByProviderProfileId(@Param("providerId") Long providerId);
 
     // Dashboard: count active posts
-    long countByProviderProfileIdAndStatus(
-            Long providerId,
-            JobPostStatus status
-    );
+    @Query("select count(j) from JobPost j where j.providerProfile.id = :providerId and j.status = :status")
+    long countByProviderProfileIdAndStatus(@Param("providerId") Long providerId, @Param("status") JobPostStatus status);
 
     // Dashboard: retrieve five latest posts
     List<JobPost> findTop5ByProviderProfileIdOrderByCreatedAtDesc(
             Long providerId
     );
 
-    long countByStatus(JobPostStatus status);
+    @Query("select count(j) from JobPost j where j.status = :status")
+    long countByStatus(@Param("status") JobPostStatus status);
 }

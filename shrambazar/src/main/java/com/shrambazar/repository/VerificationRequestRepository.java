@@ -41,7 +41,8 @@ public interface VerificationRequestRepository
             VerificationStatus status
     );
 
-    long countByStatus(VerificationStatus status);
+    @Query("select count(v) from VerificationRequest v where v.status = :status")
+    long countByStatus(@Param("status") VerificationStatus status);
 
     @Query("""
     SELECT COUNT(DISTINCT v.user.id)

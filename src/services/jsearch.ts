@@ -5,20 +5,36 @@ interface JSearchApiJob {
   job_title?: string
   employer_name?: string
   employer_logo?: string | null
+  employer_website?: string | null
   job_apply_link?: string
   job_description?: string
   job_employment_type?: string
   job_employment_types?: string[]
+  job_apply_is_direct?: boolean
+  apply_options?: Array<{ apply_link?: string; is_direct?: boolean; publisher?: string }>
   job_is_remote?: boolean
+  job_posted_at?: string | null
   job_posted_at_timestamp?: number
   job_posted_at_datetime_utc?: string
   job_location?: string
+  job_city?: string
+  job_state?: string
+  job_country?: string
+  job_latitude?: number
+  job_longitude?: number
   job_salary_string?: string
+  job_salary?: number | string | null
   job_min_salary?: number
   job_max_salary?: number
   job_salary_period?: string
   job_publisher?: string
-  job_country?: string
+  job_benefits?: string[] | null
+  job_benefits_strings?: string[] | null
+  job_google_link?: string
+  job_highlights?: Record<string, string[]> | null
+  job_onet_soc?: string | null
+  job_onet_job_zone?: number | null
+  job_uid?: string
 }
 
 interface JSearchObjectResponse {
@@ -92,7 +108,7 @@ function mapJob(job: JSearchApiJob, index: number): Job | null {
       : "full-day"
   const location = job.job_location?.trim() || "Anywhere"
   const published = postedDate(job)
-  const salaryText = job.job_salary_string?.trim() || (
+  const salaryText = job.job_salary_string?.trim() || (job.job_salary != null ? String(job.job_salary) : undefined) || (
     job.job_min_salary != null || job.job_max_salary != null
       ? `${job.job_min_salary != null ? job.job_min_salary.toLocaleString() : ""}${job.job_min_salary != null && job.job_max_salary != null ? "–" : ""}${job.job_max_salary != null ? job.job_max_salary.toLocaleString() : ""}${job.job_salary_period ? ` / ${job.job_salary_period.toLowerCase()}` : ""}`
       : undefined
@@ -137,6 +153,24 @@ function mapJob(job: JSearchApiJob, index: number): Job | null {
     employmentType,
     publishedDate: published.slice(0, 10),
     externalUpdatedAt: published,
+    externalPublisher: job.job_publisher,
+    externalEmployerWebsite: job.employer_website || undefined,
+    externalIsRemote: job.job_is_remote,
+    externalDirectApply: job.job_apply_is_direct,
+    externalPostedLabel: job.job_posted_at || undefined,
+    externalBenefits: job.job_benefits_strings?.length
+      ? job.job_benefits_strings
+      : job.job_benefits?.map((benefit) => benefit.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())) || undefined,
+    externalHighlights: job.job_highlights || undefined,
+    externalApplyOptions: job.apply_options?.filter((option) => Boolean(option.apply_link)).map((option) => ({
+      link: option.apply_link as string,
+      publisher: option.publisher,
+      isDirect: option.is_direct,
+    })),
+    externalGoogleUrl: job.job_google_link,
+    externalCity: job.job_city,
+    externalRegion: job.job_state,
+    externalCountry: job.job_country,
   }
 }
 

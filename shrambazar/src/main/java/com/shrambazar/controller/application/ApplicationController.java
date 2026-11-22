@@ -78,4 +78,13 @@ public class ApplicationController {
         applicationService.rejectApplication(jobId, applicationId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/provider/jobs/{jobId}/applications/{applicationId}/shortlist")
+    public ResponseEntity<Void> setShortlisted(
+            @PathVariable Long jobId,
+            @PathVariable Long applicationId,
+            @RequestParam boolean shortlisted) {
+        applicationService.setShortlisted(jobId, applicationId, shortlisted);
+        return ResponseEntity.noContent().build();
+    }
 }

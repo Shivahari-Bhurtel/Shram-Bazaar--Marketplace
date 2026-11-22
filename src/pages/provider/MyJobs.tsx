@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useApp } from "../../store/AppContext"
 import { JobStatusBadge, CategoryBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
@@ -15,10 +15,13 @@ function shiftDate(value: string, days: number) {
 export default function MyJobs() {
   const { myJobs, jobApplications, navigate, deleteJob, updateJob, postJob } = useApp()
   const [activeTab, setActiveTab] = useState<JobStatus | "all">("all")
+  const [search, setSearch] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
-  const filtered =
-    activeTab === "all" ? myJobs : myJobs.filter((j) => j.status === activeTab)
+  const filtered = useMemo(() => myJobs.filter((job) =>
+    (activeTab === "all" || job.status === activeTab) &&
+    `${job.title} ${job.category} ${job.district} ${job.location}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())
+  ), [activeTab, myJobs, search])
 
   const tabs: { key: JobStatus | "all"; label: string }[] = [
     { key: "all", label: `All (${myJobs.length})` },
@@ -37,34 +40,38 @@ export default function MyJobs() {
   ]
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="provider-page mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
+      <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-display text-3xl font-bold text-stone-900 mb-1">
+          <h1 className="font-display text-3xl font-semibold tracking-[-0.035em] text-stone-900 mb-1">
             My Jobs
           </h1>
           <p className="text-stone-500">
-            Manage your job postings and review applicants.
+          Manage your job postings, track hiring progress and review applicants.
           </p>
         </div>
         <button
           onClick={() => navigate("create-job")}
-          className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors"
+          className="provider-post-job-action min-h-11 rounded-lg bg-[#164E38] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#103B2C]"
         >
           + Post Job
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-stone-100 rounded-xl p-1 mb-6 overflow-x-auto">
+      <label className="relative mb-4 block max-w-xl">
+        <span className="sr-only">Search jobs</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search jobs by title, category or location" className="h-11 w-full rounded-lg border border-stone-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/10" />
+      </label>
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-stone-200">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`-mb-px flex-shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? "bg-white shadow text-stone-900"
-                : "text-stone-500 hover:text-stone-700"
+                ? "border-primary text-primary-ink"
+                : "border-transparent text-stone-500 hover:text-stone-700"
             }`}
           >
             {tab.label}
@@ -73,224 +80,60 @@ export default function MyJobs() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white border border-stone-200 rounded-2xl p-16 text-center">
-          <div className="text-4xl mb-4">📋</div>
-          <h3 className="font-semibold text-stone-900 mb-2">No jobs here</h3>
-          <p className="text-stone-500 text-sm mb-6">
-            {activeTab === "all"
-              ? "You haven't posted any jobs yet."
-              : `No ${activeTab} jobs.`}
-          </p>
-          <button
-            onClick={() => navigate("create-job")}
-            className="px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors"
-          >
-            Post Your First Job
-          </button>
+        <div className="rounded-xl border border-stone-200 bg-white p-12 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-ink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></svg></div>
+          <h3 className="mb-2 font-semibold text-stone-900">No jobs here</h3>
+          <p className="mb-6 text-sm text-stone-500">{activeTab === "all" ? "You haven't posted any jobs yet." : `No ${activeTab} jobs.`}</p>
+          <button onClick={() => navigate("create-job")} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark">Post Your First Job</button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filtered.map((job) => {
-            const apps = jobApplications(job.id)
-            const pendingCount = apps.filter(
-              (a) => a.status === "pending",
-            ).length
-            const acceptedCount = apps.filter(
-              (a) => a.status === "accepted",
-            ).length
-            const spotsLeft = Math.max(0, job.workersNeeded - job.workersHired)
-
-            return (
-              <div
-                key={job.id}
-                className="bg-white border border-stone-200 rounded-2xl p-5 hover:shadow-sm transition-shadow"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-3 flex-wrap">
-                      <h3 className="font-semibold text-stone-900 leading-snug">
-                        {job.title}
-                      </h3>
-                      <JobStatusBadge status={job.status} />
-                    </div>
-                    <div className="flex flex-wrap gap-3 mt-2">
-                      <CategoryBadge category={job.category} />
-                      <span className="text-xs text-stone-500 flex items-center gap-1">
-                        📍 {job.district}
-                      </span>
-                      <span className="text-xs text-stone-500">
-                        📅{" "}
-                        {formatNepalDate(job.date, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                        {job.endDate &&
-                          ` – ${formatNepalDate(job.endDate, { month: "short", day: "numeric" })}`}
-                      </span>
-                      <span className="text-xs font-semibold text-stone-800 font-mono-data">
-                        {formatJobBudget(job)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {job.status === "active" && (
-                      <>
-                        <button
-                          onClick={() => navigate("edit-job", job.id)}
-                          className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
-                          title="Edit job"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className="w-4 h-4"
-                          >
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() =>
-                            updateJob(job.id, { status: "closed" })
-                          }
-                          className="p-2 text-stone-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
-                          title="Close job"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className="w-4 h-4"
-                          >
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                          </svg>
-                        </button>
-                      </>
-                    )}
-                    <button type="button" onClick={() => {
-                      const today = nepalDateString()
-                      const startDate = isDateOnlyString(job.date) && job.date > today ? job.date : shiftDate(today, 1)
-                      const durationDays = job.endDate && isDateOnlyString(job.endDate) && isDateOnlyString(job.date)
-                        ? Math.max(0, Math.round((Date.parse(`${job.endDate}T00:00:00Z`) - Date.parse(`${job.date}T00:00:00Z`)) / 86_400_000))
-                        : 0
-                      const endDate = job.workType === "multi-day"
-                        ? shiftDate(startDate, job.endDate && isDateOnlyString(job.endDate) ? durationDays : 0)
-                        : job.endDate && isDateOnlyString(job.endDate) ? shiftDate(startDate, durationDays) : undefined
-                      const deadline = job.deadline && job.deadline >= today && job.deadline <= startDate ? job.deadline : today
-                      postJob({
-                        title: `${job.title} (copy)`, description: job.description,
-                        category: job.category, skillsRequired: job.skillsRequired,
-                        qualificationRequired: job.qualificationRequired,
-                        experienceRequired: job.experienceRequired,
-                        workType: job.workType, workersNeeded: job.workersNeeded,
-                        date: startDate, endDate, startTime: job.startTime,
-                        endTime: job.endTime, duration: job.duration, location: job.location,
-                        district: job.district, payment: job.payment, paymentType: job.paymentType,
-                        deadline,
-                      })
-                    }} className="rounded-lg border border-stone-200 px-2.5 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-50" title="Duplicate with a future work date">Duplicate</button>
-                    <button
-                      onClick={() => setConfirmDelete(job.id)}
-                      className="p-2 text-stone-400 hover:text-primary-ink hover:bg-primary-50 rounded-lg transition-colors"
-                      title="Delete job"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="w-4 h-4"
-                      >
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                        <path d="M10 11v6M14 11v6" />
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Applicant stats + progress */}
-                <div className="mt-4 pt-4 border-t border-stone-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex gap-4">
-                      <span className="text-xs text-stone-500">
-                        <span className="font-semibold text-stone-800">
-                          {apps.length}
-                        </span>{" "}
-                        applicants
-                      </span>
-                      {pendingCount > 0 && (
-                        <span className="text-xs text-amber-700 font-medium">
-                          {pendingCount} awaiting review
-                        </span>
-                      )}
-                      {acceptedCount > 0 && (
-                        <span className="text-xs text-green-700 font-medium">
-                          {acceptedCount} accepted
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => navigate("applicant-management", job.id)}
-                      className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                        pendingCount > 0
-                          ? "bg-primary text-white hover:bg-primary-dark"
-                          : "bg-stone-100 text-stone-700 hover:bg-stone-200"
-                      }`}
-                    >
-                      {pendingCount > 0
-                        ? `Review ${pendingCount} Pending`
-                        : "View Applicants"}
-                    </button>
-                  </div>
-                  {/* Progress */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-teal rounded-full transition-all"
-                        style={{
-                          width: `${Math.min((job.workersHired / job.workersNeeded) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="text-[11px] text-stone-400 font-mono-data">
-                      {job.workersHired}/{job.workersNeeded} hired
-                    </span>
-                  </div>
-                </div>
-
-                {/* Deadline warning */}
-                {job.status === "active" &&
-                  (() => {
-                    const deadlineDays = daysUntilNepalDate(job.deadline)
-                    return deadlineDays <= 3 && deadlineDays > 0 ? (
-                      <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-700">
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          className="w-3.5 h-3.5"
-                        >
-                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                          <line x1="12" y1="9" x2="12" y2="13" />
-                          <line x1="12" y1="17" x2="12.01" y2="17" />
-                        </svg>
-                        Applications close in {deadlineDays} day
-                        {deadlineDays !== 1 ? "s" : ""}
-                      </div>
-                    ) : null
-                  })()}
-              </div>
-            )
-          })}
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-[0_1px_2px_rgba(25,44,34,0.03)]">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1040px] border-collapse text-left">
+              <thead className="bg-stone-50 text-sm font-bold uppercase tracking-[0.08em] text-stone-700">
+                <tr>
+                  <th scope="col" className="px-5 py-5">Job title</th>
+                  <th scope="col" className="px-5 py-5">Category</th>
+                  <th scope="col" className="px-5 py-5">Location</th>
+                  <th scope="col" className="px-5 py-5">Applicants</th>
+                  <th scope="col" className="px-5 py-5">Status</th>
+                  <th scope="col" className="px-5 py-5">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {filtered.map((job) => {
+                  const apps = jobApplications(job.id)
+                  const pendingCount = apps.filter((application) => application.status === "pending").length
+                  const acceptedCount = apps.filter((application) => application.status === "accepted").length
+                  return (
+                    <tr key={job.id} className="align-middle transition-colors hover:bg-[#FCFBF9]">
+                      <td className="px-5 py-6">
+                        <div className="max-w-[250px] text-base font-bold leading-snug text-stone-900">{job.title}</div>
+                        <div className="mt-1.5 text-sm font-medium text-stone-600">Posted {formatNepalDate(job.postedDate || job.date, { month: "short", day: "numeric", year: "numeric" })}</div>
+                        <div className="mt-2 text-base font-bold text-stone-900">{formatJobBudget(job)}</div>
+                      </td>
+                      <td className="px-5 py-6 text-base font-medium capitalize text-stone-800">{job.category.replace(/-/g, " ")}</td>
+                      <td className="max-w-[320px] px-5 py-6 text-base font-medium leading-6 text-stone-700" title={job.location || job.district}>{job.location || job.district}</td>
+                      <td className="px-5 py-6">
+                        <button onClick={() => navigate("applicant-management", job.id)} className="text-base font-bold tabular-nums text-stone-900 underline-offset-4 hover:text-primary-ink hover:underline">{apps.length}</button>
+                        {pendingCount > 0 && <div className="mt-1 whitespace-nowrap text-sm font-medium text-amber-700">{pendingCount} awaiting review</div>}
+                        {acceptedCount > 0 && <div className="mt-1 whitespace-nowrap text-sm font-medium text-green-700">{acceptedCount} accepted</div>}
+                      </td>
+                      <td className="px-5 py-5"><JobStatusBadge status={job.status} /></td>
+                      <td className="px-5 py-5">
+                        <div className="flex items-center gap-2">
+                          {job.status === "active" && <button onClick={() => navigate("edit-job", job.id)} className="rounded-md border border-stone-300 px-3 py-2.5 text-sm font-semibold text-stone-800 hover:bg-stone-50">Edit</button>}
+                          <button onClick={() => navigate("applicant-management", job.id)} className="whitespace-nowrap rounded-md bg-[#164E38] px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-[#103B2C]">{pendingCount ? `Review ${pendingCount}` : "Applicants"}</button>
+                          {job.status === "active" && <button onClick={() => updateJob(job.id, { status: "closed" })} className="rounded-md border border-stone-300 px-3 py-2.5 text-sm font-semibold text-stone-700 hover:border-red-200 hover:bg-red-50 hover:text-red-800" title="Close job">Close</button>}
+                          <button onClick={() => setConfirmDelete(job.id)} className="rounded-md p-2.5 text-stone-500 hover:bg-red-50 hover:text-red-700" aria-label={`Delete ${job.title}`} title="Delete job"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

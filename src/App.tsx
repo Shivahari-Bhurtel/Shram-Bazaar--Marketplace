@@ -20,14 +20,17 @@ const MyJobs = lazy(() => import("./pages/provider/MyJobs"))
 const ApplicantManagement = lazy(
   () => import("./pages/provider/ApplicantManagement"),
 )
+const ProviderApplicants = lazy(() => import("./pages/provider/ProviderApplicants"))
 const ProviderOperations = lazy(
   () => import("./pages/provider/ProviderOperations"),
 )
+const ProviderHire = lazy(() => import("./pages/provider/Hire"))
 const Chat = lazy(() => import("./pages/Chat"))
 const Settings = lazy(() => import("./pages/Settings"))
 const KycVerification = lazy(() => import("./pages/worker/KycVerification"))
 import { LanguageSwitch } from "./i18n/LanguageContext"
 import WorkerSidebar from "./components/WorkerSidebar"
+import ProviderSidebar from "./components/ProviderSidebar"
 const VoiceAssistantPage = lazy(
   () => import("./pages/worker/VoiceAssistantPage"),
 )
@@ -75,7 +78,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen bg-cream ${isWorker && !isStandaloneLearn ? "worker-interface" : ""} ${useWorkerPageBackground ? "worker-content-background" : ""}`}
+      className={`min-h-screen bg-cream ${isWorker && !isStandaloneLearn ? "worker-interface" : ""} ${isProvider ? "provider-portal" : ""} ${useWorkerPageBackground ? "worker-content-background" : ""}`}
     >
       {state.storageWarning && (
         <div
@@ -103,13 +106,14 @@ export default function App() {
           <Navbar />
         </div>
       )}
-      {isLoggedIn && !isWorker && !isAdmin && !isVoiceAssistant && <Navbar />}
+      {isProvider && !isVoiceAssistant && <div className="lg:hidden"><Navbar /></div>}
       {!isLoggedIn && !isPublicPage && <Navbar />}
       {showWorkerSidebar && <WorkerSidebar />}
+      {isProvider && !isVoiceAssistant && <ProviderSidebar />}
       <main
         key={currentPage}
         className={`${isFullScreenJobDiscovery ? "h-[100dvh] w-full overflow-hidden" : "page-enter"} ${
-          showWorkerSidebar ? "lg:ml-56" : ""
+          showWorkerSidebar || (isProvider && !isVoiceAssistant) ? "lg:ml-56" : ""
         } ${workerTopSpacing}`}
       >
         <Suspense
@@ -164,6 +168,7 @@ export default function App() {
           {isProvider && currentPage === "provider-operations" && (
             <ProviderOperations />
           )}
+          {isProvider && currentPage === "provider-hire" && <ProviderHire />}
           {isProvider && currentPage === "create-job" && (
             <CreateEditJob editJobId={null} />
           )}
@@ -172,7 +177,7 @@ export default function App() {
           )}
           {isProvider && currentPage === "my-jobs" && <MyJobs />}
           {isProvider && currentPage === "applicant-management" && (
-            <ApplicantManagement />
+            currentJobId ? <ApplicantManagement /> : <ProviderApplicants />
           )}
           {isAdmin && currentPage === "admin-dashboard" && <AdminDashboard />}
 

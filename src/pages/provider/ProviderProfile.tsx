@@ -13,6 +13,7 @@ export default function ProviderProfile() {
   const [tempData, setTempData] = useState<any>({})
   const [saved, setSaved] = useState(false)
   const [profileError, setProfileError] = useState("")
+  const [profileSaving, setProfileSaving] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState("")
   const [verificationFront, setVerificationFront] = useState<{ name: string; data: string } | null>(null)
   const [verificationBack, setVerificationBack] = useState<{ name: string; data: string } | null>(null)
@@ -88,7 +89,7 @@ export default function ProviderProfile() {
     })
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     const orgName = String(tempData.orgName ?? "").trim()
     const contactName = String(tempData.contactName ?? "").trim()
     const phone = String(tempData.phone ?? "").trim()
@@ -126,7 +127,9 @@ export default function ProviderProfile() {
       return
     }
 
-    updateProviderProfile({
+    setProfileSaving(true)
+    try {
+    await updateProviderProfile({
       ...tempData,
       providerType,
       orgName,
@@ -142,6 +145,11 @@ export default function ProviderProfile() {
     setEditing(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : "Unable to save the provider profile.")
+    } finally {
+      setProfileSaving(false)
+    }
   }
 
   const industries = [
@@ -221,7 +229,7 @@ export default function ProviderProfile() {
           if (!file) return
           if (!file.type.startsWith("image/") || file.size > 2_000_000) { setProfileError("Choose a PNG, JPG, or WebP image smaller than 2 MB."); return }
           const reader = new FileReader()
-          reader.onload = () => { if (typeof reader.result === "string") updateProviderProfile({ logo: reader.result }) }
+          reader.onload = () => { if (typeof reader.result === "string") void updateProviderProfile({ logo: reader.result }).catch((error: unknown) => setProfileError(error instanceof Error ? error.message : "Unable to update profile picture.")) }
           reader.onerror = () => setProfileError("Could not read the selected image.")
           reader.readAsDataURL(file)
         }} />
@@ -255,9 +263,10 @@ export default function ProviderProfile() {
                   </button>
                   <button
                     onClick={saveEdit}
-                    className="text-xs font-medium text-white bg-primary px-2.5 py-1 rounded-lg hover:bg-primary-dark transition-colors"
+                    disabled={profileSaving}
+                    className="text-xs font-medium text-white bg-primary px-2.5 py-1 rounded-lg hover:bg-primary-dark transition-colors disabled:cursor-wait disabled:opacity-60"
                   >
-                    Save
+                    {profileSaving ? "Saving…" : "Save"}
                   </button>
                 </div>
               )}

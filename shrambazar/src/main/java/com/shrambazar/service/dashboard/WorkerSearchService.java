@@ -74,6 +74,9 @@ public class WorkerSearchService {
                 .filter(seeker ->
                         seeker.getUser().getStatus() == AccountStatus.ACTIVE
                 )
+                .filter(SeekerProfile::isAcceptingWork)
+                .filter(seeker -> workerServiceListingRepository
+                        .existsBySeekerProfileIdAndActiveTrue(seeker.getId()))
                 .filter(seeker -> matchesSkills(seeker, request))
                 .filter(seeker -> matchesLocation(seeker, request))
                 .filter(seeker -> matchesVerification(seeker, request))

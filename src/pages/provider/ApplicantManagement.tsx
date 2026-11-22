@@ -246,14 +246,14 @@ export default function ApplicantManagement() {
                         <ApplicationStatusBadge status={app.status} />
                       </div>
 
-                  <div className="mt-4 rounded-xl border border-[#D9E8DE] bg-[#F4F8F5] p-4">
+                  <div className="mt-4 rounded-xl border border-[#E8E2D5] bg-[#FAF8F5] p-4">
                     {app.offeredAmount != null ? <>
-                      <div className="flex flex-wrap items-baseline justify-between gap-2"><div><span className="text-xs font-semibold uppercase tracking-wide text-[#68736B]">Worker offer</span><p className="mt-0.5 text-xl font-bold text-[#286B50]">NPR {app.offeredAmount.toLocaleString()}</p><span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${job.budgetNegotiable || app.offeredAmount <= (job.paymentMax || job.payment) ? "bg-[#E2F0E7] text-[#286B50]" : "bg-[#FFF0D2] text-[#815219]"}`}>{job.budgetNegotiable ? "Provider invited offers" : app.offeredAmount > (job.paymentMax || job.payment) ? "Above budget" : "Within budget"}</span></div><p className="text-xs text-[#68736B]">Task budget: {formatJobBudget(job)} · estimate {app.estimatedDurationHours || "—"}h</p></div>
-                      {app.proposedStartAt && <p className="mt-2 text-xs text-[#202923]">Proposed time: {new Date(`${app.proposedStartAt.slice(0, 16)}+05:45`).toLocaleString("en-NP", { timeZone: "Asia/Kathmandu", dateStyle: "medium", timeStyle: "short" })} (Nepal time)</p>}
-                      {app.offerMessage && <p className="mt-2 text-sm leading-relaxed text-[#202923]">“{app.offerMessage}”</p>}
-                    </> : <p className="text-sm text-[#68736B]">Application details</p>}
-                    {app.experienceLevel && <p className="mt-2 text-xs text-[#202923]"><strong>Experience:</strong> {app.experienceLevel}</p>}
-                    {app.coverNote && <div className="mt-2 border-t border-[#D9E8DE] pt-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-[#68736B]">Applicant introduction</p><p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-[#202923]">{app.coverNote}</p></div>}
+                      <div className="flex flex-wrap items-baseline justify-between gap-2"><div><span className="text-xs font-semibold uppercase tracking-wide text-[#766B61]">Worker offer</span><p className="mt-0.5 text-xl font-bold text-[#70472F]">NPR {app.offeredAmount.toLocaleString()}</p><span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${job.budgetNegotiable || app.offeredAmount <= (job.paymentMax || job.payment) ? "bg-[#F7F1EB] text-[#70472F]" : "bg-[#FFF0D2] text-[#815219]"}`}>{job.budgetNegotiable ? "Provider invited offers" : app.offeredAmount > (job.paymentMax || job.payment) ? "Above budget" : "Within budget"}</span></div><p className="text-xs text-[#766B61]">Task budget: {formatJobBudget(job)} · estimate {app.estimatedDurationHours || "—"}h</p></div>
+                      {app.proposedStartAt && <p className="mt-2 text-xs text-[#38291F]">Proposed time: {new Date(`${app.proposedStartAt.slice(0, 16)}+05:45`).toLocaleString("en-NP", { timeZone: "Asia/Kathmandu", dateStyle: "medium", timeStyle: "short" })} (Nepal time)</p>}
+                      {app.offerMessage && <p className="mt-2 text-sm leading-relaxed text-[#38291F]">“{app.offerMessage}”</p>}
+                    </> : <p className="text-sm text-[#766B61]">Application details</p>}
+                    {app.experienceLevel && <p className="mt-2 text-xs text-[#38291F]"><strong>Experience:</strong> {app.experienceLevel}</p>}
+                    {app.coverNote && <div className="mt-2 border-t border-[#E8E2D5] pt-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-[#766B61]">Applicant introduction</p><p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-[#38291F]">{app.coverNote}</p></div>}
                   </div>
 
                       {/* Skills */}

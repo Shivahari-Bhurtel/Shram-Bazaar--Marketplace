@@ -44,7 +44,7 @@ import {
   type BackendAuth,
 } from "../services/backendApi"
 
-export type Page = "landing" | "login" | "register-choice" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "worker-availability" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "learn" | "settings" | "kyc-verification" | "worker-help" | "provider-dashboard" | "provider-profile" | "provider-operations" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "admin-dashboard" | "chat" | "shram-ai" | "voice-assistant"
+export type Page = "landing" | "login" | "register-choice" | "worker-signup" | "provider-signup" | "worker-dashboard" | "worker-profile" | "worker-availability" | "job-discovery" | "job-detail" | "my-applications" | "saved-jobs" | "learn" | "settings" | "kyc-verification" | "worker-help" | "provider-dashboard" | "provider-profile" | "provider-operations" | "provider-hire" | "create-job" | "edit-job" | "my-jobs" | "applicant-management" | "admin-dashboard" | "chat" | "shram-ai" | "voice-assistant"
 
 type Credentials = { userId: string; password: string }
 type SavedJob = { workerId: string; jobId: string; snapshot?: Job }
@@ -413,6 +413,7 @@ const providerOnly: Page[] = [
   "provider-dashboard",
   "provider-profile",
   "provider-operations",
+  "provider-hire",
   "create-job",
   "edit-job",
   "my-jobs",
@@ -448,6 +449,7 @@ interface AppContextValue {
     status: ApplicationStatus,
     note?: string,
   ) => void
+  setApplicationShortlisted: (applicationId: string, shortlisted: boolean) => Promise<string | null>
   withdrawApplication: (applicationId: string) => Promise<string | null>
   requestWorkerForJob: (jobId: string, worker: WorkerProfile) => Promise<string | null>
   respondToSelection: (applicationId: string, accept: boolean) => void
@@ -462,7 +464,7 @@ interface AppContextValue {
   updateWorkerProfile: (updates: Partial<WorkerProfile>) => void
   removeWorkerAvailability: (availabilityId: string) => Promise<void>
   notifyProfileUpdated: (message: string) => void
-  updateProviderProfile: (updates: Partial<ProviderProfile>) => void
+  updateProviderProfile: (updates: Partial<ProviderProfile>) => Promise<void>
   submitProviderVerification: (fileName: string, fileData: string, backFileName?: string, backFileData?: string, identityDocumentType?: "national-id" | "citizenship", businessDocumentType?: "BUSINESS_REGISTRATION" | "PAN_CERTIFICATE") => Promise<string | null>
   reviewProviderVerification: (providerId: string, approved: boolean, note?: string) => void
   sendUserNotification: (userId: string, title: string, message: string, type?: Notification["type"]) => Promise<string | null>
@@ -527,7 +529,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [sessionId, setSessionId] = useState(readSessionId)
   const [storageWarning, setStorageWarning] = useState("")
   const [currentPage, setCurrentPage] = useState<Page>(() =>
-    sessionId ? "worker-dashboard" : "landing",
+    typeof window !== "undefined" && window.location.hash === "#/provider/hire"
+      ? "provider-hire"
+      : sessionId ? "worker-dashboard" : "landing",
   )
   const [currentJobId, setCurrentJobId] = useState<string | null>(null)
   const [externalJobs, setExternalJobsState] = useState<Job[]>(() => data.externalJobs)
@@ -1087,6 +1091,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Authentication routes are intentionally reachable even when another
     // role is signed in, so a user can register or switch accounts.
     if (authPages.includes(page)) {
+      if (window.location.hash === "#/provider/hire") window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`)
       setCurrentPage(page)
       setCurrentJobId(null)
       window.scrollTo({ top: 0, behavior: "smooth" })
@@ -1123,6 +1128,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return
     setCurrentPage(page)
     setCurrentJobId(jobId ?? null)
+    if (page === "provider-hire") {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#/provider/hire`)
+    } else if (window.location.hash === "#/provider/hire") {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`)
+    }
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
@@ -1684,6 +1694,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const setApplicationShortlisted = async (applicationId: string, shortlisted: boolean): Promise<string | null> => {
+    if (!providerProfile) return "Provider account is unavailable."
+    const application = data.applications.find((item) => item.id === applicationId && item.providerId === providerProfile.id)
+    if (!application || application.status !== "pending") return "Only pending applications can be shortlisted."
+    if (backendMode) {
+      try {
+        await apiRequest<void>(`/api/provider/jobs/${application.jobId}/applications/${applicationId}/shortlist?shortlisted=${shortlisted}`, { method: "POST" })
+      } catch (error) {
+        return error instanceof Error ? error.message : "Unable to update shortlist status."
+      }
+    }
+    setData((old) => ({ ...old, applications: old.applications.map((item) => item.id === applicationId ? { ...item, shortlisted } : item) }))
+    return null
+  }
+
   const withdrawApplication = async (applicationId: string) => {
     const application = data.applications.find((item) => item.id === applicationId)
     if (!workerProfile || !application || application.workerId !== workerProfile.id) return "This application is not available to your worker account."
@@ -1760,7 +1785,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         if (action === "start") {
-          await apiRequest(`/api/provider/engagements/${application.engagementId}/start`, { method: "POST" })
+          const result = await apiRequest<{ status: string }>(`/api/provider/engagements/${application.engagementId}/start`, { method: "POST" })
+          setData((old) => ({ ...old, applications: old.applications.map((item) => item.id === applicationId ? { ...item, engagementStatus: result.status } : item) }))
+          setStorageWarning("")
           return
         }
         if (currentUser.role === "provider" && application.engagementStatus === "CONFIRMED") {
@@ -1801,13 +1828,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           endTime: `${job.endTime}:00`,
           durationDescription: job.duration,
           paymentAmount: job.budgetNegotiable ? null : job.payment,
-          paymentMaxAmount: job.paymentMax,
+          paymentMaxAmount: !job.budgetNegotiable && Number(job.paymentMax) > 0 ? job.paymentMax : null,
           budgetNegotiable: job.budgetNegotiable === true,
           paymentPeriod: job.paymentType === "per-hour" ? "PER_HOUR" : job.paymentType === "fixed" ? "FIXED" : "PER_DAY",
           paymentMethod: job.paymentMethod || "CASH",
           requiredExperienceMonths: parseRequiredExperienceMonths(job.experienceRequired),
           numberOfWorkersRequired: job.workersNeeded,
           requiredSkillIds: skillIds,
+          requiredSkills: job.skillsRequired,
         }
         const created = await apiRequest<ApiJob>("/api/provider/jobs", {
           method: "POST",
@@ -1875,11 +1903,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
             startDate: job.date, endDate: job.endDate || job.date,
             startTime: `${job.startTime}:00`, endTime: `${job.endTime}:00`,
             durationDescription: job.duration, paymentAmount: job.budgetNegotiable ? null : job.payment,
-            paymentMaxAmount: job.paymentMax, budgetNegotiable: job.budgetNegotiable === true,
+            paymentMaxAmount: !job.budgetNegotiable && Number(job.paymentMax) > 0 ? job.paymentMax : null, budgetNegotiable: job.budgetNegotiable === true,
             paymentPeriod: job.paymentType === "per-hour" ? "PER_HOUR" : job.paymentType === "fixed" ? "FIXED" : "PER_DAY",
             paymentMethod: job.paymentMethod || "CASH",
             requiredExperienceMonths: parseRequiredExperienceMonths(job.experienceRequired),
             numberOfWorkersRequired: job.workersNeeded, requiredSkillIds: skillIds,
+            requiredSkills: job.skillsRequired,
           }),
         })
         const mapped = { ...mapApiJob(saved, providerProfile.id), status: updates.status || mapApiJob(saved, providerProfile.id).status }
@@ -2791,11 +2820,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return draft
     })
   }
-  const updateProviderProfile = (updates: Partial<ProviderProfile>) => {
-    if (!providerProfile) return
+  const updateProviderProfile = async (updates: Partial<ProviderProfile>) => {
+    if (!providerProfile) throw new Error("Provider account is unavailable.")
     if (backendMode) {
       const next = { ...providerProfile, ...updates }
-      void apiRequest<Record<string, unknown>>("/api/provider/profile", {
+      await apiRequest<Record<string, unknown>>("/api/provider/profile", {
         method: "PUT",
         body: JSON.stringify({
           fullName: next.contactName,
@@ -2808,18 +2837,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           hasBusiness: next.providerType !== "individual",
           businessWebsite: next.website || null,
         }),
-      }).catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Unable to save the provider profile."))
+      })
       if (updates.logo?.startsWith("data:")) {
-        void (async () => {
-          try {
-            const blob = await (await fetch(updates.logo!)).blob()
-            const form = new FormData()
-            form.append("file", new File([blob], "provider-picture.png", { type: blob.type || "image/png" }))
-            await apiRequest("/api/provider/profile/picture", { method: "POST", body: form })
-          } catch (error) {
-            setStorageWarning(error instanceof Error ? error.message : "Unable to upload the provider picture.")
-          }
-        })()
+        const blob = await (await fetch(updates.logo)).blob()
+        const form = new FormData()
+        form.append("file", new File([blob], "provider-picture.png", { type: blob.type || "image/png" }))
+        await apiRequest("/api/provider/profile/picture", { method: "POST", body: form })
       }
     }
     setData((old) => ({
@@ -2853,6 +2876,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           : application,
       ),
     }))
+    return Promise.resolve()
   }
 
   const state: AppState = {
@@ -2974,6 +2998,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       saveJob,
       unsaveJob,
       updateApplicationStatus,
+      setApplicationShortlisted,
       withdrawApplication,
       requestWorkerForJob,
       respondToSelection,

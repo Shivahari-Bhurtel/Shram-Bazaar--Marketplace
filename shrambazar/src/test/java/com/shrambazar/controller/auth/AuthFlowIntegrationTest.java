@@ -36,6 +36,16 @@ class AuthFlowIntegrationTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
+    void startupSqlCreatesReviewTableWhenHibernateDdlIsDisabled() throws Exception {
+        jdbcTemplate.execute("DROP TABLE IF EXISTS reviews");
+
+        new ResourceDatabasePopulator(new ClassPathResource("schema.sql")).execute(dataSource);
+
+        org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM reviews", Long.class)).isZero();
+    }
+
+    @Test
     void registrationRejectsPasswordLongerThanBcryptLimitWithHelpfulError() throws Exception {
         String longPassword = "a".repeat(73);
         mockMvc.perform(post("/api/auth/register/job-seeker")
@@ -170,6 +180,12 @@ class AuthFlowIntegrationTest {
                                 """.formatted(email, password)))
                 .andReturn().getResponse().getContentAsString();
         String providerToken = objectMapper.readTree(token).get("accessToken").asText();
+        long providerUserId = objectMapper.readTree(token).get("userId").asLong();
+        mockMvc.perform(get("/api/users/{userId}/reviews/summary", providerUserId)
+                        .header("Authorization", "Bearer " + providerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(providerUserId))
+                .andExpect(jsonPath("$.totalReviews").value(0));
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/seeker/calendar")
                         .param("startDate", "2026-11-21")
@@ -230,6 +246,48 @@ class AuthFlowIntegrationTest {
         // Restore the modern fixture values needed by the rest of this flow;
         // the preceding default assertions exercise the legacy migration.
         jdbcTemplate.update("UPDATE job_posts SET category = 'Plumbing', budget_negotiable = TRUE, payment_period = 'FIXED' WHERE id = ?", jobId);
+
+        // Fixed-price jobs must omit the optional maximum; clients used to send 0,
+        // which violates @DecimalMin on JobPostRequest and prevents publishing.
+        String fixedJobResponse = mockMvc.perform(post("/api/provider/jobs")
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title":"Fixed budget plumber",
+                                  "category":"Plumbing",
+                                  "description":"Repair a bathroom tap.",
+                                  "responsibilities":"Replace the washer and test the tap.",
+                                  "address":"Kathmandu",
+                                  "municipality":"Kathmandu Metropolitan City",
+                                  "district":"Kathmandu",
+                                  "province":"Bagmati",
+                                  "startDate":"2026-11-22",
+                                  "endDate":"2026-11-22",
+                                  "startTime":"10:00:00",
+                                  "endTime":"11:00:00",
+                                  "durationDescription":"1 hour",
+                                  "paymentAmount":1500,
+                                  "paymentMaxAmount":null,
+                                  "budgetNegotiable":false,
+                                  "paymentPeriod":"PER_DAY",
+                                  "paymentMethod":"CASH",
+                                  "requiredExperienceMonths":0,
+                                  "numberOfWorkersRequired":1,
+                                  "requiredSkillIds":[],
+                                  "requiredSkills":["Emergency wiring"]
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.paymentAmount").value(1500))
+                .andExpect(jsonPath("$.paymentMaxAmount").value(nullValue()))
+                .andExpect(jsonPath("$.requiredSkills[0]").value("Emergency wiring"))
+                .andReturn().getResponse().getContentAsString();
+        long fixedJobId = objectMapper.readTree(fixedJobResponse).get("id").asLong();
+        mockMvc.perform(get("/api/jobs").param("keyword", "Fixed budget plumber"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(fixedJobId))
+                .andExpect(jsonPath("$[0].requiredSkills[0]").value("Emergency wiring"));
 
         String workerEmail = "market-worker-" + UUID.randomUUID() + "@example.com";
         String workerRegistration = mockMvc.perform(post("/api/auth/register/job-seeker")
@@ -350,6 +408,21 @@ class AuthFlowIntegrationTest {
                 .andExpect(jsonPath("$[0].applicationSkills[0]").value("Pipe fitting"))
                 .andExpect(jsonPath("$[0].introduction").value("I have hands-on plumbing repair experience and can complete this task safely."));
 
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/provider/jobs/{jobId}/applications/{applicationId}/shortlist", jobId, applicationId)
+                        .param("shortlisted", "true")
+                        .header("Authorization", "Bearer " + providerToken))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/provider/jobs/{jobId}/applications", jobId)
+                        .header("Authorization", "Bearer " + providerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].shortlisted").value(true));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/provider/jobs/{jobId}/applications/{applicationId}/shortlist", jobId, applicationId)
+                        .param("shortlisted", "false")
+                        .header("Authorization", "Bearer " + providerToken))
+                .andExpect(status().isNoContent());
+
         String engagementResponse = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .post("/api/provider/jobs/{jobId}/applications/{applicationId}/select", jobId, applicationId)
                         .header("Authorization", "Bearer " + providerToken))
@@ -376,7 +449,8 @@ class AuthFlowIntegrationTest {
                         .get("/api/provider/jobs")
                         .header("Authorization", "Bearer " + providerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].status").value("ASSIGNED"));
+                .andExpect(jsonPath("$[?(@.id == " + jobId + ")].status")
+                        .value(org.hamcrest.Matchers.hasItem("ASSIGNED")));
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/jobs/{jobId}", jobId))
                 .andExpect(status().isOk())

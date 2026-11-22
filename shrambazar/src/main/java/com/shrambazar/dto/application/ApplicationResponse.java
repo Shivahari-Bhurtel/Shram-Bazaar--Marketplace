@@ -31,6 +31,7 @@ public record ApplicationResponse(
         List<String> skills,
         String experienceLevel,
         String introduction,
-        boolean confirmationEmailSent
+        boolean confirmationEmailSent,
+        boolean shortlisted
 ) {
 }

@@ -52,8 +52,11 @@ export default function CreateEditJob({ editJobId }: Props) {
   const [skillInput, setSkillInput] = useState("")
   const [step, setStep] = useState(1)
   const [submitted, setSubmitted] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [formError, setFormError] = useState("")
   const [locationMessage, setLocationMessage] = useState("")
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationAttribution, setLocationAttribution] = useState(false)
   const [jobCategories] = useState(getConfiguredJobCategories)
 
   const filteredSkills = skillCatalog.filter(
@@ -71,8 +74,99 @@ export default function CreateEditJob({ editJobId }: Props) {
     }))
   }
 
+  const addCustomSkill = () => {
+    const skill = skillInput.trim().replace(/\s+/g, " ")
+    if (!skill) return
+    if (!form.skillsRequired.some((selected) => selected.toLocaleLowerCase() === skill.toLocaleLowerCase())) {
+      setForm((previous) => ({ ...previous, skillsRequired: [...previous.skillsRequired, skill] }))
+    }
+    setSkillInput("")
+  }
+
+  const continueToNextStep = () => {
+    if (step === 2 && skillInput.trim()) {
+      const typedSkill = skillInput.trim().replace(/\s+/g, " ")
+      const skillsRequired = form.skillsRequired.some((skill) => skill.toLocaleLowerCase() === typedSkill.toLocaleLowerCase())
+        ? form.skillsRequired
+        : [...form.skillsRequired, typedSkill]
+      const nextForm = { ...form, skillsRequired }
+      setForm(nextForm)
+      setSkillInput("")
+      if (validateStep(step, nextForm)) setStep((current) => current + 1)
+      return
+    }
+    if (validateStep(step)) setStep((current) => current + 1)
+  }
+
+  const useCurrentJobLocation = async () => {
+    if (locationLoading) return
+    setLocationLoading(true)
+    setLocationMessage("Finding your location…")
+    try {
+      const coordinates = await getCurrentCoordinates()
+      let locationName = `${coordinates.latitude.toFixed(5)}, ${coordinates.longitude.toFixed(5)}`
+      let municipality = ""
+      let district = ""
+      let province = ""
+      let hasAddress = false
+
+      try {
+        const query = new URLSearchParams({
+          format: "jsonv2",
+          lat: String(coordinates.latitude),
+          lon: String(coordinates.longitude),
+          zoom: "16",
+          addressdetails: "1",
+        })
+        const reverseController = new AbortController()
+        const reverseTimeout = window.setTimeout(() => reverseController.abort(), 7000)
+        let response: Response
+        try {
+          response = await fetch(`https://nominatim.openstreetmap.org/reverse?${query}`, {
+            headers: { Accept: "application/json" },
+            signal: reverseController.signal,
+          })
+        } finally {
+          window.clearTimeout(reverseTimeout)
+        }
+        if (response.ok) {
+          const result = await response.json() as { address?: Record<string, string>; display_name?: string }
+          const address = result.address || {}
+          const locality = address.neighbourhood || address.suburb || address.village || address.hamlet || address.town || address.city || address.municipality || result.display_name?.split(",")[0]
+          municipality = address.municipality || address.city || address.town || address.village || ""
+          const districtName = address.state_district || address.county || ""
+          const provinceName = address.state || ""
+          district = DISTRICTS.find((item) => districtName.toLocaleLowerCase().includes(item.toLocaleLowerCase())) || ""
+          province = ["Koshi", "Madhesh", "Bagmati", "Gandaki", "Lumbini", "Karnali", "Sudurpashchim"].find((item) => provinceName.toLocaleLowerCase().includes(item.toLocaleLowerCase())) || ""
+          if (locality) {
+            locationName = [address.road || address.pedestrian, locality, district || districtName].filter(Boolean).join(", ")
+            hasAddress = true
+          }
+        }
+      } catch {
+        // Keep the exact coordinates as a useful editable location fallback.
+      }
+
+      setForm((previous) => ({
+        ...previous,
+        ...coordinates,
+        location: locationName,
+        ...(municipality ? { municipality } : {}),
+        ...(district ? { district } : {}),
+        ...(province ? { province } : {}),
+      }))
+      setLocationAttribution(hasAddress)
+      setLocationMessage("")
+    } catch (error) {
+      setLocationMessage(error instanceof Error ? error.message : "Could not get your location.")
+    } finally {
+      setLocationLoading(false)
+    }
+  }
+
   const handleSubmit = async () => {
-    if (!validateStep(3)) return
+    if (isSaving || !validateStep(3)) return
+    setIsSaving(true)
     try {
       const { budgetMode, ...jobPayload } = form
       if (existingJob) {
@@ -83,10 +177,12 @@ export default function CreateEditJob({ editJobId }: Props) {
       setSubmitted(true)
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Unable to save this job.")
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  const validateStep = (stepToValidate: number) => {
+  const validateStep = (stepToValidate: number, formData = form) => {
     let message = ""
     if (stepToValidate === 1) {
       if (!form.title.trim()) message = "Enter a job title."
@@ -103,10 +199,14 @@ export default function CreateEditJob({ editJobId }: Props) {
       else if (existingJob && form.workersNeeded < existingJob.workersHired)
         message = `This job already has ${existingJob.workersHired} accepted workers. Keep the requested positions at ${existingJob.workersHired} or more.`
     } else if (stepToValidate === 2) {
-      if (!form.location.trim()) message = "Enter the work location."
-      else if (!form.municipality.trim()) message = "Enter the municipality or city."
-      else if (!form.district) message = "Select the work district."
-      else if (!form.province.trim()) message = "Enter the province."
+      if (formData.category === "skill-based" && formData.skillsRequired.length === 0)
+        message = "Add at least one skill or trade required for this job."
+      else if (formData.experienceRequired && (!Number.isInteger(Number(formData.experienceRequired)) || Number(formData.experienceRequired) < 0 || Number(formData.experienceRequired) > 1200))
+        message = "Enter minimum experience as a whole number from 0 to 1200 months."
+      else if (!formData.location.trim()) message = "Enter the work location."
+      else if (!formData.municipality.trim()) message = "Enter the municipality or city."
+      else if (!formData.district) message = "Select the work district."
+      else if (!formData.province.trim()) message = "Enter the province."
     } else {
       const today = nepalDateString()
       if (!isDateOnlyString(form.date)) message = "Choose a valid start date."
@@ -140,13 +240,18 @@ export default function CreateEditJob({ editJobId }: Props) {
     return !message
   }
 
-  const continueToNextStep = () => {
-    if (validateStep(step)) setStep((current) => current + 1)
+  const selectCategory = (category: JobCategory) => {
+    setForm((previous) => ({
+      ...previous,
+      category,
+      ...(category === "beginner-friendly" ? { experienceRequired: "0" } : {}),
+    }))
+    setFormError("")
   }
 
   if (submitted) {
     return (
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 text-center">
+      <div className="provider-page provider-post-job mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
         <h2 className="font-display text-2xl font-bold text-stone-900 mb-2">
           {existingJob ? "Job Updated!" : "Job Posted Successfully!"}
         </h2>
@@ -180,7 +285,7 @@ export default function CreateEditJob({ editJobId }: Props) {
   ]
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+    <div className="provider-page provider-post-job mx-auto w-full max-w-3xl px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
       <button
         onClick={() => navigate(existingJob ? "my-jobs" : "provider-dashboard")}
         className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6 transition-colors"
@@ -197,17 +302,24 @@ export default function CreateEditJob({ editJobId }: Props) {
         Back
       </button>
 
-      <h1 className="font-display text-3xl font-bold text-stone-900 mb-8">
-        {existingJob ? "Edit Job Posting" : "Post a New Job"}
-      </h1>
+      <div className="mb-7 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+        <div>
+          <h1 className="font-heading text-3xl font-bold tracking-[-0.03em] text-stone-900">
+            {existingJob ? "Edit Job Posting" : "Post a New Job"}
+          </h1>
+          <p className="mt-2 text-sm text-stone-500">Describe the work clearly so workers can decide whether to apply.</p>
+        </div>
+      </div>
 
       {/* Step indicator */}
-      <div className="flex items-center gap-3 mb-10">
+      <div className="mb-7 grid grid-cols-3 gap-2 sm:gap-3" aria-label="Job posting progress">
         {steps.map((s, i) => (
-          <div key={s.n} className="flex items-center gap-3">
+          <div key={s.n} className="min-w-0">
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => step > s.n && setStep(s.n)}
+                aria-current={step === s.n ? "step" : undefined}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                   step === s.n
                     ? "bg-primary text-white"
@@ -219,29 +331,24 @@ export default function CreateEditJob({ editJobId }: Props) {
                 {step > s.n ? "✓" : s.n}
               </button>
               <span
-                className={`text-sm font-medium hidden sm:block ${
+                className={`truncate text-sm font-medium ${
                   step === s.n ? "text-stone-900" : "text-stone-400"
                 }`}
               >
                 {s.label}
               </span>
             </div>
-            {i < steps.length - 1 && (
-              <div
-                className={`flex-1 h-px min-w-8 ${
-                  step > s.n ? "bg-green" : "bg-stone-200"
-                }`}
-              />
-            )}
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-stone-200"><div className={`h-full rounded-full transition-all ${step >= s.n ? "w-full bg-primary" : "w-0"}`} /></div>
           </div>
         ))}
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl p-6 md:p-8">
+      <div className="rounded-md border border-stone-200 bg-white p-4 shadow-[0_1px_2px_rgba(25,44,34,0.03)] sm:p-5 lg:p-6">
         {formError && (
           <p
             role="alert"
             className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+            aria-live="polite"
           >
             {formError}
           </p>
@@ -249,14 +356,15 @@ export default function CreateEditJob({ editJobId }: Props) {
         {/* Step 1: Job Basics */}
         {step === 1 && (
           <div className="space-y-5 animate-fade-in">
-            <h2 className="font-semibold text-stone-900 text-lg mb-4">
+            <h2 className="mb-4 font-heading text-xl font-bold text-stone-900">
               Job Information
             </h2>
             <div>
-              <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Job Title *
+              <label htmlFor="job-title" className="text-sm font-semibold text-stone-700 block mb-1.5">
+                Job title <span className="text-red-700">*</span>
               </label>
               <input
+                id="job-title"
                 value={form.title}
                 onChange={(e) => {
                   setFormError("")
@@ -265,33 +373,34 @@ export default function CreateEditJob({ editJobId }: Props) {
                 placeholder="e.g. Electrician for Office Renovation"
                 className="input-style"
                 maxLength={100}
+                required
+                aria-required="true"
               />
+              <p className="mt-1 text-right text-xs tabular-nums text-stone-400">{form.title.length}/100</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Job Category *
+              <label className="text-sm font-semibold text-stone-700 block mb-1.5">
+                What kind of worker do you need? <span className="text-red-700">*</span>
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <p className="mb-2.5 text-xs leading-5 text-stone-500">Choose the experience level that best describes this job.</p>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                 {jobCategories.map((cat) => (
                   <button
                     key={cat.value}
                     type="button"
-                    onClick={() =>
-                      setForm((p) => ({
-                        ...p,
-                        category: cat.value as JobCategory,
-                      }))
-                    }
-                    className={`p-3 rounded-xl border text-left transition-colors ${
+                    aria-pressed={form.category === cat.value}
+                    onClick={() => selectCategory(cat.value as JobCategory)}
+                    className={`min-h-32 rounded-md border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
                       form.category === cat.value
-                        ? "border-primary bg-primary-50"
-                        : "border-stone-200 hover:border-stone-300 bg-white"
+                        ? "border-primary bg-primary-50 shadow-sm"
+                        : "border-stone-200 bg-white hover:border-primary/40 hover:bg-stone-50"
                     }`}
                   >
-                    <div className="text-xs font-medium text-stone-800 leading-snug">
-                      {cat.label}
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-base font-bold leading-snug text-stone-800">{cat.label}</span>
+                      <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${form.category === cat.value ? "border-primary bg-primary text-white" : "border-stone-300 text-transparent"}`} aria-hidden="true">✓</span>
                     </div>
-                    <div className="text-[11px] text-stone-500 mt-0.5 leading-snug">
+                    <div className="mt-2 text-sm leading-relaxed text-stone-600">
                       {cat.desc}
                     </div>
                   </button>
@@ -299,30 +408,36 @@ export default function CreateEditJob({ editJobId }: Props) {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Job Description *
+              <label htmlFor="job-description" className="text-sm font-semibold text-stone-700 block mb-1.5">
+                Job description <span className="text-red-700">*</span>
               </label>
               <textarea
+                id="job-description"
                 value={form.description}
                 onChange={(e) => {
                   setFormError("")
                   setForm((p) => ({ ...p, description: e.target.value }))
                 }}
                 placeholder="Describe the role, responsibilities, and what you expect from workers. The more detail, the better the match."
-                rows={5}
-                className="input-style resize-none"
+                rows={4}
+                className="input-style resize-y"
                 maxLength={4000}
+                required
+                aria-required="true"
               />
+              <p className="mt-1 text-right text-xs tabular-nums text-stone-400">{form.description.length}/4000</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-stone-700 block mb-1.5">Responsibilities *</label>
-              <textarea value={form.responsibilities} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, responsibilities: event.target.value })) }} placeholder="List the tasks the worker will complete." rows={4} maxLength={4000} className="input-style resize-y" />
+              <label htmlFor="job-responsibilities" className="text-sm font-semibold text-stone-700 block mb-1.5">Main responsibilities <span className="text-red-700">*</span></label>
+              <textarea id="job-responsibilities" value={form.responsibilities} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, responsibilities: event.target.value })) }} placeholder="List the main tasks the worker will complete. Add one responsibility per line for clarity." rows={3} maxLength={4000} className="input-style resize-y" required aria-required="true" />
+              <p className="mt-1 text-right text-xs tabular-nums text-stone-400">{form.responsibilities.length}/4000</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Number of Workers Needed *
+              <label htmlFor="workers-needed" className="text-sm font-semibold text-stone-700 block mb-1.5">
+                Number of workers needed <span className="text-red-700">*</span>
               </label>
               <input
+                id="workers-needed"
                 type="number"
                 min={Math.max(1, existingJob?.workersHired || 1)}
                 max="100"
@@ -335,7 +450,9 @@ export default function CreateEditJob({ editJobId }: Props) {
                     workersNeeded: Number(e.target.value),
                   }))
                 }}
-                className="input-style w-32"
+                className="input-style w-48"
+                required
+                aria-required="true"
               />
             </div>
           </div>
@@ -344,32 +461,40 @@ export default function CreateEditJob({ editJobId }: Props) {
         {/* Step 2: Requirements */}
         {step === 2 && (
           <div className="space-y-5 animate-fade-in">
-            <h2 className="font-semibold text-stone-900 text-lg mb-4">
+            <h2 className="font-semibold text-stone-900 text-lg mb-1">
               Skills & Requirements
             </h2>
+            <p className="-mt-3 mb-2 text-sm leading-6 text-stone-500">Add relevant skills and experience.</p>
             <div>
-              <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Skills Required
+              <label htmlFor="required-skills" className="text-sm font-semibold text-stone-700 block mb-1.5">
+                Skills required {form.category === "skill-based" && <span className="text-red-700">*</span>}
               </label>
+              <div className="flex gap-2">
               <input
+                id="required-skills"
                 type="text"
                 value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                placeholder="Search skills…"
-                className="input-style mb-2"
+                onChange={(e) => { setFormError(""); setSkillInput(e.target.value) }}
+                onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addCustomSkill() } }}
+                placeholder="Search or enter a skill"
+                className="input-style"
               />
+              <button type="button" onClick={addCustomSkill} disabled={!skillInput.trim()} className="shrink-0 rounded-lg border border-stone-200 px-4 text-sm font-semibold text-primary-ink transition hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-50">Add</button>
+              </div>
+              <p className="mt-1.5 text-sm text-stone-500">{form.category === "skill-based" ? "Type a skill or choose a suggestion. Typed skills are saved when you continue." : "Add skills to help workers understand the job."}</p>
               {form.skillsRequired.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {form.skillsRequired.map((s) => (
                     <span
                       key={s}
-                      className="text-xs px-2.5 py-1 bg-primary-50 text-primary-ink rounded-full border border-primary-100 flex items-center gap-1"
+                      className="inline-flex items-center gap-1 rounded-lg border border-primary-100 bg-primary-50 px-2.5 py-1.5 text-xs text-primary-ink"
                     >
                       {s}
                       <button
                         type="button"
                         onClick={() => toggleSkill(s)}
-                        className="text-primary-ink/60 hover:text-primary-ink font-bold"
+                        aria-label={`Remove ${s}`}
+                        className="ml-1 flex h-5 w-5 items-center justify-center rounded-full text-primary-ink/60 hover:bg-white hover:text-primary-ink"
                       >
                         ×
                       </button>
@@ -386,7 +511,7 @@ export default function CreateEditJob({ editJobId }: Props) {
                       toggleSkill(s)
                       setSkillInput("")
                     }}
-                    className="text-xs px-2.5 py-1 bg-stone-100 text-stone-700 rounded-full border border-stone-200 hover:bg-stone-200 transition-colors"
+                    className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-700 transition-colors hover:border-primary/40 hover:bg-primary-50"
                   >
                     + {s}
                   </button>
@@ -395,60 +520,69 @@ export default function CreateEditJob({ editJobId }: Props) {
             </div>
             <div>
               <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Qualification Required
+                Qualification <span className="font-normal text-stone-500">(optional)</span>
               </label>
               <input
                 value={form.qualificationRequired}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setFormError("")
                   setForm((p) => ({
                     ...p,
                     qualificationRequired: e.target.value,
                   }))
-                }
+                }}
                 placeholder="e.g. SLC/SEE passed, Diploma in Electrical Engineering"
                 className="input-style"
+                maxLength={300}
               />
             </div>
-            <div>
+            {form.category === "beginner-friendly" ? (
+              <div className="rounded-xl border border-primary-100 bg-primary-50 px-4 py-3">
+                <p className="text-sm font-semibold text-primary-ink">No previous experience required</p>
+                <p className="mt-1 text-xs leading-5 text-stone-600">This job will be shown as beginner friendly. Workers can learn the task on site.</p>
+              </div>
+            ) : <div>
               <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Required experience (months)
+                Minimum experience (months) <span className="font-normal text-stone-500">(optional)</span>
               </label>
               <input
                 type="number"
                 min="0"
                 max="1200"
                 value={form.experienceRequired}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, experienceRequired: e.target.value }))
-                }
+                onChange={(e) => { setFormError(""); setForm((p) => ({ ...p, experienceRequired: e.target.value })) }}
                 placeholder="0 for no previous experience"
                 className="input-style"
               />
-            </div>
+            </div>}
             <div>
               <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Work Location *
+                Work location <span className="text-red-700">*</span>
               </label>
               <input
                 value={form.location}
                 onChange={(e) => {
                   setFormError("")
+                  setLocationAttribution(false)
                   setForm((p) => ({ ...p, location: e.target.value, latitude: undefined, longitude: undefined }))
                 }}
                 placeholder="e.g. Durbar Marg, Kathmandu"
                 className="input-style"
                 maxLength={120}
+                required
+                aria-required="true"
               />
-              <div className="mt-2 rounded-lg border border-stone-200 bg-stone-50 p-3">
-                <p className="text-xs leading-relaxed text-stone-600">Add the job site's approximate coordinates for workers who use distance-based matching. Location sharing is optional.</p>
-                <button type="button" onClick={() => { setLocationMessage("Getting location…"); void getCurrentCoordinates().then((coordinates) => { setForm((previous) => ({ ...previous, ...coordinates })); setLocationMessage("Job-site coordinates added. Confirm this device is at the work location.") }).catch((error: unknown) => setLocationMessage(error instanceof Error ? error.message : "Could not get location.")) }} className="mt-2 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100">Use current location for job site</button>
-                {locationMessage && <p role="status" className="mt-2 text-xs text-stone-600">{locationMessage}</p>}
-                {Number.isFinite(form.latitude) && Number.isFinite(form.longitude) && <p className="mt-1 text-xs text-teal-800">Job-site coordinates are set for distance matching.</p>}
+              <div className="mt-3 rounded-md border border-primary-100 bg-primary-50 p-4 sm:p-5">
+                <h3 className="font-heading text-base font-bold text-primary-ink">Pin the job location</h3>
+                <p className="mt-1 text-sm leading-6 text-stone-600">Add a nearby place and optional map coordinates for distance matching.</p>
+                <button type="button" disabled={locationLoading} onClick={() => void useCurrentJobLocation()} className="mt-3 min-h-11 rounded-md border border-primary-100 bg-white px-4 py-2.5 text-sm font-semibold text-primary-ink transition hover:bg-primary-50 disabled:cursor-wait disabled:opacity-60">{locationLoading ? "Finding location…" : "Use my current location"}</button>
+                {locationMessage && <p role="status" className="mt-3 rounded-md bg-white/80 px-3 py-2 text-sm text-stone-700">{locationMessage}</p>}
+                {Number.isFinite(form.latitude) && Number.isFinite(form.longitude) && <div className="mt-3 rounded-md border border-primary-100 bg-white px-3 py-2.5 text-sm text-primary-ink"><span className="font-semibold">Location saved:</span> {form.location || `${form.latitude?.toFixed(5)}, ${form.longitude?.toFixed(5)}`}<span className="mt-1 block text-xs text-stone-500">Coordinates are ready for distance-based matching.</span>{locationAttribution && <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="mt-1 block text-[10px] text-stone-500 underline">© OpenStreetMap contributors</a>}</div>}
               </div>
             </div>
             <div>
               <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                District *
+                District <span className="text-red-700">*</span>
               </label>
               <select
                 value={form.district}
@@ -457,6 +591,8 @@ export default function CreateEditJob({ editJobId }: Props) {
                   setForm((p) => ({ ...p, district: e.target.value }))
                 }}
                 className="input-style"
+                required
+                aria-required="true"
               >
                 <option value="">Select district</option>
                 {DISTRICTS.map((d) => (
@@ -467,12 +603,12 @@ export default function CreateEditJob({ editJobId }: Props) {
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium text-stone-700 block mb-1.5">Municipality / city *</label>
-              <input value={form.municipality} onChange={(event) => setForm((previous) => ({ ...previous, municipality: event.target.value }))} maxLength={120} className="input-style" placeholder="e.g. Pokhara Metropolitan City" />
+              <label htmlFor="job-municipality" className="text-sm font-medium text-stone-700 block mb-1.5">Municipality / city <span className="text-red-700">*</span></label>
+              <input id="job-municipality" value={form.municipality} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, municipality: event.target.value })) }} maxLength={120} className="input-style" placeholder="e.g. Pokhara Metropolitan City" required aria-required="true" />
             </div>
             <div>
-              <label className="text-sm font-medium text-stone-700 block mb-1.5">Province *</label>
-              <select value={form.province} onChange={(event) => setForm((previous) => ({ ...previous, province: event.target.value }))} className="input-style"><option value="">Select province</option>{["Koshi", "Madhesh", "Bagmati", "Gandaki", "Lumbini", "Karnali", "Sudurpashchim"].map((province) => <option key={province} value={province}>{province}</option>)}</select>
+              <label htmlFor="job-province" className="text-sm font-medium text-stone-700 block mb-1.5">Province <span className="text-red-700">*</span></label>
+              <select id="job-province" value={form.province} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, province: event.target.value })) }} className="input-style" required aria-required="true"><option value="">Select province</option>{["Koshi", "Madhesh", "Bagmati", "Gandaki", "Lumbini", "Karnali", "Sudurpashchim"].map((province) => <option key={province} value={province}>{province}</option>)}</select>
             </div>
           </div>
         )}
@@ -485,7 +621,7 @@ export default function CreateEditJob({ editJobId }: Props) {
             </h2>
             <div>
               <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                Work Type *
+                Work type <span className="text-red-700">*</span>
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
@@ -500,7 +636,7 @@ export default function CreateEditJob({ editJobId }: Props) {
                     onClick={() =>
                       setForm((p) => ({ ...p, workType: wt.value as WorkType }))
                     }
-                    className={`py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                    className={`min-h-14 rounded-md border px-4 py-3 text-base font-semibold transition-colors ${
                       form.workType === wt.value
                         ? "border-primary bg-primary-50 text-primary-ink"
                         : "border-stone-200 text-stone-700 hover:border-stone-300"
@@ -514,7 +650,7 @@ export default function CreateEditJob({ editJobId }: Props) {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                  Start Date *
+                  Start date <span className="text-red-700">*</span>
                 </label>
                 <input
                   type="date"
@@ -525,12 +661,14 @@ export default function CreateEditJob({ editJobId }: Props) {
                     setForm((p) => ({ ...p, date: e.target.value }))
                   }}
                   className="input-style"
+                  required
+                  aria-required="true"
                 />
               </div>
               {form.workType === "multi-day" && (
                 <div>
                   <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                    End Date {form.workType === "multi-day" && "*"}
+                    End date <span className="text-red-700">*</span>
                   </label>
                   <input
                     type="date"
@@ -541,12 +679,14 @@ export default function CreateEditJob({ editJobId }: Props) {
                       setForm((p) => ({ ...p, endDate: e.target.value }))
                     }}
                     className="input-style"
+                    required
+                    aria-required="true"
                   />
                 </div>
               )}
               <div>
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                  Start Time *
+                  Start time <span className="text-red-700">*</span>
                 </label>
                 <input
                   type="time"
@@ -556,11 +696,13 @@ export default function CreateEditJob({ editJobId }: Props) {
                     setForm((p) => ({ ...p, startTime: e.target.value }))
                   }}
                   className="input-style"
+                  required
+                  aria-required="true"
                 />
               </div>
               <div>
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                  End Time *
+                  End time <span className="text-red-700">*</span>
                 </label>
                 <input
                   type="time"
@@ -570,6 +712,8 @@ export default function CreateEditJob({ editJobId }: Props) {
                     setForm((p) => ({ ...p, endTime: e.target.value }))
                   }}
                   className="input-style"
+                  required
+                  aria-required="true"
                 />
               </div>
               <div>
@@ -602,52 +746,39 @@ export default function CreateEditJob({ editJobId }: Props) {
               </div>
             </div>
             <div className="mb-4 rounded-xl border border-[#E4E9E3] bg-[#F7F8F5] p-4">
-              <label className="text-sm font-semibold text-[#202923]">Task budget format</label>
-              <select value={form.budgetMode} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, budgetMode: event.target.value as typeof previous.budgetMode, ...(event.target.value === "open" ? { payment: 0, paymentMax: 0 } : {}) })) }} className="input-style mt-1.5 w-full sm:max-w-sm"><option value="fixed">Fixed budget</option><option value="range">Budget range</option><option value="open">Open to offers</option></select>
-              <p className="mt-1.5 text-xs text-[#68736B]">Workers can propose their own price for this task. Their usual service rate is shown separately on their profile.</p>
+              <label htmlFor="budget-mode" className="text-sm font-semibold text-[#202923]">Budget setup <span className="text-red-700">*</span></label>
+              <select id="budget-mode" value={form.budgetMode} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, budgetMode: event.target.value as typeof previous.budgetMode, ...(event.target.value === "open" ? { payment: 0, paymentMax: 0 } : {}) })) }} className="input-style mt-1.5 w-full sm:max-w-sm" required><option value="fixed">Fixed budget</option><option value="range">Budget range</option><option value="open">Open to offers</option></select>
+              <p className="mt-1.5 text-xs text-[#68736B]">Workers can suggest their own price.</p>
             </div>
-            {form.budgetMode === "open" ? <div className="mb-4 rounded-lg border border-[#E4E9E3] bg-white p-4 text-sm text-[#68736B]">No fixed budget set. Workers will submit their prices for you to compare.</div> : <div className="grid sm:grid-cols-2 gap-4">
+            {form.budgetMode === "open" ? <div className="mb-1 rounded-lg border border-[#E4E9E3] bg-white p-4 text-sm text-[#68736B]">No fixed budget set. Workers will submit their prices for you to compare.</div> : <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                  {form.budgetMode === "range" ? "Minimum budget (NPR) *" : "Task budget (NPR) *"}
+                  {form.budgetMode === "range" ? <>Minimum budget (NPR) <span className="text-red-700">*</span></> : <>Task budget (NPR) <span className="text-red-700">*</span></>}
                 </label>
-                <input type="number" min="1" step="1" value={form.payment || ""} onChange={(e) => { setFormError(""); setForm((p) => ({ ...p, payment: Number(e.target.value) })) }} placeholder="e.g. 1500" className="input-style" />
+                <input type="number" min="1" step="1" value={form.payment || ""} onChange={(e) => { setFormError(""); setForm((p) => ({ ...p, payment: Number(e.target.value) })) }} placeholder="e.g. 1500" className="input-style" required />
               </div>
-              {form.budgetMode === "range" && <div><label className="text-sm font-medium text-stone-700 block mb-1.5">Maximum budget (NPR) *</label><input type="number" min={form.payment || 1} step="1" value={form.paymentMax || ""} onChange={(e) => { setFormError(""); setForm((p) => ({ ...p, paymentMax: Number(e.target.value) })) }} placeholder="e.g. 2500" className="input-style" /></div>}
-              <div>
-                <label className="text-sm font-medium text-stone-700 block mb-1.5">
-                  Payment Type *
-                </label>
-                <select
-                  value={form.paymentType}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      paymentType: e.target.value as PaymentType,
-                    }))
-                  }
-                  className="input-style"
-                >
-                  <option value="per-day">Per Day</option>
-                  <option value="per-hour">Per Hour</option>
-                  <option value="fixed">Fixed (total)</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-stone-700 block mb-1.5">Payment Method *</label>
-                <select value={form.paymentMethod} onChange={(event) => setForm((previous) => ({ ...previous, paymentMethod: event.target.value as typeof previous.paymentMethod }))} className="input-style"><option value="CASH">Cash</option><option value="BANK_TRANSFER">Bank transfer</option><option value="DIGITAL_WALLET">Digital wallet</option><option value="OTHER">Other</option></select>
-              </div>
+              {form.budgetMode === "range" && <div><label className="text-sm font-medium text-stone-700 block mb-1.5">Maximum budget (NPR) <span className="text-red-700">*</span></label><input type="number" min={form.payment || 1} step="1" value={form.paymentMax || ""} onChange={(e) => { setFormError(""); setForm((p) => ({ ...p, paymentMax: Number(e.target.value) })) }} placeholder="e.g. 2500" className="input-style" required /></div>}
             </div>}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-stone-700 block mb-1.5">Payment type <span className="text-red-700">*</span></label>
+                <select value={form.paymentType} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, paymentType: event.target.value as PaymentType })) }} className="input-style" required><option value="per-day">Per day</option><option value="per-hour">Per hour</option><option value="fixed">Fixed total</option></select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-stone-700 block mb-1.5">Payment method <span className="text-red-700">*</span></label>
+                <select value={form.paymentMethod} onChange={(event) => { setFormError(""); setForm((previous) => ({ ...previous, paymentMethod: event.target.value as typeof previous.paymentMethod })) }} className="input-style" required><option value="CASH">Cash</option><option value="BANK_TRANSFER">Bank transfer</option><option value="DIGITAL_WALLET">Digital wallet</option><option value="OTHER">Other</option></select>
+              </div>
+            </div>
 
             {/* Preview */}
             <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
+              <p className="text-sm font-bold text-stone-600 uppercase tracking-wide mb-3">
                 Job Summary Preview
               </p>
-              <h3 className="font-semibold text-stone-900">
+              <h3 className="text-lg font-bold tracking-tight text-stone-950">
                 {form.title || "Untitled Job"}
               </h3>
-              <div className="flex flex-wrap gap-2 mt-2 text-xs text-stone-500">
+              <div className="flex flex-wrap gap-2 mt-2 text-sm text-stone-600">
                 {form.district && <span>{form.district}</span>}
                 {form.date && (
                   <span>
@@ -658,7 +789,7 @@ export default function CreateEditJob({ editJobId }: Props) {
                   </span>
                 )}
                 {form.budgetMode === "open" ? <span className="font-semibold text-[#286B50]">Open to offers</span> : form.payment > 0 && (
-                  <span className="font-mono-data font-semibold text-stone-800">
+                  <span className="font-mono-data text-base font-bold text-stone-900">
                     NPR {form.payment.toLocaleString()}{form.budgetMode === "range" ? `–${form.paymentMax.toLocaleString()}` : ""} / {form.paymentType.replace("per-", "")}
                   </span>
                 )}
@@ -670,17 +801,21 @@ export default function CreateEditJob({ editJobId }: Props) {
         {/* Navigation */}
         <div className="flex justify-between mt-8 pt-6 border-t border-stone-100">
           <button
+            type="button"
+            disabled={isSaving}
             onClick={() =>
               step === 1
                 ? navigate("provider-dashboard")
                 : (setFormError(""), setStep((s) => s - 1))
             }
-            className="px-5 py-2.5 border border-stone-200 rounded-xl text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+            className="px-5 py-2.5 border border-stone-200 rounded-lg text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {step === 1 ? "Cancel" : "← Back"}
           </button>
           {step < 3 ? (
             <button
+              type="button"
+              disabled={isSaving}
               onClick={continueToNextStep}
               className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -688,10 +823,13 @@ export default function CreateEditJob({ editJobId }: Props) {
             </button>
           ) : (
             <button
+              type="button"
               onClick={handleSubmit}
-              className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSaving}
+              aria-busy={isSaving}
+              className="min-w-36 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-wait disabled:opacity-60"
             >
-              {existingJob ? "Save Changes" : "Post Job →"}
+              {isSaving ? "Saving…" : existingJob ? "Save changes" : "Post job →"}
             </button>
           )}
         </div>

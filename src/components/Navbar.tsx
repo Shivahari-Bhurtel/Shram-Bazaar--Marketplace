@@ -48,6 +48,8 @@ export default function Navbar() {
     { label: "Team & operations", page: "provider-operations" as const },
     { label: "Post a Job", page: "create-job" as const },
     { label: "My Jobs", page: "my-jobs" as const },
+    { label: "Applicants", page: "applicant-management" as const },
+    { label: "Hire", page: "provider-hire" as const },
     { label: "Organisation", page: "provider-profile" as const },
   ]
 

@@ -16,6 +16,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Set;
 
 import com.shrambazar.enums.ApplicationStatus;
 import com.shrambazar.enums.EngagementStatus;
@@ -75,7 +78,7 @@ public class JobPostService {
 
         JobPost savedJob = jobPostRepository.save(job);
 
-        saveJobSkills(savedJob, request.requiredSkillIds());
+        saveJobSkills(savedJob, resolveRequiredSkillIds(request));
 
         return mapToResponse(savedJob);
     }
@@ -118,7 +121,7 @@ public class JobPostService {
 
         applyRequest(job, request);
 
-        replaceJobSkills(job, request.requiredSkillIds());
+        replaceJobSkills(job, resolveRequiredSkillIds(request));
 
         notifyApplicants(
                 job,
@@ -366,6 +369,28 @@ public class JobPostService {
 
             jobPostSkillRepository.save(jobSkill);
         }
+    }
+
+    private List<Long> resolveRequiredSkillIds(JobPostRequest request) {
+        Set<Long> resolvedIds = new LinkedHashSet<>(request.requiredSkillIds() == null
+                ? List.of()
+                : request.requiredSkillIds());
+        if (request.requiredSkills() == null) return List.copyOf(resolvedIds);
+
+        Set<String> seenNames = new LinkedHashSet<>();
+        for (String rawName : request.requiredSkills()) {
+            String name = rawName.trim().replaceAll("\\s+", " ");
+            String normalizedName = name.toLowerCase(Locale.ROOT);
+            if (name.isEmpty() || !seenNames.add(normalizedName)) continue;
+
+            Skill skill = skillRepository.findByNameIgnoreCase(name).orElseGet(() -> {
+                Skill newSkill = new Skill();
+                newSkill.setName(name);
+                return skillRepository.save(newSkill);
+            });
+            resolvedIds.add(skill.getId());
+        }
+        return List.copyOf(resolvedIds);
     }
 
     // Helper: replace existing required skills

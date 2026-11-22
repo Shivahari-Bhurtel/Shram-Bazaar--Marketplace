@@ -16,13 +16,13 @@ type Props = {
 
 export default function DemoJobCard({ job, selected = false, saved = false, applied = false, homeStyle = false, inlineSaveAction = false, matchReasons = [], onOpen, onToggleSaved, onApply }: Props) {
   return (
-    <article className={`job-listing-card border bg-white p-3 transition-colors ${homeStyle ? "flex h-full min-h-[232px] flex-col rounded-xl p-4" : ""} ${selected ? "border-[#265D4C] ring-1 ring-[#265D4C]/25" : "border-stone-200 hover:border-stone-300"}`}>
+    <article className={`job-listing-card border bg-white p-4 transition-colors ${homeStyle ? "flex h-full min-h-[220px] flex-col rounded-none p-5" : "rounded-none"} ${selected ? "border-[#265D4C] ring-1 ring-[#265D4C]/25" : "border-stone-300 hover:border-stone-500"}`}>
       <div className="flex items-start justify-between gap-2.5">
         <div className="min-w-0">
           <h3 className={`job-listing-title text-base font-semibold leading-snug text-stone-900 ${homeStyle ? "line-clamp-2" : ""}`}>
             <button type="button" onClick={() => onOpen(job)} className="text-left hover:text-primary-ink focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{job.title}</button>
           </h3>
-          <p className="mt-0.5 truncate text-sm text-stone-600">{job.company}</p>
+          <p className="mt-1 truncate text-sm font-medium text-stone-600">{job.category} <span aria-hidden="true">·</span> {job.job_type}</p>
         </div>
         {(homeStyle || inlineSaveAction) && onToggleSaved ? <button type="button" aria-label={saved ? `Remove ${job.title} from saved jobs` : `Save ${job.title}`} title={saved ? "Remove saved job" : "Save job"} aria-pressed={saved} onClick={() => onToggleSaved(job.id)} className={`flex h-8 w-9 shrink-0 items-center justify-center rounded-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#80502F] ${saved ? "text-[#70472F]" : "text-stone-500 hover:text-[#70472F]"}`}><svg viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]" aria-hidden="true"><path d="M6 4.75A1.75 1.75 0 0 1 7.75 3h8.5A1.75 1.75 0 0 1 18 4.75V21l-6-3.75L6 21V4.75Z" /></svg></button> : !homeStyle && <span className="job-card-type shrink-0">{job.job_type}</span>}
       </div>

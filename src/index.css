@@ -935,6 +935,131 @@ body {
   background-color: #FAF8F5;
 }
 
+/* Provider pages follow the worker workspace's warm brown palette. */
+.provider-portal {
+  --color-primary: #80502F;
+  --color-primary-light: #986744;
+  --color-primary-dark: #4F3020;
+  --color-primary-ink: #553421;
+  --color-primary-50: #F7F1EB;
+  --color-primary-100: #EEDFD2;
+  --color-teal: #80502F;
+  --color-teal-light: #986744;
+  --color-teal-dark: #4F3020;
+  --color-teal-50: #F7F1EB;
+  --color-teal-100: #EEDFD2;
+  --color-green: #80502F;
+  --color-green-50: #F7F1EB;
+  --color-green-100: #EEDFD2;
+  --color-green-700: #70472F;
+  --color-green-800: #553421;
+  --color-teal-700: #70472F;
+  --color-emerald-50: #F7F1EB;
+  --color-emerald-100: #EEDFD2;
+  --color-emerald-700: #70472F;
+  --color-emerald-800: #553421;
+  --color-cream: #FAF8F5;
+  --color-stone-50: #FAF8F5;
+  --color-stone-100: #F5F2EE;
+  --color-stone-200: #E8E2D5;
+  --color-stone-300: #D8CEC3;
+  --color-stone-400: #9A9086;
+  --color-stone-500: #766B61;
+  --color-stone-600: #65564A;
+  --color-stone-700: #4B3B2F;
+  --color-stone-800: #38291F;
+  --color-stone-900: #261C14;
+  min-height: 100vh;
+  background-color: #FAF8F5;
+  color: #261C14;
+  font-family: var(--font-ui);
+}
+
+.provider-portal :is(button, a).bg-primary:not(:disabled),
+.provider-portal :is(button, a).bg-primary-dark:not(:disabled) {
+  background-color: var(--color-primary);
+}
+
+.provider-portal :is(button, a)[class~="hover:bg-primary"]:not(:disabled):hover,
+.provider-portal :is(button, a)[class~="hover:bg-primary-dark"]:not(:disabled):hover,
+.provider-portal :is(button, a).bg-primary:not(:disabled):hover,
+.provider-portal :is(button, a).bg-primary-dark:not(:disabled):hover {
+  background-color: var(--color-primary-dark);
+}
+
+/* Job creation is the one Provider flow that intentionally keeps forest green. */
+.provider-portal .provider-post-job {
+  --color-primary: #164E38;
+  --color-primary-light: #236B4B;
+  --color-primary-dark: #103B2C;
+  --color-primary-ink: #164E38;
+  --color-primary-50: #EAF3ED;
+  --color-primary-100: #D7E9DD;
+  --color-teal: #236B4B;
+  --color-teal-light: #438764;
+  --color-teal-dark: #164E38;
+  --color-teal-50: #EAF3ED;
+  --color-teal-100: #D7E9DD;
+  --color-green: #236B4B;
+  --color-green-50: #EAF3ED;
+  --color-green-100: #D7E9DD;
+  --color-green-700: #15803D;
+  --color-green-800: #166534;
+  --color-teal-50: #F0FDFA;
+  --color-teal-100: #CCFBF1;
+  --color-teal-700: #0F766E;
+  --color-emerald-50: #ECFDF5;
+  --color-emerald-100: #D1FAE5;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065F46;
+}
+
+.provider-post-job {
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.provider-post-job label {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+.provider-post-job .input-style {
+  min-height: 3.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.provider-post-job textarea.input-style {
+  min-height: 9rem;
+  padding-top: 0.875rem;
+}
+
+.provider-post-job :is(input, select, textarea, button):not(.rounded-full) {
+  border-radius: 0.375rem;
+}
+
+.provider-post-job [aria-label="Job posting progress"] span {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.provider-post-job-action,
+.provider-portal .provider-post-job-action {
+  background-color: #164E38 !important;
+}
+.provider-post-job-action:hover,
+.provider-portal .provider-post-job-action:hover {
+  background-color: #103B2C !important;
+}
+
 .worker-interface :is(section, article).rounded-2xl,
 .worker-interface :is(section, article).rounded-xl {
   border-color: #E1DAD3;
@@ -952,6 +1077,15 @@ body {
 
 .worker-profile-page {
   --font-sans: 'Rza', 'Neue Montreal', 'Outfit', 'Noto Sans Devanagari', sans-serif;
+  font-family: var(--font-sans);
+}
+
+.external-job-detail {
+  --font-sans: 'Rza', 'Neue Montreal', 'Outfit', 'Noto Sans Devanagari', sans-serif;
+  font-family: var(--font-sans);
+}
+
+.external-job-detail :is(h1, h2, h3, h4) {
   font-family: var(--font-sans);
 }
 
@@ -1574,8 +1708,8 @@ body {
   font-family: 'Neue Montreal', 'Rza', 'Outfit', 'Noto Sans Devanagari', sans-serif;
 }
 .job-listing-card {
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgb(38 28 20 / 8%);
+  border-radius: 0;
+  box-shadow: 0 1px 3px rgb(38 28 20 / 8%);
 }
 .job-card-type {
   max-width: 112px;
@@ -1591,18 +1725,18 @@ body {
   white-space: nowrap;
 }
 .job-card-salary {
-  border: 1px solid #e3b323;
-  border-radius: 4px;
-  color: #302b27;
+  border: 1px solid #d8d8d8;
+  border-radius: 0;
+  color: #e53935;
   background: #ffc72c;
 }
 .job-detail-salary {
   display: inline-flex;
   width: fit-content;
-  border: 1px solid #e3b323;
-  border-radius: 6px;
-  padding: 4px 10px;
-  color: #302b27;
+  border: 1px solid #d8d8d8;
+  border-radius: 0;
+  padding: 5px 11px;
+  color: #e53935;
   background: #ffc72c;
 }
 .job-listing-title,
@@ -1663,7 +1797,7 @@ body {
 .job-map-preview strong { font-size: 13px; line-height: 1.35; }
 .job-map-preview span { color: #706a64; font-size: 11px; }
 .job-map-preview .job-map-preview-meta { color: #706a64; }
-.job-map-preview .job-map-preview-salary { margin-top: 8px; color: #302b27; font-size: 12px; font-weight: 700; }
+.job-map-preview .job-map-preview-salary { justify-self: start; display: inline-flex; margin-top: 8px; border: 1px solid #e7c66b; padding: 4px 7px; color: #765016; background: #fff6d9; font-size: 12px; font-weight: 600; }
 .job-map-preview .job-map-preview-link {
   justify-self: start;
   margin-top: 2px;
@@ -1822,12 +1956,12 @@ body {
 }
 
 .kyc-verification-page .input-style {
-  min-height: 3.25rem;
-  padding: .8rem 1rem;
+  min-height: 2.9rem;
+  padding: .65rem .85rem;
   border: 1px solid #cfc5bb;
   border-radius: 0;
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: .875rem;
 }
 
 .kyc-verification-page .input-style:focus {

@@ -223,6 +223,20 @@ export interface Job {
   employmentType?: string
   seniority?: string
   publishedDate?: string
+  externalPublisher?: string
+  externalEmployerWebsite?: string
+  externalIsRemote?: boolean
+  externalDirectApply?: boolean
+  externalPostedLabel?: string
+  externalBenefits?: string[]
+  externalHighlights?: Record<string, string[]>
+  externalApplyOptions?: Array<{ link: string; publisher?: string; isDirect?: boolean }>
+  externalGoogleUrl?: string
+  externalCity?: string
+  externalRegion?: string
+  externalCountry?: string
+  externalLocationRestrictions?: string[]
+  externalTimezoneRestrictions?: string[]
 }
 
 export interface Application {
@@ -279,6 +293,7 @@ export interface Application {
   workerReviewRating?: number
   workerReview?: string
   workerReviewDate?: string
+  shortlisted?: boolean
 }
 
 export interface Notification {
