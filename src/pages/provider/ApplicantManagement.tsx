@@ -4,6 +4,7 @@ import { ApplicationStatusBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
 import type { ApplicationStatus } from "../../types"
 import { formatNepalDate, nepalDateString } from "../../utils/dates"
+import { prioritizeApplicants } from "../../utils/fairPriority"
 
 type ActionType = {
   applicationId: string
@@ -22,6 +23,7 @@ export default function ApplicantManagement() {
   } = useApp()
   const job = state.jobs.find((j) => j.id === state.currentJobId)
   const [activeTab, setActiveTab] = useState<ApplicationStatus | "all">("all")
+  const [sortMode, setSortMode] = useState<"fair" | "recent">("fair")
   const [pendingAction, setPendingAction] = useState<ActionType>(null)
   const [rejectNote, setRejectNote] = useState("")
   const [expandedApp, setExpandedApp] = useState<string | null>(null)
@@ -49,8 +51,13 @@ export default function ApplicantManagement() {
   }
 
   const apps = jobApplications(job.id)
-  const filtered =
-    activeTab === "all" ? apps : apps.filter((a) => a.status === activeTab)
+  const fairPriorityApps = prioritizeApplicants(apps, job, state.allWorkerProfiles, nepalDateString())
+  const sortedApplications = sortMode === "fair"
+    ? fairPriorityApps
+    : [...fairPriorityApps].sort((a, b) => (b.application.appliedDate || "").localeCompare(a.application.appliedDate || ""))
+  const filtered = activeTab === "all"
+    ? sortedApplications
+    : sortedApplications.filter(({ application }) => application.status === activeTab)
 
   const counts = {
     all: apps.length,
@@ -152,6 +159,22 @@ export default function ApplicantManagement() {
       </div>
 
       {/* Tabs */}
+      <section className="mb-5 rounded-2xl border border-teal-200 bg-teal-50/70 p-4" aria-label="Applicant priority guidance">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-teal-950">Fair applicant priority</h2>
+            <p className="mt-1 max-w-3xl text-xs leading-relaxed text-teal-900">{sortMode === "fair" ? "Pending applicants are grouped by close job-fit scores. Within each group, workers with fewer completed Shram Bazar jobs get an opportunity boost. Ratings and verification status do not affect this order; you make the final hiring decision." : "Pending applicants are shown by application date. Their job-fit score and opportunity boost remain visible; ratings and verification status do not affect those scores."}</p>
+          </div>
+          <label className="shrink-0 text-xs font-semibold text-teal-950">Order applicants
+            <select value={sortMode} onChange={(event) => setSortMode(event.target.value as "fair" | "recent")} className="mt-1 block w-full rounded-lg border border-teal-200 bg-white px-3 py-2 text-sm text-stone-800">
+              <option value="fair">Fair priority</option>
+              <option value="recent">Most recent</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      {/* Tabs */}
       <div className="flex gap-1 bg-stone-100 rounded-xl p-1 mb-6 overflow-x-auto">
         {tabs.map((tab) => (
           <button
@@ -185,7 +208,7 @@ export default function ApplicantManagement() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map((app) => {
+          {filtered.map(({ application: app, score }, index) => {
             const workerFull = workerProfiles.find((w) => w.id === app.workerId)
             const isExpanded = expandedApp === app.id
             return (
@@ -216,6 +239,12 @@ export default function ApplicantManagement() {
                           <h3 className="font-semibold text-stone-900">
                             {app.workerName}
                           </h3>
+                          {app.status === "pending" && <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                            <span className="rounded-full border border-teal-200 bg-teal-50 px-2 py-0.5 font-semibold text-teal-800">{sortMode === "fair" ? `Priority #${index + 1}` : "Applicant"}</span>
+                            <span className="text-stone-600">Match {score.fitScore}%</span>
+                            {score.opportunityBoost > 0 && <span className="rounded-full bg-violet-50 px-2 py-0.5 font-semibold text-violet-800">+{score.opportunityBoost} opportunity boost · {score.completedPlatformJobs === 0 ? "no completed platform jobs yet" : `${score.completedPlatformJobs} completed platform job${score.completedPlatformJobs === 1 ? "" : "s"}`}</span>}
+                          </div>}
+                          {app.status === "pending" && <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-stone-500">{score.reasons.join(" · ")}</p>}
                           <div className="flex items-center gap-3 mt-0.5">
                             <span className="text-xs text-stone-500">
                               {app.workerLocation}
