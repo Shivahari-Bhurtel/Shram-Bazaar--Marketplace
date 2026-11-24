@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react"
-import { sendChatMessage } from "../services/shramAi"
+import { useMemo, useState } from "react"
+import { sendChatMessage, serializeWorkerProfileContext } from "../services/shramAi"
 import { useLanguage } from "../i18n/LanguageContext"
 import { useApp } from "../store/AppContext"
 import type { Job, WorkerProfile } from "../types"
@@ -7,14 +7,6 @@ import { nepalYear } from "../utils/dates"
 import ShramAIRobotAnimation from "../components/ShramAIRobotAnimation"
 
 type ToolId = "profile" | "career" | "hiring"
-
-const MAX_RESUME_BYTES = 10 * 1024 * 1024
-const MAX_RESUME_FILES = 5
-const RESUME_TYPES: Record<string, string> = {
-  pdf: "application/pdf",
-  doc: "application/msword",
-  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-}
 
 function getExperienceYears(profile: WorkerProfile) {
   return profile.experience.reduce((total, experience) => {
@@ -76,7 +68,7 @@ function ToolIcon({ kind }: { kind: ToolId }) {
 }
 
 export default function AIWorkspace() {
-  const { state, navigate, updateWorkerProfile } = useApp()
+  const { state, navigate } = useApp()
   const { language } = useLanguage()
   const isWorker = state.currentUser?.role === "worker"
   const worker = state.workerProfile
@@ -102,13 +94,8 @@ export default function AIWorkspace() {
   const [extraDetails, setExtraDetails] = useState("")
   const [answer, setAnswer] = useState("")
   const [error, setError] = useState("")
-  const [notice, setNotice] = useState("")
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [resumeFiles, setResumeFiles] = useState<File[]>([])
-  const [resumeError, setResumeError] = useState("")
-  const resumeInputRef = useRef<HTMLInputElement>(null)
-
   const selectedJob = selectedJobId === "new"
     ? undefined
     : ownJobs.find((job) => job.id === selectedJobId) || ownJobs[0]
@@ -126,21 +113,26 @@ export default function AIWorkspace() {
   const runAssistant = async (kind: ToolId) => {
     setBusy(true)
     setError("")
-    setNotice("")
     setAnswer("")
     setCopied(false)
     try {
       let prompt = ""
       if (kind === "profile" && worker) {
         const profileData = {
-          title: worker.professionalTitle,
+          professionalTitle: worker.professionalTitle,
           skills: worker.skills,
-          experience: worker.experience.map(({ title, duration, description }) => ({ title, duration, description })),
-          existingBio: worker.bio,
+          qualifications: worker.qualifications.map(({ degree, field, institution }) => ({ degree, field, institution })),
+          experience: worker.experience.map(({ title, company, duration, description }) => ({ title, company, duration, description })),
+          bio: worker.bio,
+          preferredCategories: worker.preferredCategories,
+          employmentPreferences: worker.employmentPreferences,
           district: worker.district,
+          preferredWorkLocation: worker.preferredWorkLocation,
           availability: worker.availability,
+          languages: worker.languages,
+          certifications: worker.certifications,
         }
-        prompt = `Improve this worker profile bio. Use only facts in the supplied profile; do not invent qualifications, employers, years, or achievements. Return only a first-person bio under 100 words, in ${language === "ne" ? "simple Nepali" : "clear English"}. Profile: ${JSON.stringify(profileData)}`
+        prompt = `Give a specific, field-by-field review of this saved worker profile, using the supplied profile details as your only source. Do not give generic advice. Format the response as: (1) Profile strengths, citing the actual skills, bio phrases, qualifications, and experience entries that support them; (2) Suggested bio, with one concise rewrite under 90 words using only facts already present in the saved profile; (3) Skills, show a clearer grouping or order using the exact saved skill names and any existing proficiency labels; (4) Experience, review each saved role and its description, identify repeated titles, and say exactly what factual details the worker could add to distinguish entries; (5) Priority changes, list up to 3 concrete edits and name the exact profile section for each. The bio, skills, qualifications, experience, preferences, location, and availability are provided for you to inspect. Do not rewrite or save any field. Never invent employers, dates, years, metrics, skills, qualifications, responsibilities, or achievements. Never use sample values, placeholder names, or hypothetical examples. When additional detail is needed, say which real information the worker should enter only if accurate. Compare the bio, experience, and qualifications before stating anything is missing. Write in ${language === "ne" ? "simple Nepali" : "clear English"}, with plain-text headings and readable lists. Saved profile details: ${JSON.stringify(profileData)}`
       } else if (kind === "career" && worker) {
         prompt = `Give personalized career and skill guidance for a Shram Bazaar worker. Suggest 3 realistic next skills to learn, possible work paths, and free or practical learning resources. Explain why each fits the profile and goal. Do not claim that a course or job is available on this app. Be concise and use ${language === "ne" ? "simple Nepali" : "clear English"}. Worker profile: ${JSON.stringify({ skills: worker.skills, experience: worker.experience.map(({ title, duration }) => ({ title, duration })), qualifications: worker.qualifications.map(({ degree, field }) => ({ degree, field })), district: worker.district, availability: worker.availability })}. Their goal: ${goal || "Find steadier work and build on existing skills."}`
       } else if (kind === "hiring" && selectedJob) {
@@ -151,21 +143,13 @@ export default function AIWorkspace() {
         prompt = `Help a provider plan a new Shram Bazaar job listing. Return: (1) a clear, inclusive job description, (2) essential skills and qualifications, (3) a practical hiring checklist including a suggested number of workers and interview questions. Do not invent pay, dates, location, or legal requirements. Mark assumptions clearly. Use ${language === "ne" ? "simple Nepali" : "clear English"}. Provider and job details: ${JSON.stringify({ organization: provider?.orgName, industry: provider?.industry, title: draftTitle.trim(), skills, location: draftLocation || provider?.location, district: provider?.district, payment: draftPayment ? Number(draftPayment) : null, paymentType: "per-day", additionalNotes: extraDetails || "None." })}`
       }
       if (!prompt) throw new Error("Complete the required profile or job details first.")
-      const result = await sendChatMessage(prompt, null, [], language)
+      const result = await sendChatMessage(prompt, null, [], language, undefined, [], "general", "", isWorker ? serializeWorkerProfileContext(worker) : "")
       setAnswer(result.answer)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Shram AI could not complete this request.")
     } finally {
       setBusy(false)
     }
-  }
-
-  const applyBio = () => {
-    if (!worker || !answer.trim()) return
-    updateWorkerProfile({ bio: answer.trim() })
-    setCopied(false)
-    setError("")
-    setNotice("Profile bio updated. Review it in My Profile.")
   }
 
   const copyAnswer = async () => {
@@ -177,42 +161,9 @@ export default function AIWorkspace() {
     }
   }
 
-  const addResumeFiles = (files: FileList | null) => {
-    setResumeError("")
-    if (!files?.length) return
-
-    const accepted: File[] = []
-    for (const file of Array.from(files)) {
-      const extension = file.name.split(".").pop()?.toLowerCase() || ""
-      if (!(extension in RESUME_TYPES) || file.type !== RESUME_TYPES[extension]) {
-        setResumeError("Choose valid PDF, DOC, or DOCX resume files.")
-        continue
-      }
-      if (!file.size || file.size > MAX_RESUME_BYTES) {
-        setResumeError(file.size ? "Each resume file must be 10 MB or smaller." : "An empty file cannot be added.")
-        continue
-      }
-      accepted.push(file)
-    }
-
-    setResumeFiles((current) => {
-      const next = [...current]
-      for (const file of accepted) {
-        if (next.length >= MAX_RESUME_FILES) {
-          setResumeError(`You can add up to ${MAX_RESUME_FILES} resume files.`)
-          break
-        }
-        if (!next.some((item) => item.name === file.name && item.size === file.size && item.lastModified === file.lastModified)) {
-          next.push(file)
-        }
-      }
-      return next
-    })
-  }
-
   const labels = isWorker
     ? [
-        { id: "profile" as const, title: "Profile & resume", subtitle: "Turn your experience into a clear worker profile." },
+        { id: "profile" as const, title: "Profile improvement", subtitle: "Get practical suggestions for strengthening your worker profile." },
         { id: "career" as const, title: "Career & skills", subtitle: "Get learning and career suggestions for your goals." },
       ]
     : [{ id: "hiring" as const, title: "Provider hiring assistant", subtitle: "Improve job posts and plan a practical hiring process." }]
@@ -254,41 +205,18 @@ export default function AIWorkspace() {
           <section id="ai-tool-details" className="ai-assistant-panel">
             {tool === "profile" && isWorker && (
               <>
-                <h2 className="font-display text-xl font-bold text-stone-900">Improve your profile bio</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">Shram AI uses your saved skills and experience to suggest a short bio. It won’t add qualifications you haven’t entered.</p>
+                <h2 className="font-display text-xl font-bold text-stone-900">Profile improvement suggestions</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-600">Shram AI reviews your saved profile and suggests specific changes you can choose to make. It won’t edit your profile automatically.</p>
                 <dl className="ai-profile-context mt-5 grid gap-x-6 sm:grid-cols-2">
                   <div className="py-3 sm:col-span-2"><dt>Current bio</dt><dd>{worker?.bio || "No profile bio yet."}</dd></div>
-                  <div className="py-3"><dt>Skills</dt><dd>{worker?.skills.join(", ") || "Add skills to your profile for better suggestions."}</dd></div>
-                  <div className="py-3"><dt>Experience</dt><dd>{worker?.experience.map((item) => item.title).join(", ") || "None added"}</dd></div>
+                  <div className="py-3 sm:col-span-2"><dt>Saved skills</dt><dd>{worker?.skills.join(", ") || "Add skills to your profile for better suggestions."}</dd></div>
+                  <div className="py-3"><dt>Qualifications & training</dt><dd>{worker?.qualifications.length ? worker.qualifications.map((item) => [item.degree, item.field, item.institution].filter(Boolean).join(" · ")).join("; ") : "None added"}</dd></div>
+                  <div className="py-3"><dt>Work preferences</dt><dd>{[worker?.preferredCategories.join(", "), worker?.preferredWorkLocation, worker?.availability].filter(Boolean).join(" · ") || "None added"}</dd></div>
+                  <div className="py-3 sm:col-span-2"><dt>Experience details</dt><dd>{worker?.experience.length ? worker.experience.map((item) => [item.title, item.company, item.duration, item.description].filter(Boolean).join(" — ")).join("; ") : "None added"}</dd></div>
                 </dl>
                 <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <button type="button" onClick={() => void runAssistant("profile")} disabled={busy || !worker?.skills.length} className="min-h-10 bg-[#553421] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#402719] disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Improving profile…" : "Improve Profile"}</button>
-                  <input
-                    ref={resumeInputRef}
-                    type="file"
-                    multiple
-                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    className="sr-only"
-                    aria-label="Add PDF, DOC, or DOCX resume files"
-                    onChange={(event) => {
-                      addResumeFiles(event.target.files)
-                      event.target.value = ""
-                    }}
-                  />
-                  <button type="button" onClick={() => resumeInputRef.current?.click()} className="min-h-10 border border-stone-300 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:border-stone-400 hover:bg-stone-50">Add files</button>
+                  <button type="button" onClick={() => void runAssistant("profile")} disabled={busy || !worker} className="min-h-10 bg-[#553421] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#402719] disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Reviewing profile…" : "Improve Profile"}</button>
                 </div>
-                {resumeFiles.length > 0 && (
-                  <ul className="mt-3 space-y-2" aria-label="Resume files added on this device">
-                    {resumeFiles.map((file) => (
-                      <li key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm">
-                        <span className="min-w-0 break-all text-stone-700">{file.name}<span className="ml-2 text-xs text-stone-500">{(file.size / (1024 * 1024)).toFixed(2)} MB</span></span>
-                        <button type="button" onClick={() => setResumeFiles((current) => current.filter((item) => item !== file))} className="shrink-0 text-xs font-semibold text-stone-600 underline underline-offset-2">Remove</button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {resumeError && <p role="alert" className="mt-2 text-sm text-red-700">{resumeError}</p>}
-                <p className="mt-2 text-xs text-stone-500">Files are kept on this device and are not sent to AI yet.</p>
               </>
             )}
             {tool === "career" && isWorker && (
@@ -326,16 +254,14 @@ export default function AIWorkspace() {
             )}
             {answer && (
               <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
-                <h3 className="text-sm font-bold text-violet-950">Shram AI suggestion</h3>
+                <h3 className="text-sm font-bold text-violet-950">{tool === "profile" ? "Profile changes to consider" : "Shram AI suggestion"}</h3>
                 <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-stone-800">{answer}</div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {tool === "profile" && isWorker && <button type="button" onClick={applyBio} className="rounded-lg bg-[#553421] px-3 py-2 text-xs font-semibold text-white">Use this bio</button>}
                   <button type="button" onClick={() => void copyAnswer()} className="rounded-lg border border-violet-300 px-3 py-2 text-xs font-semibold text-violet-950">{copied ? "Copied" : "Copy text"}</button>
                 </div>
               </div>
             )}
             {error && <p role="alert" className="mt-4 text-sm text-amber-800">{error}</p>}
-            {notice && <p role="status" className="mt-4 text-sm text-teal-800">{notice}</p>}
           </section>
         </section>
 

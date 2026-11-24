@@ -82,6 +82,15 @@ export interface WorkerProfile {
   services?: WorkerServiceListing[]
   qualifications: Qualification[]
   experience: Experience[]
+  languages?: string[]
+  certifications?: string[]
+  contactEmail?: string
+  employmentPreferences?: string[]
+  preferredShifts?: string[]
+  weekendsAvailable?: boolean | null
+  availableStart?: string
+  preferredWorkLocation?: string
+  referenceNote?: string
   availableDates: string[]
   preferredTravelDistanceKm?: number
   weeklyAvailability?: AvailabilitySlot[]

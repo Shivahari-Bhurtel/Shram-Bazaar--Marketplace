@@ -1,13 +1,14 @@
 # Shram Bazar AI service
 
-This FastAPI service handles Shram AI chat, resume analysis, and short-lived Gemini Live tokens for the browser voice assistant. Normal text chat uses local Ollama (`qwen3:4b` by default); resume analysis and the existing voice assistant continue to use their Gemini credentials. The browser never receives provider credentials.
+This FastAPI service handles Shram AI chat, local Qwen resume extraction, and short-lived Gemini Live tokens for the browser voice assistant. Text chat and PDF/DOCX resume extraction use the existing local Ollama model (`qwen3:4b` by default). Gemini remains an optional text chat fallback and is used by the existing voice assistant. The browser never receives provider credentials.
 
-Job searches use deterministic matching against `../shrambazar/src/main/resources/data/jobs.json`; Ollama does not create or select job records. The bundled file contains 130 showcase records. These are illustrative demo listings. The current app login/profile is client-side, so the AI service cannot securely read an authenticated worker profile. Do not expose this prototype publicly without adding backend authentication and abuse controls.
+Job searches use deterministic matching against the Java API's `/api/jobs/showcase` endpoint, which serves the 130 imported showcase listings; Ollama does not invent or select job records. The bundled 130-row JSON file is used as a local fallback if the Java API is unavailable. These are illustrative demo listings. Worker chat sends only work-related profile fields for personalized matching; it does not send phone, email, date of birth, or identity-verification data.
 
 ## Requirements
 
 - Python 3.10+
-- Separate text and voice Gemini API keys from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- Ollama with the configured local model already installed
+- A Gemini voice API key only if using the existing voice assistant
 - Node.js and npm for the existing Vite app
 
 ## Configure the local model
@@ -16,6 +17,7 @@ Copy `.env.example` to `.env` if needed, then configure these backend-only value
 
 ```dotenv
 AI_PROVIDER=ollama
+SHRAM_API_BASE_URL=http://127.0.0.1:8080
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:4b
 OLLAMA_CONNECT_TIMEOUT_SECONDS=2
@@ -25,14 +27,14 @@ OLLAMA_STARTUP_TIMEOUT_SECONDS=20
 OLLAMA_START_COOLDOWN_SECONDS=30
 OLLAMA_NUM_CTX=4096
 OLLAMA_NUM_PREDICT=300
-# Required only for resume analysis and optional Gemini text fallback:
+# Optional Gemini text-chat fallback and existing voice assistant:
 GEMINI_API_KEY=your_text_and_resume_key
 GEMINI_MODEL=gemini-3.6-flash
 GEMINI_VOICE_API_KEY=your_separate_voice_project_key
 CORS_ORIGINS=http://localhost:8443,http://127.0.0.1:8443
 ```
 
-Keep `.env` out of Git. Ollama settings are read only by FastAPI. `AI_PROVIDER=gemini` selects Gemini as an optional text-chat fallback. Resume analysis still requires `GEMINI_API_KEY`; voice requires `GEMINI_VOICE_API_KEY`.
+Keep `.env` out of Git. Ollama settings are read only by FastAPI. Resume extraction always uses the configured Ollama model, regardless of the optional chat fallback setting; it does not call Gemini. `AI_PROVIDER=gemini` selects Gemini for text chat. Voice requires `GEMINI_VOICE_API_KEY`.
 
 ## Vercel deployment
 
@@ -70,7 +72,7 @@ Check <http://localhost:8000/health>.
 
 FastAPI checks Ollama during startup. On macOS it opens the installed Ollama app when available, then checks the API with bounded retries; if no server process exists, it starts one tracked `ollama serve` child. It never downloads model data. Missing or stopped Ollama does not stop FastAPI, deterministic job search, or local platform guidance.
 
-`GET /api/v1/ai/status` reports provider/model, installation and service state, model availability/loading, readiness, last check/error, and fallback state. The check uses `/api/tags` and `/api/show`, not text generation. Chat retries a stopped service with a cooldown and requests a schema-constrained final answer so reasoning text cannot be returned to users.
+`GET /api/v1/ai/status` reports provider/model, installation and service state, model availability/loading, readiness, last check/error, and fallback state. It also advertises the resume extraction provider/model/schema so the launcher can detect and replace an outdated server process. The check uses `/api/tags` and `/api/show`, not text generation. Chat and resume extraction share one inference gate so concurrent requests queue instead of interrupting each other. Resume upload supports PDF and DOCX up to 4 MB; scanned image-only PDFs need OCR before they can be extracted.
 
 ## Start the frontend
 
@@ -106,9 +108,9 @@ The automated tests mock Google token creation. They verify credential separatio
 
 ## Resume analysis
 
-The chat plus button accepts PDF/DOCX files up to 10 MB. The backend independently checks extension, MIME type, file size, PDF encryption/page count, DOCX package structure and uncompressed size, and rejects documents with no extractable text. It extracts at most 60,000 characters and calls Gemini with instructions to treat resume text as untrusted and not invent qualifications. Scanned image-only PDFs need OCR, which is not included.
+The worker profile and chat attachment accept PDF/DOCX resumes up to 4 MB. The backend independently validates file type, size, PDF encryption/page count, DOCX package structure and uncompressed size, and rejects documents with no extractable text. It sends extracted text to the configured local Ollama model with instructions to treat resume content as untrusted. Qwen output is validated and reconciled with facts explicitly present in labeled CV sections; no resume content is treated as identity verified. Scanned image-only PDFs need OCR, which is not included.
 
-`POST /api/v1/resume-analysis` uses multipart form fields `file`, optional `message`, optional `conversation_id`, and optional JSON `history`. A blank message becomes “Please analyze my resume.” The response contains `answer` and `conversation_id`.
+`POST /api/v1/resume-analysis` accepts the `file` multipart field and returns structured profile fields (contact, bio, skills, education, experience, languages, certifications, and work preferences) as JSON. Chat resume uploads summarize this structured result for the conversation.
 
 ## Backend checks
 

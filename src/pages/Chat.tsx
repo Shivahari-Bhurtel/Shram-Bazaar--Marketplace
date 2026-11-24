@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { useApp, type Page } from "../store/AppContext"
-import { fetchAiStatus, sendChatMessage, sendResumeAnalysis, type AiStatus, type ChatResponse, type ChatTurn } from "../services/shramAi"
+import { fetchAiStatus, formatResumeExtraction, sendChatMessage, sendResumeAnalysis, serializeWorkerProfileContext, type AiStatus, type ChatResponse, type ChatTurn, type ResumeExtraction } from "../services/shramAi"
 import { useLanguage } from "../i18n/LanguageContext"
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside"
 import ConfirmDialog from "../components/ConfirmDialog"
@@ -211,28 +211,28 @@ function renderInlineText(text: string) {
             href={link[2]}
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-[#5630A8] underline decoration-[#B7A4E9] underline-offset-2 hover:text-[#40227F]"
+            className="font-medium text-[#553421] underline decoration-[#D7C6B7] underline-offset-2 hover:text-[#553421]"
           >
             {link[1]}
           </a>
         )
       if (part.startsWith("***") && part.endsWith("***")) {
         return (
-          <strong key={index} className="font-semibold text-[#342747]">
+          <strong key={index} className="font-semibold text-[#3A2A20]">
             <em>{part.slice(3, -3)}</em>
           </strong>
         )
       }
       if (part.startsWith("**") && part.endsWith("**")) {
         return (
-          <strong key={index} className="font-semibold text-[#342747]">
+          <strong key={index} className="font-semibold text-[#3A2A20]">
             {part.slice(2, -2)}
           </strong>
         )
       }
       if (part.startsWith("*") && part.endsWith("*")) {
         return (
-          <em key={index} className="italic text-[#39344C]">
+          <em key={index} className="italic text-[#302B27]">
             {part.slice(1, -1)}
           </em>
         )
@@ -241,7 +241,7 @@ function renderInlineText(text: string) {
         return (
           <code
             key={index}
-            className="rounded-md bg-[#F1EDFF] px-1.5 py-0.5 font-mono text-[0.9em] text-[#39344C]"
+            className="rounded-md bg-[#F7F1EB] px-1.5 py-0.5 font-mono text-[0.9em] text-[#302B27]"
           >
             {part.slice(1, -1)}
           </code>
@@ -284,7 +284,7 @@ function AssistantResponse({ text }: { text: string }) {
   const blocks = splitMarkdownBlocks(text)
 
   return (
-    <div className="max-w-[68ch] space-y-5 text-base leading-8 tracking-normal text-[#39344C] sm:text-lg">
+    <div className="max-w-[68ch] space-y-5 text-base leading-8 tracking-normal text-[#302B27] sm:text-lg">
       {blocks.map((block, index) => {
         const lines = block
           .split("\n")
@@ -295,7 +295,7 @@ function AssistantResponse({ text }: { text: string }) {
           return (
             <pre
               key={index}
-              className="overflow-x-auto rounded-xl bg-[#211B42] p-4 text-sm leading-relaxed text-[#F8F7FB]"
+              className="overflow-x-auto rounded-xl border border-[#E5D8CC] bg-[#F7F1EB] p-4 text-sm leading-relaxed text-[#302B27]"
             >
               <code>{code}</code>
             </pre>
@@ -316,15 +316,15 @@ function AssistantResponse({ text }: { text: string }) {
           return (
             <div
               key={index}
-              className="overflow-x-auto rounded-xl border border-[#E5E2EC]"
+              className="overflow-x-auto rounded-xl border border-[#E5D8CC]"
             >
               <table className="min-w-full border-collapse text-left text-sm">
-                <thead className="bg-[#F8F7FB] text-[#211B42]">
+                <thead className="bg-[#FFFEFA] text-[#211915]">
                   <tr>
                     {headers.map((cell, cellIndex) => (
                       <th
                         key={cellIndex}
-                        className="border-b border-[#E5E2EC] px-3 py-2.5 font-semibold"
+                        className="border-b border-[#E5D8CC] px-3 py-2.5 font-semibold"
                       >
                         {renderInlineText(cell)}
                       </th>
@@ -333,11 +333,11 @@ function AssistantResponse({ text }: { text: string }) {
                 </thead>
                 <tbody>
                   {lines.slice(2).map((line, rowIndex) => (
-                    <tr key={rowIndex} className="even:bg-[#FAF9FC]">
+                    <tr key={rowIndex} className="even:bg-[#F8F3EE]">
                       {cells(line).map((cell, cellIndex) => (
                         <td
                           key={cellIndex}
-                          className="border-b border-[#F0EDF5] px-3 py-2.5 last:border-b-0"
+                          className="border-b border-[#EDE1D7] px-3 py-2.5 last:border-b-0"
                         >
                           {renderInlineText(cell)}
                         </td>
@@ -351,7 +351,7 @@ function AssistantResponse({ text }: { text: string }) {
         }
         if (lines.every((line) => /^[-*]\s+/.test(line))) {
           return (
-            <ul key={index} className="space-y-2 pl-5 marker:text-[#7658D6]">
+            <ul key={index} className="space-y-2 pl-5 marker:text-[#80502F]">
               {lines.map((line, lineIndex) => (
                 <li key={lineIndex} className="pl-1">
                   {renderInlineText(line.replace(/^[-*]\s+/, ""))}
@@ -364,7 +364,7 @@ function AssistantResponse({ text }: { text: string }) {
           return (
             <ol
               key={index}
-              className="list-decimal space-y-2 pl-5 marker:font-medium marker:text-[#7658D6]"
+              className="list-decimal space-y-2 pl-5 marker:font-medium marker:text-[#80502F]"
             >
               {lines.map((line, lineIndex) => (
                 <li key={lineIndex} className="pl-1">
@@ -378,7 +378,7 @@ function AssistantResponse({ text }: { text: string }) {
           return (
             <h3
               key={index}
-              className="pt-1 text-xl font-semibold leading-snug tracking-tight text-[#211B42]"
+              className="pt-1 text-xl font-semibold leading-snug tracking-tight text-[#211915]"
             >
               {renderInlineText(lines[0].replace(/^#{1,6}\s+/, ""))}
             </h3>
@@ -404,6 +404,7 @@ export default function Chat() {
   const demoState = useDemoJobState(state.workerProfile?.id)
   const { language } = useLanguage()
   const isProvider = state.currentUser?.role === "provider"
+  const workerContext = isProvider ? "" : serializeWorkerProfileContext(state.workerProfile)
   const firstName = state.currentUser?.name.split(" ")[0] || ""
   const goBack = () => {
     let destination: Page = isProvider ? "provider-dashboard" : "worker-dashboard"
@@ -703,25 +704,24 @@ export default function Chat() {
         return
       }
       const result = resumeFile
-        ? await sendResumeAnalysis(
-            resumeFile,
-            text,
-            activeThread.conversationId ?? null,
-            priorHistory.slice(-20),
-            language,
-            controller.signal,
-          )
+        ? await sendResumeAnalysis(resumeFile, controller.signal)
         : await sendChatMessage(
             text,
             activeThread.conversationId ?? null,
             priorHistory.slice(-20),
             language,
             controller.signal,
+            [],
+            "general",
+            "",
+            workerContext,
           )
       const assistantMessage: Message = {
         id: `message-${Date.now()}-${++idCounter.current}-${Math.random().toString(36).slice(2, 8)}`,
         role: "assistant",
-        text: result.answer,
+        text: resumeFile
+          ? formatResumeExtraction(result as ResumeExtraction)
+          : (result as ChatResponse).answer,
         time: formatTime(),
         jobs: resumeFile ? undefined : (result as ChatResponse).jobs,
       }
@@ -731,7 +731,7 @@ export default function Chat() {
           thread.id === activeThread.id
             ? {
                 ...thread,
-                conversationId: result.conversation_id,
+                conversationId: resumeFile ? thread.conversationId : (result as ChatResponse).conversation_id,
                 updatedAt: Date.now(),
                 messages: [...thread.messages, assistantMessage],
               }
@@ -815,6 +815,9 @@ export default function Chat() {
         language,
         controller.signal,
         getLatestSharedJobIds(activeThread.messages.slice(0, userIndex)),
+        "general",
+        "",
+        workerContext,
       )
       syncStatusFromResponse(result)
       setThreads((current) =>
@@ -994,7 +997,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="relative flex h-dvh min-h-0 overflow-hidden bg-white text-[#211B42]">
+    <div className="relative flex h-dvh min-h-0 overflow-hidden bg-white text-[#211915]">
       {sidebarOpen && (
         <button
           aria-label="Close conversation sidebar"
@@ -1014,7 +1017,7 @@ export default function Chat() {
           <button
             onClick={() => setSidebarOpen(false)}
             aria-label="Close sidebar"
-            className="rounded-lg p-2 text-[#706A64] hover:bg-[#EEDFD2] hover:text-[#553421]"
+            className="rounded-lg p-2 text-[#706357] hover:bg-[#EEDFD2] hover:text-[#553421]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -1043,7 +1046,7 @@ export default function Chat() {
           </button>
           <button
             onClick={startNewChat}
-            className="flex w-fit items-center gap-3 rounded-2xl bg-[#80502F] px-5 py-4 text-left text-xl font-bold text-white shadow-sm transition-colors hover:bg-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
+            className="flex w-fit items-center gap-3 rounded-2xl bg-[#553421] px-5 py-4 text-left text-xl font-bold text-white shadow-sm transition-colors hover:bg-[#402719] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -1061,7 +1064,7 @@ export default function Chat() {
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-3">
           {threadGroups.length === 0 ? (
-            <p className="px-2 py-3 text-sm text-[#706A64]">
+            <p className="px-2 py-3 text-sm text-[#706357]">
               Your conversations will appear here.
             </p>
           ) : (
@@ -1136,7 +1139,7 @@ export default function Chat() {
                               onClick={() => beginRename(thread)}
                               aria-label={`Rename chat: ${thread.title}`}
                               title="Rename chat"
-                              className="mr-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#99918A] opacity-100 transition-opacity hover:bg-[#EEDFD2] hover:text-[#553421] focus-visible:opacity-100 group-hover:opacity-100 md:opacity-0"
+                              className="mr-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#8A7768] opacity-100 transition-opacity hover:bg-[#EEDFD2] hover:text-[#553421] focus-visible:opacity-100 group-hover:opacity-100 md:opacity-0"
                             >
                               <svg
                                 viewBox="0 0 24 24"
@@ -1156,7 +1159,7 @@ export default function Chat() {
                               onClick={() => setPendingDeleteId(thread.id)}
                               aria-label={`Delete chat: ${thread.title}`}
                               title="Delete chat"
-                              className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#89849A] opacity-100 transition-opacity hover:bg-red-50 hover:text-red-700 focus-visible:opacity-100 group-hover:opacity-100 md:opacity-0"
+                              className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#8A7768] opacity-100 transition-opacity hover:bg-[#F7F1EB] hover:text-[#553421] focus-visible:opacity-100 group-hover:opacity-100 md:opacity-0"
                             >
                               <svg
                                 viewBox="0 0 24 24"
@@ -1185,13 +1188,13 @@ export default function Chat() {
         </div>
       </aside>
 
-      <section className="flex min-w-0 flex-1 flex-col border-l border-[#E5E7EB] bg-white">
-        <header className="flex min-h-12 shrink-0 items-center justify-between gap-2 border-b border-[#E5E7EB] px-3 py-1.5">
+      <section className="flex min-w-0 flex-1 flex-col border-l border-[#E5D8CC] bg-white">
+        <header className="flex min-h-12 shrink-0 items-center justify-between gap-2 border-b border-[#E5D8CC] px-3 py-1.5">
           <button
             onClick={() => setSidebarOpen(true)}
             aria-label="Open conversation sidebar"
             aria-expanded={sidebarOpen}
-            className="rounded-lg p-2 text-[#625D73] hover:bg-[#F1EDFF] hover:text-[#5630A8]"
+            className="rounded-lg p-2 text-[#62584F] hover:bg-[#F7F1EB] hover:text-[#553421]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -1206,13 +1209,13 @@ export default function Chat() {
           </button>
           <div className="flex min-w-0 items-center justify-end gap-2">
             {isProvider && <>
-              <button type="button" onClick={() => { try { sessionStorage.setItem("voice-assistant-return-page", "chat") } catch {} navigate("voice-assistant") }} className="min-h-9 whitespace-nowrap rounded-xl border border-[#E5E2EC] bg-white px-2.5 text-xs font-semibold text-[#5630A8] hover:bg-[#F8F7FB] sm:px-3 sm:text-sm">Voice assistant</button>
+              <button type="button" onClick={() => { try { sessionStorage.setItem("voice-assistant-return-page", "chat") } catch {} navigate("voice-assistant") }} className="min-h-9 whitespace-nowrap rounded-xl border border-[#E5D8CC] bg-white px-2.5 text-xs font-semibold text-[#553421] hover:bg-[#FFFEFA] sm:px-3 sm:text-sm">Voice assistant</button>
             </>}
             {!isProvider && <div
               role="status"
               aria-live="polite"
               title={aiStatus?.last_error ?? undefined}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-600"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#E5D8CC] bg-white px-2.5 py-1 text-xs font-medium text-[#62584F]"
             >
               <span className={`h-2 w-2 rounded-full ${aiStatusPresentation.tone}`} aria-hidden="true" />
               <span>{aiStatusPresentation.label}</span>
@@ -1236,13 +1239,13 @@ export default function Chat() {
                   <ShramaAIMark className="-ml-4 h-14 w-14" />
                 </div>
                 <h1
-                  className="welcome-reveal mt-4 font-sans text-3xl font-semibold tracking-tight text-[#211B42] sm:text-4xl"
+                  className="welcome-reveal mt-4 font-sans text-3xl font-semibold tracking-tight text-[#211915] sm:text-4xl"
                   style={{ animationDelay: "620ms" }}
                 >
                   Hello, {firstName || "there"}!
                 </h1>
                 <p
-                  className="welcome-reveal mx-auto mt-3 max-w-2xl text-base leading-7 text-[#625D73] sm:text-lg"
+                  className="welcome-reveal mx-auto mt-3 max-w-2xl text-base leading-7 text-[#62584F] sm:text-lg"
                   style={{ animationDelay: "1.15s" }}
                 >
                   {isProvider
@@ -1252,7 +1255,7 @@ export default function Chat() {
               </div>
               <div className="mb-3 text-center sm:mb-4">
                 <h3
-                  className="welcome-reveal text-lg font-medium leading-snug text-[#211B42]"
+                  className="welcome-reveal text-lg font-medium leading-snug text-[#211915]"
                   style={{ animationDelay: "1.4s" }}
                 >
                   What would you like help with today?
@@ -1264,13 +1267,13 @@ export default function Chat() {
                     key={suggestion.title}
                     onClick={() => sendSuggestion(suggestion)}
                     disabled={sending}
-                    className="welcome-intro-card group rounded-2xl border border-[#E5E2EC] bg-white p-5 text-left shadow-sm transition-colors hover:border-[#CBBCEB] hover:bg-[#FAF9FC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7655CE] disabled:cursor-wait disabled:opacity-60 sm:p-6"
+                    className="welcome-intro-card group rounded-2xl border border-[#E5D8CC] bg-white p-5 text-left shadow-sm transition-colors hover:border-[#D7C6B7] hover:bg-[#F8F3EE] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#80502F] disabled:cursor-wait disabled:opacity-60 sm:p-6"
                     style={{ animationDelay: `${1.7 + index * 0.16}s` }}
                   >
-                    <span className="block text-lg font-medium leading-snug text-[#211B42] group-hover:text-[#5630A8]">
+                    <span className="block text-lg font-medium leading-snug text-[#211915] group-hover:text-[#553421]">
                       {suggestion.title}
                     </span>
-                    <span className="mt-1.5 block text-base leading-relaxed text-[#625D73]">
+                    <span className="mt-1.5 block text-base leading-relaxed text-[#62584F]">
                       {suggestion.detail}
                     </span>
                   </button>
@@ -1289,31 +1292,31 @@ export default function Chat() {
                   <div
                     className={`${
                       message.role === "user"
-                        ? "max-w-[88%] rounded-2xl border border-[#E5DDF7] bg-[#F1EDFF] px-4 py-3 sm:max-w-[82%] sm:px-5"
+                        ? "max-w-[88%] rounded-2xl border border-[#E5D8CC] bg-[#F7F1EB] px-4 py-3 sm:max-w-[82%] sm:px-5"
                         : "min-w-0 flex-1 pt-0.5"
                     }`}
                   >
                     {message.role === "assistant" ? (
                       <AssistantResponse text={message.text} />
                     ) : (
-                      <p className="whitespace-pre-wrap text-base leading-8 text-[#302A45] sm:text-lg">
+                      <p className="whitespace-pre-wrap text-base leading-8 text-[#302B27] sm:text-lg">
                         {message.text}
                       </p>
                     )}
                     {message.role === "assistant" && message.jobs && message.jobs.length > 0 && (
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {message.jobs.map((job) => (
-                          <article key={job.id} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-                            <p className="text-[13px] font-semibold uppercase tracking-wide text-[#265D4C]">{job.category} · {job.job_type}</p>
-                            <h3 className="mt-1 text-lg font-semibold text-stone-900">{job.title}</h3>
-                            <p className="mt-1 text-base text-stone-600">{job.company} · {job.location}, {job.city}</p>
-                            <p className="mt-2 text-base font-medium text-stone-800">{formatDemoSalary(job)}</p>
-                            <p className="mt-2 line-clamp-3 text-[15px] leading-6 text-stone-600">{job.description}</p>
-                            <p className="mt-2 text-sm text-stone-600"><span className="font-semibold">Skills:</span> {job.skills.slice(0, 3).join(", ")}</p>
-                            {job.match_reasons?.length ? <p className="mt-2 text-xs text-[#265D4C]">{job.match_reasons.join(" · ")}</p> : null}
+                          <article key={job.id} className="rounded-xl border border-[#E5D8CC] bg-white p-4 shadow-sm">
+                            <p className="text-[13px] font-semibold uppercase tracking-wide text-[#553421]">{job.category} · {job.job_type}</p>
+                            <h3 className="mt-1 text-lg font-semibold text-[#211915]">{job.title}</h3>
+                            <p className="mt-1 text-base text-[#62584F]">{job.company} · {job.location}, {job.city}</p>
+                            <p className="mt-2 text-base font-medium text-[#302B27]">{formatDemoSalary(job)}</p>
+                            <p className="mt-2 line-clamp-3 text-[15px] leading-6 text-[#62584F]">{job.description}</p>
+                            <p className="mt-2 text-sm text-[#62584F]"><span className="font-semibold">Skills:</span> {job.skills.slice(0, 3).join(", ")}</p>
+                            {job.match_reasons?.length ? <p className="mt-2 text-xs text-[#553421]">{job.match_reasons.join(" · ")}</p> : null}
                             <div className="mt-3 flex gap-2">
-                              <button type="button" onClick={() => setSelectedChatJob(job)} className="rounded-md border border-[#265D4C] px-3 py-1.5 text-sm font-semibold text-[#265D4C] hover:bg-[#265D4C]/5">View details</button>
-                              {state.currentUser?.role === "worker" && <button type="button" disabled={demoState.applications.some((application) => application.jobId === job.id)} onClick={() => demoState.apply(job.id)} className="rounded-md bg-[#171717] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#33271F] disabled:bg-stone-500">{demoState.applications.some((application) => application.jobId === job.id) ? "Applied" : "Apply now"}</button>}
+                              <button type="button" onClick={() => setSelectedChatJob(job)} className="rounded-md border border-[#553421] px-3 py-1.5 text-sm font-semibold text-[#553421] hover:bg-[#553421]/5">View details</button>
+                              {state.currentUser?.role === "worker" && <button type="button" disabled={demoState.applications.some((application) => application.jobId === job.id)} onClick={() => demoState.apply(job.id)} className="rounded-md bg-black px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#222222] disabled:bg-[#E5D8CC] disabled:text-[#8A7768]">{demoState.applications.some((application) => application.jobId === job.id) ? "Applied" : "Apply now"}</button>}
                             </div>
                           </article>
                         ))}
@@ -1322,55 +1325,55 @@ export default function Chat() {
                     {isProvider && message.role === "assistant" && message.candidates && message.candidates.length > 0 && (
                       <div className="mt-5 grid gap-4">
                         {message.candidates.map(({ worker, matchScore, matchReasons }) => (
-                          <article key={worker.userId} className="overflow-hidden rounded-2xl border border-[#E5E2EC] bg-white shadow-sm">
+                          <article key={worker.userId} className="overflow-hidden rounded-2xl border border-[#E5D8CC] bg-white shadow-sm">
                             <div className="flex items-start gap-3 p-4 sm:p-5">
                               {worker.profilePictureUrl
                                 ? <img src={worker.profilePictureUrl} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
-                                : <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#F1EDFF] text-lg font-semibold text-[#5630A8]">{worker.fullName.charAt(0)}</span>}
+                                : <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#F7F1EB] text-lg font-semibold text-[#553421]">{worker.fullName.charAt(0)}</span>}
                               <div className="min-w-0 flex-1">
                                 <div className="flex flex-wrap items-start justify-between gap-2">
-                                  <h3 className="font-semibold text-[#211B42]">{worker.fullName}</h3>
-                                  {matchScore !== null && <span className="rounded-full bg-[#F1EDFF] px-2.5 py-1 text-xs font-semibold text-[#5630A8]">{matchScore}% indicative fit</span>}
+                                  <h3 className="font-semibold text-[#211915]">{worker.fullName}</h3>
+                                  {matchScore !== null && <span className="rounded-full bg-[#F7F1EB] px-2.5 py-1 text-xs font-semibold text-[#553421]">{matchScore}% indicative fit</span>}
                                 </div>
-                                <p className="mt-1 text-sm text-[#625D73]">{worker.address || "Location not listed"} · {worker.totalExperienceYears == null ? "Experience not listed" : `${worker.totalExperienceYears} years experience`}</p>
-                                <p className="mt-1 text-sm font-medium text-[#39344C]">{providerWorkerSkills(worker).slice(0, 5).join(" · ") || "Skills not listed"}</p>
-                                <p className="mt-1 text-sm text-[#625D73]">{worker.averageRating == null ? "No rating listed" : `★ ${worker.averageRating.toFixed(1)} (${worker.reviewCount} reviews)`} · {formatProviderRate(worker)}</p>
-                                <p className="mt-1 text-sm text-[#625D73]">Availability: {providerWorkerAvailability(worker)}</p>
-                                {matchReasons.length > 0 && <p className="mt-2 text-sm leading-6 text-[#4D6659]">{matchReasons.join(" · ")}</p>}
+                                <p className="mt-1 text-sm text-[#62584F]">{worker.address || "Location not listed"} · {worker.totalExperienceYears == null ? "Experience not listed" : `${worker.totalExperienceYears} years experience`}</p>
+                                <p className="mt-1 text-sm font-medium text-[#302B27]">{providerWorkerSkills(worker).slice(0, 5).join(" · ") || "Skills not listed"}</p>
+                                <p className="mt-1 text-sm text-[#62584F]">{worker.averageRating == null ? "No rating listed" : `★ ${worker.averageRating.toFixed(1)} (${worker.reviewCount} reviews)`} · {formatProviderRate(worker)}</p>
+                                <p className="mt-1 text-sm text-[#62584F]">Availability: {providerWorkerAvailability(worker)}</p>
+                                {matchReasons.length > 0 && <p className="mt-2 text-sm leading-6 text-[#62584F]">{matchReasons.join(" · ")}</p>}
                               </div>
                             </div>
-                            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#F0EDF5] px-4 py-3 sm:px-5">
-                              <button type="button" onClick={() => setExpandedProviderWorkerId((current) => current === worker.userId ? null : worker.userId)} aria-expanded={expandedProviderWorkerId === worker.userId} className="text-sm font-semibold text-[#5630A8] underline underline-offset-2">{expandedProviderWorkerId === worker.userId ? "Hide profile" : "View profile"}</button>
-                              <button type="button" onClick={() => prepareProviderInvite(worker, message.jobId, matchReasons)} disabled={!providerJobs.some((job) => job.id === message.jobId && job.status === "OPEN")} className="min-h-10 rounded-xl bg-[#5630A8] px-4 text-sm font-semibold text-white hover:bg-[#48268F] disabled:cursor-not-allowed disabled:bg-[#E8E5ED] disabled:text-[#9994A5]">Prepare invitation</button>
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EDE1D7] px-4 py-3 sm:px-5">
+                              <button type="button" onClick={() => setExpandedProviderWorkerId((current) => current === worker.userId ? null : worker.userId)} aria-expanded={expandedProviderWorkerId === worker.userId} className="text-sm font-semibold text-[#553421] underline underline-offset-2">{expandedProviderWorkerId === worker.userId ? "Hide profile" : "View profile"}</button>
+                              <button type="button" onClick={() => prepareProviderInvite(worker, message.jobId, matchReasons)} disabled={!providerJobs.some((job) => job.id === message.jobId && job.status === "OPEN")} className="min-h-10 rounded-xl bg-[#EEDFD2] px-4 text-sm font-semibold text-[#553421] hover:bg-[#D7C6B7] disabled:cursor-not-allowed disabled:bg-[#E5D8CC] disabled:text-[#8A7768]">Prepare invitation</button>
                             </div>
-                            {expandedProviderWorkerId === worker.userId && <div className="space-y-2 border-t border-[#F0EDF5] bg-[#FCFBFE] px-4 py-3 text-sm leading-6 text-[#625D73] sm:px-5">
+                            {expandedProviderWorkerId === worker.userId && <div className="space-y-2 border-t border-[#EDE1D7] bg-[#F8F3EE] px-4 py-3 text-sm leading-6 text-[#62584F] sm:px-5">
                               {worker.bio && <p>{worker.bio}</p>}
                               {worker.qualifications?.length ? <p><strong>Qualifications:</strong> {worker.qualifications.join(" · ")}</p> : null}
                               {worker.workExperiences?.length ? <p><strong>Work history:</strong> {worker.workExperiences.join(" · ")}</p> : null}
                               {!worker.bio && !worker.qualifications?.length && !worker.workExperiences?.length && <p>Additional profile details are not listed.</p>}
-                              <p className="text-xs text-[#8B829C]">Compatibility is indicative and is not a hiring outcome.</p>
+                              <p className="text-xs text-[#8A7768]">Compatibility is indicative and is not a hiring outcome.</p>
                             </div>}
                           </article>
                         ))}
                       </div>
                     )}
                     {message.attachment && (
-                      <div className="mt-3 flex max-w-full items-center gap-2.5 rounded-xl border border-primary-100 bg-white/80 px-3 py-2">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-[9px] font-bold tracking-wide text-primary-ink">
+                      <div className="mt-3 flex max-w-full items-center gap-2.5 rounded-xl border border-[#E5D8CC] bg-white/80 px-3 py-2">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F7F1EB] text-[9px] font-bold tracking-wide text-[#553421]">
                           {message.attachment.extension}
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate text-xs font-semibold text-[#342747]">
+                          <span className="block truncate text-xs font-semibold text-[#3A2A20]">
                             {message.attachment.name}
                           </span>
-                          <span className="mt-0.5 block text-[10px] text-[#8B829C]">
+                          <span className="mt-0.5 block text-[10px] text-[#8A7768]">
                             Resume · {formatFileSize(message.attachment.size)}
                           </span>
                         </span>
                       </div>
                     )}
                     <p
-                      className={`mt-2.5 text-xs font-normal text-[#8B829C] ${
+                      className={`mt-2.5 text-xs font-normal text-[#8A7768] ${
                         message.role === "user" ? "text-right" : ""
                       }`}
                     >
@@ -1378,7 +1381,7 @@ export default function Chat() {
                     </p>
                     {message.role === "assistant" &&
                       !message.id.startsWith("welcome-") && (
-                        <div className="mt-3 flex items-center gap-1 border-t border-[#F0EDF5] pt-2.5 text-[#777287]">
+                        <div className="mt-3 flex items-center gap-1 border-t border-[#EDE1D7] pt-2.5 text-[#706357]">
                           <button
                             type="button"
                             onClick={() => void copyResponse(message)}
@@ -1388,7 +1391,7 @@ export default function Chat() {
                                 ? "Copied"
                                 : "Copy response"
                             }
-                            className="rounded-lg p-2 transition-colors hover:bg-[#F1EDFF] hover:text-[#5630A8]"
+                            className="rounded-lg p-2 transition-colors hover:bg-[#F7F1EB] hover:text-[#553421]"
                           >
                             <svg
                               viewBox="0 0 24 24"
@@ -1405,7 +1408,7 @@ export default function Chat() {
                             </svg>
                           </button>
                           {copiedMessageId === message.id && (
-                            <span className="text-xs text-[#5630A8]">
+                            <span className="text-xs text-[#553421]">
                               Copied
                             </span>
                           )}
@@ -1415,9 +1418,9 @@ export default function Chat() {
                             aria-label="Helpful response"
                             aria-pressed={feedback[message.id] === "up"}
                             title="Helpful"
-                            className={`rounded-lg p-2 transition-colors hover:bg-[#F1EDFF] hover:text-[#5630A8] ${
+                            className={`rounded-lg p-2 transition-colors hover:bg-[#F7F1EB] hover:text-[#553421] ${
                               feedback[message.id] === "up"
-                                ? "text-[#5630A8]"
+                                ? "text-[#553421]"
                                 : ""
                             }`}
                           >
@@ -1440,9 +1443,9 @@ export default function Chat() {
                             aria-label="Unhelpful response"
                             aria-pressed={feedback[message.id] === "down"}
                             title="Not helpful"
-                            className={`rounded-lg p-2 transition-colors hover:bg-[#F1EDFF] hover:text-[#5630A8] ${
+                            className={`rounded-lg p-2 transition-colors hover:bg-[#F7F1EB] hover:text-[#553421] ${
                               feedback[message.id] === "down"
-                                ? "text-[#5630A8]"
+                                ? "text-[#553421]"
                                 : ""
                             }`}
                           >
@@ -1465,7 +1468,7 @@ export default function Chat() {
                               type="button"
                               onClick={() => void regenerateLastResponse()}
                               disabled={sending}
-                              className="ml-1 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[#F1EDFF] hover:text-[#5630A8] disabled:opacity-50"
+                              className="ml-1 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[#F7F1EB] hover:text-[#553421] disabled:opacity-50"
                               title="Regenerate response"
                             >
                               <svg
@@ -1492,16 +1495,16 @@ export default function Chat() {
               {sending && (
                 <div
                   role="status"
-                  className="flex items-center gap-3 text-sm text-[#625D73]"
+                  className="flex items-center gap-3 text-sm text-[#62584F]"
                 >
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-[#7655CE]" />
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-[#80502F]" />
                   {processingResume
                     ? "Reading and analyzing your resume…"
                     : "Shram AI is thinking…"}
                   <button
                     type="button"
                     onClick={stopGeneration}
-                    className="ml-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#5630A8] hover:bg-[#F1EDFF]"
+                    className="ml-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#553421] hover:bg-[#F7F1EB]"
                   >
                     Stop
                   </button>
@@ -1516,15 +1519,15 @@ export default function Chat() {
         <div className="shrink-0 px-3 pb-9 pt-2 sm:px-6 sm:pb-11">
           <div className="mx-auto max-w-3xl">
             {!isProvider && selectedFile && (
-              <div className="mb-2 flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-2.5 shadow-sm">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-[10px] font-bold text-primary-ink">
+              <div className="mb-2 flex items-center gap-3 rounded-2xl border border-[#E5D8CC] bg-[#F8F3EE] px-3 py-2.5 shadow-sm">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F7F1EB] text-[10px] font-bold text-[#553421]">
                   {selectedFile.name.split(".").pop()?.toUpperCase()}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-[#342747]">
+                  <span className="block truncate text-sm font-semibold text-[#3A2A20]">
                     {selectedFile.name}
                   </span>
-                  <span className="text-xs text-[#8B829C]">
+                  <span className="text-xs text-[#8A7768]">
                     {selectedFile.name.split(".").pop()?.toUpperCase()} resume ·{" "}
                     {formatFileSize(selectedFile.size)}
                   </span>
@@ -1537,7 +1540,7 @@ export default function Chat() {
                   }}
                   disabled={sending}
                   aria-label={`Remove ${selectedFile.name}`}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#8B829C] hover:bg-[#F2EDFF] hover:text-[#514760] disabled:opacity-50"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#8A7768] hover:bg-[#F7F1EB] hover:text-[#5A544F] disabled:opacity-50"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -1555,7 +1558,7 @@ export default function Chat() {
             {(attachmentError || error) && (
               <div
                 role="alert"
-                className="mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+                className="mb-2 rounded-xl border border-[#D7C6B7] bg-[#F7F1EB] px-3 py-2 text-sm text-[#553421]"
               >
                 {attachmentError || error}
                 <button
@@ -1571,7 +1574,7 @@ export default function Chat() {
               </div>
             )}
             {voiceError && (
-              <div role="alert" className="mb-2 text-sm text-red-700">
+              <div role="alert" className="mb-2 text-sm text-[#553421]">
                 {voiceError}
               </div>
             )}
@@ -1588,7 +1591,7 @@ export default function Chat() {
             />}
             <form
               onSubmit={sendMessage}
-              className="chat-composer-enter chat-composer-glow flex items-end gap-2 rounded-3xl border border-[#E5E2EC] bg-white px-3 py-2 shadow-sm transition-all focus-within:border-[#7655CE] focus-within:ring-2 focus-within:ring-[#7655CE]/15 focus-within:shadow-[0_4px_18px_rgba(86,48,168,0.1)] sm:px-4"
+              className="chat-composer-enter chat-composer-glow flex items-end gap-2 rounded-3xl border border-[#E5D8CC] bg-white px-3 py-2 shadow-sm transition-all focus-within:border-[#80502F] focus-within:ring-2 focus-within:ring-[#80502F]/15 focus-within:shadow-[0_4px_18px_rgba(86,48,168,0.1)] sm:px-4"
             >
               <div ref={attachmentMenuRef} className="relative mb-0.5 shrink-0">
                 <button
@@ -1601,7 +1604,7 @@ export default function Chat() {
                   onKeyDown={(event) => {
                     if (event.key === "Escape") setAttachmentMenuOpen(false)
                   }}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-[#777287] transition-colors hover:bg-[#F1EDFF] hover:text-[#5630A8] disabled:opacity-50"
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-[#706357] transition-colors hover:bg-[#F7F1EB] hover:text-[#553421] disabled:opacity-50"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -1617,11 +1620,11 @@ export default function Chat() {
                 {attachmentMenuOpen && (
                   <div
                     role="menu"
-                    className="absolute bottom-full left-0 z-20 mb-2 w-52 rounded-xl border border-[#E5E2EC] bg-white p-1.5 shadow-lg"
+                    className="absolute bottom-full left-0 z-20 mb-2 w-52 rounded-xl border border-[#E5D8CC] bg-white p-1.5 shadow-lg"
                   >
                     {isProvider ? <>
-                      <button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); sendMessage(undefined, "Find the best candidates for my latest job.") }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#49445A] hover:bg-[#F8F7FB]">Find workers for my latest job</button>
-                      <button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); sendMessage(undefined, "Find available workers near Kathmandu.") }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#49445A] hover:bg-[#F8F7FB]">Find available workers</button>
+                      <button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); sendMessage(undefined, "Find the best candidates for my latest job.") }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#5A544F] hover:bg-[#FFFEFA]">Find workers for my latest job</button>
+                      <button type="button" role="menuitem" onClick={() => { setAttachmentMenuOpen(false); sendMessage(undefined, "Find available workers near Kathmandu.") }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#5A544F] hover:bg-[#FFFEFA]">Find available workers</button>
                     </> : <>
                     <button
                       type="button"
@@ -1630,14 +1633,14 @@ export default function Chat() {
                         setAttachmentMenuOpen(false)
                         fileInputRef.current?.click()
                       }}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#49445A] hover:bg-[#F8F7FB]"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-[#5A544F] hover:bg-[#FFFEFA]"
                     >
                       <svg
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="1.8"
-                        className="h-4 w-4 text-[#5630A8]"
+                        className="h-4 w-4 text-[#553421]"
                         aria-hidden="true"
                       >
                         <path
@@ -1648,7 +1651,7 @@ export default function Chat() {
                       </svg>
                       Upload from device
                     </button>
-                    <p className="px-3 pb-1 pt-0.5 text-[10px] text-[#8C879B]">
+                    <p className="px-3 pb-1 pt-0.5 text-[10px] text-[#8A7768]">
                       PDF, DOC, or DOCX · max 10 MB
                     </p>
                     </>}
@@ -1671,7 +1674,7 @@ export default function Chat() {
                 rows={1}
                 placeholder={isProvider ? "Describe the workers you need…" : "Message Shram AI..."}
                 disabled={sending}
-                className="max-h-36 min-h-12 flex-1 resize-none border-0 bg-transparent px-1 py-3 font-sans text-base leading-relaxed text-[#39344C] outline-none placeholder:text-[#8C879B] sm:text-lg"
+                className="max-h-36 min-h-12 flex-1 resize-none border-0 bg-transparent px-1 py-3 font-sans text-base leading-relaxed text-[#302B27] outline-none placeholder:text-[#8A7768] sm:text-lg"
               />
               <button
                 type="button"
@@ -1682,10 +1685,10 @@ export default function Chat() {
                 }
                 aria-pressed={isListening}
                 title={isListening ? "Stop voice input" : "Voice input"}
-                className={`mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7655CE] disabled:opacity-50 ${
+                className={`mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#80502F] disabled:opacity-50 ${
                   isListening
-                    ? "bg-red-50 text-red-700"
-                    : "text-[#777287] hover:bg-[#F1EDFF] hover:text-[#5630A8]"
+                    ? "bg-[#F7F1EB] text-[#553421]"
+                    : "text-[#706357] hover:bg-[#F7F1EB] hover:text-[#553421]"
                 }`}
               >
                 <svg
@@ -1705,7 +1708,7 @@ export default function Chat() {
               <button
                 type="submit"
                 disabled={(!draft.trim() && !selectedFile) || sending}
-                className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5630A8] text-white transition-colors hover:bg-[#48268F] disabled:cursor-not-allowed disabled:bg-[#E8E5ED] disabled:text-[#9994A5]"
+                className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EEDFD2] text-[#553421] transition-colors hover:bg-[#D7C6B7] disabled:cursor-not-allowed disabled:bg-[#E5D8CC] disabled:text-[#8A7768]"
                 aria-label="Send message"
                 title="Send message"
               >
@@ -1725,13 +1728,13 @@ export default function Chat() {
                 </svg>
               </button>
             </form>
-            <p className="mt-2 text-center text-xs leading-relaxed text-[#8B829C]">
+            <p className="mt-2 text-center text-xs leading-relaxed text-[#8A7768]">
               {isProvider ? "Worker profiles and your jobs come from authenticated Shram Bazar records." : "Shram AI can make mistakes. Verify important info."}
             </p>
           </div>
         </div>
       </section>
-      {inviteDraft && <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !invitingWorkerId) setInviteDraft(null) }}><section role="dialog" aria-modal="true" aria-labelledby="provider-invite-title" className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl"><h2 id="provider-invite-title" className="text-lg font-bold text-[#211B42]">Review worker invitation</h2><p className="mt-1 text-sm text-[#625D73]">Edit the message before sending it to {inviteDraft.worker.fullName} about {inviteDraft.job.title}.</p><label htmlFor="provider-invite-message" className="mt-4 block text-sm font-semibold text-[#39344C]">Message</label><textarea id="provider-invite-message" value={inviteDraft.message} onChange={(event) => setInviteDraft((current) => current ? { ...current, message: event.target.value } : current)} maxLength={1000} rows={8} className="mt-2 w-full rounded-xl border border-[#E5E2EC] p-3 text-sm leading-6 text-[#39344C] outline-none focus:border-[#7655CE]" /><div className="mt-4 flex justify-end gap-2"><button type="button" disabled={invitingWorkerId !== null} onClick={() => setInviteDraft(null)} className="min-h-10 rounded-xl border border-[#E5E2EC] px-4 text-sm font-semibold text-[#49445A]">Cancel</button><button type="button" disabled={invitingWorkerId !== null || !inviteDraft.message.trim()} onClick={() => void sendProviderInvite()} className="min-h-10 rounded-xl bg-[#5630A8] px-4 text-sm font-semibold text-white disabled:opacity-50">{invitingWorkerId ? "Sending…" : "Confirm and send"}</button></div></section></div>}
+      {inviteDraft && <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !invitingWorkerId) setInviteDraft(null) }}><section role="dialog" aria-modal="true" aria-labelledby="provider-invite-title" className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl"><h2 id="provider-invite-title" className="text-lg font-bold text-[#211915]">Review worker invitation</h2><p className="mt-1 text-sm text-[#62584F]">Edit the message before sending it to {inviteDraft.worker.fullName} about {inviteDraft.job.title}.</p><label htmlFor="provider-invite-message" className="mt-4 block text-sm font-semibold text-[#302B27]">Message</label><textarea id="provider-invite-message" value={inviteDraft.message} onChange={(event) => setInviteDraft((current) => current ? { ...current, message: event.target.value } : current)} maxLength={1000} rows={8} className="mt-2 w-full rounded-xl border border-[#E5D8CC] p-3 text-sm leading-6 text-[#302B27] outline-none focus:border-[#80502F]" /><div className="mt-4 flex justify-end gap-2"><button type="button" disabled={invitingWorkerId !== null} onClick={() => setInviteDraft(null)} className="min-h-10 rounded-xl border border-[#E5D8CC] px-4 text-sm font-semibold text-[#5A544F]">Cancel</button><button type="button" disabled={invitingWorkerId !== null || !inviteDraft.message.trim()} onClick={() => void sendProviderInvite()} className="min-h-10 rounded-xl bg-[#EEDFD2] px-4 text-sm font-semibold text-[#553421] disabled:opacity-50">{invitingWorkerId ? "Sending…" : "Confirm and send"}</button></div></section></div>}
       {pendingDeleteId && (
         <ConfirmDialog
           title="Delete this conversation?"

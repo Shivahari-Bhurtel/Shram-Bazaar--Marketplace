@@ -10,6 +10,7 @@ import type {
   Application,
   ApplicationStatus,
   AvailabilitySlot,
+  Experience,
   Job,
   KycDocumentType,
   Notification,
@@ -93,6 +94,18 @@ export interface WorkerSignup {
   district: string
   location: string
   skills: string[]
+  bio?: string
+  qualifications?: Qualification[]
+  experience?: Experience[]
+  languages?: string[]
+  certifications?: string[]
+  contactEmail?: string
+  employmentPreferences?: string[]
+  preferredShifts?: string[]
+  weekendsAvailable?: boolean | null
+  availableStart?: string
+  preferredWorkLocation?: string
+  referenceNote?: string
 }
 export interface ProviderSignup {
   email: string
@@ -1203,11 +1216,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         location: signupProfile?.location || signupProfile?.address || "",
         district: signupProfile?.district || "",
         skills: signupProfile?.skills || [],
-        qualifications: [],
-        experience: [],
+        qualifications: signupProfile?.qualifications || [],
+        experience: signupProfile?.experience || [],
+        languages: signupProfile?.languages || [],
+        certifications: signupProfile?.certifications || [],
         availableDates: [],
         availability: "flexible",
-        bio: "",
+        bio: signupProfile?.bio || "",
         workHistory: [],
         rating: 0,
         totalJobs: 0,
@@ -1251,6 +1266,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const profile = await apiRequest<Record<string, unknown>>("/api/seeker/profile")
         const mapped = mapSeekerProfile(profile, user)
+        mapped.qualifications = signupProfile?.qualifications || []
+        mapped.experience = signupProfile?.experience || []
+        mapped.languages = (profile.languages as string[] | undefined)?.length ? profile.languages as string[] : signupProfile?.languages || []
+        mapped.certifications = (profile.certifications as string[] | undefined)?.length ? profile.certifications as string[] : signupProfile?.certifications || []
+        mapped.bio = (profile.bio as string | undefined) || signupProfile?.bio || ""
         const catalog = await apiRequest<Array<{ id: number; name: string }>>("/api/skills")
         if (signupProfile?.skills?.length) {
           const currentSkills = await apiRequest<Array<{ skillName: string }>>("/api/seeker/skills")
@@ -1383,7 +1403,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
             district: form.district,
             location: form.location,
             skills: form.skills,
+            bio: form.bio,
+            qualifications: form.qualifications || [],
+            experience: form.experience || [],
+            languages: form.languages || [],
+            certifications: form.certifications || [],
+            contactEmail: form.contactEmail || undefined,
+            employmentPreferences: form.employmentPreferences || [],
+            preferredShifts: form.preferredShifts || [],
+            weekendsAvailable: form.weekendsAvailable ?? null,
+            availableStart: form.availableStart || "",
+            preferredWorkLocation: form.preferredWorkLocation || "",
+            referenceNote: form.referenceNote || "",
           })
+          try {
+            await apiRequest("/api/seeker/profile", {
+              method: "PUT",
+              body: JSON.stringify({ fullName: form.name.trim(), phoneNumber: form.phone.replace(/[\s()-]/g, ""), dateOfBirth: form.dateOfBirth, address: form.address || form.district.trim(), bio: form.bio || "", preferredTravelDistanceKm: 10, preferredCategories: [], acceptingWork: true, languages: form.languages || [], certifications: form.certifications || [], contactEmail: form.contactEmail || null, employmentPreferences: form.employmentPreferences || [], preferredShifts: form.preferredShifts || [], weekendsAvailable: form.weekendsAvailable ?? null, availableStart: form.availableStart || "", preferredWorkLocation: form.preferredWorkLocation || "", referenceNote: form.referenceNote || "" }),
+            })
+            await Promise.all((form.qualifications || []).map((item) => apiRequest("/api/seeker/qualifications", { method: "POST", body: JSON.stringify({ qualificationName: item.degree, institution: item.institution, fieldOfStudy: item.field, credentialType: (item.credentialType || "education").toUpperCase(), startDate: item.startDate || `${item.year}-01-01`, endDate: item.currentlyStudying ? null : item.endDate || `${item.year}-12-31`, currentlyStudying: Boolean(item.currentlyStudying) }) })))
+            await Promise.all((form.experience || []).map((item) => apiRequest("/api/seeker/experience", { method: "POST", body: JSON.stringify({ jobTitle: item.title, organizationName: item.company, description: item.description, startDate: item.startDate, endDate: item.currentlyWorking ? null : item.endDate, currentlyWorking: Boolean(item.currentlyWorking) }) })))
+          } catch (error) {
+            setStorageWarning(error instanceof Error ? `Account created, but some CV details could not be saved: ${error.message}` : "Account created, but some CV details could not be saved.")
+          }
           return null
         })
         .catch((error: unknown) =>
@@ -1411,11 +1453,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       location: form.location || form.district,
       district: form.district,
       skills: form.skills,
-      qualifications: [],
-      experience: [],
+      qualifications: form.qualifications || [],
+      experience: form.experience || [],
+      languages: form.languages || [],
+      certifications: form.certifications || [],
+      contactEmail: form.contactEmail || "",
+      employmentPreferences: form.employmentPreferences || [],
+      preferredShifts: form.preferredShifts || [],
+      weekendsAvailable: form.weekendsAvailable ?? null,
+      availableStart: form.availableStart || "",
+      preferredWorkLocation: form.preferredWorkLocation || "",
+      referenceNote: form.referenceNote || "",
       availableDates: [],
       availability: "flexible",
-      bio: "",
+      bio: form.bio || "",
       workHistory: [],
       rating: 0,
       totalJobs: 0,
@@ -2747,7 +2798,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!workerProfile) return
     if (backendMode) {
       const next = { ...workerProfile, ...updates }
-      if (updates.name !== undefined || updates.phone !== undefined || updates.dateOfBirth !== undefined || updates.address !== undefined || updates.location !== undefined || updates.district !== undefined || updates.bio !== undefined || updates.skills !== undefined || updates.preferredTravelDistanceKm !== undefined || updates.preferredCategories !== undefined || updates.acceptingWork !== undefined || Object.prototype.hasOwnProperty.call(updates, "latitude") || Object.prototype.hasOwnProperty.call(updates, "longitude")) {
+      if (updates.name !== undefined || updates.phone !== undefined || updates.dateOfBirth !== undefined || updates.address !== undefined || updates.location !== undefined || updates.district !== undefined || updates.bio !== undefined || updates.skills !== undefined || updates.languages !== undefined || updates.certifications !== undefined || updates.contactEmail !== undefined || updates.employmentPreferences !== undefined || updates.preferredShifts !== undefined || updates.weekendsAvailable !== undefined || updates.availableStart !== undefined || updates.preferredWorkLocation !== undefined || updates.referenceNote !== undefined || updates.preferredTravelDistanceKm !== undefined || updates.preferredCategories !== undefined || updates.acceptingWork !== undefined || Object.prototype.hasOwnProperty.call(updates, "latitude") || Object.prototype.hasOwnProperty.call(updates, "longitude")) {
         void apiRequest<Record<string, unknown>>("/api/seeker/profile", {
           method: "PUT",
           body: JSON.stringify({
@@ -2760,6 +2811,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
             latitude: next.latitude,
             longitude: next.longitude,
             preferredCategories: next.preferredCategories || [],
+            languages: next.languages || [],
+            certifications: next.certifications || [],
+            contactEmail: next.contactEmail || null,
+            employmentPreferences: next.employmentPreferences || [],
+            preferredShifts: next.preferredShifts || [],
+            weekendsAvailable: next.weekendsAvailable ?? null,
+            availableStart: next.availableStart || "",
+            preferredWorkLocation: next.preferredWorkLocation || "",
+            referenceNote: next.referenceNote || "",
             acceptingWork: next.acceptingWork ?? true,
           }),
         }).catch((error: unknown) => setStorageWarning(error instanceof Error ? error.message : "Unable to save the worker profile."))

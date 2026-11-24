@@ -3,6 +3,7 @@ import pytest
 import asyncio
 
 import main
+import job_matching
 
 
 client = TestClient(main.app)
@@ -11,6 +12,7 @@ client = TestClient(main.app)
 @pytest.fixture(autouse=True)
 def clear_chat_rate_limits(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "gemini")
+    monkeypatch.delenv("SHRAM_API_BASE_URL", raising=False)
     main.chat_requests.clear()
     yield
     main.chat_requests.clear()
@@ -305,6 +307,122 @@ def test_job_search_does_not_touch_ollama(monkeypatch):
     assert response.json()["jobs"]
 
 
+def test_list_down_kitchen_helper_query_returns_kitchen_listings_without_ollama(monkeypatch):
+    monkeypatch.setattr(main.ollama_runtime, "ensure_ready", lambda: (_ for _ in ()).throw(AssertionError("listing search must be local")))
+    response = client.post("/api/v1/chat", json={"message": "list down the works related to kitchen helper"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mode"] == "job_search"
+    assert payload["jobs"]
+    assert payload["jobs"][0]["title"] == "Kitchen Helper"
+    assert all("kitchen" in (job["title"] + " " + job["description"] + " " + " ".join(job["skills"])).lower() or "cook" in (job["title"] + " " + job["description"] + " " + " ".join(job["skills"])).lower() for job in payload["jobs"])
+
+
+def test_jobs_are_loaded_from_java_showcase_api_when_configured(monkeypatch):
+    api_job = {"id": "backend-kitchen-job", "title": "Kitchen Helper", "category": "Hospitality & Service", "skills": ["Kitchen hygiene"]}
+    monkeypatch.setenv("SHRAM_API_BASE_URL", "http://java-api:8080")
+
+    class ApiResponse:
+        def raise_for_status(self):
+            return None
+        def json(self):
+            return [api_job]
+
+    def get(url, timeout):
+        assert url == "http://java-api:8080/api/jobs/showcase"
+        assert timeout > 0
+        return ApiResponse()
+
+    monkeypatch.setattr(job_matching.httpx, "get", get)
+    assert job_matching.load_jobs() == [api_job]
+
+
+@pytest.mark.parametrize("query", [
+    "what are the construction works available in shram bazaar?",
+    "can u provide lists of construction works available here?",
+])
+def test_construction_work_queries_return_real_construction_listings_without_ollama(monkeypatch, query):
+    monkeypatch.setattr(main.ollama_runtime, "ensure_ready", lambda: (_ for _ in ()).throw(AssertionError("listing search must be local")))
+    response = client.post("/api/v1/chat", json={"message": query})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mode"] == "job_search"
+    assert payload["jobs"]
+    dataset_ids = {job["id"] for job in main.load_jobs()}
+    assert all(job["id"] in dataset_ids for job in payload["jobs"])
+    assert all(job["category"] == "Construction & Skilled Trades" for job in payload["jobs"])
+
+
+def test_personalized_job_question_uses_worker_profile_and_returns_matching_cards(monkeypatch):
+    monkeypatch.setattr(main.ollama_runtime, "ensure_ready", lambda: (_ for _ in ()).throw(AssertionError("profile matching must not require the model")))
+    response = client.post("/api/v1/chat", json={
+        "message": "according to my profile what work matches me best?",
+        "worker_context": '{"skills":["Wok cooking","Kitchen hygiene"],"preferredCategories":["Hospitality & Service"],"district":"Kathmandu"}',
+    })
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mode"] == "job_search"
+    assert payload["jobs"]
+    assert any("Kitchen hygiene" in reason or "Wok cooking" in reason for job in payload["jobs"] for reason in job["match_reasons"])
+    assert all(job["id"] in {record["id"] for record in main.load_jobs()} for job in payload["jobs"])
+
+
+def test_profile_match_without_work_details_asks_worker_to_complete_profile(monkeypatch):
+    monkeypatch.setattr(main.ollama_runtime, "ensure_ready", lambda: (_ for _ in ()).throw(AssertionError("profile guidance must be local")))
+    response = client.post("/api/v1/chat", json={
+        "message": "what work matches me best according to my profile?",
+        "worker_context": '{"skills":[],"qualifications":[],"experience":[]}',
+    })
+    assert response.status_code == 200
+    assert response.json()["mode"] == "job_search"
+    assert "add your skills" in response.json()["answer"].lower()
+
+
+def test_analyze_my_profile_reaches_qwen_with_worker_profile_context(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setattr(main.ollama_runtime, "ensure_ready", lambda: {"ai_ready": True, "ollama_running": True, "model_available": True, "fallback_active": False, "last_error": None})
+    captured = {}
+
+    async def generate(system_instruction, prompt):
+        captured["system"] = system_instruction
+        captured["prompt"] = prompt
+        return "Your cooking experience fits kitchen roles."
+
+    monkeypatch.setattr(main, "generate_ollama_response", generate)
+    response = client.post("/api/v1/chat", json={
+        "message": "Please analyze my profile.",
+        "worker_context": '{"skills":["Kitchen hygiene"],"experience":["Restaurant cook"],"location":"Kathmandu"}',
+    })
+    assert response.status_code == 200
+    assert response.json()["mode"] == "ai"
+    assert response.json()["answer"] == "Your cooking experience fits kitchen roles."
+    assert response.json()["jobs"]
+    assert "Kitchen hygiene" in captured["prompt"]
+    assert "Restaurant cook" in captured["prompt"]
+    assert "Kitchen Helper" in captured["prompt"]
+    assert "analyze a worker profile" in captured["system"]
+
+
+def test_profile_review_rejects_made_up_examples_from_model(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setattr(main.ollama_runtime, "ensure_ready", lambda: {"ai_ready": True, "ollama_running": True, "model_available": True, "fallback_active": False, "last_error": None})
+
+    async def generate(_system_instruction, _prompt):
+        return "Add a Bachelor degree (e.g. Expected 2025), add work at XYZ Office, and claim 50+ guests served weekly."
+
+    monkeypatch.setattr(main, "generate_ollama_response", generate)
+    response = client.post("/api/v1/chat", json={
+        "message": "Review my profile and suggest changes.",
+        "worker_context": '{"skills":["Guest service"],"experience":["Front Desk Assistant"],"qualifications":[],"bio":"Currently pursuing a Bachelor of Business Studies","availability":"Flexible"}',
+    })
+    assert response.status_code == 200
+    answer = response.json()["answer"]
+    assert "XYZ" not in answer
+    assert "2025" not in answer
+    assert "50+" not in answer
+    assert "qualifications section" in answer.lower()
+
+
 def test_model_unavailable_fallback_remains_useful(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
     monkeypatch.setattr(main.ollama_runtime, "ensure_ready", lambda: {"ai_ready": False, "ollama_running": False, "model_available": False, "fallback_active": True, "last_error": "Ollama is stopped."})
@@ -326,6 +444,7 @@ def test_platform_application_guidance_is_deterministic(monkeypatch):
 
 def test_general_question_about_technology_applications_is_not_misrouted():
     assert main.deterministic_platform_guidance("What are common applications of information technology?") is None
+    assert main.deterministic_platform_guidance("Please analyze my profile.") is None
 
 
 def test_how_to_apply_is_answered_as_a_process_not_a_job_search(monkeypatch):
@@ -340,11 +459,17 @@ def test_how_to_apply_is_answered_as_a_process_not_a_job_search(monkeypatch):
 
 def test_ai_status_endpoint_returns_provider_state(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.delenv("GEMINI_VOICE_API_KEY", raising=False)
     expected = {"provider": "ollama", "model": "qwen3:4b", "ai_ready": False, "state": "model_missing"}
     monkeypatch.setattr(main.ollama_runtime, "check", lambda: expected)
     response = client.get("/api/v1/ai/status")
     assert response.status_code == 200
-    assert response.json() == {**expected, "chat_provider": "ollama"}
+    assert response.json() == {
+        **expected,
+        "chat_provider": "ollama",
+        "resume_extraction": {"enabled": True, "provider": "ollama", "model": "qwen3:4b", "schema_version": 1},
+        "voice_assistant": {"enabled": False, "provider": "gemini", "model": main.VOICE_MODEL},
+    }
 
 
 def test_ai_status_reports_when_chat_is_misconfigured_for_gemini(monkeypatch):
@@ -421,6 +546,7 @@ def test_job_search_returns_only_existing_dataset_records():
     "Find cooking jobs.",
     "Find delivery jobs.",
     "Find me a job.",
+    "What construction works are available here?",
 ])
 def test_expected_natural_language_job_queries_use_dataset(query):
     jobs, is_search = main.search_jobs(query)

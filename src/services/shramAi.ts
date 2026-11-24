@@ -1,3 +1,5 @@
+import type { WorkerProfile } from "../types"
+
 export type ChatTurn = { role: "user" | "assistant"; text: string }
 
 export type ChatResponse = {
@@ -24,13 +26,66 @@ export type AiStatus = {
   fallback_active: boolean
 }
 
-export type ResumeAnalysisResponse = {
-  answer: string
-  conversation_id: string
+export type ResumeExtraction = {
+  fullName: string | null
+  email: string | null
+  phone: string | null
+  location: string | null
+  bio: string | null
+  skills: string[]
+  qualifications: Array<{ name: string; institution: string; field: string; year: number | null }>
+  experience: Array<{ title: string; company: string; description: string; startDate: string | null; endDate: string | null; currentlyWorking: boolean | null }>
+  languages: string[]
+  certifications: string[]
+  employmentPreferences: string[]
+  preferredShifts: string[]
+  weekendsAvailable: boolean | null
+  availableStart: string | null
+  preferredWorkLocation: string | null
+  referenceNote: string | null
+}
+
+export function formatResumeExtraction(resume: ResumeExtraction): string {
+  const lines = [
+    `### Resume details extracted${resume.fullName ? ` for ${resume.fullName}` : ""}`,
+    "Please review these details in Worker Profile. Resume information is not verified.",
+  ]
+  if (resume.bio) lines.push(`**Summary:** ${resume.bio}`)
+  if (resume.skills.length) lines.push(`**Skills:** ${resume.skills.join(", ")}`)
+  if (resume.qualifications.length) lines.push(`**Education and training:** ${resume.qualifications.map((item) => [item.name, item.field, item.institution, item.year].filter(Boolean).join(" · ")).join("; ")}`)
+  if (resume.experience.length) lines.push(`**Work experience:** ${resume.experience.map((item) => [item.title, item.company, item.startDate, item.endDate || (item.currentlyWorking ? "Present" : "")].filter(Boolean).join(" · ")).join("; ")}`)
+  if (resume.languages.length) lines.push(`**Languages:** ${resume.languages.join(", ")}`)
+  if (resume.certifications.length) lines.push(`**Certifications:** ${resume.certifications.join(", ")}`)
+  return lines.join("\n\n")
 }
 
 export type ChatLanguage = "en" | "ne"
 export type AssistantRole = "general" | "provider"
+
+export function serializeWorkerProfileContext(profile?: WorkerProfile | null) {
+  if (!profile) return ""
+  const shortList = (values: Array<string | undefined>, count = 20) =>
+    values.map((value) => value?.trim()).filter((value): value is string => Boolean(value)).slice(0, count).map((value) => value.slice(0, 180))
+  return JSON.stringify({
+    professionalTitle: profile.professionalTitle?.slice(0, 180) || "",
+    skills: shortList(profile.skills || []),
+    preferredCategories: shortList(profile.preferredCategories || []),
+    qualifications: shortList((profile.qualifications || []).map((item) => [item.degree, item.field, item.institution].filter(Boolean).join(" "))),
+    experience: shortList((profile.experience || []).map((item) => [item.title, item.company, item.description].filter(Boolean).join(" "))),
+    experienceTitles: shortList((profile.experience || []).map((item) => item.title)),
+    employmentPreferences: shortList(profile.employmentPreferences || []),
+    preferredShifts: shortList(profile.preferredShifts || []),
+    languages: shortList(profile.languages || []),
+    certifications: shortList(profile.certifications || []),
+    location: profile.location?.slice(0, 120) || "",
+    district: profile.district?.slice(0, 120) || "",
+    preferredWorkLocation: profile.preferredWorkLocation?.slice(0, 120) || "",
+    availability: profile.availability || "",
+    weekendsAvailable: profile.weekendsAvailable ?? null,
+    acceptingWork: profile.acceptingWork ?? null,
+    bio: profile.bio?.slice(0, 1200) || "",
+  })
+}
 
 export async function fetchAiService(
   path: string,
@@ -84,6 +139,7 @@ export async function sendChatMessage(
   contextJobIds: string[] = [],
   assistantRole: AssistantRole = "general",
   providerContext = "",
+  workerContext = "",
 ): Promise<ChatResponse> {
   const response = await fetchAiService("/api/v1/chat", {
     method: "POST",
@@ -96,6 +152,7 @@ export async function sendChatMessage(
       language,
       assistant_role: assistantRole,
       provider_context: providerContext,
+      worker_context: workerContext,
     }),
     signal,
   })
@@ -115,24 +172,16 @@ export async function sendChatMessage(
 
 export async function sendResumeAnalysis(
   file: File,
-  message: string,
-  conversationId: string | null,
-  history: ChatTurn[],
-  language: ChatLanguage = "en",
   signal?: AbortSignal,
-): Promise<ResumeAnalysisResponse> {
+): Promise<ResumeExtraction> {
   const form = new FormData()
   form.set("file", file)
-  form.set("message", message)
-  if (conversationId) form.set("conversation_id", conversationId)
-  form.set("history", JSON.stringify(history))
-  form.set("language", language)
 
   const response = await fetchAiService("/api/v1/resume-analysis", {
     method: "POST",
     body: form,
     signal,
-  })
+  }, 180_000)
   if (!response.ok) {
     let detail = `Resume analysis failed (${response.status})`
     try {
@@ -143,5 +192,5 @@ export async function sendResumeAnalysis(
     }
     throw new Error(detail)
   }
-  return response.json() as Promise<ResumeAnalysisResponse>
+  return response.json() as Promise<ResumeExtraction>
 }

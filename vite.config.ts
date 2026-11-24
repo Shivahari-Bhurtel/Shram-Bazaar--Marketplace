@@ -10,6 +10,7 @@ import { jsearchProxy } from "./server/jsearchProxy"
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
+  const apiServiceTarget = `http://127.0.0.1:${process.env.API_SERVICE_PORT || "8080"}`
   const aiServiceTarget = `http://127.0.0.1:${process.env.AI_SERVICE_PORT || "8000"}`
   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
   const emitSourcemaps = mode === "development"
@@ -49,7 +50,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         "/uploads": {
-          target: "http://127.0.0.1:8080",
+          target: apiServiceTarget,
           changeOrigin: true,
         },
         "/api/v1": {
@@ -57,7 +58,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         "/api": {
-          target: "http://127.0.0.1:8080",
+          target: apiServiceTarget,
           changeOrigin: true,
         },
       },
@@ -70,7 +71,7 @@ export default defineConfig(({ mode }) => {
       port: parseInt(process.env.PORT || "8443"),
       proxy: {
         "/uploads": {
-          target: "http://127.0.0.1:8080",
+          target: apiServiceTarget,
           changeOrigin: true,
         },
         "/api/v1": {
@@ -78,7 +79,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         "/api": {
-          target: "http://127.0.0.1:8080",
+          target: apiServiceTarget,
           changeOrigin: true,
         },
       },

@@ -61,6 +61,12 @@ public class ProfileService {
                 profile.getLatitude(),
                 profile.getLongitude(),
                 profile.getPreferredCategories().stream().sorted().toList(),
+                profile.getLanguages().stream().sorted().toList(),
+                profile.getCertifications().stream().sorted().toList(),
+                profile.getContactEmail(), profile.getPreferredWorkLocation(), profile.getAvailableStart(),
+                profile.getReferenceNote(), profile.getWeekendsAvailable(),
+                profile.getEmploymentPreferences().stream().sorted().toList(),
+                profile.getPreferredShifts().stream().sorted().toList(),
                 profile.isAcceptingWork(),
                 getIsVerified(user.getId(), VerificationType.IDENTITY)
         );
@@ -83,6 +89,11 @@ public class ProfileService {
 
         profile.setAddress(request.address());
         profile.setBio(request.bio());
+        profile.setContactEmail(request.contactEmail());
+        profile.setPreferredWorkLocation(request.preferredWorkLocation());
+        profile.setAvailableStart(request.availableStart());
+        profile.setReferenceNote(request.referenceNote());
+        profile.setWeekendsAvailable(request.weekendsAvailable());
         profile.setPreferredTravelDistanceKm(
                 request.preferredTravelDistanceKm()
         );
@@ -93,6 +104,16 @@ public class ProfileService {
                     .map(String::trim).filter(value -> !value.isBlank())
                     .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
         }
+        if (request.languages() != null) {
+            profile.setLanguages(request.languages().stream().map(String::trim).filter(value -> !value.isBlank())
+                    .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+        }
+        if (request.certifications() != null) {
+            profile.setCertifications(request.certifications().stream().map(String::trim).filter(value -> !value.isBlank())
+                    .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+        }
+        if (request.employmentPreferences() != null) profile.setEmploymentPreferences(request.employmentPreferences().stream().map(String::trim).filter(value -> !value.isBlank()).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
+        if (request.preferredShifts() != null) profile.setPreferredShifts(request.preferredShifts().stream().map(String::trim).filter(value -> !value.isBlank()).collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new)));
         if (request.acceptingWork() != null) {
             profile.setAcceptingWork(request.acceptingWork());
         }

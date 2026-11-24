@@ -2,11 +2,12 @@
 set -Eeuo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-API_URL="http://127.0.0.1:8080"
+API_PORT="${API_PORT:-8080}"
 AI_PORT="${AI_PORT:-8000}"
-AI_URL="http://127.0.0.1:${AI_PORT}"
 WEB_PORT="${WEB_PORT:-8444}"
+AI_URL="http://127.0.0.1:${AI_PORT}"
 WEB_URL="http://127.0.0.1:${WEB_PORT}"
+API_URL="http://127.0.0.1:${API_PORT}"
 API_LOG="${TMPDIR:-/tmp}/shram-bazar-api.log"
 AI_LOG="${TMPDIR:-/tmp}/shram-bazar-ai.log"
 API_PID=""
@@ -22,6 +23,10 @@ export DB_USERNAME="${DB_USERNAME:-shrambazar}"
 # These match the local-development defaults in shrambazar/compose.yaml.
 export DB_PASSWORD="${DB_PASSWORD:-local-only-shrambazar}"
 export JWT_SECRET="${JWT_SECRET:-bG9jYWwtZGV2LW9ubHktc2hyYW1iYXphci1qd3Qtc2VjcmV0LW5vdC1mb3ItcHJvZHVjdGlvbi0yMDI2}"
+# Keep the local API schema aligned with its JPA entities before applying the
+# forward-only SQL additions (the SQL file references entity-owned tables).
+export SPRING_JPA_HIBERNATE_DDL_AUTO="${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}"
+export SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION="${SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION:-true}"
 
 # Figma Make and Vite read .env.local for the frontend, but child processes
 # started here do not inherit those values. Read managed database settings only
@@ -83,27 +88,86 @@ fi
 api_healthy() {
   curl -fsS --max-time 3 "$API_URL/api/health" >/dev/null 2>&1 &&
     curl -fsS --max-time 3 "$API_URL/api/jobs" 2>/dev/null |
-      node -e 'const fs=require("fs");let data;try{data=JSON.parse(fs.readFileSync(0,"utf8"))}catch{process.exit(1)}process.exit(Array.isArray(data)?0:1)' >/dev/null 2>&1
+      node -e 'const fs=require("fs");let data;try{data=JSON.parse(fs.readFileSync(0,"utf8"))}catch{process.exit(1)}process.exit(Array.isArray(data)?0:1)' >/dev/null 2>&1 || return 1
+  local owner
+  owner="$(port_owner_cwd "$API_PORT" || true)"
+  [[ -z "$owner" || "$owner" == "$APP_DIR/shrambazar" ]]
+}
+
+port_listener_pid() {
+  command -v lsof >/dev/null 2>&1 || return 1
+  lsof -nP -tiTCP:"$1" -sTCP:LISTEN 2>/dev/null | head -n 1
+}
+
+port_owner_cwd() {
+  local pid
+  pid="$(port_listener_pid "$1")"
+  [[ -n "$pid" ]] || return 1
+  lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1
+}
+
+choose_free_port() {
+  local port="$1" end="$2"
+  while (( port <= end )); do
+    if [[ -z "$(port_listener_pid "$port" || true)" ]]; then
+      printf '%s' "$port"
+      return 0
+    fi
+    ((port += 1))
+  done
+  return 1
 }
 
 web_healthy() {
-  curl -fsS --max-time 3 "$WEB_URL/" >/dev/null 2>&1
+  curl -fsS --max-time 3 "$WEB_URL/" >/dev/null 2>&1 || return 1
+  local owner
+  owner="$(port_owner_cwd "$WEB_PORT" || true)"
+  [[ -z "$owner" || "$owner" == "$APP_DIR" ]]
 }
 
 ai_healthy() {
   curl -fsS --max-time 4 "$AI_URL/api/v1/ai/status" 2>/dev/null |
-    node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{let s;try{s=JSON.parse(input)}catch{process.exit(1)}process.exit(s.provider==="ollama"&&s.chat_provider==="ollama"?0:1)})' >/dev/null 2>&1
+    node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{let s;try{s=JSON.parse(input)}catch{process.exit(1)}const r=s.resume_extraction,v=s.voice_assistant;process.exit(s.provider==="ollama"&&s.chat_provider==="ollama"&&r?.enabled===true&&r?.provider==="ollama"&&r?.model===(process.env.OLLAMA_MODEL||"qwen3:4b")&&r?.schema_version===1&&v?.provider==="gemini"&&typeof v.enabled==="boolean"&&typeof v.model==="string"?0:1)})' >/dev/null 2>&1
+}
+
+restart_stale_project_ai() {
+  command -v lsof >/dev/null 2>&1 || return 1
+  local pid command cwd
+  pid="$(port_listener_pid "$AI_PORT" || true)"
+  [[ -n "$pid" ]] || return 1
+  command="$(ps -p "$pid" -o command= 2>/dev/null || true)"
+  cwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)"
+  if [[ "$cwd" == "$APP_DIR/ai-service" && "$command" == *"uvicorn main:app"* ]]; then
+    echo "Restarting the outdated Shram AI process from this project's ai-service directory (PID $pid)..."
+    kill -TERM "$pid" 2>/dev/null || return 1
+    for _ in {1..10}; do
+      if [[ -z "$(port_listener_pid "$AI_PORT" || true)" ]]; then return 0; fi
+      sleep 1
+    done
+    echo "The old Shram AI process did not release port $AI_PORT. Stop it and rerun this script."
+    return 1
+  fi
+  return 1
 }
 
 start_ai() {
-  if curl -sS --max-time 2 "$AI_URL/" >/dev/null 2>&1; then
-    echo "Port $AI_PORT responds, but Shram AI is not healthy; leaving the existing service untouched."
-    return 1
+  if [[ -n "$(port_listener_pid "$AI_PORT" || true)" ]]; then
+    if ! restart_stale_project_ai; then
+      local available_port
+      available_port="$(choose_free_port "$((AI_PORT + 1))" 65535)" || {
+        echo "No free local port is available for Shram AI. Stop another service or set AI_PORT explicitly."
+        return 1
+      }
+      AI_PORT="$available_port"
+      AI_URL="http://127.0.0.1:${AI_PORT}"
+      echo "Another service owns the requested AI port; using port $AI_PORT for this project's Shram AI service."
+    fi
   fi
   echo "Starting Shram AI on $AI_URL..."
   (
     cd "$APP_DIR/ai-service"
     AI_PROVIDER=ollama \
+      SHRAM_API_BASE_URL="$API_URL" \
       OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3:4b}" \
       OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}" \
       "$AI_PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$AI_PORT"
@@ -141,10 +205,15 @@ if ! (cd "$APP_DIR/ai-service" && "$AI_PYTHON" -c 'import fastapi, httpx, google
 fi
 
 if ! api_healthy; then
-  if curl -sS --max-time 2 "$API_URL/" >/dev/null 2>&1; then
-    echo "Port 8080 is occupied by a service that is not serving the Shram Bazar API routes. Stop that service, then rerun this script."
-    exit 1
-  else
+  if [[ -n "$(port_listener_pid "$API_PORT" || true)" ]]; then
+    API_PORT="$(choose_free_port "$((API_PORT + 1))" 65535)" || {
+      echo "No free local port is available for the Shram Bazar API. Stop another service or set API_PORT explicitly."
+      exit 1
+    }
+    API_URL="http://127.0.0.1:${API_PORT}"
+    echo "Another service owns the requested API port; using port $API_PORT for this project."
+  fi
+  if ! api_healthy; then
     if [[ "$managed_db_configured" != true ]] && ! pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1; then
       if command -v docker >/dev/null 2>&1; then
         if docker compose -f "$APP_DIR/shrambazar/compose.yaml" up -d database; then
@@ -173,6 +242,7 @@ if ! api_healthy; then
       if (cd "$APP_DIR/shrambazar" && sh ./mvnw clean -DskipTests package); then
         (
           cd "$APP_DIR/shrambazar"
+          PORT="$API_PORT" \
           java -jar target/shrambazar-0.0.1-SNAPSHOT.jar
         ) >"$API_LOG" 2>&1 &
         API_PID=$!
@@ -215,14 +285,23 @@ if ! ai_healthy; then
 fi
 
 if ai_healthy; then
-  curl -fsS --max-time 5 "$AI_URL/api/v1/ai/status" | node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{const s=JSON.parse(input);if(s.ai_ready){console.log(`Local AI ready: ${s.provider} / ${s.model}`)}else{console.log(`AI service online; model status: ${s.state}. ${s.last_error||"Platform guidance and job search remain available."}`)}})'
+  echo "Shram AI status: $AI_URL/api/v1/ai/status"
+  curl -fsS --max-time 5 "$AI_URL/api/v1/ai/status" | node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{const s=JSON.parse(input);if(s.ai_ready){console.log(`Local AI ready: ${s.provider} / ${s.model}`)}else{console.log(`AI service online; model status: ${s.state}. ${s.last_error||"Platform guidance and job search remain available."}`)}console.log(s.voice_assistant.enabled?`Voice assistant configured: ${s.voice_assistant.provider} / ${s.voice_assistant.model}`:"Voice assistant is not configured: set GEMINI_VOICE_API_KEY in ai-service/.env.")})'
 else
   echo "AI is starting in the background; logs: $AI_LOG"
 fi
 
 if ! web_healthy; then
+  if [[ -n "$(port_listener_pid "$WEB_PORT" || true)" ]]; then
+    WEB_PORT="$(choose_free_port "$((WEB_PORT + 1))" 65535)" || {
+      echo "No free local port is available for the frontend. Stop another service or set WEB_PORT explicitly."
+      exit 1
+    }
+    WEB_URL="http://127.0.0.1:${WEB_PORT}"
+    echo "Another service owns the requested frontend port; using port $WEB_PORT for this project."
+  fi
   echo "Starting Shram Bazar at $WEB_URL (API: $API_URL). Keep this terminal open; Ctrl+C stops services started here."
-  (cd "$APP_DIR" && PORT="$WEB_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
+  (cd "$APP_DIR" && PORT="$WEB_PORT" API_SERVICE_PORT="$API_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
   WEB_PID=$!
 else
   echo "Shram Bazar is ready at $WEB_URL (API: $API_URL). Leave this terminal open to keep monitoring AI."
@@ -246,13 +325,13 @@ while true; do
     if ! web_healthy; then
       echo "Vite exited. Restarting the frontend in 2 seconds..."
       sleep 2
-      (cd "$APP_DIR" && PORT="$WEB_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
+      (cd "$APP_DIR" && PORT="$WEB_PORT" API_SERVICE_PORT="$API_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
       WEB_PID=$!
     fi
   fi
   if [[ -z "$WEB_PID" ]] && ! web_healthy; then
     echo "The frontend is no longer responding. Restarting Vite..."
-    (cd "$APP_DIR" && PORT="$WEB_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
+    (cd "$APP_DIR" && PORT="$WEB_PORT" API_SERVICE_PORT="$API_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
     WEB_PID=$!
   fi
   sleep 5

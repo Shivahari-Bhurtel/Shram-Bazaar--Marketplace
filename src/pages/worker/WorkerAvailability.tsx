@@ -479,7 +479,7 @@ export default function WorkerAvailability() {
         </div>
 
         <div className="h-[27rem] min-w-0 overflow-y-auto border-t border-[#E5E8EB] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-          <div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => openWizard(cursor)} className="rounded-none bg-black px-4 py-3 font-ui text-sm font-bold tracking-tight text-white shadow-sm transition hover:bg-neutral-800">+ Publish Work &amp; Availability</button></div>
+          <div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => openWizard(cursor)} className="rounded-none bg-[#553421] px-4 py-3 font-ui text-sm font-bold tracking-tight text-white shadow-sm transition hover:bg-[#402719]">+ Publish Work &amp; Availability</button></div>
           {calendarLoading && <p role="status" className="mt-3 animate-pulse rounded-lg bg-[#F7F8F5] p-3 text-sm text-[#68736B]">Loading this date…</p>}
           {selectedDayEntries.length ? <><div className="mt-5 space-y-5">{(["Morning", "Afternoon", "Evening"] as const).map((period) => {
             const entries = selectedDayEntries.filter((entry) => period === "Morning" ? minutes(entry.startTime) < 12 * 60 : period === "Afternoon" ? minutes(entry.startTime) >= 12 * 60 && minutes(entry.startTime) < 17 * 60 : minutes(entry.startTime) >= 17 * 60)

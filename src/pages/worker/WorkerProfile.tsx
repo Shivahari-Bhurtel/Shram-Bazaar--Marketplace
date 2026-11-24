@@ -18,6 +18,8 @@ import type {
 import { formatNepalDate, isDateOnlyString, nepalDateString, nepalYear } from "../../utils/dates"
 import { isValidPhoneNumber } from "../../utils/validation"
 import { getConfiguredJobCategories } from "../../utils/categories"
+import { sendResumeAnalysis } from "../../services/shramAi"
+import { resumeExperience, resumeQualifications, uniqueExperience, uniqueResumeValues } from "../../utils/resumeProfile"
 
 const presetAvatars = [
   {
@@ -64,6 +66,9 @@ export default function WorkerProfile() {
   const [photoError, setPhotoError] = useState(false)
   const [photoChoicesOpen, setPhotoChoicesOpen] = useState(false)
   const [publicPreviewOpen, setPublicPreviewOpen] = useState(false)
+  const [resumeBusy, setResumeBusy] = useState(false)
+  const [resumeError, setResumeError] = useState("")
+  const resumeInputRef = useRef<HTMLInputElement>(null)
   const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "history">("overview")
   const photoInputRef = useRef<HTMLInputElement>(null)
   const photoPickerRef = useRef<HTMLDivElement>(null)
@@ -321,8 +326,50 @@ export default function WorkerProfile() {
     reader.readAsDataURL(file)
   }
 
+  const importResume = async (file?: File) => {
+    if (!file) return
+    setResumeBusy(true)
+    setResumeError("")
+    try {
+      const extracted = await sendResumeAnalysis(file)
+      const incomingExperience = resumeExperience(extracted).filter((item) => item.startDate && (item.endDate || item.currentlyWorking))
+      const incomingQualifications = resumeQualifications(extracted)
+      const location = extracted.location || ""
+      const locationParts = location.split(",").map((part) => part.trim()).filter(Boolean)
+      const district = locationParts.find((part) => DISTRICTS.some((item) => item.toLowerCase() === part.toLowerCase())) || workerProfile.district
+      updateWorkerProfile({
+        name: extracted.fullName || workerProfile.name,
+        phone: extracted.phone || workerProfile.phone,
+        contactEmail: extracted.email || workerProfile.contactEmail || "",
+        address: location || workerProfile.address || workerProfile.district,
+        location: locationParts.find((part) => part.toLowerCase() === district.toLowerCase()) || location || workerProfile.location,
+        district,
+        bio: extracted.bio || workerProfile.bio,
+        skills: uniqueResumeValues(workerProfile.skills, extracted.skills),
+        languages: uniqueResumeValues(workerProfile.languages || [], extracted.languages),
+        certifications: uniqueResumeValues(workerProfile.certifications || [], extracted.certifications),
+        qualifications: [...workerProfile.qualifications, ...incomingQualifications.filter((item) => !workerProfile.qualifications.some((old) => old.degree.trim().toLowerCase() === item.degree.trim().toLowerCase() && old.institution.trim().toLowerCase() === item.institution.trim().toLowerCase()))],
+        experience: uniqueExperience(workerProfile.experience, incomingExperience),
+        employmentPreferences: uniqueResumeValues(workerProfile.employmentPreferences || [], extracted.employmentPreferences),
+        preferredShifts: uniqueResumeValues(workerProfile.preferredShifts || [], extracted.preferredShifts),
+        weekendsAvailable: extracted.weekendsAvailable ?? workerProfile.weekendsAvailable ?? null,
+        availableStart: extracted.availableStart || workerProfile.availableStart || "",
+        preferredWorkLocation: extracted.preferredWorkLocation || workerProfile.preferredWorkLocation || "",
+        referenceNote: extracted.referenceNote || workerProfile.referenceNote || "",
+      })
+      showProfileUpdate("Resume extracted with local Qwen and added to your profile. Review the details; resume information is not verified.")
+    } catch (cause) {
+      setResumeError(cause instanceof Error ? cause.message : "Could not read that resume. Try another file or edit your profile manually.")
+    } finally {
+      setResumeBusy(false)
+      if (resumeInputRef.current) resumeInputRef.current.value = ""
+    }
+  }
+
+
   return (
     <div className="worker-profile-page mx-auto w-full max-w-[1600px] px-4 py-6 font-sans sm:px-6 sm:py-8 lg:px-8">
+      {resumeError && <div role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{resumeError}</div>}
       {saved && (
         <div className="mb-4 flex justify-end">
           <span className="text-sm font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100 animate-fade-in">
@@ -534,7 +581,7 @@ export default function WorkerProfile() {
             <button
               type="button"
               onClick={() => navigate("kyc-verification")}
-              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#176B4D]/20 bg-[#eff7f1] px-3 font-sans text-sm font-medium tracking-[-0.005em] text-[#176B4D] transition-colors hover:border-[#176B4D] hover:bg-[#e5f1e8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176B4D]"
+              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#553421] bg-[#553421] px-3 font-sans text-sm font-medium tracking-[-0.005em] text-white transition-colors hover:border-[#402719] hover:bg-[#402719] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
             >
               {kycStatus === "pending" ? "Check status" : "Verify identity"}
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
@@ -553,6 +600,8 @@ export default function WorkerProfile() {
             </svg>
             <span className="whitespace-nowrap">Public Preview</span>
           </button>
+          <button type="button" onClick={() => resumeInputRef.current?.click()} disabled={resumeBusy} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#553421] bg-[#553421] px-3 font-sans text-sm font-semibold text-white transition-colors hover:border-[#402719] hover:bg-[#402719] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744] disabled:cursor-wait disabled:opacity-60">{resumeBusy ? "Adding resume…" : "Add Resume"}</button>
+          <input ref={resumeInputRef} type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={(event) => { void importResume(event.target.files?.[0]) }} />
         </div>
       </div>
       </div>
@@ -830,6 +879,7 @@ export default function WorkerProfile() {
                   }
                 />
                 <Info label="Phone" value={workerProfile.phone} />
+                <Info label="Resume contact email" value={workerProfile.contactEmail || "Not provided"} />
                 <Info
                   label="Date of birth"
                   value={workerProfile.dateOfBirth || "Not added"}
@@ -863,6 +913,21 @@ export default function WorkerProfile() {
               </div>
             )}
           </Section>
+
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-lg font-semibold text-stone-900">Resume details & work preferences</h2>
+            <p className="mt-1 text-sm text-stone-500">Imported from your CV. These details are editable in the relevant profile sections and are not verified.</p>
+            <div className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+              <Info label="Employment preference" value={workerProfile.employmentPreferences?.join(", ") || "Not provided"} />
+              <Info label="Preferred shifts" value={workerProfile.preferredShifts?.join(", ") || "Not provided"} />
+              <Info label="Weekend availability" value={workerProfile.weekendsAvailable == null ? "Not provided" : workerProfile.weekendsAvailable ? "Available" : "Not available"} />
+              <Info label="Can start" value={workerProfile.availableStart || "Not provided"} />
+              <Info label="Preferred work location" value={workerProfile.preferredWorkLocation || "Not provided"} />
+              <Info label="References" value={workerProfile.referenceNote || "Not provided"} />
+              <Info label="Languages" value={workerProfile.languages?.join(", ") || "Not provided"} />
+              <Info label="Certifications" value={workerProfile.certifications?.join(", ") || "None listed"} />
+            </div>
+          </section>
 
           {/* Skills */}
           <Section
@@ -1188,6 +1253,8 @@ export default function WorkerProfile() {
               </button>
             )}
           </Section>
+
+          {(workerProfile.languages?.length || workerProfile.certifications?.length) ? <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6"><h2 className="text-lg font-semibold tracking-tight text-stone-950">Languages & certifications</h2>{workerProfile.languages?.length ? <div className="mt-4"><p className="text-sm font-medium text-stone-600">Languages</p><div className="mt-2 flex flex-wrap gap-2">{workerProfile.languages.map((value) => <span key={value} className="rounded-full bg-stone-100 px-3 py-1.5 text-sm text-stone-700">{value}</span>)}</div></div> : null}{workerProfile.certifications?.length ? <div className="mt-4"><p className="text-sm font-medium text-stone-600">Certifications</p><div className="mt-2 flex flex-wrap gap-2">{workerProfile.certifications.map((value) => <span key={value} className="rounded-full bg-stone-100 px-3 py-1.5 text-sm text-stone-700">{value}</span>)}</div></div> : null}</section> : null}
 
           {/* Experience */}
           <Section

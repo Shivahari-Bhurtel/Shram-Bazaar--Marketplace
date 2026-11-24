@@ -25,6 +25,20 @@ public class SeekerProfile {
     @Column(length = 255)
     private String address;
 
+    @Column(length = 254)
+    private String contactEmail;
+
+    @Column(length = 160)
+    private String preferredWorkLocation;
+
+    @Column(length = 120)
+    private String availableStart;
+
+    @Column(length = 255)
+    private String referenceNote;
+
+    private Boolean weekendsAvailable;
+
     private Integer preferredTravelDistanceKm;
 
     // Null on profiles created before this preference existed means enabled.
@@ -36,6 +50,26 @@ public class SeekerProfile {
     @CollectionTable(name = "seeker_preferred_categories", joinColumns = @JoinColumn(name = "seeker_profile_id"))
     @Column(name = "category", nullable = false, length = 80)
     private java.util.Set<String> preferredCategories = new java.util.LinkedHashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "seeker_languages", joinColumns = @JoinColumn(name = "seeker_profile_id"))
+    @Column(name = "language", nullable = false, length = 80)
+    private java.util.Set<String> languages = new java.util.LinkedHashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "seeker_certifications", joinColumns = @JoinColumn(name = "seeker_profile_id"))
+    @Column(name = "certification", nullable = false, length = 160)
+    private java.util.Set<String> certifications = new java.util.LinkedHashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "seeker_employment_preferences", joinColumns = @JoinColumn(name = "seeker_profile_id"))
+    @Column(name = "preference", nullable = false, length = 80)
+    private java.util.Set<String> employmentPreferences = new java.util.LinkedHashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "seeker_preferred_shifts", joinColumns = @JoinColumn(name = "seeker_profile_id"))
+    @Column(name = "shift", nullable = false, length = 80)
+    private java.util.Set<String> preferredShifts = new java.util.LinkedHashSet<>();
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -98,6 +132,17 @@ public class SeekerProfile {
         this.address = address;
     }
 
+    public String getContactEmail() { return contactEmail; }
+    public void setContactEmail(String contactEmail) { this.contactEmail = contactEmail; }
+    public String getPreferredWorkLocation() { return preferredWorkLocation; }
+    public void setPreferredWorkLocation(String preferredWorkLocation) { this.preferredWorkLocation = preferredWorkLocation; }
+    public String getAvailableStart() { return availableStart; }
+    public void setAvailableStart(String availableStart) { this.availableStart = availableStart; }
+    public String getReferenceNote() { return referenceNote; }
+    public void setReferenceNote(String referenceNote) { this.referenceNote = referenceNote; }
+    public Boolean getWeekendsAvailable() { return weekendsAvailable; }
+    public void setWeekendsAvailable(Boolean weekendsAvailable) { this.weekendsAvailable = weekendsAvailable; }
+
     public Integer getPreferredTravelDistanceKm() {
         return preferredTravelDistanceKm;
     }
@@ -115,6 +160,14 @@ public class SeekerProfile {
     public void setLongitude(Double longitude) { this.longitude = longitude; }
     public java.util.Set<String> getPreferredCategories() { return preferredCategories; }
     public void setPreferredCategories(java.util.Set<String> preferredCategories) { this.preferredCategories = preferredCategories; }
+    public java.util.Set<String> getLanguages() { return languages; }
+    public void setLanguages(java.util.Set<String> languages) { this.languages = languages; }
+    public java.util.Set<String> getCertifications() { return certifications; }
+    public void setCertifications(java.util.Set<String> certifications) { this.certifications = certifications; }
+    public java.util.Set<String> getEmploymentPreferences() { return employmentPreferences; }
+    public void setEmploymentPreferences(java.util.Set<String> employmentPreferences) { this.employmentPreferences = employmentPreferences; }
+    public java.util.Set<String> getPreferredShifts() { return preferredShifts; }
+    public void setPreferredShifts(java.util.Set<String> preferredShifts) { this.preferredShifts = preferredShifts; }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

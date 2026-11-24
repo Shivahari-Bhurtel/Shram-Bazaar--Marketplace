@@ -565,7 +565,23 @@ class AuthFlowIntegrationTest {
                         .header("Authorization", "Bearer " + workerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.count").value(org.hamcrest.Matchers.greaterThan(0)));
+        // The accepted application has its own job-linked conversation. Reading
+        // the separate direct-hire thread below must not mark that thread read.
+        String applicationConversation = mockMvc.perform(post("/api/conversations")
+                        .header("Authorization", "Bearer " + workerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"applicationId\":%d}".formatted(applicationId)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long applicationConversationId = objectMapper.readTree(applicationConversation).get("id").asLong();
         mockMvc.perform(post("/api/conversations/{id}/read", directConversationId)
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/conversations/unread-count")
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.count").value(org.hamcrest.Matchers.greaterThan(0)));
+        mockMvc.perform(post("/api/conversations/{id}/read", applicationConversationId)
                         .header("Authorization", "Bearer " + workerToken))
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/conversations/unread-count")
@@ -694,17 +710,37 @@ class AuthFlowIntegrationTest {
                                   "fullName": "Availability Worker",
                                   "phoneNumber": "+9779800000091",
                                   "address": "Kathmandu, Bagmati",
-                                  "acceptingWork": false
+                                  "acceptingWork": false,
+                                  "contactEmail": "resume@example.com",
+                                  "preferredWorkLocation": "Kathmandu Valley",
+                                  "availableStart": "Within two weeks",
+                                  "referenceNote": "Available upon request.",
+                                  "weekendsAvailable": true,
+                                  "employmentPreferences": ["Part-time", "Full-time"],
+                                  "preferredShifts": ["Morning", "Evening"],
+                                  "languages": ["Nepali — Native"],
+                                  "certifications": ["First Aid"]
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.acceptingWork").value(false));
+                .andExpect(jsonPath("$.acceptingWork").value(false))
+                .andExpect(jsonPath("$.contactEmail").value("resume@example.com"))
+                .andExpect(jsonPath("$.preferredWorkLocation").value("Kathmandu Valley"))
+                .andExpect(jsonPath("$.availableStart").value("Within two weeks"))
+                .andExpect(jsonPath("$.weekendsAvailable").value(true))
+                .andExpect(jsonPath("$.employmentPreferences[0]").value("Full-time"))
+                .andExpect(jsonPath("$.preferredShifts[0]").value("Evening"))
+                .andExpect(jsonPath("$.languages[0]").value("Nepali — Native"))
+                .andExpect(jsonPath("$.certifications[0]").value("First Aid"));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/seeker/profile")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.acceptingWork").value(false));
+                .andExpect(jsonPath("$.acceptingWork").value(false))
+                .andExpect(jsonPath("$.contactEmail").value("resume@example.com"))
+                .andExpect(jsonPath("$.employmentPreferences.length()").value(2))
+                .andExpect(jsonPath("$.preferredShifts.length()").value(2));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/seeker/calendar")

@@ -339,7 +339,7 @@ export default function MyApplications() {
             <p className="mt-0.5 text-xs leading-5 text-stone-600 sm:text-sm">{job.company} <span aria-hidden="true" className="px-1 text-stone-400">·</span> {job.location}, {job.city}</p>
             <p className="mt-1.5 text-[11px] font-medium tabular-nums text-stone-500 sm:text-xs">Saved {new Intl.DateTimeFormat("en-NP", { dateStyle: "medium" }).format(new Date(application.appliedAt))}</p>
           </div>
-          <button type="button" onClick={() => setSelectedDemoJob(job)} className="inline-flex min-h-9 w-fit items-center justify-center gap-2 rounded-lg bg-[#246B50] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#1D5942] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#246B50]">
+          <button type="button" onClick={() => setSelectedDemoJob(job)} className="inline-flex min-h-9 w-fit items-center justify-center gap-2 rounded-lg bg-[#553421] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#402719] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]">
             View listing <span aria-hidden="true">↗</span>
           </button>
         </article>)}</div>}

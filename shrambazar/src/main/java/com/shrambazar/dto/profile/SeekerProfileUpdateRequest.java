@@ -38,7 +38,20 @@ public record SeekerProfileUpdateRequest(
         @Size(max = 30)
         List<@NotBlank @Size(max = 80) String> preferredCategories,
 
-        Boolean acceptingWork
+        @Size(max = 30)
+        List<@NotBlank @Size(max = 80) String> languages,
+
+        @Size(max = 30)
+        List<@NotBlank @Size(max = 160) String> certifications,
+
+        Boolean acceptingWork,
+        @Email @Size(max = 254) String contactEmail,
+        @Size(max = 160) String preferredWorkLocation,
+        @Size(max = 120) String availableStart,
+        @Size(max = 255) String referenceNote,
+        Boolean weekendsAvailable,
+        @Size(max = 30) List<@NotBlank @Size(max = 80) String> employmentPreferences,
+        @Size(max = 30) List<@NotBlank @Size(max = 80) String> preferredShifts
 
 ) {
 }

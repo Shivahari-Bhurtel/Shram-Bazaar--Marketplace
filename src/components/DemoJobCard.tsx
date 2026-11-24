@@ -34,7 +34,7 @@ export default function DemoJobCard({ job, selected = false, saved = false, appl
       <div className={`flex flex-wrap items-center gap-2 border-t border-stone-100 ${homeStyle ? "mt-1 pt-3" : "mt-2.5 pt-2.5"}`}>
         <button type="button" onClick={() => onOpen(job)} className={`mr-auto px-3 py-1 text-sm font-semibold transition-colors ${homeStyle ? "min-h-9 rounded-md border border-[#475231] bg-[#475231] text-white hover:bg-[#364025]" : "rounded-[2px] border border-[#475231]/50 font-medium text-[#475231] hover:bg-[#475231]/5"}`}>Details</button>
         {onToggleSaved && !homeStyle && !inlineSaveAction && <button type="button" aria-pressed={saved} onClick={() => onToggleSaved(job.id)} className="rounded-md border border-stone-300 px-3 py-1 text-sm font-medium text-stone-700 hover:bg-stone-50">{saved ? "Saved" : "Save"}</button>}
-        {onApply && <button type="button" disabled={applied} onClick={() => onApply(job.id)} className={`job-card-apply rounded-md bg-[#265D4C] px-3 py-1 text-sm font-semibold text-white hover:bg-[#1D493B] disabled:cursor-default disabled:bg-stone-300 ${homeStyle ? "min-h-9" : ""}`}>{applied ? "Applied" : "Apply"}</button>}
+        {onApply && <button type="button" disabled={applied} onClick={() => onApply(job.id)} className={`job-card-apply rounded-md px-3 py-1 text-sm font-semibold text-white transition-colors ${applied ? "cursor-default bg-stone-400" : "bg-[#553421] hover:bg-[#402719]"} disabled:cursor-default ${homeStyle ? "min-h-9" : ""}`}>{applied ? "Applied" : "Apply"}</button>}
       </div>
     </article>
   )

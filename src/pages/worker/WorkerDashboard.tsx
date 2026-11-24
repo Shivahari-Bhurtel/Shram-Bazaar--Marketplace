@@ -385,11 +385,11 @@ export default function WorkerDashboard() {
           <header className="worker-dashboard-hero relative mb-6 overflow-hidden rounded-2xl border px-5 py-6 sm:px-7 sm:py-7">
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
               <div className="min-w-0">
-                <h1 className="font-heading text-[1.8rem] font-bold leading-tight tracking-[-0.035em] text-[#25231F] sm:text-3xl lg:text-[2.65rem]">
+                <h1 className="font-heading text-[1.8rem] font-bold leading-tight tracking-[-0.035em] text-[#553421] sm:text-3xl lg:text-[2.65rem]">
                   {greeting()},{" "}
                   {firstName.charAt(0).toUpperCase() + firstName.slice(1)}
                 </h1>
-                <p className="mt-2 max-w-xl font-ui text-sm leading-relaxed text-[#6F6A5F] sm:text-base">
+                <p className="mt-2 max-w-xl font-ui text-sm leading-relaxed text-[#6D584A] sm:text-base">
                   Search remote IT opportunities from the connected job feeds.
                 </p>
               </div>
@@ -740,7 +740,7 @@ export default function WorkerDashboard() {
                 <button
                   type="button"
                   onClick={() => navigate("job-discovery")}
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#553421] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#402719]"
                 >
                   Find work
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="M4 12 12 4M5 4h7v7" /></svg>
@@ -839,7 +839,7 @@ function RecommendedJobRow({ job }: { job: Job }) {
                 href={job.externalUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#171717] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#33271F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#553421] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#402719] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
               >
                 Apply
                 <svg

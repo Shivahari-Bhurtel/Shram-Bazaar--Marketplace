@@ -26,10 +26,40 @@ ALTER TABLE availabilities
 ALTER TABLE seeker_profiles
     ADD COLUMN IF NOT EXISTS accepting_work BOOLEAN NOT NULL DEFAULT TRUE;
 
+ALTER TABLE seeker_profiles ADD COLUMN IF NOT EXISTS contact_email VARCHAR(254);
+ALTER TABLE seeker_profiles ADD COLUMN IF NOT EXISTS preferred_work_location VARCHAR(160);
+ALTER TABLE seeker_profiles ADD COLUMN IF NOT EXISTS available_start VARCHAR(120);
+ALTER TABLE seeker_profiles ADD COLUMN IF NOT EXISTS reference_note VARCHAR(255);
+ALTER TABLE seeker_profiles ADD COLUMN IF NOT EXISTS weekends_available BOOLEAN;
+
 CREATE TABLE IF NOT EXISTS seeker_preferred_categories (
     seeker_profile_id BIGINT NOT NULL REFERENCES seeker_profiles(id) ON DELETE CASCADE,
     category VARCHAR(80) NOT NULL,
     PRIMARY KEY (seeker_profile_id, category)
+);
+
+CREATE TABLE IF NOT EXISTS seeker_languages (
+    seeker_profile_id BIGINT NOT NULL REFERENCES seeker_profiles(id) ON DELETE CASCADE,
+    language VARCHAR(80) NOT NULL,
+    PRIMARY KEY (seeker_profile_id, language)
+);
+
+CREATE TABLE IF NOT EXISTS seeker_certifications (
+    seeker_profile_id BIGINT NOT NULL REFERENCES seeker_profiles(id) ON DELETE CASCADE,
+    certification VARCHAR(160) NOT NULL,
+    PRIMARY KEY (seeker_profile_id, certification)
+);
+
+CREATE TABLE IF NOT EXISTS seeker_employment_preferences (
+    seeker_profile_id BIGINT NOT NULL REFERENCES seeker_profiles(id) ON DELETE CASCADE,
+    preference VARCHAR(80) NOT NULL,
+    PRIMARY KEY (seeker_profile_id, preference)
+);
+
+CREATE TABLE IF NOT EXISTS seeker_preferred_shifts (
+    seeker_profile_id BIGINT NOT NULL REFERENCES seeker_profiles(id) ON DELETE CASCADE,
+    shift VARCHAR(80) NOT NULL,
+    PRIMARY KEY (seeker_profile_id, shift)
 );
 
 -- Forward-only compatibility migration for columns added to provider-owned jobs.

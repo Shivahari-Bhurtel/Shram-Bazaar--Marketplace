@@ -7,6 +7,8 @@ import { isValidAuthPasswordLength, isValidEmail, isValidPhoneNumber } from "../
 import LoginIllustration from "../components/LoginIllustration"
 import WorkerSignupIllustration from "../components/WorkerSignupIllustration"
 import ProviderSignupIllustration from "../components/ProviderSignupIllustration"
+import { sendResumeAnalysis, type ResumeExtraction } from "../services/shramAi"
+import { resumeExperience, resumeQualifications } from "../utils/resumeProfile"
 
 type AuthMode = "login" | "register-choice" | "worker-signup" | "provider-signup"
 
@@ -40,12 +42,40 @@ export default function AuthPage({ mode: initialMode }: Props) {
   const submitInFlight = useRef(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [resumeLoading, setResumeLoading] = useState(false)
+  const [resumeNotice, setResumeNotice] = useState("")
+  const [resumeImported, setResumeImported] = useState<ResumeExtraction | null>(null)
+
+  const importSignupResume = async (file?: File) => {
+    if (!file) return
+    setResumeLoading(true)
+    setResumeNotice("")
+    try {
+      const resume = await sendResumeAnalysis(file)
+      setResumeImported(resume)
+      const extractedDistrict = DISTRICTS.find((district) => (resume.location || "").toLocaleLowerCase().includes(district.toLocaleLowerCase()))
+      setFormData((current) => ({
+        ...current,
+        name: resume.fullName || current.name,
+        phone: resume.phone || current.phone,
+        district: current.district || extractedDistrict || "",
+      }))
+      if (resume.skills.length) setSkillInput((current) => [...new Set([...parseSkillInput(current), ...resume.skills])].join(", "))
+      setResumeNotice(`Imported details from ${file.name}. Review the extracted details and edit the prefilled fields before creating your account.`)
+    } catch (cause) {
+      setResumeNotice(cause instanceof Error ? cause.message : "Could not read that resume. You can continue with manual signup.")
+    } finally {
+      setResumeLoading(false)
+    }
+  }
 
   const changeAuthMode = (nextMode: AuthMode) => {
     setError("")
     setStep(1)
     setLoading(false)
     submitInFlight.current = false
+    setResumeImported(null)
+    setResumeNotice("")
     setMode(nextMode)
   }
 
@@ -142,10 +172,22 @@ export default function AuthPage({ mode: initialMode }: Props) {
             name: formData.name.trim(),
             phone: formData.phone.trim(),
             dateOfBirth: formData.dateOfBirth,
-            address: formData.district,
+            address: resumeImported?.location || formData.district,
             district: formData.district,
-            location: formData.district,
+            location: resumeImported?.location || formData.district,
             skills: parseSkillInput(skillInput),
+            bio: resumeImported?.bio || "",
+            qualifications: resumeImported ? resumeQualifications(resumeImported) : [],
+            experience: resumeImported ? resumeExperience(resumeImported).filter((item) => Boolean(item.startDate && (item.endDate || item.currentlyWorking))) : [],
+            languages: resumeImported?.languages || [],
+            certifications: resumeImported?.certifications || [],
+            contactEmail: resumeImported?.email || "",
+            employmentPreferences: resumeImported?.employmentPreferences || [],
+            preferredShifts: resumeImported?.preferredShifts || [],
+            weekendsAvailable: resumeImported?.weekendsAvailable ?? null,
+            availableStart: resumeImported?.availableStart || "",
+            preferredWorkLocation: resumeImported?.preferredWorkLocation || "",
+            referenceNote: resumeImported?.referenceNote || "",
           })
         : signupProvider({
             email: formData.email,
@@ -415,6 +457,16 @@ export default function AuthPage({ mode: initialMode }: Props) {
               {/* Worker signup step 2 */}
               {isWorker && step === 2 && (
                 <>
+                  {resumeNotice.startsWith("Imported details") && <Field label="Full name"><input value={formData.name} onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))} className="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20" required /></Field>}
+                  <div className="rounded-xl border border-[#176B4D]/20 bg-[#176B4D]/5 p-4">
+                    <label className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border border-[#176B4D]/30 bg-white px-4 text-sm font-semibold text-[#176B4D] hover:bg-[#176B4D]/5">
+                      {resumeLoading ? "Importing resume…" : "Import from CV (optional)"}
+                      <input type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" disabled={resumeLoading} onChange={(event) => { void importSignupResume(event.target.files?.[0]); event.currentTarget.value = "" }} />
+                    </label>
+                    <p className="mt-2 text-xs leading-5 text-stone-600">PDF or DOCX, up to 4 MB. Imported details stay editable and are saved only when you submit signup.</p>
+                    {resumeNotice && <p role="status" className="mt-2 text-sm text-stone-700">{resumeNotice}</p>}
+                    {resumeImported && <div className="mt-3 space-y-1 border-t border-[#176B4D]/15 pt-3 text-xs leading-5 text-stone-700"><p><strong>Profile details found:</strong> {resumeImported.qualifications.length} qualifications · {resumeImported.experience.length} work entries · {resumeImported.languages.length} languages · {resumeImported.certifications.length} certifications</p>{resumeImported.email && <p>Resume email: {resumeImported.email} · the account email above remains unchanged</p>}{resumeImported.qualifications.map((item, index) => <p key={`q-${index}`}>Education: {item.name}{item.institution ? ` · ${item.institution}` : ""}{item.year ? ` · ${item.year}` : ""}</p>)}{resumeImported.experience.map((item, index) => <p key={`e-${index}`}>Experience: {item.title}{item.company ? ` · ${item.company}` : ""}{item.startDate ? ` · ${item.startDate}` : ""}{item.endDate ? `–${item.endDate}` : item.currentlyWorking ? "–Present" : ""}</p>)}{resumeImported.languages.length > 0 && <p>Languages: {resumeImported.languages.join(", ")}</p>}{resumeImported.certifications.length > 0 && <p>Certifications: {resumeImported.certifications.join(", ")}</p>}<p>Imported details remain unverified. Edit the visible fields now; after signup, edit qualifications and experience in Worker Profile.</p><button type="button" onClick={() => { setResumeImported(null); setResumeNotice("Resume details removed. Continue with manual signup or import another CV.") }} className="mt-2 font-semibold text-[#176B4D] underline underline-offset-2">Remove imported CV details</button></div>}
+                  </div>
                   <Field label="Date of birth">
                     <input
                       type="date"
