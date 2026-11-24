@@ -38,7 +38,7 @@ function SectionNav({ section, onChange }: { section: LearnSection; onChange: (s
   return (
     <nav aria-label="Learn navigation" className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 lg:flex-col lg:border-0 lg:bg-transparent lg:p-0">
       {(Object.keys(sectionLabels) as LearnSection[]).map((item) => (
-        <button key={item} type="button" onClick={() => onChange(item)} aria-current={section === item ? "page" : undefined} className={`min-h-8 shrink-0 rounded-lg px-2 text-left text-xs font-medium transition lg:w-full ${section === item ? item === "overview" ? "bg-[#4E342E] text-white" : "bg-[#FDF0E9] text-[#D86C3A]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:bg-transparent"}`}>
+        <button key={item} type="button" onClick={() => onChange(item)} aria-current={section === item ? "page" : undefined} className={`min-h-8 shrink-0 rounded-lg px-2 text-left text-xs font-medium transition lg:w-full ${section === item ? "bg-[#4E342E] text-white" : "text-[#38291F] hover:bg-[#F2F1EB] hover:text-black lg:bg-transparent"}`}>
           {sectionLabels[item]}
         </button>
       ))}
@@ -58,7 +58,7 @@ function LearnSidebarItem({ label, icon, active = false, onClick }: { label: str
   }
 
   return (
-    <button type="button" onClick={onClick} aria-current={active ? "page" : undefined} className={`flex min-h-14 w-full items-center gap-3 border-l-4 px-4 text-left text-[15px] leading-snug transition-colors ${active ? "border-[#4E342E] bg-[#4E342E] font-medium text-white" : "border-transparent text-[#4E342E] hover:bg-[#F2E4D4]"}`}>
+    <button type="button" onClick={onClick} aria-current={active ? "page" : undefined} className={`flex min-h-14 w-full items-center gap-3 border-l-4 px-4 text-left text-[15px] leading-snug transition-colors ${active ? "border-[#4E342E] bg-[#4E342E] font-medium text-white" : "border-transparent text-[#261C14] hover:bg-[#D8DADD]"}`}>
       <svg viewBox="0 0 24 24" className={`h-6 w-6 shrink-0 ${active ? "text-white" : "text-[#5B4032]"}`} aria-hidden="true">{iconPaths[icon]}</svg>
       <span>{label}</span>
     </button>
@@ -66,19 +66,19 @@ function LearnSidebarItem({ label, icon, active = false, onClick }: { label: str
 }
 
 function LearnSidebarHeading({ children }: { children: React.ReactNode }) {
-  return <p className="px-5 pb-2 pt-6 text-base font-bold text-[#735B49]">{children}</p>
+  return <p className="px-5 pb-2 pt-6 text-base font-bold text-[#38291F]">{children}</p>
 }
 
 function LearnCourseIcon({ courseId, active }: { courseId: string; active: boolean }) {
   void courseId
-  return <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${active ? "bg-white text-[#4E342E]" : "bg-[#F6EBDD] text-[#805B3D] group-hover:bg-white"}`} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[19px] w-[19px]"><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3.5 2.7 8.5 2.7 12 0v-5M22 9v6" /></svg></span>
+  return <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${active ? "bg-white text-[#4E342E]" : "bg-[#F2F1EB] text-[#553421] group-hover:bg-white"}`} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[19px] w-[19px]"><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3.5 2.7 8.5 2.7 12 0v-5M22 9v6" /></svg></span>
 }
 
 function LearnSidebarCourse({ courseId, title, active, onClick }: { courseId: string; title: string; active: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} className={`group flex w-full items-center gap-2.5 border-l-4 py-2 pl-8 pr-3 text-left font-['Source_Sans_3',Inter,sans-serif] text-[15px] leading-[1.3] tracking-[-0.01em] transition-colors ${active ? "border-[#4E342E] bg-[#F2E4D4] font-bold text-[#4E342E]" : "border-transparent font-semibold text-[#543D2E] hover:bg-[#F2E4D4]"}`}>
+    <button type="button" onClick={onClick} aria-pressed={active} className={`group flex w-full items-center gap-2.5 border-l-4 py-2 pl-8 pr-3 text-left font-['Source_Sans_3',Inter,sans-serif] text-[15px] leading-[1.3] tracking-[-0.01em] transition-colors ${active ? "border-[#4E342E] bg-[#D8DADD] font-bold text-[#261C14]" : "border-transparent font-semibold text-[#38291F] hover:bg-[#D8DADD]"}`}>
       <LearnCourseIcon courseId={courseId} active={active} />
-      <span className={`min-w-0 flex-1 font-['Source_Sans_3','Inter',sans-serif] text-[16px] font-semibold leading-[1.35] tracking-[-0.01em] underline decoration-1 underline-offset-4 ${active ? "decoration-[#8A5B37]" : "decoration-[#C9A989] group-hover:decoration-[#6F4930]"}`}>{title}</span>
+      <span className={`min-w-0 flex-1 font-['Source_Sans_3','Inter',sans-serif] text-[16px] font-semibold leading-[1.35] tracking-[-0.01em] underline decoration-1 underline-offset-4 ${active ? "decoration-[#553421]" : "decoration-[#9A9086] group-hover:decoration-[#553421]"}`}>{title}</span>
     </button>
   )
 }
@@ -86,12 +86,12 @@ function LearnSidebarCourse({ courseId, title, active, onClick }: { courseId: st
 function EmptyState({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-8 text-center">
-      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#FDF0E9] text-[#D86C3A]" aria-hidden="true">
+      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#F2F1EB] text-[#553421]" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6"><path d="M4 5.5c3-.9 5.8-.4 8 1.2v13c-2.2-1.6-5-2.1-8-1.2v-13Zm16 0c-3-.9-5.8-.4-8 1.2v13c2.2-1.6 5-2.1 8-1.2v-13Z" /></svg>
       </span>
       <h3 className="mt-4 font-semibold text-slate-900">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600">{description}</p>
-      {actionLabel && onAction && <button type="button" onClick={onAction} className="mt-5 rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">{actionLabel}</button>}
+      {actionLabel && onAction && <button type="button" onClick={onAction} className="mt-5 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800">{actionLabel}</button>}
     </div>
   )
 }
@@ -283,8 +283,8 @@ export default function Learn() {
 
   const learnerInitials = learnerName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()
   return (
-    <div className={`learn-portal text-slate-900 ${view === "game" ? "h-dvh overflow-hidden bg-[#FAF8F5]" : "min-h-screen bg-[#FAF8F5]"}`}>
-      {view !== "game" && <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div className={`learn-portal text-[#171717] ${view === "game" ? "h-dvh overflow-hidden bg-[#F5F4EE]" : "min-h-screen bg-[#F5F4EE]"}`}>
+      {view !== "game" && <header className="sticky top-0 z-40 border-b border-[#D8DADD] bg-white/95 backdrop-blur">
         <div className="mx-auto flex min-h-[72px] max-w-[1480px] items-center justify-between gap-4 pl-2 pr-4 sm:gap-6 sm:pl-2 sm:pr-6 lg:pl-2 lg:pr-8">
           <div className="flex shrink-0 items-center">
             <button type="button" onClick={() => navigate("worker-dashboard")} className="ml-4 inline-flex min-h-10 shrink-0 items-baseline gap-0.5 whitespace-nowrap transition-opacity hover:opacity-80 sm:ml-5" aria-label="Go to Shram Bazaar worker page" title="Go to worker page">
@@ -297,10 +297,10 @@ export default function Learn() {
             <label className="relative mx-auto hidden w-full max-w-2xl flex-1 md:block">
               <span className="sr-only">Search courses</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m15.6 15.6 4.6 4.6" /></svg>
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-11 w-full rounded-lg border border-[#D8DADD] bg-[#F5F4EE] pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#80502F] focus:bg-white focus:ring-2 focus:ring-[#80502F]/15" />
             </label>
           ) : (
-            <div className="hidden min-w-0 flex-1 md:block"><p className={`truncate ${view === "player" && activeCourse?.id === "crane-operation-basics" ? "font-script text-xl font-semibold leading-tight text-blue-700" : view === "details" ? "text-base font-semibold text-blue-700" : "text-sm font-semibold text-slate-800"}`}>{activeCourse?.title}</p><p style={view === "details" ? { fontFamily: "'Dancing Script', cursive" } : undefined} className={`truncate ${view === "details" ? "font-script text-lg leading-tight text-[#4E342E]" : "text-xs text-slate-500"}`}>{view === "player" ? activeLesson?.title : "Course overview"}</p></div>
+            <div className="hidden min-w-0 flex-1 md:block"><p className={`truncate ${view === "details" ? "text-base font-semibold text-black" : "text-sm font-semibold text-[#261C14]"}`}>{activeCourse?.title}</p><p className="truncate text-xs text-[#553421]">{view === "player" ? activeLesson?.title : "Course overview"}</p></div>
           )}
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -311,13 +311,13 @@ export default function Learn() {
             {state.workerProfile?.photo ? <img src={state.workerProfile.photo} alt={`${learnerName} profile`} className="h-12 w-12 rounded-full object-cover" /> : <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#4E342E] text-base font-bold text-white" aria-label={learnerName}>{learnerInitials || "L"}</span>}
           </div>
         </div>
-        {view === "dashboard" && <div className="px-4 pb-3 md:hidden"><label className="relative block"><span className="sr-only">Search courses</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m15.6 15.6 4.6 4.6" /></svg><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-12 w-full rounded-lg border border-slate-200 bg-slate-50 pl-11 pr-4 text-base outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" /></label></div>}
+        {view === "dashboard" && <div className="px-4 pb-3 md:hidden"><label className="relative block"><span className="sr-only">Search courses</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5" /><path d="m15.6 15.6 4.6 4.6" /></svg><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search skills and courses" className="h-12 w-full rounded-lg border border-[#D8DADD] bg-[#F5F4EE] pl-11 pr-4 text-base outline-none focus:border-[#80502F] focus:ring-2 focus:ring-[#80502F]/15" /></label></div>}
       </header>}
 
       {storageWarning && view !== "game" && <div role="status" className="mx-auto mt-4 max-w-[1480px] px-4 sm:px-6 lg:px-8"><p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{storageWarning}</p></div>}
 
-      <div className={`mx-auto grid ${view === "game" ? "h-full w-full max-w-none grid-cols-1" : `max-w-[1480px] ${view === "dashboard" ? "lg:grid-cols-[minmax(190px,19%)_minmax(0,1fr)]" : "grid-cols-1"}`}`}>
-        {view === "dashboard" && <aside aria-label="Main navigation" className="sticky top-16 hidden h-[calc(100vh-4rem)] self-start overflow-y-auto border-r border-[#D7BFA4] bg-[#E9D6BC] pb-8 pt-2 lg:block">
+      <div className={`mx-auto grid ${view === "game" ? "h-full w-full max-w-none grid-cols-1" : `max-w-[1480px] ${view === "dashboard" ? "lg:grid-cols-[14rem_minmax(0,1fr)]" : "grid-cols-1"}`} `}>
+        {view === "dashboard" && <aside aria-label="Main navigation" className="sticky top-16 hidden h-[calc(100dvh-4rem)] min-h-0 self-start overflow-y-auto overscroll-contain border-r border-[#D8DADD] bg-[#E8E9EA] pb-8 pt-2 [scrollbar-width:thin] lg:block">
           <nav>
             <LearnSidebarItem label="Home" icon="home" active onClick={() => navigate("worker-dashboard")} />
             <LearnSidebarItem label="My Career Journey" icon="journey" onClick={() => setSection("my-learning")} />
@@ -327,7 +327,7 @@ export default function Learn() {
             <LearnSidebarItem label="Content" icon="content" onClick={goToExplore} />
             <LearnSidebarItem label="Certifications" icon="certificate" onClick={() => setSection("certificates")} />
 
-            <div className="flex items-center gap-2.5 px-5 pb-2 pt-6 text-base font-bold text-[#735B49]">
+            <div className="flex items-center gap-2.5 px-5 pb-2 pt-6 text-base font-bold text-[#38291F]">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px] shrink-0" aria-hidden="true"><path d="m2 9 10-5 10 5-10 5L2 9Z" /><path d="M6 11v5c3.5 2.7 8.5 2.7 12 0v-5M22 9v6" /></svg>
               <span>Our courses</span>
             </div>
@@ -339,29 +339,29 @@ export default function Learn() {
 
         <main className={view === "game" ? "h-full min-w-0 p-0" : `min-w-0 px-4 py-6 sm:px-6 sm:py-7 lg:px-6 lg:py-4 ${view === "player" ? "xl:px-10" : ""}`}>
           {view === "dashboard" && <div className="mb-5 lg:hidden">
-            <button type="button" onClick={() => setMobileNavOpen((open) => !open)} aria-expanded={mobileNavOpen} className="mb-3 inline-flex min-h-9 items-center gap-2 text-sm font-semibold text-slate-700"><span className="text-blue-700">☰</span> Learning menu</button>
+            <button type="button" onClick={() => setMobileNavOpen((open) => !open)} aria-expanded={mobileNavOpen} className="mb-3 inline-flex min-h-9 items-center gap-2 text-sm font-semibold text-[#38291F]"><span className="text-[#553421]">☰</span> Learning menu</button>
             {mobileNavOpen && <SectionNav section={section} onChange={(next) => { setSection(next); setMobileNavOpen(false) }} />}
           </div>}
 
           {view === "dashboard" && section === "overview" && <>
-            <div className="mb-5 flex min-h-[168px] items-center justify-between gap-4 overflow-hidden rounded-2xl bg-[#4E342E] px-5 py-6 text-white shadow-sm sm:min-h-[192px] sm:px-8">
-              <div className="max-w-3xl"><h1 className="text-3xl font-bold tracking-tight text-white">Build skills. Boost your profile.</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-[#F3E8DE]">Take a short course today, {learnerName.split(" ")[0]}, and make your profile stronger.</p></div>
+            <div className="mb-5 flex min-h-[168px] items-center justify-between gap-4 overflow-hidden rounded-2xl border border-[#E4E1D7] bg-[#F2F1EB] px-5 py-6 text-[#171717] shadow-sm sm:min-h-[192px] sm:px-8">
+              <div className="max-w-3xl"><h1 className="text-3xl font-bold tracking-tight text-black">Build skills. Boost your profile.</h1><p className="mt-2 max-w-2xl text-base leading-relaxed text-[#38291F]">Take a short course today, {learnerName.split(" ")[0]}, and make your profile stronger.</p></div>
               <GraduationHatAnimation />
             </div>
 
             <section className="mt-2" aria-labelledby="continue-learning-heading">
-              <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 id="continue-learning-heading" className="text-lg font-bold text-[#4E342E]">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-[#80502F] underline decoration-[#C9A989] underline-offset-4 hover:text-[#4E342E]">View my learning</button>}</div>
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h2 id="continue-learning-heading" className="text-lg font-bold text-black">Continue learning</h2></div>{inProgressCourses.length > 0 && <button type="button" onClick={() => setSection("my-learning")} className="text-sm font-semibold text-[#553421] underline decoration-[#9A9086] underline-offset-4 hover:text-black">View my learning</button>}</div>
               {inProgressCourses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{inProgressCourses.slice(0, 2).map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled highlighted onView={openCourse} onContinue={startLesson} />
-              })}</div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-blue-200 bg-blue-50">
-                <div className="flex aspect-[16/9] w-full items-center justify-center bg-blue-100" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" className="h-16 w-16 text-blue-700"><path d="M8 10.5c6.5-2 13-.5 16 2v25c-3-2.5-9.5-4-16-2v-25Zm32 0c-6.5-2-13-.5-16 2v25c3-2.5 9.5-4 16-2v-25Z" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" /><path d="M14 18c2-.3 4.3 0 6 1m14-1c-2-.3-4.3 0-6 1M14 24c2-.3 4.3 0 6 1m14-1c-2-.3-4.3 0-6 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></div>
+              })}</div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#D8DADD] bg-[#F2F1EB]">
+                <div className="flex aspect-[16/9] w-full items-center justify-center bg-[#E8E9EA]" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" className="h-16 w-16 text-[#553421]"><path d="M8 10.5c6.5-2 13-.5 16 2v25c-3-2.5-9.5-4-16-2v-25Zm32 0c-6.5-2-13-.5-16 2v25c3-2.5 9.5-4 16-2v-25Z" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" /><path d="M14 18c2-.3 4.3 0 6 1m14-1c-2-.3-4.3 0-6 1M14 24c2-.3 4.3 0 6 1m14-1c-2-.3-4.3 0-6 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg></div>
                 <div className="flex flex-1 flex-col p-4 sm:p-5"><h3 className="text-lg font-semibold leading-snug text-slate-900">Your learning journey starts here</h3><p className="mt-2 text-sm leading-relaxed text-slate-600">Choose a practical course to build your first skill and track lessons as you go.</p></div>
               </article></div>}
             </section>
 
             <section className="mt-8" aria-labelledby="recommended-heading">
-              <div className="mb-4"><h2 id="recommended-heading" className="text-lg font-bold text-[#4E342E]">Recommended courses</h2><p className="mt-1 text-xs text-[#735B49]">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
+              <div className="mb-4"><h2 id="recommended-heading" className="text-lg font-bold text-black">Recommended courses</h2><p className="mt-1 text-xs text-[#38291F]">{state.workerProfile?.skills?.length ? "Recommendations use the skills on your worker profile." : "Explore a hands-on skill that interests you."}</p></div>
               <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{recommendedCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
                 return <CourseCard key={course.id} course={course} completed={metric.completedCount} total={metric.totalLessons} percent={metric.percent} enrolled={progress.enrolledCourseIds.includes(course.id)} onView={openCourse} onContinue={startLesson} />
@@ -369,9 +369,9 @@ export default function Learn() {
             </section>
 
             <section id="explore-courses" className="mt-10 scroll-mt-24" aria-labelledby="explore-heading">
-              <div className="mb-4"><h2 id="explore-heading" className="text-lg font-bold text-[#4E342E]">Explore courses</h2><p className="mt-1 text-xs text-[#735B49]">Short, self-paced introductions across five vocational skill areas.</p></div>
+              <div className="mb-4"><h2 id="explore-heading" className="text-lg font-bold text-black">Explore courses</h2><p className="mt-1 text-xs text-[#38291F]">Short, self-paced introductions across five vocational skill areas.</p></div>
               <div className="mb-5 flex gap-2 overflow-x-auto pb-1" aria-label="Filter courses by skill category">
-                {["All skills", ...learningCategories].map((category) => <button key={category} type="button" onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`min-h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition ${activeCategory === category ? "border-[#4E342E] bg-[#4E342E] text-white" : "border-[#D7BFA4] bg-white text-[#5B4032] hover:border-[#A47C5A] hover:bg-[#F7F0E8] hover:text-[#4E342E]"}`}>{category}</button>)}
+                {["All skills", ...learningCategories].map((category) => <button key={category} type="button" onClick={() => setActiveCategory(category)} aria-pressed={activeCategory === category} className={`min-h-9 shrink-0 rounded-full border px-3.5 text-xs font-semibold transition ${activeCategory === category ? "border-black bg-black text-white" : "border-[#D8DADD] bg-white text-[#38291F] hover:border-[#9A9086] hover:bg-[#F2F1EB] hover:text-black"}`}>{category}</button>)}
               </div>
               {filteredCourses.length ? <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">{filteredCourses.map((course) => {
                 const metric = getCourseProgress(course, progress)
@@ -381,9 +381,9 @@ export default function Learn() {
           </>}
 
           {view === "dashboard" && section === "my-learning" && <section>
-            <div className="mb-6"><p className="text-sm font-semibold text-[#D86C3A]">Your learning space</p><h1 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">My learning</h1><p className="mt-2 text-sm text-slate-600">Keep track of courses you have started and finished.</p></div>
+            <div className="mb-6"><p className="text-sm font-semibold text-[#553421]">Your learning space</p><h1 className="mt-1 text-2xl font-bold text-black sm:text-3xl">My learning</h1><p className="mt-2 text-sm text-[#38291F]">Keep track of courses you have started and finished.</p></div>
             <div className="mb-5 flex flex-wrap gap-2" role="tablist" aria-label="Filter your courses">
-              {(["all", "in-progress", "completed"] as LearningFilter[]).map((filter) => <button key={filter} type="button" role="tab" aria-selected={learningFilter === filter} onClick={() => setLearningFilter(filter)} className={`min-h-9 rounded-full px-4 text-sm font-semibold ${learningFilter === filter ? "bg-blue-700 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}>{filter === "all" ? `All (${enrolledCourses.length})` : filter === "in-progress" ? `In progress (${inProgressCourses.length})` : `Completed (${completedCourses.length})`}</button>)}
+              {(["all", "in-progress", "completed"] as LearningFilter[]).map((filter) => <button key={filter} type="button" role="tab" aria-selected={learningFilter === filter} onClick={() => setLearningFilter(filter)} className={`min-h-9 rounded-full px-4 text-sm font-semibold ${learningFilter === filter ? "bg-black text-white" : "border border-[#D8DADD] bg-white text-[#38291F] hover:bg-[#F2F1EB]"}`}>{filter === "all" ? `All (${enrolledCourses.length})` : filter === "in-progress" ? `In progress (${inProgressCourses.length})` : `Completed (${completedCourses.length})`}</button>)}
             </div>
             {(() => {
               const sourceCourses = learningFilter === "all" ? enrolledCourses : learningFilter === "completed" ? completedCourses : inProgressCourses
@@ -397,9 +397,9 @@ export default function Learn() {
 
           {view === "dashboard" && section === "certificates" && <section>
             <div className="mb-6">
-              <p className="font-['Dancing_Script',cursive] text-2xl font-bold leading-tight text-[#80502F] sm:text-3xl">Your achievements</p>
-              <h1 className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">My certificates</h1>
-              <p className="mt-2 text-sm text-slate-600">Course certificates you have earned will be collected here.</p>
+              <p className="font-['Dancing_Script',cursive] text-2xl font-bold leading-tight text-[#553421] sm:text-3xl">Your achievements</p>
+              <h1 className="mt-2 text-2xl font-bold text-black sm:text-3xl">My certificates</h1>
+              <p className="mt-2 text-sm text-[#38291F]">Course certificates you have earned will be collected here.</p>
             </div>
             {earnedCourses.filter(matchesCourseSearch).length ? (
               <div className="space-y-3">

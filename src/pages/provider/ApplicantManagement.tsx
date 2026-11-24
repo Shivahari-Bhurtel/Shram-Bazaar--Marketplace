@@ -5,7 +5,7 @@ import ConfirmDialog from "../../components/ConfirmDialog"
 import type { ApplicationStatus } from "../../types"
 import { formatNepalDate, nepalDateString } from "../../utils/dates"
 import { formatJobBudget } from "../../utils/jobBudget"
-import { openConversation } from "../../services/messaging"
+import { openConversation, resolveDemoMessagingIdentity, shouldUseLocalDemoMessaging } from "../../services/messaging"
 
 type ActionType = {
   applicationId: string
@@ -450,7 +450,7 @@ export default function ApplicantManagement() {
                   {(app.status === "pending" ||
                     app.status === "accepted") && (
                     <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-stone-100">
-                      <button type="button" onClick={async () => { setMessageError(""); try { const demo = import.meta.env.VITE_DEMO_MODE === "true"; const id = state.currentUser?.role === "provider" && demo ? "demo-provider" : state.currentUser?.id || ""; const c = await openConversation(demo, app.id, id, state.currentUser?.name || "Provider"); sessionStorage.setItem("shram-open-conversation-id", c.id); navigate("messages") } catch (error) { setMessageError(error instanceof Error ? error.message : "Could not open conversation.") } }} className="rounded-xl border border-[#286B50]/30 px-4 py-1.5 text-sm font-semibold text-[#286B50] hover:bg-green-50">Message worker</button>
+                      <button type="button" onClick={async () => { setMessageError(""); try { const demo = shouldUseLocalDemoMessaging(import.meta.env.VITE_DEMO_MODE === "true","provider",state.currentUser?.profileId || "",state.currentUser?.name || "Provider",state.providerProfile?.orgName); const id = state.currentUser?.role === "provider" ? resolveDemoMessagingIdentity(demo,"provider",state.currentUser.profileId,state.currentUser.name,state.providerProfile?.orgName) : state.currentUser?.profileId || ""; const c = await openConversation(demo, app.id, id, state.currentUser?.name || "Provider", { actorRole: "provider", workerId: app.workerId, workerName: app.workerName, providerId: app.providerId, providerName: app.providerName, jobId: app.jobId, jobTitle: app.jobTitle }); sessionStorage.setItem("shram-open-conversation-id", c.id); navigate("messages") } catch (error) { setMessageError(error instanceof Error ? error.message : "Could not open conversation.") } }} className="rounded-xl border border-[#286B50]/30 px-4 py-1.5 text-sm font-semibold text-[#286B50] hover:bg-green-50">Message worker</button>
                       {app.status !== "accepted" && (
                         <button
                           onClick={() =>

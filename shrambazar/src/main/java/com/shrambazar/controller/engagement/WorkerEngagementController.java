@@ -2,11 +2,13 @@
 package com.shrambazar.controller.engagement;
 
 import com.shrambazar.dto.engagement.WorkerEngagementResponse;
+import com.shrambazar.dto.engagement.WorkerRequestOffer;
 import com.shrambazar.service.engagement.WorkerEngagementService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -38,9 +40,10 @@ public class WorkerEngagementController {
     @PostMapping("/provider/jobs/{jobId}/workers/{seekerUserId}/request")
     public ResponseEntity<WorkerEngagementResponse> requestWorker(
             @PathVariable Long jobId,
-            @PathVariable Long seekerUserId) {
+            @PathVariable Long seekerUserId,
+            @Valid @RequestBody(required = false) WorkerRequestOffer offer) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(engagementService.requestWorker(jobId, seekerUserId));
+                .body(engagementService.requestWorker(jobId, seekerUserId, offer));
     }
 
     // Seeker views engagements
@@ -93,7 +96,22 @@ public class WorkerEngagementController {
         );
     }
 
+    @PostMapping("/provider/engagements/{engagementId}/withdraw")
+    public ResponseEntity<WorkerEngagementResponse> withdrawOffer(@PathVariable Long engagementId) {
+        return ResponseEntity.ok(engagementService.withdrawPendingOffer(engagementId));
+    }
+
     // Provider confirms work completion
+    @PostMapping("/seeker/engagements/{engagementId}/request-completion")
+    public ResponseEntity<WorkerEngagementResponse> requestCompletion(@PathVariable Long engagementId) {
+        return ResponseEntity.ok(engagementService.requestCompletionBySeeker(engagementId));
+    }
+
+    @PostMapping("/provider/engagements/{engagementId}/request-completion")
+    public ResponseEntity<WorkerEngagementResponse> requestCompletionByProvider(@PathVariable Long engagementId) {
+        return ResponseEntity.ok(engagementService.requestCompletionByProvider(engagementId));
+    }
+
     @PostMapping("/provider/engagements/{engagementId}/confirm-completion")
     public ResponseEntity<WorkerEngagementResponse>
     confirmCompletionByProvider(@PathVariable Long engagementId) {

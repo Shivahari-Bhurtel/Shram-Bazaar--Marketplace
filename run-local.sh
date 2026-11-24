@@ -95,6 +95,22 @@ ai_healthy() {
     node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{let s;try{s=JSON.parse(input)}catch{process.exit(1)}process.exit(s.provider==="ollama"&&s.chat_provider==="ollama"?0:1)})' >/dev/null 2>&1
 }
 
+start_ai() {
+  if curl -sS --max-time 2 "$AI_URL/" >/dev/null 2>&1; then
+    echo "Port $AI_PORT responds, but Shram AI is not healthy; leaving the existing service untouched."
+    return 1
+  fi
+  echo "Starting Shram AI on $AI_URL..."
+  (
+    cd "$APP_DIR/ai-service"
+    AI_PROVIDER=ollama \
+      OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3:4b}" \
+      OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}" \
+      "$AI_PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$AI_PORT"
+  ) >>"$AI_LOG" 2>&1 &
+  AI_PID=$!
+}
+
 cleanup() {
   if [[ -n "$WEB_PID" ]] && kill -0 "$WEB_PID" 2>/dev/null; then kill "$WEB_PID" 2>/dev/null || true; fi
   if [[ -n "$AI_PID" ]] && kill -0 "$AI_PID" 2>/dev/null; then kill "$AI_PID" 2>/dev/null || true; fi
@@ -144,6 +160,9 @@ if ! api_healthy; then
         export DB_USERNAME="sa"
         export DB_PASSWORD=""
         export DB_DRIVER="org.h2.Driver"
+        # The development H2 fallback is a fresh local database. Build its
+        # complete schema from the JPA entities instead of applying the
+        # production PostgreSQL-only partial schema.sql migration.
         export SPRING_JPA_HIBERNATE_DDL_AUTO="update"
         export SPRING_SQL_INIT_MODE="never"
         local_h2_configured=true
@@ -151,7 +170,7 @@ if ! api_healthy; then
       fi
     fi
     if pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1 || [[ "$managed_db_configured" == true || "$local_h2_configured" == true ]]; then
-      if (cd "$APP_DIR/shrambazar" && sh ./mvnw -DskipTests package); then
+      if (cd "$APP_DIR/shrambazar" && sh ./mvnw clean -DskipTests package); then
         (
           cd "$APP_DIR/shrambazar"
           java -jar target/shrambazar-0.0.1-SNAPSHOT.jar
@@ -179,49 +198,62 @@ if ! api_healthy; then
   fi
 fi
 
-# FastAPI checks Ollama on startup, opens Ollama.app on macOS when needed,
-# and starts `ollama serve` only when no server process is present.
+# Start FastAPI when needed. The monitor checks its health and restarts it after
+# a process exit. Ollama/model availability is reported separately.
 if ! ai_healthy; then
-  if curl -sS --max-time 2 "$AI_URL/" >/dev/null 2>&1; then
-    echo "Port 8000 is occupied by a service without the Shram AI status endpoint. Stop it or correct the AI service, then rerun."
-    exit 1
-  fi
-  echo "Starting Shram AI and checking local Ollama/Qwen readiness..."
-  (
-    cd "$APP_DIR/ai-service"
-    AI_PROVIDER=ollama \
-      OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3:4b}" \
-      OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}" \
-      "$AI_PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$AI_PORT"
-  ) >"$AI_LOG" 2>&1 &
-  AI_PID=$!
-
+  start_ai || true
   for _ in {1..45}; do
     if ai_healthy; then break; fi
-    if ! kill -0 "$AI_PID" 2>/dev/null; then
-      echo "The Shram AI backend stopped during startup. Recent log output:"
-      tail -40 "$AI_LOG" || true
-      exit 1
+    if [[ -n "$AI_PID" ]] && ! kill -0 "$AI_PID" 2>/dev/null; then
+      echo "AI exited during startup; the monitor will retry. Recent log output:"
+      tail -20 "$AI_LOG" || true
+      AI_PID=""
+      break
     fi
     sleep 1
   done
-  if ! ai_healthy; then
-    echo "The Shram AI backend did not become ready. Recent log output:"
-    tail -40 "$AI_LOG" || true
-    exit 1
+fi
+
+if ai_healthy; then
+  curl -fsS --max-time 5 "$AI_URL/api/v1/ai/status" | node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{const s=JSON.parse(input);if(s.ai_ready){console.log(`Local AI ready: ${s.provider} / ${s.model}`)}else{console.log(`AI service online; model status: ${s.state}. ${s.last_error||"Platform guidance and job search remain available."}`)}})'
+else
+  echo "AI is starting in the background; logs: $AI_LOG"
+fi
+
+if ! web_healthy; then
+  echo "Starting Shram Bazar at $WEB_URL (API: $API_URL). Keep this terminal open; Ctrl+C stops services started here."
+  (cd "$APP_DIR" && PORT="$WEB_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
+  WEB_PID=$!
+else
+  echo "Shram Bazar is ready at $WEB_URL (API: $API_URL). Leave this terminal open to keep monitoring AI."
+fi
+
+# If a service started here exits, restart it; if another process owns the AI
+# port, leave it alone rather than starting a duplicate.
+while true; do
+  if [[ -n "$AI_PID" ]] && ! kill -0 "$AI_PID" 2>/dev/null; then
+    wait "$AI_PID" 2>/dev/null || true
+    AI_PID=""
+    echo "Shram AI exited. Restarting in 2 seconds..."
+    sleep 2
   fi
-fi
-
-curl -fsS --max-time 5 "$AI_URL/api/v1/ai/status" | node -e 'let input="";process.stdin.on("data",chunk=>input+=chunk);process.stdin.on("end",()=>{const s=JSON.parse(input);if(s.ai_ready){console.log(`Local AI ready: ${s.provider} / ${s.model}`)}else{console.log(`Shram AI fallback mode: ${s.state}. ${s.last_error||"Job search and platform guidance remain available."}`)}})'
-
-if web_healthy; then
-  echo "Shram Bazar is ready at $WEB_URL (API: $API_URL)."
-  if [[ -n "$API_PID" ]]; then wait "$API_PID"; fi
-  if [[ -n "$AI_PID" ]]; then wait "$AI_PID"; fi
-  exit 0
-fi
-
-echo "Shram Bazar is starting at $WEB_URL (API: $API_URL). Press Ctrl+C to stop services started by this script."
-(cd "$APP_DIR" && PORT="$WEB_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
-WEB_PID=$!
-wait "$WEB_PID"
+  if ! ai_healthy && [[ -z "$AI_PID" ]]; then
+    start_ai || true
+  fi
+  if [[ -n "$WEB_PID" ]] && ! kill -0 "$WEB_PID" 2>/dev/null; then
+    wait "$WEB_PID" 2>/dev/null || true
+    WEB_PID=""
+    if ! web_healthy; then
+      echo "Vite exited. Restarting the frontend in 2 seconds..."
+      sleep 2
+      (cd "$APP_DIR" && PORT="$WEB_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
+      WEB_PID=$!
+    fi
+  fi
+  if [[ -z "$WEB_PID" ]] && ! web_healthy; then
+    echo "The frontend is no longer responding. Restarting Vite..."
+    (cd "$APP_DIR" && PORT="$WEB_PORT" AI_SERVICE_PORT="$AI_PORT" FIGMA_DEV_SERVER_HOST=127.0.0.1 npm run dev:vite) &
+    WEB_PID=$!
+  fi
+  sleep 5
+done

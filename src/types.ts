@@ -77,6 +77,8 @@ export interface WorkerProfile {
   skills: string[]
   preferredCategories?: string[]
   acceptingWork?: boolean
+  /** Marks a bundled showcase profile that uses local simulated hiring. */
+  isShowcaseDemo?: boolean
   services?: WorkerServiceListing[]
   qualifications: Qualification[]
   experience: Experience[]
@@ -287,7 +289,12 @@ export interface Application {
   providerReview?: string
   providerReviewDate?: string
   engagementId?: string
+  /** Showcase hires are locally simulated and do not represent a registered worker account. */
+  showcaseHire?: boolean
   engagementStatus?: string
+  paymentStatus?: "UNPAID" | "PAID"
+  paymentMethod?: string
+  paymentDate?: string
   providerCompletionConfirmed?: boolean
   seekerCompletionConfirmed?: boolean
   workerReviewRating?: number

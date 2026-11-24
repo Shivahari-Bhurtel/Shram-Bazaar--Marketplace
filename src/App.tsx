@@ -56,7 +56,7 @@ export default function App() {
     isWorker && !isWorkerAIChat && !isVoiceAssistant && !isFullScreenJobDiscovery && !isStandaloneLearn && currentPage !== "shram-ai"
   const workerTopSpacing =
     isWorker && !isWorkerAIChat && !isVoiceAssistant && !isFullScreenJobDiscovery && !isStandaloneLearn
-      ? currentPage === "my-applications"
+      ? currentPage === "messages" || currentPage === "my-applications"
         ? "lg:pt-0"
         : currentPage === "shram-ai"
           ? "lg:pt-14"
@@ -141,6 +141,7 @@ export default function App() {
           {isWorker && currentPage === "worker-profile" && <WorkerProfile />}
           {isWorker && currentPage === "worker-availability" && <WorkerAvailability />}
           {isWorker && currentPage === "worker-help" && <WorkerResourcePage />}
+          {isProvider && currentPage === "provider-help" && <WorkerResourcePage />}
           {isWorker && currentPage === "kyc-verification" && (
             <KycVerification />
           )}

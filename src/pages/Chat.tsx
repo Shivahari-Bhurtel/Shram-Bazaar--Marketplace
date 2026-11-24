@@ -456,7 +456,6 @@ export default function Chat() {
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
   const [aiStatusUnavailable, setAiStatusUnavailable] = useState(false)
   const [providerJobs, setProviderJobs] = useState<ApiJob[]>([])
-  const [selectedProviderJobId, setSelectedProviderJobId] = useState("")
   const [inviteDraft, setInviteDraft] = useState<{ worker: ProviderWorker; job: ApiJob; message: string; applicationId?: number } | null>(null)
   const [invitingWorkerId, setInvitingWorkerId] = useState<number | null>(null)
   const [expandedProviderWorkerId, setExpandedProviderWorkerId] = useState<number | null>(null)
@@ -681,9 +680,7 @@ export default function Chat() {
     requestControllerRef.current = controller
     try {
       if (isProvider) {
-        const jobId = selectedProviderJobId && /^\d+$/.test(selectedProviderJobId)
-          ? Number(selectedProviderJobId)
-          : null
+        const jobId = null
         const reply = await askProviderAssistant(
           text,
           priorHistory.slice(-20),
@@ -1209,14 +1206,9 @@ export default function Chat() {
           </button>
           <div className="flex min-w-0 items-center justify-end gap-2">
             {isProvider && <>
-              <label className="sr-only" htmlFor="provider-chat-job">Choose a provider job</label>
-              <select id="provider-chat-job" value={selectedProviderJobId} onChange={(event) => setSelectedProviderJobId(event.target.value)} className="min-h-9 max-w-44 rounded-xl border border-[#E5E2EC] bg-white px-2 text-xs text-[#49445A] sm:max-w-60 sm:px-3 sm:text-sm">
-                <option value="">Choose a job</option>
-                {providerJobs.map((job) => <option key={job.id} value={job.id}>{job.title} · {job.status.toLowerCase()}</option>)}
-              </select>
               <button type="button" onClick={() => { try { sessionStorage.setItem("voice-assistant-return-page", "chat") } catch {} navigate("voice-assistant") }} className="min-h-9 whitespace-nowrap rounded-xl border border-[#E5E2EC] bg-white px-2.5 text-xs font-semibold text-[#5630A8] hover:bg-[#F8F7FB] sm:px-3 sm:text-sm">Voice assistant</button>
             </>}
-            <div
+            {!isProvider && <div
               role="status"
               aria-live="polite"
               title={aiStatus?.last_error ?? undefined}
@@ -1224,7 +1216,7 @@ export default function Chat() {
             >
               <span className={`h-2 w-2 rounded-full ${aiStatusPresentation.tone}`} aria-hidden="true" />
               <span>{aiStatusPresentation.label}</span>
-            </div>
+            </div>}
           </div>
         </header>
 
@@ -1284,11 +1276,6 @@ export default function Chat() {
                   </button>
                 ))}
               </div>
-              {isProvider && providerJobs.every((job) => job.status !== "OPEN") && (
-                <p className="welcome-reveal mx-auto mt-5 max-w-2xl text-center text-sm leading-6 text-[#625D73]">
-                  No open jobs were found for this account. You can still search using skills and location, or tell me what kind of worker you need.
-                </p>
-              )}
             </div>
           ) : (
             <div className="mx-auto max-w-3xl space-y-8">
@@ -1326,7 +1313,7 @@ export default function Chat() {
                             {job.match_reasons?.length ? <p className="mt-2 text-xs text-[#265D4C]">{job.match_reasons.join(" · ")}</p> : null}
                             <div className="mt-3 flex gap-2">
                               <button type="button" onClick={() => setSelectedChatJob(job)} className="rounded-md border border-[#265D4C] px-3 py-1.5 text-sm font-semibold text-[#265D4C] hover:bg-[#265D4C]/5">View details</button>
-                              {state.currentUser?.role === "worker" && <button type="button" disabled={demoState.applications.some((application) => application.jobId === job.id)} onClick={() => demoState.apply(job.id)} className="rounded-md bg-[#265D4C] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#1D493B] disabled:bg-stone-300">{demoState.applications.some((application) => application.jobId === job.id) ? "Applied" : "Apply now"}</button>}
+                              {state.currentUser?.role === "worker" && <button type="button" disabled={demoState.applications.some((application) => application.jobId === job.id)} onClick={() => demoState.apply(job.id)} className="rounded-md bg-[#171717] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#33271F] disabled:bg-stone-500">{demoState.applications.some((application) => application.jobId === job.id) ? "Applied" : "Apply now"}</button>}
                             </div>
                           </article>
                         ))}

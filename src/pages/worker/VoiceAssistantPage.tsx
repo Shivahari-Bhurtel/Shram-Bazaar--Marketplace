@@ -113,7 +113,7 @@ export default function VoiceAssistantPage() {
 
   return (
     <div className={`voice-assistant-page voice-state-${voice.status}${sessionActive ? " voice-session-active" : ""}`}>
-      <header className="voice-assistant-header">
+      <header className={`voice-assistant-header${isProvider ? " voice-assistant-header-provider" : ""}`}>
         <button
           type="button"
           onClick={goBack}

@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface EngagementPaymentRepository extends JpaRepository<EngagementPayment, Long> {
     List<EngagementPayment> findByEngagementApplicationJobPostProviderProfileIdOrderByPaymentDateDesc(Long providerId);
     Optional<EngagementPayment> findByEngagementId(Long engagementId);
+    List<EngagementPayment> findByEngagementApplicationSeekerProfileIdOrderByPaymentDateDesc(Long seekerProfileId);
 }

@@ -1,6 +1,7 @@
 package com.shrambazar.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,6 +31,10 @@ public class EngagementPayment {
     @Column(length = 1000)
     private String note;
 
+    @Column(name = "payment_status", nullable = false, length = 16)
+    @ColumnDefault("'PAID'")
+    private String status = "UNPAID";
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -48,5 +53,7 @@ public class EngagementPayment {
     public void setTransactionReference(String transactionReference) { this.transactionReference = transactionReference; }
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

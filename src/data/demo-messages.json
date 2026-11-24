@@ -1,0 +1,542 @@
+{
+  "conversations": [
+    {
+      "id": "demo-conv-101",
+      "workerId": "demo-worker",
+      "workerName": "Sita Tamang",
+      "providerId": "demo-provider",
+      "providerName": "Himalayan Build Co.",
+      "jobId": "demo-job-masonry-helper",
+      "jobTitle": "Masonry Helper — Lalitpur",
+      "applicationId": "demo-app-masonry-sita",
+      "status": "OPEN",
+      "createdAt": "2026-11-18T10:05:00.000Z",
+      "updatedAt": "2026-11-24T08:20:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": "demo-conv-101-m1",
+          "senderId": "demo-worker",
+          "senderName": "Sita Tamang",
+          "content": "Namaste sir, I saw your masonry helper post in Lalitpur. I have 3 years of experience with brick and block work.",
+          "createdAt": "2026-11-18T10:05:00.000Z"
+        },
+        {
+          "id": "demo-conv-101-m2",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Namaste Sita. Thank you for applying. Have you worked on a multi-storey building before?",
+          "createdAt": "2026-11-18T10:40:00.000Z"
+        },
+        {
+          "id": "demo-conv-101-m3",
+          "senderId": "demo-worker",
+          "senderName": "Sita Tamang",
+          "content": "Yes, I worked on a 4-storey house in Imadol last year. I can send photos.",
+          "createdAt": "2026-11-18T11:02:00.000Z"
+        },
+        {
+          "id": "demo-conv-101-m4",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Good. We have shortlisted you. Daily wage is NPR 1,400 plus lunch. Is that fine?",
+          "createdAt": "2026-11-19T09:15:00.000Z"
+        },
+        {
+          "id": "demo-conv-101-m5",
+          "senderId": "demo-worker",
+          "senderName": "Sita Tamang",
+          "content": "Yes, that is fine. When would the work start?",
+          "createdAt": "2026-11-19T09:48:00.000Z"
+        },
+        {
+          "id": "demo-conv-101-m6",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "You are hired. Work starts next Monday at 8:00 AM at the Lalitpur site. Please bring your own tools.",
+          "createdAt": "2026-11-20T14:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-101-m7",
+          "senderId": "demo-worker",
+          "senderName": "Sita Tamang",
+          "content": "Thank you sir. I will be at the site by 8 AM. Can you share the exact location pin?",
+          "createdAt": "2026-11-24T08:20:00.000Z"
+        }
+      ],
+      "reads": {
+        "demo-provider": [
+          "demo-conv-101-m1",
+          "demo-conv-101-m3",
+          "demo-conv-101-m5"
+        ],
+        "demo-worker": [
+          "demo-conv-101-m2",
+          "demo-conv-101-m4",
+          "demo-conv-101-m6"
+        ]
+      },
+      "workerPhoto": "/avatars/sunita-tamang.png"
+    },
+    {
+      "id": "demo-conv-102",
+      "workerId": "demo-worker-ram",
+      "workerName": "Ram Bahadur Thapa",
+      "providerId": "demo-provider",
+      "providerName": "Himalayan Build Co.",
+      "jobId": "demo-job-house-painting",
+      "jobTitle": "House Painting — Kathmandu",
+      "applicationId": "demo-app-painting-ram",
+      "status": "OPEN",
+      "createdAt": "2026-11-16T13:00:00.000Z",
+      "updatedAt": "2026-11-22T17:00:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": "demo-conv-102-m1",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Namaste Ram ji, your profile looks suitable for our house painting job in Baneshwor.",
+          "createdAt": "2026-11-16T13:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-102-m2",
+          "senderId": "demo-worker-ram",
+          "senderName": "Ram Bahadur Thapa",
+          "content": "Namaste. Thank you. How many rooms need painting?",
+          "createdAt": "2026-11-16T13:30:00.000Z"
+        },
+        {
+          "id": "demo-conv-102-m3",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "A 3-bedroom flat, interior only. About 4 days of work, NPR 1,600 per day.",
+          "createdAt": "2026-11-16T13:45:00.000Z"
+        },
+        {
+          "id": "demo-conv-102-m4",
+          "senderId": "demo-worker-ram",
+          "senderName": "Ram Bahadur Thapa",
+          "content": "I can do it. I will bring two helpers if needed.",
+          "createdAt": "2026-11-17T09:10:00.000Z"
+        },
+        {
+          "id": "demo-conv-102-m5",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Please come alone for now, we have another painter hired. Start Thursday, 8:30 AM.",
+          "createdAt": "2026-11-17T10:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-102-m6",
+          "senderId": "demo-worker-ram",
+          "senderName": "Ram Bahadur Thapa",
+          "content": "Understood. See you Thursday.",
+          "createdAt": "2026-11-17T10:12:00.000Z"
+        },
+        {
+          "id": "demo-conv-102-m7",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Great work on the living room today. Payment of NPR 4,500 for the first 3 days has been recorded.",
+          "createdAt": "2026-11-22T16:30:00.000Z"
+        },
+        {
+          "id": "demo-conv-102-m8",
+          "senderId": "demo-worker-ram",
+          "senderName": "Ram Bahadur Thapa",
+          "content": "Thank you sir. I will finish the last room tomorrow.",
+          "createdAt": "2026-11-22T17:00:00.000Z"
+        }
+      ],
+      "reads": {
+        "demo-provider": [
+          "demo-conv-102-m2",
+          "demo-conv-102-m4",
+          "demo-conv-102-m6",
+          "demo-conv-102-m8"
+        ],
+        "demo-worker-ram": [
+          "demo-conv-102-m1",
+          "demo-conv-102-m3",
+          "demo-conv-102-m5",
+          "demo-conv-102-m7"
+        ]
+      },
+      "workerPhoto": "/avatars/sujan-maharjan.png"
+    },
+    {
+      "id": "demo-conv-103",
+      "workerId": "demo-worker-maya",
+      "workerName": "Maya Gurung",
+      "providerId": "demo-provider",
+      "providerName": "Himalayan Build Co.",
+      "jobId": "demo-job-deep-cleaning",
+      "jobTitle": "Deep Cleaning — Bhaktapur",
+      "applicationId": "demo-app-cleaning-maya",
+      "status": "OPEN",
+      "createdAt": "2026-11-12T08:45:00.000Z",
+      "updatedAt": "2026-11-15T19:00:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": "demo-conv-103-m1",
+          "senderId": "demo-worker-maya",
+          "senderName": "Maya Gurung",
+          "content": "Namaste. I applied for deep cleaning in Bhaktapur. I have my own cleaning supplies.",
+          "createdAt": "2026-11-12T08:45:00.000Z"
+        },
+        {
+          "id": "demo-conv-103-m2",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Thank you Maya. The job is a 2-floor house, one day. NPR 3,000 fixed. Are you available this Saturday?",
+          "createdAt": "2026-11-12T09:30:00.000Z"
+        },
+        {
+          "id": "demo-conv-103-m3",
+          "senderId": "demo-worker-maya",
+          "senderName": "Maya Gurung",
+          "content": "Yes, I am available all day Saturday.",
+          "createdAt": "2026-11-12T09:41:00.000Z"
+        },
+        {
+          "id": "demo-conv-103-m4",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Confirmed. Please arrive at 8 AM. Kitchen and bathrooms need the most attention.",
+          "createdAt": "2026-11-13T10:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-103-m5",
+          "senderId": "demo-worker-maya",
+          "senderName": "Maya Gurung",
+          "content": "The cleaning is complete. I have sent photos of each room.",
+          "createdAt": "2026-11-15T18:20:00.000Z"
+        },
+        {
+          "id": "demo-conv-103-m6",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Looks excellent. Marking the job as completed and recording your payment. Thank you!",
+          "createdAt": "2026-11-15T19:00:00.000Z"
+        }
+      ],
+      "reads": {
+        "demo-provider": [
+          "demo-conv-103-m1",
+          "demo-conv-103-m3",
+          "demo-conv-103-m5"
+        ],
+        "demo-worker-maya": [
+          "demo-conv-103-m2",
+          "demo-conv-103-m4",
+          "demo-conv-103-m6"
+        ]
+      },
+      "workerPhoto": "/avatars/mina-rai.png"
+    },
+    {
+      "id": "demo-conv-104",
+      "workerId": "demo-worker-bishnu",
+      "workerName": "Bishnu Shrestha",
+      "providerId": "demo-provider",
+      "providerName": "Himalayan Build Co.",
+      "jobId": "demo-job-construction-helper",
+      "jobTitle": "Construction Helper — Lalitpur",
+      "applicationId": "demo-app-construction-bishnu",
+      "status": "OPEN",
+      "createdAt": "2026-11-21T07:50:00.000Z",
+      "updatedAt": "2026-11-24T07:30:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": "demo-conv-104-m1",
+          "senderId": "demo-worker-bishnu",
+          "senderName": "Bishnu Shrestha",
+          "content": "Namaste sir. I want to apply for construction helper. I can lift heavy materials and mix cement.",
+          "createdAt": "2026-11-21T07:50:00.000Z"
+        },
+        {
+          "id": "demo-conv-104-m2",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Namaste Bishnu. We need 5 helpers and 3 are already hired. Can you start on Monday?",
+          "createdAt": "2026-11-21T08:30:00.000Z"
+        },
+        {
+          "id": "demo-conv-104-m3",
+          "senderId": "demo-worker-bishnu",
+          "senderName": "Bishnu Shrestha",
+          "content": "Yes sir, I can start Monday. Is transport provided?",
+          "createdAt": "2026-11-22T18:05:00.000Z"
+        },
+        {
+          "id": "demo-conv-104-m4",
+          "senderId": "demo-worker-bishnu",
+          "senderName": "Bishnu Shrestha",
+          "content": "Sir, any update on my application? I am free this week.",
+          "createdAt": "2026-11-24T07:30:00.000Z"
+        }
+      ],
+      "reads": {
+        "demo-provider": [
+          "demo-conv-104-m1"
+        ],
+        "demo-worker-bishnu": [
+          "demo-conv-104-m2"
+        ]
+      },
+      "workerPhoto": "/avatars/prakash-bhandari.png"
+    },
+    {
+      "id": "demo-conv-105",
+      "workerId": "demo-worker-anita",
+      "workerName": "Anita Rai",
+      "providerId": "demo-provider",
+      "providerName": "Himalayan Build Co.",
+      "jobId": "demo-job-wedding-staff",
+      "jobTitle": "Wedding Event Staff — Kathmandu",
+      "applicationId": "demo-app-wedding-anita",
+      "status": "OPEN",
+      "createdAt": "2026-11-14T12:00:00.000Z",
+      "updatedAt": "2026-11-23T10:30:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": "demo-conv-105-m1",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Namaste Anita, we are hiring wedding event staff for 12 Nov in Tinkune. Are you interested?",
+          "createdAt": "2026-11-14T12:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-105-m2",
+          "senderId": "demo-worker-anita",
+          "senderName": "Anita Rai",
+          "content": "Yes, I have worked at weddings before in serving and decoration. What is the pay?",
+          "createdAt": "2026-11-14T12:25:00.000Z"
+        },
+        {
+          "id": "demo-conv-105-m3",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "NPR 1,800 for the day plus dinner. Reporting time is 2 PM.",
+          "createdAt": "2026-11-14T12:40:00.000Z"
+        },
+        {
+          "id": "demo-conv-105-m4",
+          "senderId": "demo-worker-anita",
+          "senderName": "Anita Rai",
+          "content": "Accepted. I will arrive at 2 PM.",
+          "createdAt": "2026-11-14T13:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-105-m5",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Thank you for the great work at the wedding. Payment of NPR 1,800 has been recorded.",
+          "createdAt": "2026-11-23T10:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-105-m6",
+          "senderId": "demo-worker-anita",
+          "senderName": "Anita Rai",
+          "content": "Thank you sir. Please keep me in mind for future events.",
+          "createdAt": "2026-11-23T10:30:00.000Z"
+        }
+      ],
+      "reads": {
+        "demo-provider": [
+          "demo-conv-105-m2",
+          "demo-conv-105-m4"
+        ],
+        "demo-worker-anita": [
+          "demo-conv-105-m1",
+          "demo-conv-105-m3",
+          "demo-conv-105-m5"
+        ]
+      },
+      "workerPhoto": "/avatars/gita-karki.png"
+    },
+    {
+      "id": "demo-conv-106",
+      "workerId": "demo-worker-kiran",
+      "workerName": "Kiran Magar",
+      "providerId": "demo-provider",
+      "providerName": "Himalayan Build Co.",
+      "jobId": "demo-job-furniture-moving",
+      "jobTitle": "Furniture Moving — Kathmandu",
+      "applicationId": "demo-app-moving-kiran",
+      "status": "OPEN",
+      "createdAt": "2026-11-20T16:00:00.000Z",
+      "updatedAt": "2026-11-24T06:45:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": "demo-conv-106-m1",
+          "senderId": "demo-worker-kiran",
+          "senderName": "Kiran Magar",
+          "content": "Namaste. Is the furniture moving job still open? I have experience with a mini truck team.",
+          "createdAt": "2026-11-20T16:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-106-m2",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Yes it is. Moving a 2-bedroom flat from Koteshwor to Kalanki. How many people can you bring?",
+          "createdAt": "2026-11-20T16:30:00.000Z"
+        },
+        {
+          "id": "demo-conv-106-m3",
+          "senderId": "demo-worker-kiran",
+          "senderName": "Kiran Magar",
+          "content": "Two helpers and myself. Total NPR 6,000 for all three?",
+          "createdAt": "2026-11-21T08:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-106-m4",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "We can offer NPR 5,500 total. Let me know if that works.",
+          "createdAt": "2026-11-21T09:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-106-m5",
+          "senderId": "demo-worker-kiran",
+          "senderName": "Kiran Magar",
+          "content": "NPR 5,500 is fine. When should we come?",
+          "createdAt": "2026-11-24T06:45:00.000Z"
+        }
+      ],
+      "reads": {
+        "demo-provider": [
+          "demo-conv-106-m1",
+          "demo-conv-106-m3"
+        ],
+        "demo-worker-kiran": [
+          "demo-conv-106-m2",
+          "demo-conv-106-m4"
+        ]
+      },
+      "workerPhoto": "/avatars/rajan-pariyar.png"
+    },
+    {
+      "id": "demo-conv-107",
+      "workerId": "demo-worker-sunita",
+      "workerName": "Sunita Karki",
+      "providerId": "demo-provider",
+      "providerName": "Himalayan Build Co.",
+      "jobId": "demo-job-housekeeping",
+      "jobTitle": "Housekeeping — Pokhara",
+      "applicationId": "demo-app-housekeeping-sunita",
+      "status": "OPEN",
+      "createdAt": "2026-11-09T09:00:00.000Z",
+      "updatedAt": "2026-11-11T15:20:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": "demo-conv-107-m1",
+          "senderId": "demo-worker-sunita",
+          "senderName": "Sunita Karki",
+          "content": "Namaste, I am interested in the housekeeping position in Pokhara. I have 2 years of hotel experience.",
+          "createdAt": "2026-11-09T09:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-107-m2",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Thank you Sunita. We will review applications and contact you soon.",
+          "createdAt": "2026-11-09T10:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-107-m3",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "The position has been filled. We will keep your profile for future openings.",
+          "createdAt": "2026-11-11T15:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-107-m4",
+          "senderId": "demo-worker-sunita",
+          "senderName": "Sunita Karki",
+          "content": "Thank you for letting me know. Please contact me if anything opens.",
+          "createdAt": "2026-11-11T15:20:00.000Z"
+        }
+      ],
+      "reads": {
+        "demo-provider": [
+          "demo-conv-107-m1",
+          "demo-conv-107-m4"
+        ],
+        "demo-worker-sunita": [
+          "demo-conv-107-m2",
+          "demo-conv-107-m3"
+        ]
+      },
+      "workerPhoto": "/avatars/kritika-adhikari.png"
+    },
+    {
+      "id": "demo-conv-108",
+      "workerId": "demo-worker-dipak",
+      "workerName": "Dipak Chaudhary",
+      "providerId": "demo-provider",
+      "providerName": "Himalayan Build Co.",
+      "jobId": "demo-job-farm-worker",
+      "jobTitle": "Farm Worker — Chitwan",
+      "applicationId": "demo-app-farm-dipak",
+      "status": "OPEN",
+      "createdAt": "2026-11-19T06:30:00.000Z",
+      "updatedAt": "2026-11-24T06:10:00.000Z",
+      "unreadCount": 0,
+      "messages": [
+        {
+          "id": "demo-conv-108-m1",
+          "senderId": "demo-worker-dipak",
+          "senderName": "Dipak Chaudhary",
+          "content": "Namaste sir. I live near Bharatpur and can work on the farm daily. I know paddy harvesting.",
+          "createdAt": "2026-11-19T06:30:00.000Z"
+        },
+        {
+          "id": "demo-conv-108-m2",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "Good. The harvest runs for 10 days. NPR 1,200 per day. Are you available from Wednesday?",
+          "createdAt": "2026-11-19T07:15:00.000Z"
+        },
+        {
+          "id": "demo-conv-108-m3",
+          "senderId": "demo-worker-dipak",
+          "senderName": "Dipak Chaudhary",
+          "content": "Yes, from Wednesday I am free. I can bring my own sickle.",
+          "createdAt": "2026-11-19T07:40:00.000Z"
+        },
+        {
+          "id": "demo-conv-108-m4",
+          "senderId": "demo-provider",
+          "senderName": "Himalayan Build Co.",
+          "content": "You are shortlisted. We will confirm by tomorrow evening.",
+          "createdAt": "2026-11-20T18:00:00.000Z"
+        },
+        {
+          "id": "demo-conv-108-m5",
+          "senderId": "demo-worker-dipak",
+          "senderName": "Dipak Chaudhary",
+          "content": "Namaste sir, I am ready for Wednesday. Please confirm.",
+          "createdAt": "2026-11-24T06:10:00.000Z"
+        }
+      ],
+      "reads": {
+        "demo-provider": [
+          "demo-conv-108-m1",
+          "demo-conv-108-m3"
+        ],
+        "demo-worker-dipak": [
+          "demo-conv-108-m2",
+          "demo-conv-108-m4"
+        ]
+      },
+      "workerPhoto": "/avatars/anil-thapa.png"
+    }
+  ]
+}

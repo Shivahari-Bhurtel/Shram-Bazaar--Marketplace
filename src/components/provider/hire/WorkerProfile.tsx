@@ -5,7 +5,7 @@ import type { WorkerServiceListing } from "../../../types"
 import { formatHirePrice, workerLocation } from "./WorkerCard"
 import RatingStars from "./RatingStars"
 
-export default function WorkerProfile({ worker, onClose, service }: { worker: HireWorker; onClose: () => void; service?: WorkerServiceListing | null }) {
+export default function WorkerProfile({ worker, onClose, service, onHire, onMessage }: { worker: HireWorker; onClose: () => void; service?: WorkerServiceListing | null; onHire?: () => void; onMessage?: () => void }) {
   const [imageSource, setImageSource] = useState(worker.profileImage || worker.avatarUrl || "")
   const [imageFailed, setImageFailed] = useState(false)
 
@@ -41,6 +41,7 @@ export default function WorkerProfile({ worker, onClose, service }: { worker: Hi
             <div className="min-w-0 text-center sm:text-left">
               <h1 id="hire-profile-title" className="font-heading text-2xl font-semibold tracking-tight text-[#1A2420]">{worker.name}</h1>
               <p className="mt-1 font-heading text-base font-medium text-[#4E5D53]">{worker.profession || worker.category || "Profession not listed"}</p>
+              {worker.isDemo && <span className="mt-2 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">Showcase sample profile</span>}
               <p className="mt-2 text-sm text-[#717C74]">{workerLocation(worker)}</p>
               <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#46534A]"><span className={`h-2 w-2 rounded-full ${status === "available" ? "bg-[#236B4B]" : status === "busy" ? "bg-stone-500" : status === "available-soon" || status === "available_soon" ? "bg-amber-600" : "bg-stone-400"}`} />{statusLabel}</span>
               <div className="mt-2"><RatingStars rating={worker.rating} count={worker.ratingCount} /></div>
@@ -58,6 +59,10 @@ export default function WorkerProfile({ worker, onClose, service }: { worker: Hi
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <section><h2 className="font-heading text-base font-medium text-[#1A2420]">Availability schedule</h2><p className="mt-2 text-base leading-7 text-[#48443F]">{worker.availability?.days?.length ? worker.availability.days.join(", ") : "Days not listed"}{worker.availability?.hours ? ` · ${worker.availability.hours}` : ""}</p><p className="mt-1 text-sm text-[#626D65]">{worker.availability?.preference || "Work preference not listed"}</p></section>
             <section><h2 className="font-heading text-base font-medium text-[#1A2420]">Work types accepted</h2><p className="mt-2 text-base leading-7 text-[#48443F]">{worker.workTypes?.length ? worker.workTypes.join(", ") : "Work types not listed"}</p></section>
+          </div>
+          <div className="mt-6 flex flex-col-reverse gap-2 border-t border-[#E5EAE6] pt-5 sm:flex-row sm:justify-end">
+            {onMessage && <button type="button" onClick={onMessage} className="min-h-11 rounded-sm border border-[#164E38] px-5 text-sm font-semibold text-[#164E38] hover:bg-[#F3F6F3]">Message Worker</button>}
+            {onHire && <button type="button" onClick={onHire} className="min-h-11 rounded-sm bg-[#164E38] px-5 text-sm font-semibold text-white hover:bg-[#236B4B]">Hire Worker</button>}
           </div>
         </div>
       </section>

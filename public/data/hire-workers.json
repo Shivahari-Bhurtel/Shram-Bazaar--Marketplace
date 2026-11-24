@@ -9,7 +9,7 @@
     {
       "id": "hire-worker-001",
       "name": "Sujan Maharjan",
-      "profileImage": "/avatars/dara.svg",
+      "profileImage": "/avatars/sujan-maharjan.png",
       "avatarSeed": "Dara",
       "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Dara",
       "profession": "Electrician",
@@ -56,12 +56,14 @@
         "Contract"
       ],
       "isPublished": true,
-      "isDemo": true
+      "isDemo": true,
+      "rating": 4.8,
+      "ratingCount": 42
     },
     {
       "id": "hire-worker-002",
       "name": "Prakash Bhandari",
-      "profileImage": "/avatars/ilse.svg",
+      "profileImage": "/avatars/prakash-bhandari.png",
       "avatarSeed": "Ilse",
       "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Ilse",
       "profession": "Plumber",
@@ -106,12 +108,14 @@
         "One-time Job"
       ],
       "isPublished": true,
-      "isDemo": true
+      "isDemo": true,
+      "rating": 4.6,
+      "ratingCount": 31
     },
     {
       "id": "hire-worker-003",
       "name": "Sunita Tamang",
-      "profileImage": "/avatars/caspar.svg",
+      "profileImage": "/avatars/sunita-tamang.png",
       "avatarSeed": "Caspar",
       "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Caspar",
       "profession": "House Cleaner",
@@ -158,12 +162,14 @@
         "Recurring"
       ],
       "isPublished": true,
-      "isDemo": true
+      "isDemo": true,
+      "rating": 4.9,
+      "ratingCount": 56
     },
     {
       "id": "hire-worker-004",
       "name": "Anil Thapa",
-      "profileImage": "/avatars/erik.svg",
+      "profileImage": "/avatars/anil-thapa.png",
       "avatarSeed": "Erik",
       "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Erik",
       "profession": "Delivery Rider",
@@ -210,12 +216,14 @@
         "Temporary"
       ],
       "isPublished": true,
-      "isDemo": true
+      "isDemo": true,
+      "rating": 4.5,
+      "ratingCount": 28
     },
     {
       "id": "hire-worker-005",
       "name": "Gita Karki",
-      "profileImage": "/avatars/berta.svg",
+      "profileImage": "/avatars/gita-karki.png",
       "avatarSeed": "Berta",
       "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Berta",
       "profession": "Painter",
@@ -262,12 +270,14 @@
         "Temporary"
       ],
       "isPublished": true,
-      "isDemo": true
+      "isDemo": true,
+      "rating": 4.7,
+      "ratingCount": 37
     },
     {
       "id": "hire-worker-006",
       "name": "Rajan Pariyar",
-      "profileImage": "/avatars/emil.svg",
+      "profileImage": "/avatars/rajan-pariyar.png",
       "avatarSeed": "Emil",
       "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Emil",
       "profession": "Construction Helper",
@@ -314,12 +324,14 @@
         "Contract"
       ],
       "isPublished": true,
-      "isDemo": true
+      "isDemo": true,
+      "rating": 4.4,
+      "ratingCount": 19
     },
     {
       "id": "hire-worker-007",
       "name": "Mina Rai",
-      "profileImage": "/avatars/alia.svg",
+      "profileImage": "/avatars/mina-rai.png",
       "avatarSeed": "Alia",
       "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Alia",
       "profession": "Kitchen Assistant",
@@ -364,12 +376,14 @@
         "Event-based"
       ],
       "isPublished": true,
-      "isDemo": true
+      "isDemo": true,
+      "rating": 4.8,
+      "ratingCount": 46
     },
     {
       "id": "hire-worker-008",
       "name": "Kritika Adhikari",
-      "profileImage": "/avatars/regina.svg",
+      "profileImage": "/avatars/kritika-adhikari.png",
       "avatarSeed": "Regina",
       "avatarUrl": "https://api.dicebear.com/10.x/lorelei/svg?seed=Regina",
       "profession": "Event Assistant",
@@ -413,7 +427,9 @@
         "Temporary"
       ],
       "isPublished": true,
-      "isDemo": true
+      "isDemo": true,
+      "rating": 4.9,
+      "ratingCount": 23
     }
   ]
 }

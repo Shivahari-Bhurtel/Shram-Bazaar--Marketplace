@@ -6,7 +6,7 @@ import { useDemoJobState } from "../../hooks/useDemoJobState"
 import { loadDemoJobs, type DemoJob } from "../../services/demoJobs"
 import type { Application, ApplicationStatus, Job, WorkType } from "../../types"
 import { formatNepalDate, nepalDateString } from "../../utils/dates"
-import { openConversation } from "../../services/messaging"
+import { openConversation, resolveDemoMessagingIdentity, shouldUseLocalDemoMessaging } from "../../services/messaging"
 import { apiRequest } from "../../services/backendApi"
 import type { Page } from "../../store/AppContext"
 
@@ -32,7 +32,10 @@ function formatDate(date: string) {
 }
 
 function getApplicationDisplayStatus(application: Application): ApplicationStatus {
-  return application.engagementStatus === "COMPLETED" ? "completed" : application.status
+  if (application.engagementStatus === "AWAITING_RESPONSE") return "pending"
+  if (application.engagementStatus === "DECLINED" || application.engagementStatus === "CANCELLED") return "declined"
+  if (application.engagementStatus === "COMPLETED") return "completed"
+  return application.status
 }
 
 function normalizeSearchText(value: string) {
@@ -65,10 +68,12 @@ function StatusIcon({ name }: { name: (typeof statusCards)[number]["icon"] }) {
 function ApplicationRow({
   application,
   job,
+  payment,
   navigate,
 }: {
   application: Application
   job?: Job
+  payment?: { amount: number; method: string; status: "UNPAID" | "PAID"; paymentDate: string }
   navigate: (page: Page, jobId?: string) => void
 }) {
   const { reviewProvider, respondToSelection, updateEngagementWork, withdrawApplication, state } = useApp()
@@ -82,10 +87,18 @@ function ApplicationRow({
   const [withdrawNotice, setWithdrawNotice] = useState("")
   const [messageNotice, setMessageNotice] = useState("")
   const [messageBusy, setMessageBusy] = useState(false)
-  const completed = application.engagementStatus === "COMPLETED" || (
-    import.meta.env.VITE_DEMO_MODE === "true" &&
-    scheduledWorkHasEnded(job)
-  )
+  const [responding, setResponding] = useState(false)
+  const [responseNotice, setResponseNotice] = useState("")
+  const completed = application.engagementStatus === "COMPLETED"
+  const respond = async (accept: boolean) => {
+    if (responding) return
+    if (!accept && !window.confirm("Decline this hiring offer? The provider will be notified.")) return
+    setResponding(true)
+    setResponseNotice("")
+    const error = await respondToSelection(application.id, accept)
+    setResponseNotice(error || (accept ? "Offer accepted. The provider has been notified." : "Offer declined. The provider has been notified."))
+    setResponding(false)
+  }
   return (
     <article className="rounded-xl border border-[#E8E2DC] bg-white p-4 transition-colors hover:border-[#CDB9A7] sm:p-5">
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-center">
@@ -143,7 +156,7 @@ function ApplicationRow({
       {withdrawNotice && <p role="status" className="mt-3 text-xs text-stone-600">{withdrawNotice}</p>}
 
       {application.status === "pending" || application.status === "accepted" ? <div className="mt-4 border-t border-[#F0EBE6] pt-3">
-        <button type="button" disabled={messageBusy} onClick={async () => { setMessageBusy(true); setMessageNotice(""); try { const conversation = await openConversation(import.meta.env.VITE_DEMO_MODE === "true", application.id, state.currentUser?.role === "worker" && import.meta.env.VITE_DEMO_MODE === "true" ? "demo-worker" : state.currentUser?.id || "", state.currentUser?.name || "Worker"); sessionStorage.setItem("shram-open-conversation-id", conversation.id); navigate("messages"); } catch (error) { setMessageNotice(error instanceof Error ? error.message : "Unable to open conversation.") } finally { setMessageBusy(false) } }} className="rounded-lg bg-[#70472F] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{messageBusy ? "Opening…" : "Open conversation"}</button>
+        <button type="button" disabled={messageBusy} onClick={async () => { setMessageBusy(true); setMessageNotice(""); try { const demo = shouldUseLocalDemoMessaging(import.meta.env.VITE_DEMO_MODE === "true","worker",state.currentUser?.profileId || "",state.currentUser?.name || "Worker",application.providerName); const identity = state.currentUser?.role === "worker" ? resolveDemoMessagingIdentity(demo,"worker",state.currentUser.profileId,state.currentUser.name) : state.currentUser?.profileId || ""; const providerId = demo ? resolveDemoMessagingIdentity(true,"provider",application.providerId,application.providerName,application.providerName) : application.providerId; const conversation = await openConversation(demo, application.id, identity, state.currentUser?.name || "Worker", { actorRole: "worker", workerId: application.workerId, workerName: application.workerName, providerId, providerName: application.providerName, jobId: application.jobId, jobTitle: application.jobTitle }); sessionStorage.setItem("shram-open-conversation-id", conversation.id); navigate("messages"); } catch (error) { setMessageNotice(error instanceof Error ? error.message : "Unable to open conversation.") } finally { setMessageBusy(false) } }} className="rounded-lg bg-[#70472F] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{messageBusy ? "Opening…" : "Open conversation"}</button>
         {messageNotice && <p role="status" className="mt-2 text-xs text-stone-600">{messageNotice}</p>}
       </div> : null}
 
@@ -157,17 +170,20 @@ function ApplicationRow({
       )}
       {application.offeredAmount != null && (
         <div className="mt-4 flex flex-wrap items-start justify-between gap-2 border-t border-[#F0EBE6] pt-3">
-          <div><p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Your offer</p><p className="mt-0.5 text-sm font-bold text-[#286B50]">NPR {application.offeredAmount.toLocaleString()} · {application.estimatedDurationHours || "—"}h estimate</p>{application.offerMessage && <p className="mt-1 max-w-2xl text-sm leading-relaxed text-stone-600">{application.offerMessage}</p>}</div>
+          <div><p className="text-xs font-semibold uppercase tracking-wide text-stone-500">{application.engagementStatus === "AWAITING_RESPONSE" ? "Provider's hiring offer" : "Your offer"}</p><p className="mt-0.5 text-sm font-bold text-[#286B50]">NPR {application.offeredAmount.toLocaleString()}{application.estimatedDurationHours ? ` · ${application.estimatedDurationHours}h estimate` : ""}</p>{application.offerMessage && <p className="mt-1 max-w-2xl text-sm leading-relaxed text-stone-600">{application.offerMessage}</p>}</div>
           {application.proposedStartAt && <p className="text-xs text-stone-500">Proposed {application.proposedStartAt.replace("T", " ").slice(0, 16)} Nepal time</p>}
         </div>
       )}
+      {application.engagementStatus === "AWAITING_RESPONSE" && job && <section className="mt-4 border-t border-[#F0EBE6] pt-3"><h3 className="text-xs font-bold uppercase tracking-wide text-stone-500">Hiring offer details</h3><dl className="mt-2 grid gap-2 text-xs text-stone-600 sm:grid-cols-2"><div><dt className="font-semibold text-stone-700">Work location</dt><dd>{job.location}{job.district ? `, ${job.district}` : ""}</dd></div><div><dt className="font-semibold text-stone-700">Date and time</dt><dd>{formatNepalDate(job.date, { month: "short", day: "numeric", year: "numeric" })}{job.endDate && job.endDate !== job.date ? ` – ${formatNepalDate(job.endDate, { month: "short", day: "numeric", year: "numeric" })}` : ""} · {job.startTime}–{job.endTime}</dd></div><div><dt className="font-semibold text-stone-700">Duration</dt><dd>{job.duration || "As scheduled"}</dd></div><div><dt className="font-semibold text-stone-700">Workers needed</dt><dd>{job.workersNeeded || 1}</dd></div><div><dt className="font-semibold text-stone-700">Payment</dt><dd>NPR {(application.offeredAmount ?? job.payment).toLocaleString()} · {(job.paymentMethod || "CASH").replace(/_/g, " ")}</dd></div></dl><p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-stone-600">{job.description}</p></section>}
+      {payment && <p className="mt-3 border-t border-[#F0EBE6] pt-3 text-xs text-stone-600">Payment record: <strong className={payment.status === "PAID" ? "text-emerald-700" : "text-amber-700"}>{payment.status === "PAID" ? "Paid" : "Unpaid"}</strong> · NPR {payment.amount.toLocaleString()} · {(payment.method || "Pending method").replace(/_/g, " ")}</p>}
       {application.engagementStatus === "AWAITING_RESPONSE" && (
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EBE6] pt-3">
-          <p className="mr-auto text-sm text-stone-600">The provider selected you. Confirm or decline this work.</p>
-          <button type="button" onClick={() => respondToSelection(application.id, false)} className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-stone-700">Decline</button>
-          <button type="button" onClick={() => respondToSelection(application.id, true)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white">Confirm work</button>
+          <p className="mr-auto text-sm text-stone-600">The provider sent you a hiring offer. Accept or decline this assignment.</p>
+          <button type="button" disabled={responding} onClick={() => void respond(false)} className="rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-stone-700 disabled:opacity-50">{responding ? "Saving…" : "Decline offer"}</button>
+          <button type="button" disabled={responding} onClick={() => void respond(true)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{responding ? "Saving…" : "Accept offer"}</button>
         </div>
       )}
+      {responseNotice && <p role="status" className="mt-2 text-xs text-stone-600">{responseNotice}</p>}
       {["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(application.engagementStatus || "") && application.engagementId && (
         <div className="mt-4 border-t border-[#F0EBE6] pt-3">
           {providerContact ? (
@@ -184,16 +200,17 @@ function ApplicationRow({
           {contactError && <p role="alert" className="mt-2 text-xs text-red-700">{contactError}</p>}
         </div>
       )}
-      {application.engagementStatus === "CONFIRMED" && scheduledWorkHasEnded(job) && !application.seekerCompletionConfirmed && (
+      {application.engagementStatus === "IN_PROGRESS" && !application.seekerCompletionConfirmed && !application.providerCompletionConfirmed && (
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EBE6] pt-3">
-          <p className="mr-auto text-sm text-stone-600">Confirm when the scheduled work is complete.</p>
-          <button type="button" onClick={() => updateEngagementWork(application.id, "confirm-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Confirm work complete</button>
+          <p className="mr-auto text-sm text-stone-600">{scheduledWorkHasEnded(job) ? "Submit the work for provider review when it is complete." : "You can submit completion after the scheduled work ends."}</p>
+          {scheduledWorkHasEnded(job) && <button type="button" onClick={() => updateEngagementWork(application.id, "request-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Mark work completed</button>}
         </div>
       )}
-      {application.engagementStatus === "IN_PROGRESS" && (
+      {application.engagementStatus === "IN_PROGRESS" && application.seekerCompletionConfirmed && !application.providerCompletionConfirmed && <p className="mt-4 border-t border-[#F0EBE6] pt-3 text-sm text-stone-600">Completion submitted. Waiting for the provider to review and confirm.</p>}
+      {application.engagementStatus === "IN_PROGRESS" && application.providerCompletionConfirmed && !application.seekerCompletionConfirmed && (
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F0EBE6] pt-3">
-          <p className="mr-auto text-sm text-stone-600">{application.seekerCompletionConfirmed ? "You confirmed completion. Waiting for the provider to confirm." : application.providerCompletionConfirmed ? "The provider marked this work complete. Confirm if the work is finished." : "The provider started this work. Confirm completion after the scheduled work ends."}</p>
-          {!application.seekerCompletionConfirmed && scheduledWorkHasEnded(job) && <button type="button" onClick={() => updateEngagementWork(application.id, "confirm-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white">Confirm work complete</button>}
+          <p className="mr-auto text-sm text-stone-600">Your provider marked this assignment complete. Review it and confirm when ready.</p>
+          <button type="button" disabled={!scheduledWorkHasEnded(job)} title={!scheduledWorkHasEnded(job) ? "You can confirm after the scheduled end date." : undefined} onClick={() => updateEngagementWork(application.id, "confirm-completion")} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Confirm completion</button>
         </div>
       )}
       {application.status === "accepted" && <div className="mt-4 border-t border-[#F0EBE6] pt-3">
@@ -213,6 +230,14 @@ export default function MyApplications() {
   const [query, setQuery] = useState("")
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest")
   const [workType, setWorkType] = useState("all")
+  const [payments, setPayments] = useState<Array<{ engagementId: number; amount: number; method: string; status: "UNPAID" | "PAID"; paymentDate: string }>>([])
+
+  useEffect(() => {
+    if (import.meta.env.VITE_DEMO_MODE === "true" || state.currentUser?.role !== "worker") return
+    let active = true
+    void apiRequest<typeof payments>("/api/seeker/engagement-payments").then((result) => { if (active) setPayments(result) }).catch(() => { if (active) setPayments([]) })
+    return () => { active = false }
+  }, [state.currentUser?.id])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -352,8 +377,8 @@ export default function MyApplications() {
           </div>
           {filtered.length ? (
             <div className="space-y-3">
-              {filtered.map((application) => (
-                <ApplicationRow key={application.id} application={application} job={jobsById.get(application.jobId)} navigate={navigate} />
+                {filtered.map((application) => (
+                <ApplicationRow key={application.id} application={application} job={jobsById.get(application.jobId)} payment={application.paymentStatus ? { amount: application.offeredAmount ?? jobsById.get(application.jobId)?.payment ?? 0, method: application.paymentMethod || jobsById.get(application.jobId)?.paymentMethod || "PENDING", status: application.paymentStatus, paymentDate: application.paymentDate || "" } : application.engagementId ? payments.find((item) => item.engagementId === Number(application.engagementId)) : undefined} navigate={navigate} />
               ))}
             </div>
           ) : (

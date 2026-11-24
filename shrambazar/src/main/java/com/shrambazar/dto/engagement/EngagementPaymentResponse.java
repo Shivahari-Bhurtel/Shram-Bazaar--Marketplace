@@ -12,5 +12,6 @@ public record EngagementPaymentResponse(
         String method,
         LocalDate paymentDate,
         String transactionReference,
-        String note
+        String note,
+        String status
 ) {}

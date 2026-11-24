@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react"
 import { useApp } from "../../store/AppContext"
-import { JobStatusBadge, CategoryBadge } from "../../components/StatusBadge"
 import ConfirmDialog from "../../components/ConfirmDialog"
-import type { JobStatus } from "../../types"
+import SearchInOutAnimation from "../../components/SearchInOutAnimation"
+import type { Job, JobStatus } from "../../types"
 import { daysUntilNepalDate, formatNepalDate, isDateOnlyString, nepalDateString } from "../../utils/dates"
-import { formatJobBudget } from "../../utils/jobBudget"
+import showcaseJobsData from "../../data/provider-my-jobs-demo.json"
 
 function shiftDate(value: string, days: number) {
   const date = new Date(`${value}T00:00:00.000Z`)
@@ -13,29 +13,60 @@ function shiftDate(value: string, days: number) {
 }
 
 export default function MyJobs() {
-  const { myJobs, jobApplications, navigate, deleteJob, updateJob, postJob } = useApp()
+  const { state, myJobs, jobApplications, navigate, deleteJob, updateJob } = useApp()
   const [activeTab, setActiveTab] = useState<JobStatus | "all">("all")
   const [search, setSearch] = useState("")
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const visibilityKey = `shram-demo-job-visibility-${state.providerProfile?.id || state.currentUser?.id || "provider"}`
+  const [showcaseStatuses, setShowcaseStatuses] = useState<Record<string, JobStatus>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(visibilityKey) || "{}") as Record<string, JobStatus>
+    } catch {
+      return {}
+    }
+  })
 
-  const filtered = useMemo(() => myJobs.filter((job) =>
+  const ownJobIds = new Set(myJobs.map((job) => job.id))
+  const showcaseJobs = showcaseJobsData.jobs
+    .filter((job) => !ownJobIds.has(job.id))
+    .map((job) => ({ ...job, status: showcaseStatuses[job.id] || job.status, isShowcaseDemo: true }) as Job & { isShowcaseDemo: boolean })
+  const allJobs = [...myJobs, ...showcaseJobs]
+
+  const setJobVisibility = (job: Job & { isShowcaseDemo?: boolean }, visible: boolean) => {
+    const status: JobStatus = visible ? "active" : "closed"
+    if (job.isShowcaseDemo) {
+      setShowcaseStatuses((current) => {
+        const next = { ...current, [job.id]: status }
+        try {
+          localStorage.setItem(visibilityKey, JSON.stringify(next))
+        } catch {
+          // Keep this page session usable when browser storage is unavailable.
+        }
+        return next
+      })
+      return
+    }
+    void updateJob(job.id, { status })
+  }
+
+  const filtered = useMemo(() => allJobs.filter((job) =>
     (activeTab === "all" || job.status === activeTab) &&
     `${job.title} ${job.category} ${job.district} ${job.location}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())
-  ), [activeTab, myJobs, search])
+  ), [activeTab, allJobs, search])
 
   const tabs: { key: JobStatus | "all"; label: string }[] = [
-    { key: "all", label: `All (${myJobs.length})` },
+    { key: "all", label: `All (${allJobs.length})` },
     {
       key: "active",
-      label: `Active (${myJobs.filter((j) => j.status === "active").length})`,
+      label: `Active (${allJobs.filter((j) => j.status === "active").length})`,
     },
     {
       key: "filled",
-      label: `Filled (${myJobs.filter((j) => j.status === "filled").length})`,
+      label: `Filled (${allJobs.filter((j) => j.status === "filled").length})`,
     },
     {
       key: "closed",
-      label: `Closed (${myJobs.filter((j) => j.status === "closed").length})`,
+      label: `Closed (${allJobs.filter((j) => j.status === "closed").length})`,
     },
   ]
 
@@ -43,25 +74,25 @@ export default function MyJobs() {
     <div className="provider-page mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
       <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-display text-3xl font-semibold tracking-[-0.035em] text-stone-900 mb-1">
+          <h1 className="font-display text-3xl font-semibold tracking-[-0.035em] text-[#261C14] mb-1">
             My Jobs
           </h1>
-          <p className="text-stone-500">
-          Manage your job postings, track hiring progress and review applicants.
+          <p className="text-[#766B61]">
+          Manage your job postings and view applications
           </p>
         </div>
         <button
           onClick={() => navigate("create-job")}
           className="provider-post-job-action min-h-11 rounded-lg bg-[#164E38] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#103B2C]"
         >
-          + Post Job
+          + Post New Job
         </button>
       </div>
 
       <label className="relative mb-4 block max-w-xl">
         <span className="sr-only">Search jobs</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search jobs by title, category or location" className="h-11 w-full rounded-lg border border-stone-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/10" />
+        <SearchInOutAnimation />
+        <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search jobs by title, category or location" className="h-11 w-full rounded-lg border border-stone-200 bg-white pl-12 pr-4 text-sm outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/10" />
       </label>
       <div className="mb-5 flex gap-1 overflow-x-auto border-b border-stone-200">
         {tabs.map((tab) => (
@@ -90,10 +121,10 @@ export default function MyJobs() {
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-[0_1px_2px_rgba(25,44,34,0.03)]">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1040px] border-collapse text-left">
-              <thead className="bg-stone-50 text-sm font-bold uppercase tracking-[0.08em] text-stone-700">
+              <thead className="bg-[#FCFBF9] text-xs font-semibold uppercase tracking-[0.08em] text-[#766B61]">
                 <tr>
                   <th scope="col" className="px-5 py-5">Job title</th>
-                  <th scope="col" className="px-5 py-5">Category</th>
+                  <th scope="col" className="px-5 py-5">Department</th>
                   <th scope="col" className="px-5 py-5">Location</th>
                   <th scope="col" className="px-5 py-5">Applicants</th>
                   <th scope="col" className="px-5 py-5">Status</th>
@@ -102,30 +133,39 @@ export default function MyJobs() {
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {filtered.map((job) => {
-                  const apps = jobApplications(job.id)
+                  const isShowcaseDemo = "isShowcaseDemo" in job && job.isShowcaseDemo === true
+                  const apps = isShowcaseDemo
+                    ? showcaseJobsData.applications.filter((application) => application.jobId === job.id)
+                    : jobApplications(job.id)
                   const pendingCount = apps.filter((application) => application.status === "pending").length
                   const acceptedCount = apps.filter((application) => application.status === "accepted").length
                   return (
                     <tr key={job.id} className="align-middle transition-colors hover:bg-[#FCFBF9]">
                       <td className="px-5 py-6">
-                        <div className="max-w-[250px] text-base font-bold leading-snug text-stone-900">{job.title}</div>
-                        <div className="mt-1.5 text-sm font-medium text-stone-600">Posted {formatNepalDate(job.postedDate || job.date, { month: "short", day: "numeric", year: "numeric" })}</div>
-                        <div className="mt-2 text-base font-bold text-stone-900">{formatJobBudget(job)}</div>
+                        <div className="max-w-[250px] text-base font-semibold leading-snug text-[#261C14]">{job.title}</div>
+                        <div className="mt-1.5 text-sm text-[#766B61]">Posted {formatNepalDate(job.postedDate || job.date, { month: "numeric", day: "numeric", year: "numeric" })}</div>
                       </td>
-                      <td className="px-5 py-6 text-base font-medium capitalize text-stone-800">{job.category.replace(/-/g, " ")}</td>
-                      <td className="max-w-[320px] px-5 py-6 text-base font-medium leading-6 text-stone-700" title={job.location || job.district}>{job.location || job.district}</td>
+                      <td className="px-5 py-6 text-sm font-medium capitalize text-[#51483F]">{job.category.replace(/-/g, " ")}</td>
+                      <td className="max-w-[320px] px-5 py-6 text-sm font-medium leading-6 text-[#51483F]" title={job.location || job.district}><span className="inline-flex items-start gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="mt-0.5 h-4 w-4 shrink-0 text-[#92877E]" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>{job.location || job.district}</span></td>
                       <td className="px-5 py-6">
-                        <button onClick={() => navigate("applicant-management", job.id)} className="text-base font-bold tabular-nums text-stone-900 underline-offset-4 hover:text-primary-ink hover:underline">{apps.length}</button>
-                        {pendingCount > 0 && <div className="mt-1 whitespace-nowrap text-sm font-medium text-amber-700">{pendingCount} awaiting review</div>}
-                        {acceptedCount > 0 && <div className="mt-1 whitespace-nowrap text-sm font-medium text-green-700">{acceptedCount} accepted</div>}
+                        {isShowcaseDemo ? <span className="inline-flex items-center gap-2 text-sm font-semibold tabular-nums text-[#261C14]"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-[#92877E]" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1M17 8a3 3 0 0 1 0 6m2 2a4 4 0 0 1 2 4"/></svg>{apps.length}</span> : <button onClick={() => navigate("applicant-management", job.id)} className="inline-flex items-center gap-2 text-sm font-semibold tabular-nums text-[#261C14] underline-offset-4 hover:text-[#286B50] hover:underline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-[#92877E]" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1M17 8a3 3 0 0 1 0 6m2 2a4 4 0 0 1 2 4"/></svg>{apps.length}</button>}
+                        {(pendingCount > 0 || acceptedCount > 0) && <div className="mt-1 whitespace-nowrap text-xs text-[#766B61]">{pendingCount > 0 ? `${pendingCount} awaiting review` : `${acceptedCount} accepted`}</div>}
                       </td>
-                      <td className="px-5 py-5"><JobStatusBadge status={job.status} /></td>
+                      <td className="px-5 py-5"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${job.status === "active" ? "bg-[#E7F5EA] text-[#286B50]" : job.status === "filled" ? "bg-[#F8F0D9] text-[#806527]" : "bg-[#F3F1EE] text-[#766B61]"}`}>{job.status === "active" ? "Published" : job.status === "filled" ? "Filled" : "Unpublished"}</span></td>
                       <td className="px-5 py-5">
-                        <div className="flex items-center gap-2">
-                          {job.status === "active" && <button onClick={() => navigate("edit-job", job.id)} className="rounded-md border border-stone-300 px-3 py-2.5 text-sm font-semibold text-stone-800 hover:bg-stone-50">Edit</button>}
-                          <button onClick={() => navigate("applicant-management", job.id)} className="whitespace-nowrap rounded-md bg-[#164E38] px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-[#103B2C]">{pendingCount ? `Review ${pendingCount}` : "Applicants"}</button>
-                          {job.status === "active" && <button onClick={() => updateJob(job.id, { status: "closed" })} className="rounded-md border border-stone-300 px-3 py-2.5 text-sm font-semibold text-stone-700 hover:border-red-200 hover:bg-red-50 hover:text-red-800" title="Close job">Close</button>}
-                          <button onClick={() => setConfirmDelete(job.id)} className="rounded-md p-2.5 text-stone-500 hover:bg-red-50 hover:text-red-700" aria-label={`Delete ${job.title}`} title="Delete job"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg></button>
+                        <div className="flex min-w-[170px] flex-col items-start gap-2">
+                          <button type="button" role="switch" aria-checked={job.status === "active"} aria-label={`${job.status === "active" ? "Hide" : "Make visible"} ${job.title}`} disabled={job.status === "filled"} onClick={() => setJobVisibility(job, job.status !== "active")} className="inline-flex shrink-0 items-center gap-2.5 whitespace-nowrap text-sm font-medium text-[#51483F] disabled:cursor-not-allowed disabled:opacity-60">
+                            <span className={`relative block h-7 w-12 shrink-0 rounded-full transition-colors ${job.status === "active" ? "bg-[#286B50]" : "bg-[#D6D3D1]"}`}>
+                              <span className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${job.status === "active" ? "translate-x-5" : "translate-x-0"}`}/>
+                            </span>
+                            <span>{job.status === "active" ? "Published" : job.status === "filled" ? "Filled" : "Unpublished"}</span>
+                          </button>
+                          {isShowcaseDemo && <span className="pl-[3.35rem] text-[11px] text-[#92877E]">Showcase sample</span>}
+                          {!isShowcaseDemo && <div className="flex items-center gap-3 pl-1 text-xs font-medium text-[#70472F]">
+                            <button onClick={() => navigate("edit-job", job.id)} className="hover:underline">Edit</button>
+                            <button onClick={() => navigate("applicant-management", job.id)} className="hover:underline">Applicants</button>
+                            <button onClick={() => setConfirmDelete(job.id)} className="text-[#8B4035] hover:underline" aria-label={`Delete ${job.title}`}>Delete</button>
+                          </div>}
                         </div>
                       </td>
                     </tr>

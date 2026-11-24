@@ -8,4 +8,5 @@ public interface ConversationRepository extends JpaRepository<Conversation,Long>
  @Query("select distinct c from Conversation c left join fetch c.jobPost left join fetch c.application where c.id=:id and (c.seekerProfile.user.id=:uid or c.providerProfile.user.id=:uid)") Optional<Conversation> findMineById(@Param("id") Long id,@Param("uid") Long uid);
  Optional<Conversation> findByJobPostIdAndSeekerProfileIdAndProviderProfileId(Long jobId,Long seekerId,Long providerId);
  Optional<Conversation> findByApplicationId(Long applicationId);
+ Optional<Conversation> findFirstBySeekerProfileIdAndProviderProfileIdOrderByUpdatedAtDesc(Long seekerId,Long providerId);
 }

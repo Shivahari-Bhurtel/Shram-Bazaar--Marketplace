@@ -1,0 +1,4712 @@
+{
+ "meta": {
+  "isDemo": true,
+  "datasetVersion": "provider-analytics-v1",
+  "seed": "shram-provider-demo",
+  "today": "2026-11-24",
+  "providerId": "demo-provider",
+  "providerName": "Himalayan Build Co.",
+  "note": "Raw records are the source of truth. 'derivedStatus' and 'summary' are computed by the generator for verification; the UI should recompute them from the records. Payments are manually recorded amounts, not transfers.",
+  "statusMapping": {
+   "applicationStatus": "Uses frontend ApplicationStatus (pending/accepted/rejected/declined/withdrawn/completed) + `shortlisted` flag; hired = accepted/completed application with engagement CONFIRMED/IN_PROGRESS/COMPLETED.",
+   "jobStatus": "`status` uses backend JobPostStatus (DRAFT/OPEN/CLOSED/COMPLETED); `derivedStatus` adds in_progress/filled from engagements.",
+   "category": "`category` = existing app category (qualified/skill-based/beginner-friendly); `sector` = display grouping for the Job Categories chart (not in the current app)."
+  }
+ },
+ "jobs": [
+  {
+   "id": "demo-job-house-painting",
+   "title": "House Painting",
+   "category": "skill-based",
+   "sector": "Household Work",
+   "description": "Interior painting of a 3-bedroom flat. Two coats on prepared walls; paint and brushes provided.",
+   "district": "Kathmandu",
+   "municipality": "Baneshwor",
+   "location": "Baneshwor, Kathmandu",
+   "paymentAmount": 1500,
+   "paymentType": "per-day",
+   "paymentMethod": "CASH",
+   "workersRequired": 3,
+   "status": "OPEN",
+   "postedDate": "2026-10-27",
+   "applicationDeadline": "2026-12-01",
+   "startDate": "2026-11-19",
+   "endDate": "2026-11-26",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "in_progress"
+  },
+  {
+   "id": "demo-job-construction-helper",
+   "title": "Construction Helper",
+   "category": "beginner-friendly",
+   "sector": "Construction",
+   "description": "Help masons on a 3-storey house: carrying materials, mixing cement, site cleanup. Lunch provided.",
+   "district": "Lalitpur",
+   "municipality": "Imadol",
+   "location": "Imadol, Lalitpur",
+   "paymentAmount": 1350,
+   "paymentType": "per-day",
+   "paymentMethod": "CASH",
+   "workersRequired": 5,
+   "status": "OPEN",
+   "postedDate": "2026-10-28",
+   "applicationDeadline": "2026-11-28",
+   "startDate": "2026-11-30",
+   "endDate": "2026-12-12",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "active"
+  },
+  {
+   "id": "demo-job-deep-cleaning",
+   "title": "Deep Cleaning",
+   "category": "beginner-friendly",
+   "sector": "Cleaning",
+   "description": "One-day deep clean of a 2-floor house: kitchen, bathrooms, floors and windows.",
+   "district": "Bhaktapur",
+   "municipality": "Suryabinayak",
+   "location": "Suryabinayak, Bhaktapur",
+   "paymentAmount": 3000,
+   "paymentType": "fixed",
+   "paymentMethod": "CASH",
+   "workersRequired": 1,
+   "status": "COMPLETED",
+   "postedDate": "2026-11-08",
+   "applicationDeadline": "2026-11-12",
+   "startDate": "2026-11-14",
+   "endDate": "2026-11-14",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "completed"
+  },
+  {
+   "id": "demo-job-furniture-moving",
+   "title": "Furniture Moving",
+   "category": "beginner-friendly",
+   "sector": "Delivery & Moving",
+   "description": "Shift a 2-bedroom flat from Koteshwor to Kalanki, 3rd floor, no lift. Total fixed amount for the team.",
+   "district": "Kathmandu",
+   "municipality": "Koteshwor",
+   "location": "Koteshwor, Kathmandu",
+   "paymentAmount": 5500,
+   "paymentType": "fixed",
+   "paymentMethod": "CASH",
+   "workersRequired": 3,
+   "status": "OPEN",
+   "postedDate": "2026-11-20",
+   "applicationDeadline": "2026-11-27",
+   "startDate": "2026-11-28",
+   "endDate": "2026-11-28",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "active"
+  },
+  {
+   "id": "demo-job-delivery-assistant",
+   "title": "Delivery Assistant",
+   "category": "beginner-friendly",
+   "sector": "Delivery & Moving",
+   "description": "Parcel delivery assistant for local routes. Own bike preferred; fuel allowance included.",
+   "district": "Lalitpur",
+   "municipality": "Jawalakhel",
+   "location": "Jawalakhel, Lalitpur",
+   "paymentAmount": 220,
+   "paymentType": "per-hour",
+   "paymentMethod": "DIGITAL_WALLET",
+   "workersRequired": 2,
+   "status": "CLOSED",
+   "postedDate": "2026-10-20",
+   "applicationDeadline": "2026-11-05",
+   "startDate": "2026-11-08",
+   "endDate": "2026-12-07",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "closed"
+  },
+  {
+   "id": "demo-job-farm-worker",
+   "title": "Farm Worker",
+   "category": "beginner-friendly",
+   "sector": "Agriculture",
+   "description": "10-day paddy harvest on a family farm near Bharatpur. Tools provided; lunch included.",
+   "district": "Chitwan",
+   "municipality": "Bharatpur",
+   "location": "Bharatpur, Chitwan",
+   "paymentAmount": 1200,
+   "paymentType": "per-day",
+   "paymentMethod": "CASH",
+   "workersRequired": 4,
+   "status": "OPEN",
+   "postedDate": "2026-10-25",
+   "applicationDeadline": "2026-11-27",
+   "startDate": "2026-11-25",
+   "endDate": "2026-12-04",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "active"
+  },
+  {
+   "id": "demo-job-kitchen-helper",
+   "title": "Kitchen Helper",
+   "category": "beginner-friendly",
+   "sector": "Hospitality",
+   "description": "Evening kitchen helper for a Thamel restaurant, 4 PM to 10 PM. Dinner included.",
+   "district": "Kathmandu",
+   "municipality": "Thamel",
+   "location": "Thamel, Kathmandu",
+   "paymentAmount": 800,
+   "paymentType": "per-day",
+   "paymentMethod": "BANK_TRANSFER",
+   "workersRequired": 2,
+   "status": "CLOSED",
+   "postedDate": "2026-10-18",
+   "applicationDeadline": "2026-11-10",
+   "startDate": "2026-11-16",
+   "endDate": null,
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "in_progress"
+  },
+  {
+   "id": "demo-job-plumbing-assistant",
+   "title": "Plumbing Assistant",
+   "category": "skill-based",
+   "sector": "Skilled Trades",
+   "description": "Assist a licensed plumber with pipe fitting and bathroom renovation for 2 days.",
+   "district": "Bhaktapur",
+   "municipality": "Madhyapur Thimi",
+   "location": "Madhyapur Thimi, Bhaktapur",
+   "paymentAmount": 1600,
+   "paymentType": "per-day",
+   "paymentMethod": "CASH",
+   "workersRequired": 1,
+   "status": "COMPLETED",
+   "postedDate": "2026-09-12",
+   "applicationDeadline": "2026-09-17",
+   "startDate": "2026-09-19",
+   "endDate": "2026-09-20",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "completed"
+  },
+  {
+   "id": "demo-job-event-setup",
+   "title": "Event Setup Worker",
+   "category": "beginner-friendly",
+   "sector": "Event Work",
+   "description": "Stage, tent and seating setup for a corporate event. One day, 6 AM to 4 PM.",
+   "district": "Kathmandu",
+   "municipality": "Kamaladi",
+   "location": "Kamaladi, Kathmandu",
+   "paymentAmount": 1200,
+   "paymentType": "fixed",
+   "paymentMethod": "DIGITAL_WALLET",
+   "workersRequired": 5,
+   "status": "COMPLETED",
+   "postedDate": "2026-10-05",
+   "applicationDeadline": "2026-10-14",
+   "startDate": "2026-10-18",
+   "endDate": "2026-10-18",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "completed"
+  },
+  {
+   "id": "demo-job-electrician-assistant",
+   "title": "Electrician Assistant",
+   "category": "skill-based",
+   "sector": "Skilled Trades",
+   "description": "Wiring and fixture installation for a new building. Basic electrical knowledge needed.",
+   "district": "Lalitpur",
+   "municipality": "Pulchowk",
+   "location": "Pulchowk, Lalitpur",
+   "paymentAmount": 1700,
+   "paymentType": "per-day",
+   "paymentMethod": "BANK_TRANSFER",
+   "workersRequired": 2,
+   "status": "OPEN",
+   "postedDate": "2026-10-30",
+   "applicationDeadline": "2026-12-05",
+   "startDate": "2026-12-07",
+   "endDate": "2026-12-20",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "active"
+  },
+  {
+   "id": "demo-job-gardening-landscaping",
+   "title": "Gardening & Landscaping",
+   "category": "beginner-friendly",
+   "sector": "Household Work",
+   "description": "Garden clean-up, lawn trimming and planting for a private residence. (Draft, not yet published.)",
+   "district": "Kathmandu",
+   "municipality": "Budhanilkantha",
+   "location": "Budhanilkantha, Kathmandu",
+   "paymentAmount": 8000,
+   "paymentType": "fixed",
+   "paymentMethod": "CASH",
+   "workersRequired": 2,
+   "status": "DRAFT",
+   "postedDate": "2026-11-21",
+   "applicationDeadline": null,
+   "startDate": null,
+   "endDate": null,
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "draft"
+  },
+  {
+   "id": "demo-job-warehouse-helper",
+   "title": "Warehouse Helper",
+   "category": "beginner-friendly",
+   "sector": "Other",
+   "description": "Loading, unloading and stock arranging at a Bhaktapur warehouse. Fully staffed.",
+   "district": "Bhaktapur",
+   "municipality": "Kamalbinayak",
+   "location": "Kamalbinayak, Bhaktapur",
+   "paymentAmount": 1100,
+   "paymentType": "per-day",
+   "paymentMethod": "BANK_TRANSFER",
+   "workersRequired": 4,
+   "status": "CLOSED",
+   "postedDate": "2026-09-28",
+   "applicationDeadline": "2026-10-08",
+   "startDate": "2026-10-12",
+   "endDate": "2026-12-12",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "in_progress"
+  },
+  {
+   "id": "demo-job-wedding-staff",
+   "title": "Wedding Event Staff",
+   "category": "beginner-friendly",
+   "sector": "Event Work",
+   "description": "Serving, decoration and guest support for a wedding reception. Dinner included.",
+   "district": "Kathmandu",
+   "municipality": "Tinkune",
+   "location": "Tinkune, Kathmandu",
+   "paymentAmount": 1800,
+   "paymentType": "per-day",
+   "paymentMethod": "CASH",
+   "workersRequired": 6,
+   "status": "COMPLETED",
+   "postedDate": "2026-10-20",
+   "applicationDeadline": "2026-11-18",
+   "startDate": "2026-11-22",
+   "endDate": "2026-11-22",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "completed"
+  },
+  {
+   "id": "demo-job-masonry-helper",
+   "title": "Masonry Helper",
+   "category": "skill-based",
+   "sector": "Construction",
+   "description": "Brick and block work on a multi-storey house. Bring your own hand tools.",
+   "district": "Lalitpur",
+   "municipality": "Imadol",
+   "location": "Imadol, Lalitpur",
+   "paymentAmount": 1400,
+   "paymentType": "per-day",
+   "paymentMethod": "CASH",
+   "workersRequired": 2,
+   "status": "OPEN",
+   "postedDate": "2026-11-01",
+   "applicationDeadline": "2026-11-26",
+   "startDate": "2026-11-30",
+   "endDate": "2026-12-14",
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "active"
+  },
+  {
+   "id": "demo-job-housekeeping",
+   "title": "Housekeeping",
+   "category": "beginner-friendly",
+   "sector": "Hospitality",
+   "description": "Housekeeping for a lakeside guesthouse: rooms, laundry and common areas.",
+   "district": "Pokhara",
+   "municipality": "Lakeside",
+   "location": "Lakeside, Pokhara",
+   "paymentAmount": 700,
+   "paymentType": "per-day",
+   "paymentMethod": "CASH",
+   "workersRequired": 1,
+   "status": "OPEN",
+   "postedDate": "2026-10-15",
+   "applicationDeadline": "2026-11-12",
+   "startDate": "2026-12-01",
+   "endDate": null,
+   "providerId": "demo-provider",
+   "isDemo": true,
+   "derivedStatus": "filled"
+  }
+ ],
+ "workers": [
+  {
+   "id": "demo-worker-ram",
+   "name": "Ram Bahadur Thapa",
+   "district": "Kathmandu",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-sita",
+   "name": "Sita Tamang",
+   "district": "Bhaktapur",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-maya",
+   "name": "Maya Gurung",
+   "district": "Kathmandu",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-bishnu",
+   "name": "Bishnu Shrestha",
+   "district": "Bhaktapur",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-anita",
+   "name": "Anita Rai",
+   "district": "Lalitpur",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-kiran",
+   "name": "Kiran Magar",
+   "district": "Bhaktapur",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-sunita",
+   "name": "Sunita Karki",
+   "district": "Lalitpur",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-dipak",
+   "name": "Dipak Chaudhary",
+   "district": "Bhaktapur",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-001",
+   "name": "Mohan Tamang",
+   "district": "Chitwan",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-002",
+   "name": "Sabitri Rai",
+   "district": "Bhaktapur",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-003",
+   "name": "Laxmi Dahal",
+   "district": "Bhaktapur",
+   "rating": 3.8
+  },
+  {
+   "id": "demo-worker-004",
+   "name": "Lila Rai",
+   "district": "Chitwan",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-005",
+   "name": "Lila Khadka",
+   "district": "Pokhara",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-006",
+   "name": "Krishna Dahal",
+   "district": "Chitwan",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-007",
+   "name": "Kamala Gurung",
+   "district": "Pokhara",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-008",
+   "name": "Pasang Magar",
+   "district": "Chitwan",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-009",
+   "name": "Nirmala Bhandari",
+   "district": "Pokhara",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-010",
+   "name": "Sabitri Bhandari",
+   "district": "Chitwan",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-011",
+   "name": "Chandra Magar",
+   "district": "Pokhara",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-012",
+   "name": "Om Karki",
+   "district": "Chitwan",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-013",
+   "name": "Lila Pandey",
+   "district": "Kathmandu",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-014",
+   "name": "Mohan Khadka",
+   "district": "Bhaktapur",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-015",
+   "name": "Pasang Rai",
+   "district": "Bhaktapur",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-016",
+   "name": "Krishna Magar",
+   "district": "Chitwan",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-017",
+   "name": "Usha Rai",
+   "district": "Pokhara",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-018",
+   "name": "Usha Karki",
+   "district": "Bhaktapur",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-019",
+   "name": "Usha Thapa",
+   "district": "Chitwan",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-020",
+   "name": "Krishna Shrestha",
+   "district": "Lalitpur",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-021",
+   "name": "Laxmi Khadka",
+   "district": "Lalitpur",
+   "rating": 4.2
+  },
+  {
+   "id": "demo-worker-022",
+   "name": "Dawa Tamang",
+   "district": "Kathmandu",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-023",
+   "name": "Ashok Limbu",
+   "district": "Chitwan",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-024",
+   "name": "Tashi Maharjan",
+   "district": "Chitwan",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-025",
+   "name": "Ganga Pandey",
+   "district": "Chitwan",
+   "rating": 3.8
+  },
+  {
+   "id": "demo-worker-026",
+   "name": "Usha Gurung",
+   "district": "Chitwan",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-027",
+   "name": "Bimala Magar",
+   "district": "Pokhara",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-028",
+   "name": "Nabin Chaudhary",
+   "district": "Bhaktapur",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-029",
+   "name": "Yamuna Shrestha",
+   "district": "Bhaktapur",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-030",
+   "name": "Krishna Basnet",
+   "district": "Chitwan",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-031",
+   "name": "Pramila Thapa",
+   "district": "Kathmandu",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-032",
+   "name": "Krishna Pandey",
+   "district": "Lalitpur",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-033",
+   "name": "Rajesh Dahal",
+   "district": "Pokhara",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-034",
+   "name": "Sushila Maharjan",
+   "district": "Pokhara",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-035",
+   "name": "Indira Karki",
+   "district": "Kathmandu",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-036",
+   "name": "Nabin Limbu",
+   "district": "Pokhara",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-037",
+   "name": "Ashok Shrestha",
+   "district": "Bhaktapur",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-038",
+   "name": "Tek Lama",
+   "district": "Kathmandu",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-039",
+   "name": "Indira Pandey",
+   "district": "Pokhara",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-040",
+   "name": "Nirmala Neupane",
+   "district": "Pokhara",
+   "rating": 3.8
+  },
+  {
+   "id": "demo-worker-041",
+   "name": "Prem Sherpa",
+   "district": "Chitwan",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-042",
+   "name": "Sabitri Karki",
+   "district": "Chitwan",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-043",
+   "name": "Lila Tamang",
+   "district": "Bhaktapur",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-044",
+   "name": "Krishna Adhikari",
+   "district": "Pokhara",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-045",
+   "name": "Janak Shrestha",
+   "district": "Pokhara",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-046",
+   "name": "Bimala Lama",
+   "district": "Pokhara",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-047",
+   "name": "Krishna Thapa",
+   "district": "Lalitpur",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-048",
+   "name": "Usha Pandey",
+   "district": "Chitwan",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-049",
+   "name": "Bimala Karki",
+   "district": "Pokhara",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-050",
+   "name": "Narayan Rai",
+   "district": "Lalitpur",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-051",
+   "name": "Tek Adhikari",
+   "district": "Pokhara",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-052",
+   "name": "Aarav Thapa",
+   "district": "Chitwan",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-053",
+   "name": "Laxmi Chaudhary",
+   "district": "Bhaktapur",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-054",
+   "name": "Gita Poudel",
+   "district": "Chitwan",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-055",
+   "name": "Yamuna Maharjan",
+   "district": "Lalitpur",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-056",
+   "name": "Tashi Lama",
+   "district": "Kathmandu",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-057",
+   "name": "Tek Magar",
+   "district": "Kathmandu",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-058",
+   "name": "Narayan Basnet",
+   "district": "Pokhara",
+   "rating": 3.8
+  },
+  {
+   "id": "demo-worker-059",
+   "name": "Manoj Khadka",
+   "district": "Kathmandu",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-060",
+   "name": "Tek Basnet",
+   "district": "Kathmandu",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-061",
+   "name": "Vijay Basnet",
+   "district": "Pokhara",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-062",
+   "name": "Aarav Neupane",
+   "district": "Chitwan",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-063",
+   "name": "Tashi Tamang",
+   "district": "Lalitpur",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-064",
+   "name": "Janak Khadka",
+   "district": "Kathmandu",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-065",
+   "name": "Usha Magar",
+   "district": "Pokhara",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-066",
+   "name": "Indira Rai",
+   "district": "Chitwan",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-067",
+   "name": "Janak Pandey",
+   "district": "Pokhara",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-068",
+   "name": "Hari Rai",
+   "district": "Kathmandu",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-069",
+   "name": "Manoj Adhikari",
+   "district": "Chitwan",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-070",
+   "name": "Om Sherpa",
+   "district": "Lalitpur",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-071",
+   "name": "Narayan Chaudhary",
+   "district": "Lalitpur",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-072",
+   "name": "Kamala Lama",
+   "district": "Bhaktapur",
+   "rating": 4.2
+  },
+  {
+   "id": "demo-worker-073",
+   "name": "Mohan Karki",
+   "district": "Lalitpur",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-074",
+   "name": "Rajesh Limbu",
+   "district": "Bhaktapur",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-075",
+   "name": "Bimala Pandey",
+   "district": "Bhaktapur",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-076",
+   "name": "Roshan Pandey",
+   "district": "Pokhara",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-077",
+   "name": "Jamuna Shrestha",
+   "district": "Kathmandu",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-078",
+   "name": "Narayan Neupane",
+   "district": "Chitwan",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-079",
+   "name": "Pasang Adhikari",
+   "district": "Kathmandu",
+   "rating": 3.8
+  },
+  {
+   "id": "demo-worker-080",
+   "name": "Uma Adhikari",
+   "district": "Kathmandu",
+   "rating": 4.7
+  },
+  {
+   "id": "demo-worker-081",
+   "name": "Rupa Poudel",
+   "district": "Kathmandu",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-082",
+   "name": "Indira Magar",
+   "district": "Bhaktapur",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-083",
+   "name": "Manoj Basnet",
+   "district": "Kathmandu",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-084",
+   "name": "Rajesh Magar",
+   "district": "Kathmandu",
+   "rating": 3.8
+  },
+  {
+   "id": "demo-worker-085",
+   "name": "Rajesh Khadka",
+   "district": "Lalitpur",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-086",
+   "name": "Bina Adhikari",
+   "district": "Bhaktapur",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-087",
+   "name": "Ashok Karki",
+   "district": "Kathmandu",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-088",
+   "name": "Gita Karki",
+   "district": "Chitwan",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-089",
+   "name": "Jamuna Basnet",
+   "district": "Lalitpur",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-090",
+   "name": "Sabitri Pandey",
+   "district": "Bhaktapur",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-091",
+   "name": "Tashi Neupane",
+   "district": "Bhaktapur",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-092",
+   "name": "Nabin Karki",
+   "district": "Pokhara",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-093",
+   "name": "Prem Maharjan",
+   "district": "Kathmandu",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-094",
+   "name": "Tashi Magar",
+   "district": "Pokhara",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-095",
+   "name": "Roshan Magar",
+   "district": "Pokhara",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-096",
+   "name": "Jamuna Pandey",
+   "district": "Pokhara",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-097",
+   "name": "Laxmi Magar",
+   "district": "Pokhara",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-098",
+   "name": "Kamala Karki",
+   "district": "Pokhara",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-099",
+   "name": "Nabin Magar",
+   "district": "Chitwan",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-100",
+   "name": "Sabitri Poudel",
+   "district": "Pokhara",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-101",
+   "name": "Ashok Magar",
+   "district": "Pokhara",
+   "rating": 3.8
+  },
+  {
+   "id": "demo-worker-102",
+   "name": "Narayan Karki",
+   "district": "Bhaktapur",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-103",
+   "name": "Manoj Thapa",
+   "district": "Lalitpur",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-104",
+   "name": "Lila Sherpa",
+   "district": "Bhaktapur",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-105",
+   "name": "Prem Bhandari",
+   "district": "Kathmandu",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-106",
+   "name": "Rupa Shrestha",
+   "district": "Kathmandu",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-107",
+   "name": "Uma Basnet",
+   "district": "Bhaktapur",
+   "rating": 4.2
+  },
+  {
+   "id": "demo-worker-108",
+   "name": "Rajesh Thapa",
+   "district": "Bhaktapur",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-109",
+   "name": "Rajesh Adhikari",
+   "district": "Bhaktapur",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-110",
+   "name": "Usha Khadka",
+   "district": "Pokhara",
+   "rating": 4.8
+  },
+  {
+   "id": "demo-worker-111",
+   "name": "Hari Dahal",
+   "district": "Kathmandu",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-112",
+   "name": "Himal Dahal",
+   "district": "Chitwan",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-113",
+   "name": "Bimala Limbu",
+   "district": "Chitwan",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-114",
+   "name": "Chandra Rai",
+   "district": "Pokhara",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-115",
+   "name": "Bina Magar",
+   "district": "Bhaktapur",
+   "rating": 4.9
+  },
+  {
+   "id": "demo-worker-116",
+   "name": "Nirmala Thapa",
+   "district": "Chitwan",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-117",
+   "name": "Om Limbu",
+   "district": "Pokhara",
+   "rating": 4.3
+  },
+  {
+   "id": "demo-worker-118",
+   "name": "Roshan Maharjan",
+   "district": "Chitwan",
+   "rating": 4.6
+  },
+  {
+   "id": "demo-worker-119",
+   "name": "Vijay Thapa",
+   "district": "Pokhara",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-120",
+   "name": "Narayan Tamang",
+   "district": "Bhaktapur",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-121",
+   "name": "Sushila Poudel",
+   "district": "Lalitpur",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-122",
+   "name": "Janak Limbu",
+   "district": "Chitwan",
+   "rating": 4.2
+  },
+  {
+   "id": "demo-worker-123",
+   "name": "Tek Shrestha",
+   "district": "Pokhara",
+   "rating": 4.1
+  },
+  {
+   "id": "demo-worker-124",
+   "name": "Chandra Maharjan",
+   "district": "Pokhara",
+   "rating": 3.9
+  },
+  {
+   "id": "demo-worker-125",
+   "name": "Dawa Sherpa",
+   "district": "Pokhara",
+   "rating": 4.5
+  },
+  {
+   "id": "demo-worker-126",
+   "name": "Ganga Karki",
+   "district": "Lalitpur",
+   "rating": 3.8
+  },
+  {
+   "id": "demo-worker-127",
+   "name": "Tek Rai",
+   "district": "Pokhara",
+   "rating": 4.0
+  },
+  {
+   "id": "demo-worker-128",
+   "name": "Sarita Bhandari",
+   "district": "Kathmandu",
+   "rating": 4.4
+  },
+  {
+   "id": "demo-worker-129",
+   "name": "Hari Thapa",
+   "district": "Kathmandu",
+   "rating": 3.8
+  }
+ ],
+ "applications": [
+  {
+   "id": "demo-app-painting-ram",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-ram",
+   "workerName": "Ram Bahadur Thapa",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-10-27T08:07:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-02",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-001",
+   "workerName": "Mohan Tamang",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-04T11:22:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-03",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-002",
+   "workerName": "Sabitri Rai",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-13T11:29:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-04",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-003",
+   "workerName": "Laxmi Dahal",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-17T12:29:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-05",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-004",
+   "workerName": "Lila Rai",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-13T20:07:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-06",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-005",
+   "workerName": "Lila Khadka",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-09T15:16:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-07",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-006",
+   "workerName": "Krishna Dahal",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-19T16:14:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-08",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-007",
+   "workerName": "Kamala Gurung",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-31T16:27:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-09",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-008",
+   "workerName": "Pasang Magar",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-20T08:40:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-10",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-009",
+   "workerName": "Nirmala Bhandari",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-09T11:35:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-11",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-010",
+   "workerName": "Sabitri Bhandari",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-06T11:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-12",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-011",
+   "workerName": "Chandra Magar",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-11-19T14:23:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-13",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-012",
+   "workerName": "Om Karki",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-18T14:51:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-14",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-013",
+   "workerName": "Lila Pandey",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-07T19:06:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-15",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-014",
+   "workerName": "Mohan Khadka",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-23T13:53:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-16",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-015",
+   "workerName": "Pasang Rai",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-08T10:47:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-17",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-016",
+   "workerName": "Krishna Magar",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-10-31T14:37:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-house-painting-18",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-017",
+   "workerName": "Usha Rai",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-05T16:02:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-01",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-018",
+   "workerName": "Usha Karki",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-07T16:36:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-02",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-019",
+   "workerName": "Usha Thapa",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-22T15:12:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-03",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-020",
+   "workerName": "Krishna Shrestha",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-22T11:32:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-04",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-021",
+   "workerName": "Laxmi Khadka",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-22T17:41:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-bishnu",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-bishnu",
+   "workerName": "Bishnu Shrestha",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-10-30T12:41:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-06",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-022",
+   "workerName": "Dawa Tamang",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-08T11:28:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-07",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-023",
+   "workerName": "Ashok Limbu",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-14T19:10:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-08",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-024",
+   "workerName": "Tashi Maharjan",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-11T10:43:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-09",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-025",
+   "workerName": "Ganga Pandey",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-16T09:02:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-10",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-026",
+   "workerName": "Usha Gurung",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-15T14:45:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-11",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-027",
+   "workerName": "Bimala Magar",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-11-21T09:10:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-12",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-028",
+   "workerName": "Nabin Chaudhary",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-10T08:24:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-13",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-029",
+   "workerName": "Yamuna Shrestha",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-11T19:52:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-construction-helper-14",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-030",
+   "workerName": "Krishna Basnet",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-12T14:07:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-cleaning-maya",
+   "jobId": "demo-job-deep-cleaning",
+   "workerId": "demo-worker-maya",
+   "workerName": "Maya Gurung",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-11-10T15:50:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-deep-cleaning-02",
+   "jobId": "demo-job-deep-cleaning",
+   "workerId": "demo-worker-031",
+   "workerName": "Pramila Thapa",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-11T17:21:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-deep-cleaning-03",
+   "jobId": "demo-job-deep-cleaning",
+   "workerId": "demo-worker-032",
+   "workerName": "Krishna Pandey",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-09T09:22:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-deep-cleaning-04",
+   "jobId": "demo-job-deep-cleaning",
+   "workerId": "demo-worker-033",
+   "workerName": "Rajesh Dahal",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-10T11:35:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-deep-cleaning-05",
+   "jobId": "demo-job-deep-cleaning",
+   "workerId": "demo-worker-034",
+   "workerName": "Sushila Maharjan",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-09T15:08:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-deep-cleaning-06",
+   "jobId": "demo-job-deep-cleaning",
+   "workerId": "demo-worker-035",
+   "workerName": "Indira Karki",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-08T17:03:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-moving-kiran",
+   "jobId": "demo-job-furniture-moving",
+   "workerId": "demo-worker-kiran",
+   "workerName": "Kiran Magar",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-23T18:51:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-furniture-moving-02",
+   "jobId": "demo-job-furniture-moving",
+   "workerId": "demo-worker-036",
+   "workerName": "Nabin Limbu",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-22T08:18:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-furniture-moving-03",
+   "jobId": "demo-job-furniture-moving",
+   "workerId": "demo-worker-037",
+   "workerName": "Ashok Shrestha",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-20T20:57:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-furniture-moving-04",
+   "jobId": "demo-job-furniture-moving",
+   "workerId": "demo-worker-038",
+   "workerName": "Tek Lama",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-21T11:07:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-furniture-moving-05",
+   "jobId": "demo-job-furniture-moving",
+   "workerId": "demo-worker-039",
+   "workerName": "Indira Pandey",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-23T12:49:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-delivery-assistant-01",
+   "jobId": "demo-job-delivery-assistant",
+   "workerId": "demo-worker-040",
+   "workerName": "Nirmala Neupane",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-27T16:13:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-delivery-assistant-02",
+   "jobId": "demo-job-delivery-assistant",
+   "workerId": "demo-worker-041",
+   "workerName": "Prem Sherpa",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-03T17:23:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-delivery-assistant-03",
+   "jobId": "demo-job-delivery-assistant",
+   "workerId": "demo-worker-042",
+   "workerName": "Sabitri Karki",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-11-02T07:47:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-01",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-043",
+   "workerName": "Lila Tamang",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-05T19:51:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-02",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-044",
+   "workerName": "Krishna Adhikari",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-12T12:12:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-03",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-045",
+   "workerName": "Janak Shrestha",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-10-27T15:22:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-dipak",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-dipak",
+   "workerName": "Dipak Chaudhary",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-15T17:19:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-05",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-046",
+   "workerName": "Bimala Lama",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-08T13:15:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-06",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-047",
+   "workerName": "Krishna Thapa",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-10-26T18:59:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-07",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-048",
+   "workerName": "Usha Pandey",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-18T10:01:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-08",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-049",
+   "workerName": "Bimala Karki",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-04T12:08:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-09",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-050",
+   "workerName": "Narayan Rai",
+   "status": "declined",
+   "shortlisted": false,
+   "appliedAt": "2026-11-15T20:32:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-10",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-051",
+   "workerName": "Tek Adhikari",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-05T17:53:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-farm-worker-11",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-052",
+   "workerName": "Aarav Thapa",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-02T15:55:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-01",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-053",
+   "workerName": "Laxmi Chaudhary",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-10-25T20:17:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-02",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-054",
+   "workerName": "Gita Poudel",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-01T14:57:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-03",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-055",
+   "workerName": "Yamuna Maharjan",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-10-23T07:22:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-04",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-056",
+   "workerName": "Tashi Lama",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-21T12:34:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-05",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-057",
+   "workerName": "Tek Magar",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-18T10:54:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-06",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-058",
+   "workerName": "Narayan Basnet",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-28T15:33:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-07",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-059",
+   "workerName": "Manoj Khadka",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-04T12:35:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-08",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-060",
+   "workerName": "Tek Basnet",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-11-03T10:10:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-kitchen-helper-09",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-061",
+   "workerName": "Vijay Basnet",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-10-22T13:12:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-plumbing-assistant-01",
+   "jobId": "demo-job-plumbing-assistant",
+   "workerId": "demo-worker-062",
+   "workerName": "Aarav Neupane",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-09-14T19:57:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-plumbing-assistant-02",
+   "jobId": "demo-job-plumbing-assistant",
+   "workerId": "demo-worker-063",
+   "workerName": "Tashi Tamang",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-09-13T07:56:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-plumbing-assistant-03",
+   "jobId": "demo-job-plumbing-assistant",
+   "workerId": "demo-worker-064",
+   "workerName": "Janak Khadka",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-09-12T11:13:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-plumbing-assistant-04",
+   "jobId": "demo-job-plumbing-assistant",
+   "workerId": "demo-worker-065",
+   "workerName": "Usha Magar",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-09-12T12:31:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-event-setup-01",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-066",
+   "workerName": "Indira Rai",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-10-08T08:22:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-event-setup-02",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-067",
+   "workerName": "Janak Pandey",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-10-08T20:29:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-event-setup-03",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-068",
+   "workerName": "Hari Rai",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-10-12T11:48:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-event-setup-04",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-069",
+   "workerName": "Manoj Adhikari",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-10-08T18:42:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-event-setup-05",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-070",
+   "workerName": "Om Sherpa",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-10-13T19:50:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-event-setup-06",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-071",
+   "workerName": "Narayan Chaudhary",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-12T17:47:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-event-setup-07",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-072",
+   "workerName": "Kamala Lama",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-06T11:53:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-event-setup-08",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-073",
+   "workerName": "Mohan Karki",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-10-08T12:09:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-01",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-074",
+   "workerName": "Rajesh Limbu",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-12T13:25:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-02",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-075",
+   "workerName": "Bimala Pandey",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-09T17:49:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-03",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-076",
+   "workerName": "Roshan Pandey",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-09T12:03:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-04",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-077",
+   "workerName": "Jamuna Shrestha",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-17T09:21:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-05",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-078",
+   "workerName": "Narayan Neupane",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-19T20:56:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-06",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-079",
+   "workerName": "Pasang Adhikari",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-06T08:42:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-07",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-080",
+   "workerName": "Uma Adhikari",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-19T15:17:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-08",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-081",
+   "workerName": "Rupa Poudel",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-05T19:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-09",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-082",
+   "workerName": "Indira Magar",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-22T10:38:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-10",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-083",
+   "workerName": "Manoj Basnet",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-18T17:37:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-11",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-084",
+   "workerName": "Rajesh Magar",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-11-22T07:11:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-12",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-085",
+   "workerName": "Rajesh Khadka",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-11-22T17:42:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-13",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-086",
+   "workerName": "Bina Adhikari",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-12T14:56:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-14",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-087",
+   "workerName": "Ashok Karki",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-03T14:51:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-15",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-088",
+   "workerName": "Gita Karki",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-07T20:46:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-16",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-089",
+   "workerName": "Jamuna Basnet",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-20T20:04:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-17",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-090",
+   "workerName": "Sabitri Pandey",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-15T20:32:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-18",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-091",
+   "workerName": "Tashi Neupane",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-16T12:11:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-19",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-092",
+   "workerName": "Nabin Karki",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-10T08:59:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-20",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-093",
+   "workerName": "Prem Maharjan",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-06T15:54:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-21",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-094",
+   "workerName": "Tashi Magar",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-21T19:55:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-electrician-assistant-22",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-095",
+   "workerName": "Roshan Magar",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-21T12:41:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-warehouse-helper-01",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-096",
+   "workerName": "Jamuna Pandey",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-09-30T16:35:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-warehouse-helper-02",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-097",
+   "workerName": "Laxmi Magar",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-10-05T07:17:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-warehouse-helper-03",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-098",
+   "workerName": "Kamala Karki",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-09-29T09:11:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-warehouse-helper-04",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-099",
+   "workerName": "Nabin Magar",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-10-03T15:01:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-warehouse-helper-05",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-100",
+   "workerName": "Sabitri Poudel",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-05T13:09:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-warehouse-helper-06",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-101",
+   "workerName": "Ashok Magar",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-09-28T08:22:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-warehouse-helper-07",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-102",
+   "workerName": "Narayan Karki",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-09-30T10:55:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-anita",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-anita",
+   "workerName": "Anita Rai",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-11-13T13:42:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-02",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-103",
+   "workerName": "Manoj Thapa",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-11-05T12:10:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-03",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-104",
+   "workerName": "Lila Sherpa",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-11-17T17:47:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-04",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-105",
+   "workerName": "Prem Bhandari",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-10-28T10:07:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-05",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-106",
+   "workerName": "Rupa Shrestha",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-11-09T10:57:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-06",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-107",
+   "workerName": "Uma Basnet",
+   "status": "completed",
+   "shortlisted": true,
+   "appliedAt": "2026-11-05T14:56:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-07",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-108",
+   "workerName": "Rajesh Thapa",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-08T16:03:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-08",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-109",
+   "workerName": "Rajesh Adhikari",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-23T14:22:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-09",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-110",
+   "workerName": "Usha Khadka",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-13T11:02:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-10",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-111",
+   "workerName": "Hari Dahal",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-16T16:06:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-11",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-112",
+   "workerName": "Himal Dahal",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-06T09:57:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-12",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-113",
+   "workerName": "Bimala Limbu",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-06T11:01:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-13",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-114",
+   "workerName": "Chandra Rai",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-11-11T20:57:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-14",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-115",
+   "workerName": "Bina Magar",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-10-29T18:57:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-wedding-staff-15",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-116",
+   "workerName": "Nirmala Thapa",
+   "status": "declined",
+   "shortlisted": false,
+   "appliedAt": "2026-11-14T12:26:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-sita",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-sita",
+   "workerName": "Sita Tamang",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-11-02T10:38:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-helper-02",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-117",
+   "workerName": "Om Limbu",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-11T15:01:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-helper-03",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-118",
+   "workerName": "Roshan Maharjan",
+   "status": "pending",
+   "shortlisted": true,
+   "appliedAt": "2026-11-14T19:08:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-helper-04",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-119",
+   "workerName": "Vijay Thapa",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-19T20:47:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-helper-05",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-120",
+   "workerName": "Narayan Tamang",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-14T15:07:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-helper-06",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-121",
+   "workerName": "Sushila Poudel",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-15T14:25:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-helper-07",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-122",
+   "workerName": "Janak Limbu",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-01T10:03:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-helper-08",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-123",
+   "workerName": "Tek Shrestha",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-11T11:10:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-masonry-helper-09",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-124",
+   "workerName": "Chandra Maharjan",
+   "status": "pending",
+   "shortlisted": false,
+   "appliedAt": "2026-11-13T17:02:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-housekeeping-01",
+   "jobId": "demo-job-housekeeping",
+   "workerId": "demo-worker-125",
+   "workerName": "Dawa Sherpa",
+   "status": "accepted",
+   "shortlisted": true,
+   "appliedAt": "2026-10-16T20:12:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-housekeeping-sunita",
+   "jobId": "demo-job-housekeeping",
+   "workerId": "demo-worker-sunita",
+   "workerName": "Sunita Karki",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-17T08:10:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-housekeeping-03",
+   "jobId": "demo-job-housekeeping",
+   "workerId": "demo-worker-126",
+   "workerName": "Ganga Karki",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-03T07:30:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-housekeeping-04",
+   "jobId": "demo-job-housekeeping",
+   "workerId": "demo-worker-127",
+   "workerName": "Tek Rai",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-11-03T16:34:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-housekeeping-05",
+   "jobId": "demo-job-housekeeping",
+   "workerId": "demo-worker-128",
+   "workerName": "Sarita Bhandari",
+   "status": "rejected",
+   "shortlisted": false,
+   "appliedAt": "2026-10-23T13:29:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-app-housekeeping-06",
+   "jobId": "demo-job-housekeeping",
+   "workerId": "demo-worker-129",
+   "workerName": "Hari Thapa",
+   "status": "withdrawn",
+   "shortlisted": false,
+   "appliedAt": "2026-10-28T08:28:00.000Z",
+   "isDemo": true
+  }
+ ],
+ "engagements": [
+  {
+   "id": "demo-eng-001",
+   "applicationId": "demo-app-painting-ram",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-ram",
+   "status": "IN_PROGRESS",
+   "selectedAt": "2026-10-28T13:07:00.000Z",
+   "respondedAt": "2026-10-28T23:07:00.000Z",
+   "startedAt": "2026-11-19T08:00:00.000Z",
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-002",
+   "applicationId": "demo-app-house-painting-02",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-001",
+   "status": "IN_PROGRESS",
+   "selectedAt": "2026-11-05T00:22:00.000Z",
+   "respondedAt": "2026-11-05T03:22:00.000Z",
+   "startedAt": "2026-11-19T08:00:00.000Z",
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-003",
+   "applicationId": "demo-app-construction-helper-01",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-018",
+   "status": "CONFIRMED",
+   "selectedAt": "2026-11-08T07:36:00.000Z",
+   "respondedAt": "2026-11-08T10:36:00.000Z",
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-004",
+   "applicationId": "demo-app-construction-helper-02",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-019",
+   "status": "CONFIRMED",
+   "selectedAt": "2026-11-23T15:12:00.000Z",
+   "respondedAt": "2026-11-23T21:12:00.000Z",
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-005",
+   "applicationId": "demo-app-construction-helper-03",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-020",
+   "status": "CONFIRMED",
+   "selectedAt": "2026-11-23T07:32:00.000Z",
+   "respondedAt": "2026-11-23T12:32:00.000Z",
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-006",
+   "applicationId": "demo-app-construction-helper-04",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-021",
+   "status": "AWAITING_RESPONSE",
+   "selectedAt": "2026-11-23T06:41:00.000Z",
+   "respondedAt": null,
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-007",
+   "applicationId": "demo-app-cleaning-maya",
+   "jobId": "demo-job-deep-cleaning",
+   "workerId": "demo-worker-maya",
+   "status": "COMPLETED",
+   "selectedAt": "2026-11-11T13:50:00.000Z",
+   "respondedAt": "2026-11-11T15:50:00.000Z",
+   "startedAt": "2026-11-14T08:00:00.000Z",
+   "completedAt": "2026-11-14T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-008",
+   "applicationId": "demo-app-farm-worker-01",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-043",
+   "status": "CONFIRMED",
+   "selectedAt": "2026-11-06T03:51:00.000Z",
+   "respondedAt": "2026-11-06T09:51:00.000Z",
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-009",
+   "applicationId": "demo-app-farm-worker-02",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-044",
+   "status": "CONFIRMED",
+   "selectedAt": "2026-11-12T22:12:00.000Z",
+   "respondedAt": "2026-11-13T01:12:00.000Z",
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-010",
+   "applicationId": "demo-app-farm-worker-03",
+   "jobId": "demo-job-farm-worker",
+   "workerId": "demo-worker-045",
+   "status": "AWAITING_RESPONSE",
+   "selectedAt": "2026-10-28T17:22:00.000Z",
+   "respondedAt": null,
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-011",
+   "applicationId": "demo-app-kitchen-helper-01",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-053",
+   "status": "IN_PROGRESS",
+   "selectedAt": "2026-10-26T20:17:00.000Z",
+   "respondedAt": "2026-10-27T00:17:00.000Z",
+   "startedAt": "2026-11-16T08:00:00.000Z",
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-012",
+   "applicationId": "demo-app-kitchen-helper-02",
+   "jobId": "demo-job-kitchen-helper",
+   "workerId": "demo-worker-054",
+   "status": "IN_PROGRESS",
+   "selectedAt": "2026-11-02T13:57:00.000Z",
+   "respondedAt": "2026-11-02T16:57:00.000Z",
+   "startedAt": "2026-11-16T08:00:00.000Z",
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-013",
+   "applicationId": "demo-app-plumbing-assistant-01",
+   "jobId": "demo-job-plumbing-assistant",
+   "workerId": "demo-worker-062",
+   "status": "COMPLETED",
+   "selectedAt": "2026-09-16T00:57:00.000Z",
+   "respondedAt": "2026-09-16T06:57:00.000Z",
+   "startedAt": "2026-09-19T08:00:00.000Z",
+   "completedAt": "2026-09-20T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-014",
+   "applicationId": "demo-app-event-setup-01",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-066",
+   "status": "COMPLETED",
+   "selectedAt": "2026-10-08T21:22:00.000Z",
+   "respondedAt": "2026-10-09T05:22:00.000Z",
+   "startedAt": "2026-10-18T08:00:00.000Z",
+   "completedAt": "2026-10-18T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-015",
+   "applicationId": "demo-app-event-setup-02",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-067",
+   "status": "COMPLETED",
+   "selectedAt": "2026-10-09T21:29:00.000Z",
+   "respondedAt": "2026-10-09T23:29:00.000Z",
+   "startedAt": "2026-10-18T08:00:00.000Z",
+   "completedAt": "2026-10-18T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-016",
+   "applicationId": "demo-app-event-setup-03",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-068",
+   "status": "COMPLETED",
+   "selectedAt": "2026-10-12T23:48:00.000Z",
+   "respondedAt": "2026-10-13T00:48:00.000Z",
+   "startedAt": "2026-10-18T08:00:00.000Z",
+   "completedAt": "2026-10-18T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-017",
+   "applicationId": "demo-app-event-setup-04",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-069",
+   "status": "COMPLETED",
+   "selectedAt": "2026-10-09T14:42:00.000Z",
+   "respondedAt": "2026-10-09T16:42:00.000Z",
+   "startedAt": "2026-10-18T08:00:00.000Z",
+   "completedAt": "2026-10-18T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-018",
+   "applicationId": "demo-app-event-setup-05",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-070",
+   "status": "COMPLETED",
+   "selectedAt": "2026-10-15T01:50:00.000Z",
+   "respondedAt": "2026-10-15T09:50:00.000Z",
+   "startedAt": "2026-10-18T08:00:00.000Z",
+   "completedAt": "2026-10-18T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-019",
+   "applicationId": "demo-app-warehouse-helper-01",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-096",
+   "status": "IN_PROGRESS",
+   "selectedAt": "2026-10-01T20:35:00.000Z",
+   "respondedAt": "2026-10-02T03:35:00.000Z",
+   "startedAt": "2026-10-12T08:00:00.000Z",
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-020",
+   "applicationId": "demo-app-warehouse-helper-02",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-097",
+   "status": "IN_PROGRESS",
+   "selectedAt": "2026-10-06T12:17:00.000Z",
+   "respondedAt": "2026-10-06T22:17:00.000Z",
+   "startedAt": "2026-10-12T08:00:00.000Z",
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-021",
+   "applicationId": "demo-app-warehouse-helper-03",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-098",
+   "status": "IN_PROGRESS",
+   "selectedAt": "2026-09-30T03:11:00.000Z",
+   "respondedAt": "2026-09-30T12:11:00.000Z",
+   "startedAt": "2026-10-12T08:00:00.000Z",
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-022",
+   "applicationId": "demo-app-warehouse-helper-04",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-099",
+   "status": "IN_PROGRESS",
+   "selectedAt": "2026-10-04T10:01:00.000Z",
+   "respondedAt": "2026-10-04T12:01:00.000Z",
+   "startedAt": "2026-10-12T08:00:00.000Z",
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-023",
+   "applicationId": "demo-app-wedding-anita",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-anita",
+   "status": "COMPLETED",
+   "selectedAt": "2026-11-14T18:42:00.000Z",
+   "respondedAt": "2026-11-15T04:42:00.000Z",
+   "startedAt": "2026-11-22T08:00:00.000Z",
+   "completedAt": "2026-11-22T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-024",
+   "applicationId": "demo-app-wedding-staff-02",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-103",
+   "status": "COMPLETED",
+   "selectedAt": "2026-11-05T20:10:00.000Z",
+   "respondedAt": "2026-11-06T01:10:00.000Z",
+   "startedAt": "2026-11-22T08:00:00.000Z",
+   "completedAt": "2026-11-22T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-025",
+   "applicationId": "demo-app-wedding-staff-03",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-104",
+   "status": "COMPLETED",
+   "selectedAt": "2026-11-18T08:47:00.000Z",
+   "respondedAt": "2026-11-18T10:47:00.000Z",
+   "startedAt": "2026-11-22T08:00:00.000Z",
+   "completedAt": "2026-11-22T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-026",
+   "applicationId": "demo-app-wedding-staff-04",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-105",
+   "status": "COMPLETED",
+   "selectedAt": "2026-10-29T06:07:00.000Z",
+   "respondedAt": "2026-10-29T10:07:00.000Z",
+   "startedAt": "2026-11-22T08:00:00.000Z",
+   "completedAt": "2026-11-22T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-027",
+   "applicationId": "demo-app-wedding-staff-05",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-106",
+   "status": "COMPLETED",
+   "selectedAt": "2026-11-10T03:57:00.000Z",
+   "respondedAt": "2026-11-10T13:57:00.000Z",
+   "startedAt": "2026-11-22T08:00:00.000Z",
+   "completedAt": "2026-11-22T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-028",
+   "applicationId": "demo-app-wedding-staff-06",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-107",
+   "status": "COMPLETED",
+   "selectedAt": "2026-11-06T19:56:00.000Z",
+   "respondedAt": "2026-11-07T05:56:00.000Z",
+   "startedAt": "2026-11-22T08:00:00.000Z",
+   "completedAt": "2026-11-22T17:00:00.000Z",
+   "providerCompletionConfirmed": true,
+   "seekerCompletionConfirmed": true,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-029",
+   "applicationId": "demo-app-masonry-sita",
+   "jobId": "demo-job-masonry-helper",
+   "workerId": "demo-worker-sita",
+   "status": "CONFIRMED",
+   "selectedAt": "2026-11-03T15:38:00.000Z",
+   "respondedAt": "2026-11-04T01:38:00.000Z",
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  },
+  {
+   "id": "demo-eng-030",
+   "applicationId": "demo-app-housekeeping-01",
+   "jobId": "demo-job-housekeeping",
+   "workerId": "demo-worker-125",
+   "status": "CONFIRMED",
+   "selectedAt": "2026-10-17T09:12:00.000Z",
+   "respondedAt": "2026-10-17T14:12:00.000Z",
+   "startedAt": null,
+   "completedAt": null,
+   "providerCompletionConfirmed": false,
+   "seekerCompletionConfirmed": false,
+   "isDemo": true
+  }
+ ],
+ "payments": [
+  {
+   "id": "demo-pay-001",
+   "jobId": "demo-job-deep-cleaning",
+   "applicationId": "demo-app-cleaning-maya",
+   "workerId": "demo-worker-maya",
+   "amount": 3000,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-14T16:00:00.000Z",
+   "note": "Fixed fee for deep cleaning",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-002",
+   "jobId": "demo-job-plumbing-assistant",
+   "applicationId": "demo-app-plumbing-assistant-01",
+   "workerId": "demo-worker-062",
+   "amount": 3200,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-09-20T16:00:00.000Z",
+   "note": "2 days at NPR 1,600",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-003",
+   "jobId": "demo-job-event-setup",
+   "applicationId": "demo-app-event-setup-01",
+   "workerId": "demo-worker-066",
+   "amount": 1200,
+   "currency": "NPR",
+   "method": "DIGITAL_WALLET",
+   "status": "RECORDED",
+   "paidAt": "2026-10-18T16:00:00.000Z",
+   "note": "Event day wage",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-004",
+   "jobId": "demo-job-event-setup",
+   "applicationId": "demo-app-event-setup-02",
+   "workerId": "demo-worker-067",
+   "amount": 1200,
+   "currency": "NPR",
+   "method": "DIGITAL_WALLET",
+   "status": "RECORDED",
+   "paidAt": "2026-10-18T16:00:00.000Z",
+   "note": "Event day wage",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-005",
+   "jobId": "demo-job-event-setup",
+   "applicationId": "demo-app-event-setup-03",
+   "workerId": "demo-worker-068",
+   "amount": 1200,
+   "currency": "NPR",
+   "method": "DIGITAL_WALLET",
+   "status": "RECORDED",
+   "paidAt": "2026-10-18T16:00:00.000Z",
+   "note": "Event day wage",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-006",
+   "jobId": "demo-job-event-setup",
+   "applicationId": "demo-app-event-setup-04",
+   "workerId": "demo-worker-069",
+   "amount": 1200,
+   "currency": "NPR",
+   "method": "DIGITAL_WALLET",
+   "status": "RECORDED",
+   "paidAt": "2026-10-18T16:00:00.000Z",
+   "note": "Event day wage",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-007",
+   "jobId": "demo-job-event-setup",
+   "applicationId": "demo-app-event-setup-05",
+   "workerId": "demo-worker-070",
+   "amount": 1200,
+   "currency": "NPR",
+   "method": "DIGITAL_WALLET",
+   "status": "RECORDED",
+   "paidAt": "2026-10-18T16:00:00.000Z",
+   "note": "Event day wage",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-008",
+   "jobId": "demo-job-wedding-staff",
+   "applicationId": "demo-app-wedding-anita",
+   "workerId": "demo-worker-anita",
+   "amount": 1800,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Wedding day wage + dinner",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-009",
+   "jobId": "demo-job-wedding-staff",
+   "applicationId": "demo-app-wedding-staff-02",
+   "workerId": "demo-worker-103",
+   "amount": 1800,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Wedding day wage + dinner",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-010",
+   "jobId": "demo-job-wedding-staff",
+   "applicationId": "demo-app-wedding-staff-03",
+   "workerId": "demo-worker-104",
+   "amount": 1800,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Wedding day wage + dinner",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-011",
+   "jobId": "demo-job-wedding-staff",
+   "applicationId": "demo-app-wedding-staff-04",
+   "workerId": "demo-worker-105",
+   "amount": 1800,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Wedding day wage + dinner",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-012",
+   "jobId": "demo-job-wedding-staff",
+   "applicationId": "demo-app-wedding-staff-05",
+   "workerId": "demo-worker-106",
+   "amount": 1800,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Wedding day wage + dinner",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-013",
+   "jobId": "demo-job-wedding-staff",
+   "applicationId": "demo-app-wedding-staff-06",
+   "workerId": "demo-worker-107",
+   "amount": 1800,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Wedding day wage + dinner",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-014",
+   "jobId": "demo-job-house-painting",
+   "applicationId": "demo-app-painting-ram",
+   "workerId": "demo-worker-ram",
+   "amount": 4500,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-22T16:00:00.000Z",
+   "note": "Payment for first days of painting",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-015",
+   "jobId": "demo-job-house-painting",
+   "applicationId": "demo-app-house-painting-02",
+   "workerId": "demo-worker-001",
+   "amount": 3000,
+   "currency": "NPR",
+   "method": "CASH",
+   "status": "RECORDED",
+   "paidAt": "2026-11-22T16:00:00.000Z",
+   "note": "Payment for first days of painting",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-016",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-01",
+   "workerId": "demo-worker-096",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-10-26T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-017",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-02",
+   "workerId": "demo-worker-097",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-10-26T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-018",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-03",
+   "workerId": "demo-worker-098",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-10-26T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-019",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-04",
+   "workerId": "demo-worker-099",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-10-26T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-020",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-01",
+   "workerId": "demo-worker-096",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-09T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-021",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-02",
+   "workerId": "demo-worker-097",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-09T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-022",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-03",
+   "workerId": "demo-worker-098",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-09T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-023",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-04",
+   "workerId": "demo-worker-099",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-09T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-024",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-01",
+   "workerId": "demo-worker-096",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-025",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-02",
+   "workerId": "demo-worker-097",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-026",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-03",
+   "workerId": "demo-worker-098",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-027",
+   "jobId": "demo-job-warehouse-helper",
+   "applicationId": "demo-app-warehouse-helper-04",
+   "workerId": "demo-worker-099",
+   "amount": 3300,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-23T16:00:00.000Z",
+   "note": "Weekly wage (3 days at NPR 1,100)",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-028",
+   "jobId": "demo-job-kitchen-helper",
+   "applicationId": "demo-app-kitchen-helper-01",
+   "workerId": "demo-worker-053",
+   "amount": 5000,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-20T16:00:00.000Z",
+   "note": "Advance against monthly wage",
+   "isDemo": true
+  },
+  {
+   "id": "demo-pay-029",
+   "jobId": "demo-job-kitchen-helper",
+   "applicationId": "demo-app-kitchen-helper-02",
+   "workerId": "demo-worker-054",
+   "amount": 5000,
+   "currency": "NPR",
+   "method": "BANK_TRANSFER",
+   "status": "RECORDED",
+   "paidAt": "2026-11-20T16:00:00.000Z",
+   "note": "Advance against monthly wage",
+   "isDemo": true
+  }
+ ],
+ "schedule": [
+  {
+   "id": "demo-sch-001",
+   "jobId": "demo-job-house-painting",
+   "date": "2026-11-24",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Baneshwor, Kathmandu",
+   "workerIds": [
+    "demo-worker-ram",
+    "demo-worker-001"
+   ],
+   "status": "IN_PROGRESS",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-002",
+   "jobId": "demo-job-house-painting",
+   "date": "2026-11-25",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Baneshwor, Kathmandu",
+   "workerIds": [
+    "demo-worker-ram",
+    "demo-worker-001"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-003",
+   "jobId": "demo-job-house-painting",
+   "date": "2026-11-26",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Baneshwor, Kathmandu",
+   "workerIds": [
+    "demo-worker-ram",
+    "demo-worker-001"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-004",
+   "jobId": "demo-job-construction-helper",
+   "date": "2026-11-30",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-018",
+    "demo-worker-019",
+    "demo-worker-020"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-005",
+   "jobId": "demo-job-construction-helper",
+   "date": "2026-12-01",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-018",
+    "demo-worker-019",
+    "demo-worker-020"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-006",
+   "jobId": "demo-job-construction-helper",
+   "date": "2026-12-02",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-018",
+    "demo-worker-019",
+    "demo-worker-020"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-007",
+   "jobId": "demo-job-construction-helper",
+   "date": "2026-12-03",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-018",
+    "demo-worker-019",
+    "demo-worker-020"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-008",
+   "jobId": "demo-job-construction-helper",
+   "date": "2026-12-04",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-018",
+    "demo-worker-019",
+    "demo-worker-020"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-009",
+   "jobId": "demo-job-construction-helper",
+   "date": "2026-12-06",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-018",
+    "demo-worker-019",
+    "demo-worker-020"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-010",
+   "jobId": "demo-job-construction-helper",
+   "date": "2026-12-07",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-018",
+    "demo-worker-019",
+    "demo-worker-020"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-011",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-11-25",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-012",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-11-26",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-013",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-11-27",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-014",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-11-29",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-015",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-11-30",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-016",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-12-01",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-017",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-12-02",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-018",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-12-03",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-019",
+   "jobId": "demo-job-farm-worker",
+   "date": "2026-12-04",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Bharatpur, Chitwan",
+   "workerIds": [
+    "demo-worker-043",
+    "demo-worker-044"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-020",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-11-24",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "IN_PROGRESS",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-021",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-11-25",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-022",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-11-26",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-023",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-11-27",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-024",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-11-29",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-025",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-11-30",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-026",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-12-01",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-027",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-12-02",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-028",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-12-03",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-029",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-12-04",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-030",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-12-06",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-031",
+   "jobId": "demo-job-kitchen-helper",
+   "date": "2026-12-07",
+   "startTime": "16:00",
+   "endTime": "22:00",
+   "location": "Thamel, Kathmandu",
+   "workerIds": [
+    "demo-worker-053",
+    "demo-worker-054"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-032",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-11-24",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "IN_PROGRESS",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-033",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-11-25",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-034",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-11-26",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-035",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-11-27",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-036",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-11-29",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-037",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-11-30",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-038",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-12-01",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-039",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-12-02",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-040",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-12-03",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-041",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-12-04",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-042",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-12-06",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-043",
+   "jobId": "demo-job-warehouse-helper",
+   "date": "2026-12-07",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Kamalbinayak, Bhaktapur",
+   "workerIds": [
+    "demo-worker-096",
+    "demo-worker-097",
+    "demo-worker-098",
+    "demo-worker-099"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-044",
+   "jobId": "demo-job-masonry-helper",
+   "date": "2026-11-30",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-sita"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-045",
+   "jobId": "demo-job-masonry-helper",
+   "date": "2026-12-01",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-sita"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-046",
+   "jobId": "demo-job-masonry-helper",
+   "date": "2026-12-02",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-sita"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-047",
+   "jobId": "demo-job-masonry-helper",
+   "date": "2026-12-03",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-sita"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-048",
+   "jobId": "demo-job-masonry-helper",
+   "date": "2026-12-04",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-sita"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-049",
+   "jobId": "demo-job-masonry-helper",
+   "date": "2026-12-06",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-sita"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-050",
+   "jobId": "demo-job-masonry-helper",
+   "date": "2026-12-07",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Imadol, Lalitpur",
+   "workerIds": [
+    "demo-worker-sita"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-051",
+   "jobId": "demo-job-housekeeping",
+   "date": "2026-12-01",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Lakeside, Pokhara",
+   "workerIds": [
+    "demo-worker-125"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-052",
+   "jobId": "demo-job-housekeeping",
+   "date": "2026-12-02",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Lakeside, Pokhara",
+   "workerIds": [
+    "demo-worker-125"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-053",
+   "jobId": "demo-job-housekeeping",
+   "date": "2026-12-03",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Lakeside, Pokhara",
+   "workerIds": [
+    "demo-worker-125"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-054",
+   "jobId": "demo-job-housekeeping",
+   "date": "2026-12-04",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Lakeside, Pokhara",
+   "workerIds": [
+    "demo-worker-125"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-055",
+   "jobId": "demo-job-housekeeping",
+   "date": "2026-12-06",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Lakeside, Pokhara",
+   "workerIds": [
+    "demo-worker-125"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  },
+  {
+   "id": "demo-sch-056",
+   "jobId": "demo-job-housekeeping",
+   "date": "2026-12-07",
+   "startTime": "08:00",
+   "endTime": "17:00",
+   "location": "Lakeside, Pokhara",
+   "workerIds": [
+    "demo-worker-125"
+   ],
+   "status": "SCHEDULED",
+   "isDemo": true
+  }
+ ],
+ "reviews": [
+  {
+   "id": "demo-rev-001",
+   "engagementId": "demo-eng-007",
+   "jobId": "demo-job-deep-cleaning",
+   "workerId": "demo-worker-maya",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 4,
+   "comment": "Polite and reliable. Learned quickly on site.",
+   "createdAt": "2026-11-14T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-002",
+   "engagementId": "demo-eng-013",
+   "jobId": "demo-job-plumbing-assistant",
+   "workerId": "demo-worker-062",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Did the job well. Communication was clear.",
+   "createdAt": "2026-09-20T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-003",
+   "engagementId": "demo-eng-013",
+   "jobId": "demo-job-plumbing-assistant",
+   "workerId": "demo-worker-062",
+   "direction": "WORKER_TO_PROVIDER",
+   "rating": 5,
+   "comment": "Respectful and well organised.",
+   "createdAt": "2026-09-20T19:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-004",
+   "engagementId": "demo-eng-014",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-066",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 4,
+   "comment": "Did the job well. Communication was clear.",
+   "createdAt": "2026-10-19T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-005",
+   "engagementId": "demo-eng-014",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-066",
+   "direction": "WORKER_TO_PROVIDER",
+   "rating": 5,
+   "comment": "Clear instructions and paid on time. Thank you!",
+   "createdAt": "2026-10-19T19:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-006",
+   "engagementId": "demo-eng-015",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-067",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 4,
+   "comment": "Did the job well. Communication was clear.",
+   "createdAt": "2026-10-19T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-007",
+   "engagementId": "demo-eng-016",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-068",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Polite and reliable. Learned quickly on site.",
+   "createdAt": "2026-10-18T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-008",
+   "engagementId": "demo-eng-017",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-069",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Very hardworking and punctual. Would hire again.",
+   "createdAt": "2026-10-19T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-009",
+   "engagementId": "demo-eng-017",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-069",
+   "direction": "WORKER_TO_PROVIDER",
+   "rating": 4,
+   "comment": "Clear instructions and paid on time. Thank you!",
+   "createdAt": "2026-10-19T19:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-010",
+   "engagementId": "demo-eng-018",
+   "jobId": "demo-job-event-setup",
+   "workerId": "demo-worker-070",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Did the job well. Communication was clear.",
+   "createdAt": "2026-10-18T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-011",
+   "engagementId": "demo-eng-023",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-anita",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Did the job well. Communication was clear.",
+   "createdAt": "2026-11-23T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-012",
+   "engagementId": "demo-eng-024",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-103",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Did the job well. Communication was clear.",
+   "createdAt": "2026-11-23T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-013",
+   "engagementId": "demo-eng-024",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-103",
+   "direction": "WORKER_TO_PROVIDER",
+   "rating": 5,
+   "comment": "Good employer, work conditions were as promised.",
+   "createdAt": "2026-11-23T19:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-014",
+   "engagementId": "demo-eng-025",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-104",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Good work, finished on time and kept the place clean.",
+   "createdAt": "2026-11-23T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-015",
+   "engagementId": "demo-eng-025",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-104",
+   "direction": "WORKER_TO_PROVIDER",
+   "rating": 4,
+   "comment": "Clear instructions and paid on time. Thank you!",
+   "createdAt": "2026-11-23T19:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-016",
+   "engagementId": "demo-eng-026",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-105",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Polite and reliable. Learned quickly on site.",
+   "createdAt": "2026-11-22T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-017",
+   "engagementId": "demo-eng-026",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-105",
+   "direction": "WORKER_TO_PROVIDER",
+   "rating": 5,
+   "comment": "Clear instructions and paid on time. Thank you!",
+   "createdAt": "2026-11-22T19:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-018",
+   "engagementId": "demo-eng-027",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-106",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 4,
+   "comment": "Very hardworking and punctual. Would hire again.",
+   "createdAt": "2026-11-23T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-019",
+   "engagementId": "demo-eng-027",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-106",
+   "direction": "WORKER_TO_PROVIDER",
+   "rating": 5,
+   "comment": "Respectful and well organised.",
+   "createdAt": "2026-11-23T19:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-020",
+   "engagementId": "demo-eng-028",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-107",
+   "direction": "PROVIDER_TO_WORKER",
+   "rating": 5,
+   "comment": "Did the job well. Communication was clear.",
+   "createdAt": "2026-11-23T18:00:00.000Z",
+   "isDemo": true
+  },
+  {
+   "id": "demo-rev-021",
+   "engagementId": "demo-eng-028",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-107",
+   "direction": "WORKER_TO_PROVIDER",
+   "rating": 5,
+   "comment": "Respectful and well organised.",
+   "createdAt": "2026-11-23T19:00:00.000Z",
+   "isDemo": true
+  }
+ ],
+ "activity": [
+  {
+   "at": "2026-11-23T19:00:00.000Z",
+   "type": "REVIEW_RECEIVED",
+   "message": "New 5★ review received for Wedding Event Staff",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-103",
+   "applicationId": null,
+   "id": "demo-act-001",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T19:00:00.000Z",
+   "type": "REVIEW_RECEIVED",
+   "message": "New 4★ review received for Wedding Event Staff",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-104",
+   "applicationId": null,
+   "id": "demo-act-002",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T19:00:00.000Z",
+   "type": "REVIEW_RECEIVED",
+   "message": "New 5★ review received for Wedding Event Staff",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-106",
+   "applicationId": null,
+   "id": "demo-act-003",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T19:00:00.000Z",
+   "type": "REVIEW_RECEIVED",
+   "message": "New 5★ review received for Wedding Event Staff",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-107",
+   "applicationId": null,
+   "id": "demo-act-004",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T18:51:00.000Z",
+   "type": "APPLICATION_RECEIVED",
+   "message": "New application received for Furniture Moving",
+   "jobId": "demo-job-furniture-moving",
+   "workerId": "demo-worker-kiran",
+   "applicationId": "demo-app-moving-kiran",
+   "id": "demo-act-005",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 1,800 to Anita Rai",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-anita",
+   "applicationId": "demo-app-wedding-anita",
+   "id": "demo-act-006",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 1,800 to Manoj Thapa",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-103",
+   "applicationId": "demo-app-wedding-staff-02",
+   "id": "demo-act-007",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 1,800 to Lila Sherpa",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-104",
+   "applicationId": "demo-app-wedding-staff-03",
+   "id": "demo-act-008",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 1,800 to Prem Bhandari",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-105",
+   "applicationId": "demo-app-wedding-staff-04",
+   "id": "demo-act-009",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 1,800 to Rupa Shrestha",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-106",
+   "applicationId": "demo-app-wedding-staff-05",
+   "id": "demo-act-010",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 1,800 to Uma Basnet",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-107",
+   "applicationId": "demo-app-wedding-staff-06",
+   "id": "demo-act-011",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 3,300 to Jamuna Pandey",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-096",
+   "applicationId": "demo-app-warehouse-helper-01",
+   "id": "demo-act-012",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 3,300 to Laxmi Magar",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-097",
+   "applicationId": "demo-app-warehouse-helper-02",
+   "id": "demo-act-013",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 3,300 to Kamala Karki",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-098",
+   "applicationId": "demo-app-warehouse-helper-03",
+   "id": "demo-act-014",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 3,300 to Nabin Magar",
+   "jobId": "demo-job-warehouse-helper",
+   "workerId": "demo-worker-099",
+   "applicationId": "demo-app-warehouse-helper-04",
+   "id": "demo-act-015",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T15:12:00.000Z",
+   "type": "WORKER_SELECTED",
+   "message": "Usha Thapa selected for Construction Helper",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-019",
+   "applicationId": "demo-app-construction-helper-02",
+   "id": "demo-act-016",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T13:53:00.000Z",
+   "type": "APPLICATION_RECEIVED",
+   "message": "New application received for House Painting",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-014",
+   "applicationId": "demo-app-house-painting-15",
+   "id": "demo-act-017",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T12:49:00.000Z",
+   "type": "APPLICATION_RECEIVED",
+   "message": "New application received for Furniture Moving",
+   "jobId": "demo-job-furniture-moving",
+   "workerId": "demo-worker-039",
+   "applicationId": "demo-app-furniture-moving-05",
+   "id": "demo-act-018",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T07:32:00.000Z",
+   "type": "WORKER_SELECTED",
+   "message": "Krishna Shrestha selected for Construction Helper",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-020",
+   "applicationId": "demo-app-construction-helper-03",
+   "id": "demo-act-019",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-23T06:41:00.000Z",
+   "type": "WORKER_SELECTED",
+   "message": "Laxmi Khadka selected for Construction Helper",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-021",
+   "applicationId": "demo-app-construction-helper-04",
+   "id": "demo-act-020",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T19:00:00.000Z",
+   "type": "REVIEW_RECEIVED",
+   "message": "New 5★ review received for Wedding Event Staff",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-105",
+   "applicationId": null,
+   "id": "demo-act-021",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T17:42:00.000Z",
+   "type": "APPLICATION_RECEIVED",
+   "message": "New application received for Electrician Assistant",
+   "jobId": "demo-job-electrician-assistant",
+   "workerId": "demo-worker-085",
+   "applicationId": "demo-app-electrician-assistant-12",
+   "id": "demo-act-022",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T17:41:00.000Z",
+   "type": "APPLICATION_RECEIVED",
+   "message": "New application received for Construction Helper",
+   "jobId": "demo-job-construction-helper",
+   "workerId": "demo-worker-021",
+   "applicationId": "demo-app-construction-helper-04",
+   "id": "demo-act-023",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T17:00:00.000Z",
+   "type": "JOB_COMPLETED",
+   "message": "Work completed — Wedding Event Staff (Anita Rai)",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-anita",
+   "applicationId": "demo-app-wedding-anita",
+   "id": "demo-act-024",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T17:00:00.000Z",
+   "type": "JOB_COMPLETED",
+   "message": "Work completed — Wedding Event Staff (Manoj Thapa)",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-103",
+   "applicationId": "demo-app-wedding-staff-02",
+   "id": "demo-act-025",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T17:00:00.000Z",
+   "type": "JOB_COMPLETED",
+   "message": "Work completed — Wedding Event Staff (Lila Sherpa)",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-104",
+   "applicationId": "demo-app-wedding-staff-03",
+   "id": "demo-act-026",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T17:00:00.000Z",
+   "type": "JOB_COMPLETED",
+   "message": "Work completed — Wedding Event Staff (Prem Bhandari)",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-105",
+   "applicationId": "demo-app-wedding-staff-04",
+   "id": "demo-act-027",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T17:00:00.000Z",
+   "type": "JOB_COMPLETED",
+   "message": "Work completed — Wedding Event Staff (Rupa Shrestha)",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-106",
+   "applicationId": "demo-app-wedding-staff-05",
+   "id": "demo-act-028",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T17:00:00.000Z",
+   "type": "JOB_COMPLETED",
+   "message": "Work completed — Wedding Event Staff (Uma Basnet)",
+   "jobId": "demo-job-wedding-staff",
+   "workerId": "demo-worker-107",
+   "applicationId": "demo-app-wedding-staff-06",
+   "id": "demo-act-029",
+   "isDemo": true
+  },
+  {
+   "at": "2026-11-22T16:00:00.000Z",
+   "type": "PAYMENT_RECORDED",
+   "message": "Payment recorded — NPR 4,500 to Ram Bahadur Thapa",
+   "jobId": "demo-job-house-painting",
+   "workerId": "demo-worker-ram",
+   "applicationId": "demo-app-painting-ram",
+   "id": "demo-act-030",
+   "isDemo": true
+  }
+ ],
+ "summary": {
+  "totalJobs": 15,
+  "derivedStatusCounts": {
+   "in_progress": 3,
+   "active": 5,
+   "completed": 4,
+   "closed": 1,
+   "draft": 1,
+   "filled": 1
+  },
+  "totalApplications": 137,
+  "workersRequired": 41,
+  "workersHired": 28,
+  "funnel": {
+   "received": 137,
+   "shortlisted": 51,
+   "accepted": 30,
+   "hired": 28
+  },
+  "totalRecordedPaymentsNpr": 80100,
+  "monthlySpendingNpr": {
+   "2026-09": 3200,
+   "2026-10": 19200,
+   "2026-11": 57700
+  },
+  "upcomingScheduleEntries": 56,
+  "reviews": 21
+ }
+}

@@ -7,6 +7,7 @@ import DemoJobDetailsModal from "../../components/DemoJobDetailsModal"
 import { useDemoJobState } from "../../hooks/useDemoJobState"
 import type { Job } from "../../types"
 import { ApplicationStatusBadge } from "../../components/StatusBadge"
+import SearchInOutAnimation from "../../components/SearchInOutAnimation"
 import { getRecentItJobs, getRecommendedItJobs, isItOpportunity, loadCachedItRecommendations, loadCachedRecentItJobs, searchHimalayasJobs } from "../../services/himalayas"
 import { getRemoteItJobs, loadCachedRemoteItJobs, searchRemoteItJobs } from "../../services/jsearch"
 import { distanceBetweenKm, formatDemoSalary, getBundledDemoJobs, loadDemoJobs, type DemoJob } from "../../services/demoJobs"
@@ -378,32 +379,25 @@ export default function WorkerDashboard() {
   }
 
   return (
-    <div className="worker-home-page w-full max-w-[1920px] px-4 py-5 sm:px-6 sm:py-8 lg:-mt-8 lg:px-10">
+    <div className="worker-dashboard-modern worker-home-page w-full max-w-[1920px] px-4 py-5 sm:px-6 sm:py-8 lg:-mt-8 lg:px-10">
       <div className="grid items-start gap-6 2xl:gap-8">
         <main className="order-3 min-w-0 lg:order-2">
-          <header className="relative mb-6 overflow-hidden rounded-2xl border border-[#553421] bg-gradient-to-r from-[#80502F] via-[#704327] to-[#4F3020] px-5 py-6 shadow-sm sm:px-7 sm:py-7">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 w-[36%] bg-[#42291B]/55 [clip-path:polygon(0_0,100%_0,100%_100%)]"
-            />
+          <header className="worker-dashboard-hero relative mb-6 overflow-hidden rounded-2xl border px-5 py-6 sm:px-7 sm:py-7">
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
               <div className="min-w-0">
-                <h1 className="font-heading text-[1.8rem] font-bold leading-tight tracking-[-0.035em] text-white sm:text-3xl lg:text-[2.65rem]">
+                <h1 className="font-heading text-[1.8rem] font-bold leading-tight tracking-[-0.035em] text-[#25231F] sm:text-3xl lg:text-[2.65rem]">
                   {greeting()},{" "}
                   {firstName.charAt(0).toUpperCase() + firstName.slice(1)}
                 </h1>
-                <p className="mt-2 max-w-xl font-ui text-sm leading-relaxed text-[#F0E5DA] sm:text-base">
+                <p className="mt-2 max-w-xl font-ui text-sm leading-relaxed text-[#6F6A5F] sm:text-base">
                   Search remote IT opportunities from the connected job feeds.
                 </p>
               </div>
               <form
                 onSubmit={submitSearch}
-                className="flex min-h-[3.5rem] w-full max-w-[31rem] items-center gap-2 rounded-xl border border-[#E8E2D5] bg-white p-1.5 shadow-md focus-within:ring-2 focus-within:ring-white/40 sm:min-h-[3.75rem]"
+                className="relative flex min-h-[3.5rem] w-full max-w-[31rem] items-center gap-2 rounded-xl border border-[#E8E2D5] bg-white p-1.5 shadow-md focus-within:ring-2 focus-within:ring-white/40 sm:min-h-[3.75rem]"
               >
-                <SidebarIcon
-                  name="search"
-                  className="ml-3 h-5 w-5 shrink-0 text-[#9299A1]"
-                />
+                <SearchInOutAnimation />
                 <input
                   type="search"
                   aria-label="Search remote IT jobs from connected feeds by role, skill, or company"
@@ -414,7 +408,7 @@ export default function WorkerDashboard() {
                     if (!value.trim()) setSubmittedSearch("")
                   }}
                   placeholder="Search remote IT jobs, roles, skills, or companies..."
-                  className="min-w-0 flex-1 border-0 bg-transparent px-1 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-400 sm:text-base"
+                  className="min-w-0 flex-1 border-0 bg-transparent pl-9 pr-1 py-2 text-sm text-stone-800 outline-none placeholder:text-stone-400 sm:text-base"
                 />
               </form>
             </div>
@@ -462,8 +456,8 @@ export default function WorkerDashboard() {
                   onClick={() => setRecommendedTab(tab)}
                   className={`-mb-px shrink-0 rounded-t-lg border-b-2 px-3 pb-3 pt-2 text-sm font-semibold transition-colors ${
                     recommendedTab === tab
-                      ? "border-[#70472F] bg-[#EAE3D5] text-[#70472F]"
-                      : "border-transparent bg-[#FAF8F5] text-stone-600 hover:bg-[#EFECE6] hover:text-[#70472F]"
+                      ? "border-[#B8AE91] bg-[#F1EFE8] text-[#625A42]"
+                      : "border-transparent bg-[#F2F1EB] text-stone-600 hover:bg-[#EAE9E1] hover:text-[#625A42]"
                   }`}
                 >
                   {label}
@@ -558,23 +552,23 @@ export default function WorkerDashboard() {
           <section className="mb-8" aria-label="Kathmandu Valley job discovery">
             <h2 className="mb-3 font-heading text-2xl font-bold tracking-tight text-stone-950">Explore work across Kathmandu Valley</h2>
             <div className="rounded-2xl border border-[#E8E2D5] bg-white p-5 shadow-sm sm:p-6">
-            <button type="button" onClick={() => navigate("job-discovery")} aria-label="Find your work on map" className="group relative mt-4 flex h-32 w-full items-center overflow-hidden rounded-xl text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#265D4C] sm:h-36">
+            <button type="button" onClick={() => navigate("job-discovery")} aria-label="Find your work on map" className="group relative mt-4 flex h-32 w-full items-center overflow-hidden rounded-xl text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#475231] sm:h-36">
               <img src="/images/worker/find-work-map-banner.svg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
-              <span className="absolute inset-0 bg-[#265D4C]/60 transition-colors group-hover:bg-[#265D4C]/65" />
+              <span className="absolute inset-0 bg-[#475231]/60 transition-colors group-hover:bg-[#475231]/65" />
               <span className="relative flex items-center gap-3 px-5 text-lg font-semibold text-white drop-shadow-sm sm:px-8 sm:text-2xl">Find your work on map <span aria-hidden="true" className="text-2xl transition-transform group-hover:translate-x-1">→</span></span>
             </button>
             <div className="job-category-strip mt-4 flex items-stretch gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Job categories and nearby jobs">
-              <button type="button" aria-pressed={!exploreCategory && !exploreNearby} onClick={() => { setExploreCategory(""); setExploreNearby(false); setNearbyLocationMessage(""); setExploreJobLimit(12) }} className={`flex h-16 min-w-[150px] shrink-0 items-center justify-between gap-3 rounded-xl border-2 px-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#265D4C] ${!exploreCategory && !exploreNearby ? "border-[#265D4C] bg-[#DFF1E9] text-[#173F33] hover:bg-[#D2EADF]" : "border-[#E0E3E1] bg-white text-stone-700 hover:border-[#C8D8CF] hover:bg-[#F8FAF8]"}`} aria-label={`Show all ${demoJobs.length} jobs`}>
-                <span className="flex items-center gap-2.5"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 text-[#265D4C]"><DashboardStatIcon name="jobs" /></span><span className="whitespace-nowrap text-sm font-semibold">All Jobs <span className="tabular-nums">({demoJobs.length})</span></span></span><span aria-hidden="true" className="text-xl">›</span>
+              <button type="button" aria-pressed={!exploreCategory && !exploreNearby} onClick={() => { setExploreCategory(""); setExploreNearby(false); setNearbyLocationMessage(""); setExploreJobLimit(12) }} className={`flex h-16 min-w-[150px] shrink-0 items-center justify-between gap-3 rounded-xl border-2 px-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#786A42] ${!exploreCategory && !exploreNearby ? "border-[#C8C1AE] bg-[#F1EFE8] text-[#625A42] hover:bg-[#EAE8DF]" : "border-[#E0DED5] bg-white text-stone-700 hover:border-[#D3CEBF] hover:bg-[#F7F6F2]"}`} aria-label={`Show all ${demoJobs.length} jobs`}>
+                <span className="flex items-center gap-2.5"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 text-[#786A42]"><DashboardStatIcon name="jobs" /></span><span className="whitespace-nowrap text-sm font-semibold">All Jobs <span className="tabular-nums">({demoJobs.length})</span></span></span><span aria-hidden="true" className="text-xl">›</span>
               </button>
               {[{ label: "Construction", value: "Construction & Skilled Trades" }, { label: "Delivery", value: "Delivery & Logistics" }, { label: "Hospitality", value: "Hospitality & Service" }, { label: "Retail", value: "Retail & Sales" }].map(({ label, value }) => (
-                <button key={value} type="button" aria-pressed={exploreCategory === value} onClick={() => { setExploreCategory(exploreCategory === value ? "" : value); setExploreNearby(false); setNearbyLocationMessage(""); setExploreJobLimit(12) }} className={`flex h-16 min-w-[148px] shrink-0 items-center gap-2.5 rounded-xl border px-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#265D4C] ${exploreCategory === value ? "border-[#A9C6B9] bg-[#EAF2EE]" : "border-[#E0E3E1] bg-white hover:border-[#C8D8CF] hover:bg-[#F8FAF8]"}`}>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EAF2EE] text-[#477767]"><JobCategoryIcon category={value} /></span>
+                <button key={value} type="button" aria-pressed={exploreCategory === value} onClick={() => { setExploreCategory(exploreCategory === value ? "" : value); setExploreNearby(false); setNearbyLocationMessage(""); setExploreJobLimit(12) }} className={`flex h-16 min-w-[148px] shrink-0 items-center gap-2.5 rounded-xl border px-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#786A42] ${exploreCategory === value ? "border-[#C8C1AE] bg-[#F1EFE8]" : "border-[#E0DED5] bg-white hover:border-[#D3CEBF] hover:bg-[#F7F6F2]"}`}>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F1EFE8] text-[#786A42]"><JobCategoryIcon category={value} /></span>
                   <span className="whitespace-nowrap text-sm font-medium text-stone-700">{label} <span className="tabular-nums text-stone-500">({demoJobs.filter((job) => job.category === value).length})</span></span>
                 </button>
               ))}
-              <button type="button" onClick={selectNearbyExploreJobs} disabled={nearbyLocating} aria-pressed={exploreNearby} className={`flex h-16 min-w-[164px] shrink-0 items-center gap-2.5 rounded-xl border px-3.5 text-left transition-colors hover:border-[#C8D8CF] hover:bg-[#F8FAF8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#265D4C] disabled:opacity-70 ${exploreNearby ? "border-[#A9C6B9] bg-[#EAF2EE]" : "border-[#E0E3E1] bg-white"}`} aria-label={nearbyDemoCount == null ? "Use your location to show nearby jobs" : `${nearbyDemoCount} jobs within 5 kilometers`}>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F1F4F1] text-[#66766D]"><DashboardStatIcon name="nearby" /></span>
+              <button type="button" onClick={selectNearbyExploreJobs} disabled={nearbyLocating} aria-pressed={exploreNearby} className={`flex h-16 min-w-[164px] shrink-0 items-center gap-2.5 rounded-xl border px-3.5 text-left transition-colors hover:border-[#D3CEBF] hover:bg-[#F7F6F2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#786A42] disabled:opacity-70 ${exploreNearby ? "border-[#C8C1AE] bg-[#F1EFE8]" : "border-[#E0DED5] bg-white"}`} aria-label={nearbyDemoCount == null ? "Use your location to show nearby jobs" : `${nearbyDemoCount} jobs within 5 kilometers`}>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F1EFE8] text-[#786A42]"><DashboardStatIcon name="nearby" /></span>
                 <span className="min-w-0"><span className="block whitespace-nowrap text-sm font-medium text-stone-700">Within 5 km</span><span className="block whitespace-nowrap text-[11px] text-stone-500">{nearbyLocating ? "Locating…" : nearbyDemoCount == null ? "Enable location" : `${nearbyDemoCount} jobs nearby`}</span></span>
               </button>
             </div>
@@ -746,7 +740,7 @@ export default function WorkerDashboard() {
                 <button
                   type="button"
                   onClick={() => navigate("job-discovery")}
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800"
                 >
                   Find work
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="M4 12 12 4M5 4h7v7" /></svg>
@@ -845,7 +839,7 @@ function RecommendedJobRow({ job }: { job: Job }) {
                 href={job.externalUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#986744] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#80502F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#171717] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#33271F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#986744]"
               >
                 Apply
                 <svg

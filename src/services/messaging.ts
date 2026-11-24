@@ -1,49 +1,240 @@
+import demoMessageSeed from "../data/demo-messages.json"
 import { apiRequest } from "./backendApi"
 
-export type MessageItem = { id: string; senderId: string; senderName: string; content: string; createdAt: string; readAt?: string | null }
-export type ConversationItem = { id: string; workerId: string; workerName: string; providerId: string; providerName: string; jobId?: string | null; jobTitle?: string | null; applicationId?: string | null; status: string; createdAt: string; updatedAt: string; unreadCount: number; lastMessage?: MessageItem | null }
+export type MessageItem = { id: string; senderId: string; senderName: string; senderRole?: string; content: string; createdAt: string; readAt?: string | null; messageType?: "USER" | "SYSTEM" }
+export type ConversationItem = { id: string; workerId: string; workerName: string; workerPhoto?: string; providerId: string; providerName: string; jobId?: string | null; jobTitle?: string | null; applicationId?: string | null; status: string; createdAt: string; updatedAt: string; unreadCount: number; lastMessage?: MessageItem | null }
 export type Thread = { conversation: ConversationItem; messages: MessageItem[] }
+export type ConversationContext = { actorRole?: "worker" | "provider"; workerId?: string; workerName?: string; workerPhoto?: string; providerId?: string; providerName?: string; jobId?: string | null; jobTitle?: string | null }
 
-const demoKey = "shram-demo-messages-v1"
-type DemoData = { conversations: Array<ConversationItem & { messages: MessageItem[]; reads: Record<string, string[]> }> }
-function readDemo(): DemoData {
+type DemoConversation = ConversationItem & { messages: MessageItem[]; reads: Record<string, string[]> }
+type DemoData = { conversations: DemoConversation[] }
+type SeedConversation = Omit<DemoConversation, "unreadCount"> & { unreadCount?: number }
+const DEMO_PROVIDER_ID = "demo-provider"
+const DEMO_WORKER_ID = "demo-worker"
+const DEMO_PROVIDER_NAME = "Himalayan Build Co."
+const DEMO_WORKER_NAME = "Sita Tamang"
+const DEMO_PROVIDER_STORAGE_KEY = "shram_bazaar_demo_provider_messages_v1"
+const DEMO_MESSAGES_STORAGE_KEY = "shram-demo-messages-v1"
+const seedConversations = demoMessageSeed.conversations as unknown as SeedConversation[]
+const seededProvider = seedConversations[0]?.providerName || DEMO_PROVIDER_NAME
+
+function isSeededProviderAccount(userId: string, userName: string, organizationName?: string) {
+  const providerName = organizationName?.trim().toLowerCase()
+  const accountName = userName.trim().toLowerCase()
+  return userId === DEMO_PROVIDER_ID
+    || providerName === seededProvider.trim().toLowerCase()
+    || accountName === seededProvider.trim().toLowerCase()
+    || accountName === "demo provider"
+}
+
+/** Use local seeded messaging for demo mode and for the explicitly named showcase provider account. */
+export function shouldUseLocalDemoMessaging(demo: boolean, role: "worker" | "provider", userId: string, userName: string, organizationName?: string) {
+  if (demo || (role === "provider" && isSeededProviderAccount(userId, userName, organizationName))) return true
+  return role === "worker" && (seedConversations.some((conversation) => conversation.workerId === userId || conversation.workerName.trim().toLowerCase() === userName.trim().toLowerCase()) || hasStoredSeedConversation(userId))
+}
+
+/** Resolve the bundled showcase account without routing other demo accounts into its inbox. */
+export function resolveDemoMessagingIdentity(
+  demo: boolean,
+  role: "worker" | "provider",
+  userId: string,
+  userName: string,
+  organizationName?: string,
+) {
+  if (role === "provider" && isSeededProviderAccount(userId, userName, organizationName)) return DEMO_PROVIDER_ID
+  if (role === "worker") {
+    const seededWorker = seedConversations.find((conversation) => conversation.workerId === userId || conversation.workerName.trim().toLowerCase() === userName.trim().toLowerCase())
+    if (seededWorker) return seededWorker.workerId
+  }
+  if (!demo) return userId
+  return userId
+}
+
+function storageKey(userId: string, otherPartyId?: string) {
+  return userId === DEMO_PROVIDER_ID || userId === DEMO_WORKER_ID || otherPartyId === DEMO_PROVIDER_ID || otherPartyId === DEMO_WORKER_ID
+    ? DEMO_PROVIDER_STORAGE_KEY
+    : DEMO_MESSAGES_STORAGE_KEY
+}
+
+function seededData(): DemoData {
+  return {
+    conversations: seedConversations.map((conversation) => ({
+      ...conversation,
+      unreadCount: conversation.unreadCount ?? 0,
+      messages: conversation.messages.map((message) => ({ ...message })),
+      reads: Object.fromEntries(Object.entries(conversation.reads || {}).map(([id, reads]) => [id, [...reads]])),
+    })),
+  }
+}
+
+function readDemoAt(key: string): DemoData {
   try {
-    const saved = localStorage.getItem(demoKey)
-    if (saved) return JSON.parse(saved) as DemoData
-  } catch { /* Seed persistent demo data when storage is unavailable or invalid. */ }
-  const now = new Date().toISOString()
-  const sample: DemoData = { conversations: [
-    { id: "demo-101", workerId: "demo-worker", workerName: "Sita Tamang", providerId: "demo-provider", providerName: "Himalayan Build Co.", jobId: "demo-job-1", jobTitle: "Experienced mason needed", applicationId: "demo-app-1", status: "OPEN", createdAt: now, updatedAt: now, unreadCount: 1, messages: [{ id: "demo-msg-1", senderId: "demo-provider", senderName: "Himalayan Build Co.", content: "Namaste Sita, are you available to start next Monday?", createdAt: now }], reads: {} },
-    { id: "demo-102", workerId: "demo-worker", workerName: "Sita Tamang", providerId: "demo-provider", providerName: "Kathmandu Home Services", jobId: "demo-job-2", jobTitle: "Home painting work", applicationId: "demo-app-2", status: "OPEN", createdAt: now, updatedAt: now, unreadCount: 0, messages: [{ id: "demo-msg-2", senderId: "demo-worker", senderName: "Sita Tamang", content: "Thank you. I can visit to discuss the work this week.", createdAt: now }], reads: {} },
-  ] }
-  saveDemo(sample); return sample
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<DemoData>
+      if (Array.isArray(parsed.conversations) && (key !== DEMO_PROVIDER_STORAGE_KEY || parsed.conversations.length > 0)) return { conversations: parsed.conversations }
+    }
+  } catch { /* Restore the untouched JSON seed if persisted demo data is unavailable. */ }
+  const initial = key === DEMO_PROVIDER_STORAGE_KEY ? seededData() : { conversations: [] }
+  saveDemoAt(initial, key)
+  return initial
 }
-function saveDemo(data: DemoData) { try { localStorage.setItem(demoKey, JSON.stringify(data)) } catch { /* Component reports a readable storage error on writes. */ } }
-function demoMap(c: DemoData["conversations"][number], userId: string): ConversationItem {
-  const unreadCount = c.messages.filter((m) => m.senderId !== userId && !c.reads[userId]?.includes(m.id)).length
-  return { ...c, unreadCount, lastMessage: c.messages.at(-1) || null }
+
+function hasStoredSeedConversation(userId: string) {
+  try {
+    const saved = localStorage.getItem(DEMO_PROVIDER_STORAGE_KEY)
+    if (!saved) return false
+    const data = JSON.parse(saved) as Partial<DemoData>
+    return Array.isArray(data.conversations) && data.conversations.some((conversation) => conversation.providerId === userId || conversation.workerId === userId)
+  } catch { return false }
 }
+
+function saveDemoAt(data: DemoData, key: string) {
+  try { localStorage.setItem(key, JSON.stringify(data)) } catch { /* Callers surface send errors; reads stay available in memory. */ }
+}
+
+function demoStoresFor(userId: string) {
+  if (userId === DEMO_PROVIDER_ID || userId === DEMO_WORKER_ID || seedConversations.some((conversation) => conversation.workerId === userId)) return [DEMO_PROVIDER_STORAGE_KEY]
+  return hasStoredSeedConversation(userId)
+    ? [DEMO_MESSAGES_STORAGE_KEY, DEMO_PROVIDER_STORAGE_KEY]
+    : [DEMO_MESSAGES_STORAGE_KEY]
+}
+
+function findDemoConversation(id: string, userId: string) {
+  for (const key of demoStoresFor(userId)) {
+    const data = readDemoAt(key)
+    const conversation = data.conversations.find((item) => item.id === id && (item.providerId === userId || item.workerId === userId))
+    if (conversation) return { data, key, conversation }
+  }
+  return null
+}
+
+function demoMap(conversation: DemoConversation, userId: string): ConversationItem {
+  const unreadCount = conversation.messages.filter((message) => message.senderId !== userId && !conversation.reads[userId]?.includes(message.id)).length
+  return { ...conversation, unreadCount, lastMessage: conversation.messages.at(-1) || null }
+}
+
 export async function listConversations(demo: boolean, userId: string) {
   if (!demo) return (await apiRequest<Array<Record<string, unknown>>>("/api/conversations")).map(mapApiConversation)
-  return readDemo().conversations.map((c) => demoMap(c, userId)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  const conversations = new Map<string, DemoConversation>()
+  for (const key of demoStoresFor(userId)) {
+    for (const conversation of readDemoAt(key).conversations) {
+      if (conversation.providerId === userId || conversation.workerId === userId) conversations.set(conversation.id, conversation)
+    }
+  }
+  return [...conversations.values()]
+    .map((conversation) => demoMap(conversation, userId))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
-export async function openConversation(demo: boolean, applicationId: string, userId: string, name: string) {
+
+export async function openConversation(demo: boolean, applicationId: string, userId: string, name: string, context?: ConversationContext) {
   if (!demo) return mapApiConversation(await apiRequest<Record<string, unknown>>("/api/conversations", { method: "POST", body: JSON.stringify({ applicationId: Number(applicationId) }) }))
-  const data = readDemo(); let c = data.conversations.find((item) => item.applicationId === applicationId)
-  if (!c) { c = { id: `demo-${Date.now()}`, workerId: userId === "demo-worker" ? userId : "demo-worker", workerName: userId === "demo-worker" ? name : "Sita Tamang", providerId: userId === "demo-worker" ? "demo-provider" : userId, providerName: userId === "demo-worker" ? "Himalayan Build Co." : name, jobId: undefined, jobTitle: "Marketplace conversation", applicationId, status: "OPEN", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), unreadCount: 0, messages: [], reads: {} }; data.conversations.unshift(c); saveDemo(data) }
-  return demoMap(c, userId)
+  const otherPartyId = context?.actorRole === "worker" ? context.providerId : context?.workerId
+  const dataKey = storageKey(userId, otherPartyId)
+  const data = readDemoAt(dataKey)
+  let conversation = data.conversations.find((item) => item.applicationId === applicationId && (item.providerId === userId || item.workerId === userId))
+  if (!conversation) {
+    for (const key of demoStoresFor(userId)) {
+      if (key === dataKey) continue
+      const existing = readDemoAt(key).conversations.find((item) => item.applicationId === applicationId && (item.providerId === userId || item.workerId === userId))
+      if (existing) { conversation = existing; break }
+    }
+  }
+  if (!conversation) {
+    const workerIsSender = context?.actorRole ? context.actorRole === "worker" : userId === DEMO_WORKER_ID
+    const now = new Date().toISOString()
+    conversation = {
+      id: `demo-${Date.now()}`,
+      workerId: workerIsSender ? userId : context?.workerId || DEMO_WORKER_ID,
+      workerName: workerIsSender ? name : context?.workerName || DEMO_WORKER_NAME,
+      providerId: workerIsSender ? context?.providerId || DEMO_PROVIDER_ID : userId,
+      providerName: workerIsSender ? context?.providerName || DEMO_PROVIDER_NAME : name,
+      jobId: context?.jobId ?? null,
+      jobTitle: context?.jobTitle || "Marketplace conversation",
+      applicationId,
+      status: "OPEN",
+      createdAt: now,
+      updatedAt: now,
+      unreadCount: 0,
+      messages: [],
+      reads: {},
+    }
+    data.conversations.unshift(conversation)
+    saveDemoAt(data, dataKey)
+  } else if (context?.actorRole === "provider") {
+    // Keep an applicant's message thread aligned with the name and photo on their application.
+    conversation.workerId = context.workerId || conversation.workerId
+    conversation.workerName = context.workerName || conversation.workerName
+    conversation.workerPhoto = context.workerPhoto || conversation.workerPhoto
+    conversation.providerName = context.providerName || conversation.providerName
+    conversation.jobId = context.jobId ?? conversation.jobId
+    conversation.jobTitle = context.jobTitle || conversation.jobTitle
+    saveDemoAt(data, dataKey)
+  }
+  return demoMap(conversation, userId)
 }
+
+export async function openWorkerConversation(demo: boolean, workerId: string, userId: string, providerName: string, workerName: string) {
+  if (!demo) return mapApiConversation(await apiRequest<Record<string, unknown>>(`/api/conversations/workers/${encodeURIComponent(workerId)}`, { method: "POST" }))
+  const dataKey = storageKey(userId, workerId)
+  const data = readDemoAt(dataKey)
+  let conversation = data.conversations.find((item) => item.workerId === workerId && item.providerId === userId)
+  if (!conversation) {
+    const now = new Date().toISOString()
+    conversation = { id: `demo-${Date.now()}`, workerId, workerName, providerId: userId, providerName, jobId: null, jobTitle: null, applicationId: null, status: "OPEN", createdAt: now, updatedAt: now, unreadCount: 0, messages: [], reads: {} }
+    data.conversations.unshift(conversation)
+    saveDemoAt(data, dataKey)
+  }
+  return demoMap(conversation, userId)
+}
+
 export async function loadThread(demo: boolean, id: string, userId: string): Promise<Thread> {
-  if (!demo) { const result = await apiRequest<{ conversation: Record<string, unknown>; messages: Array<Record<string, unknown>> }>(`/api/conversations/${id}`); return { conversation: mapApiConversation(result.conversation), messages: result.messages.map(mapApiMessage) } }
-  const d=readDemo(), c=d.conversations.find((item)=>item.id===id); if(!c) throw new Error("Conversation not found"); c.reads[userId]=c.messages.filter(m=>m.senderId!==userId).map(m=>m.id); saveDemo(d); return {conversation:demoMap(c,userId),messages:c.messages}
+  if (!demo) {
+    const result = await apiRequest<{ conversation: Record<string, unknown>; messages: Array<Record<string, unknown>> }>(`/api/conversations/${id}`)
+    return { conversation: mapApiConversation(result.conversation), messages: result.messages.map(mapApiMessage) }
+  }
+  const found = findDemoConversation(id, userId)
+  if (!found) throw new Error("Conversation not found")
+  const { data, key, conversation } = found
+  conversation.reads[userId] = conversation.messages.filter((message) => message.senderId !== userId).map((message) => message.id)
+  saveDemoAt(data, key)
+  return { conversation: demoMap(conversation, userId), messages: [...conversation.messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)) }
 }
-export async function sendMessage(demo: boolean, id: string, userId: string, name: string, content: string) {
+
+export async function sendMessage(demo: boolean, id: string, userId: string, name: string, content: string, senderRole?: "JOB_PROVIDER" | "JOB_SEEKER") {
   if (!demo) return mapApiMessage(await apiRequest<Record<string, unknown>>(`/api/conversations/${id}/messages`, { method: "POST", body: JSON.stringify({ content }) }))
-  const d=readDemo(), c=d.conversations.find((item)=>item.id===id); if(!c) throw new Error("Conversation not found"); const message:MessageItem={id:`demo-msg-${Date.now()}`,senderId:userId,senderName:name,content,createdAt:new Date().toISOString()}; c.messages.push(message); c.updatedAt=message.createdAt; c.reads[userId]??=[]; saveDemo(d); return message
+  const found = findDemoConversation(id, userId)
+  if (!found) throw new Error("Conversation not found")
+  const { data, key, conversation } = found
+  const now = Date.now()
+  const previousActivity = Date.parse(conversation.updatedAt)
+  const createdAt = new Date(Math.max(now, Number.isFinite(previousActivity) ? previousActivity + 1 : now)).toISOString()
+  const message: MessageItem = { id: `demo-msg-${now}-${Math.random().toString(36).slice(2, 7)}`, senderId: userId, senderName: name, senderRole: senderRole || (userId.includes("provider") ? "JOB_PROVIDER" : "JOB_SEEKER"), content, createdAt }
+  conversation.messages.push(message)
+  conversation.updatedAt = message.createdAt
+  conversation.reads[userId] ??= []
+  saveDemoAt(data, key)
+  return message
 }
+
 export async function markConversationRead(demo: boolean, id: string, userId: string) {
   if (!demo) { await apiRequest<void>(`/api/conversations/${id}/read`, { method: "POST" }); return }
-  const d=readDemo(), c=d.conversations.find((item)=>item.id===id); if(c){c.reads[userId]=c.messages.filter(m=>m.senderId!==userId).map(m=>m.id);saveDemo(d)}
+  const found = findDemoConversation(id, userId)
+  if (!found) return
+  const { data, key, conversation } = found
+  conversation.reads[userId] = conversation.messages.filter((message) => message.senderId !== userId).map((message) => message.id)
+  saveDemoAt(data, key)
 }
-function mapApiMessage(v: Record<string, unknown>): MessageItem { return { id:String(v.id), senderId:String(v.senderId), senderName:String(v.senderName||"User"), content:String(v.content||""), createdAt:String(v.createdAt||new Date().toISOString()), readAt:v.readAt as string|null|undefined } }
-function mapApiConversation(v: Record<string, unknown>): ConversationItem { return { id:String(v.id), workerId:String(v.workerId), workerName:String(v.workerName||"Worker"), providerId:String(v.providerId), providerName:String(v.providerName||"Provider"), jobId:v.jobId==null?null:String(v.jobId), jobTitle:v.jobTitle==null?null:String(v.jobTitle), applicationId:v.applicationId==null?null:String(v.applicationId), status:String(v.status||"OPEN"), createdAt:String(v.createdAt||""), updatedAt:String(v.updatedAt||""), unreadCount:Number(v.unreadCount)||0, lastMessage:v.lastMessage&&typeof v.lastMessage==="object"?mapApiMessage(v.lastMessage as Record<string,unknown>):null } }
+
+/** Restore the bundled inbox for the showcase; this never touches backend or non-showcase data. */
+export function resetDemoProviderMessages() {
+  try { localStorage.removeItem(DEMO_PROVIDER_STORAGE_KEY) } catch { /* The next read still has the bundled seed. */ }
+}
+
+function mapApiMessage(value: Record<string, unknown>): MessageItem {
+  return { id: String(value.id), senderId: String(value.senderId), senderName: String(value.senderName || "User"), senderRole: String(value.senderRole || ""), content: String(value.content || ""), createdAt: String(value.createdAt || new Date().toISOString()), readAt: value.readAt as string | null | undefined, messageType: value.messageType === "SYSTEM" ? "SYSTEM" : "USER" }
+}
+
+function mapApiConversation(value: Record<string, unknown>): ConversationItem {
+  return { id: String(value.id), workerId: String(value.workerId), workerName: String(value.workerName || "Worker"), providerId: String(value.providerId), providerName: String(value.providerName || "Provider"), jobId: value.jobId == null ? null : String(value.jobId), jobTitle: value.jobTitle == null ? null : String(value.jobTitle), applicationId: value.applicationId == null ? null : String(value.applicationId), status: String(value.status || "OPEN"), createdAt: String(value.createdAt || ""), updatedAt: String(value.updatedAt || ""), unreadCount: Number(value.unreadCount) || 0, lastMessage: value.lastMessage && typeof value.lastMessage === "object" ? mapApiMessage(value.lastMessage as Record<string, unknown>) : null }
+}

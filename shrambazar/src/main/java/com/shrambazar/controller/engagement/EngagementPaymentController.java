@@ -10,17 +10,22 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/provider")
+@RequestMapping("/api")
 public class EngagementPaymentController {
     private final EngagementPaymentService paymentService;
     public EngagementPaymentController(EngagementPaymentService paymentService) { this.paymentService = paymentService; }
 
-    @GetMapping("/engagement-payments")
+    @GetMapping("/provider/engagement-payments")
     public ResponseEntity<List<EngagementPaymentResponse>> getPayments() {
         return ResponseEntity.ok(paymentService.getProviderPayments());
     }
 
-    @PostMapping("/engagements/{engagementId}/payment")
+    @GetMapping("/seeker/engagement-payments")
+    public ResponseEntity<List<EngagementPaymentResponse>> getWorkerPayments() {
+        return ResponseEntity.ok(paymentService.getWorkerPayments());
+    }
+
+    @PostMapping("/provider/engagements/{engagementId}/payment")
     public ResponseEntity<EngagementPaymentResponse> recordPayment(@PathVariable Long engagementId,
                                                                    @Valid @RequestBody EngagementPaymentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.recordPayment(engagementId, request));

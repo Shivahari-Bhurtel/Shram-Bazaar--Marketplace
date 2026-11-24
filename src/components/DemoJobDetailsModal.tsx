@@ -76,9 +76,9 @@ export default function DemoJobDetailsModal({ job, distance, saved = false, appl
           </section>
 
           <section aria-label="Workplace" className="flex flex-wrap items-center gap-3 rounded-lg bg-[#F8F7F4] px-3 py-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#265D4C]" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.2"/></svg></span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#475231]" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.2"/></svg></span>
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1"><p className="text-lg font-semibold text-stone-800">{workplaceAddress}</p>{distance != null && <p className="whitespace-nowrap text-base font-medium tabular-nums text-stone-500">· {formatDemoDistance(distance)}</p>}</div>
-            {onViewMap && <button type="button" onClick={onViewMap} className="shrink-0 text-base font-semibold text-[#265D4C] hover:underline">View on map →</button>}
+            {onViewMap && <button type="button" onClick={onViewMap} className="shrink-0 text-base font-semibold text-[#475231] hover:underline">View on map →</button>}
           </section>
         </div>
 

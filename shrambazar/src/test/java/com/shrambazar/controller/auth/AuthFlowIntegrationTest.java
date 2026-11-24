@@ -12,6 +12,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import javax.sql.DataSource;
+import java.time.LocalDate;
+import java.time.DayOfWeek;
+import java.time.temporal.TemporalAdjusters;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,6 +52,8 @@ class AuthFlowIntegrationTest {
     @Test
     void startupSqlCreatesReviewTableWhenHibernateDdlIsDisabled() throws Exception {
         jdbcTemplate.execute("DROP TABLE IF EXISTS reviews");
+        // Model an older database where messaging was introduced after the base schema.
+        jdbcTemplate.execute("DROP TABLE IF EXISTS conversation_messages");
         jdbcTemplate.execute("ALTER TABLE applications DROP COLUMN IF EXISTS offered_amount");
         jdbcTemplate.execute("ALTER TABLE applications DROP COLUMN IF EXISTS offer_message");
         jdbcTemplate.execute("ALTER TABLE applications DROP COLUMN IF EXISTS estimated_duration_hours");
@@ -66,6 +71,13 @@ class AuthFlowIntegrationTest {
         org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'application_skills'",
                 Long.class)).isEqualTo(1L);
+        org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'conversation_messages'",
+                Long.class)).isEqualTo(1L);
+        org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'conversation_messages' " +
+                        "AND column_name IN ('conversation_id', 'sender_id', 'content', 'message_type', 'created_at', 'read_at')",
+                Long.class)).isEqualTo(6L);
     }
 
     @Test
@@ -186,6 +198,8 @@ class AuthFlowIntegrationTest {
     void providerCanRegisterAndLogIn() throws Exception {
         String email = "provider-auth-flow@example.com";
         String password = "provider-password-123";
+        LocalDate futureWorkDate = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.SUNDAY));
+        LocalDate followingWorkDate = futureWorkDate.plusWeeks(1);
 
         mockMvc.perform(post("/api/auth/register/job-provider")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -237,8 +251,8 @@ class AuthFlowIntegrationTest {
                 .andExpect(jsonPath("$.totalReviews").value(0));
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/seeker/calendar")
-                        .param("startDate", "2026-11-21")
-                        .param("endDate", "2026-11-27")
+                        .param("startDate", futureWorkDate.toString())
+                        .param("endDate", followingWorkDate.toString())
                         .header("Authorization", "Bearer " + providerToken))
                 .andExpect(status().isForbidden());
 
@@ -256,8 +270,8 @@ class AuthFlowIntegrationTest {
                                   "municipality":"Kathmandu Metropolitan City",
                                   "district":"Kathmandu",
                                   "province":"Bagmati",
-                                  "startDate":"2026-11-22",
-                                  "endDate":"2026-11-22",
+                                  "startDate":"%s",
+                                  "endDate":"%s",
                                   "startTime":"08:00:00",
                                   "endTime":"09:00:00",
                                   "durationDescription":"1 hour",
@@ -270,7 +284,7 @@ class AuthFlowIntegrationTest {
                                   "numberOfWorkersRequired":1,
                                   "requiredSkillIds":[]
                                 }
-                                """))
+                                """.formatted(futureWorkDate, futureWorkDate)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.budgetNegotiable").value(true))
                 .andExpect(jsonPath("$.paymentAmount").value(nullValue()))
@@ -311,8 +325,8 @@ class AuthFlowIntegrationTest {
                                   "municipality":"Kathmandu Metropolitan City",
                                   "district":"Kathmandu",
                                   "province":"Bagmati",
-                                  "startDate":"2026-11-22",
-                                  "endDate":"2026-11-22",
+                                  "startDate":"%s",
+                                  "endDate":"%s",
                                   "startTime":"10:00:00",
                                   "endTime":"11:00:00",
                                   "durationDescription":"1 hour",
@@ -326,7 +340,7 @@ class AuthFlowIntegrationTest {
                                   "requiredSkillIds":[],
                                   "requiredSkills":["Emergency wiring"]
                                 }
-                                """))
+                                """.formatted(futureWorkDate, futureWorkDate)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.paymentAmount").value(1500))
                 .andExpect(jsonPath("$.paymentMaxAmount").value(nullValue()))
@@ -361,8 +375,8 @@ class AuthFlowIntegrationTest {
                         .header("Authorization", "Bearer " + workerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"dayOfWeek":"SUNDAY","startDate":"2026-11-22","endDate":"2026-11-29","startTime":"08:00:00","endTime":"09:00:00"}
-                                """))
+                                {"dayOfWeek":"SUNDAY","startDate":"%s","endDate":"%s","startTime":"08:00:00","endTime":"09:00:00"}
+                                """.formatted(futureWorkDate, followingWorkDate)))
                 .andExpect(status().isCreated());
 
         String workerServiceResponse = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -380,20 +394,20 @@ class AuthFlowIntegrationTest {
                         .header("Authorization", "Bearer " + workerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"startDate":"2026-11-25","endDate":"2026-11-25","startTime":"10:00:00","endTime":"12:00:00","serviceListingId":%d}
-                                """.formatted(workerServiceId)))
+                                {"startDate":"%s","endDate":"%s","startTime":"10:00:00","endTime":"12:00:00","serviceListingId":%d}
+                                """.formatted(futureWorkDate, futureWorkDate, workerServiceId)))
                 .andExpect(status().isCreated());
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/provider/workers/search")
                         .header("Authorization", "Bearer " + providerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.userId == " + workerUserId + ")].services[0].availability[0].startDate")
-                        .value(org.hamcrest.Matchers.hasItem("2026-11-25")));
+                        .value(org.hamcrest.Matchers.hasItem(futureWorkDate.toString())));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .post("/api/provider/jobs/{jobId}/workers/{seekerUserId}/request", jobId, workerUserId)
                         .header("Authorization", "Bearer " + providerToken))
-                .andExpect(status().isConflict());
+                .andExpect(status().isBadRequest());
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .post("/api/jobs/{jobId}/applications", jobId)
@@ -413,7 +427,7 @@ class AuthFlowIntegrationTest {
                                   "offeredAmount":1800,
                                   "message":"I can inspect the leak and replace the damaged section.",
                                   "estimatedDurationHours":1,
-                                  "proposedStartAt":"2026-11-22T08:00:00",
+                                  "proposedStartAt":"%sT08:00:00",
                                   "applicantName":"Test Worker",
                                   "applicantEmail":"worker-flow@example.com",
                                   "applicantPhone":"+9779800000400",
@@ -422,7 +436,7 @@ class AuthFlowIntegrationTest {
                                   "experienceLevel":"Experienced",
                                   "introduction":"I have hands-on plumbing repair experience and can complete this task safely."
                                 }
-                                """))
+                                """.formatted(futureWorkDate)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.offeredAmount").value(1800))
                 .andExpect(jsonPath("$.status").value("PENDING"))
@@ -487,8 +501,8 @@ class AuthFlowIntegrationTest {
                 .andExpect(jsonPath("$.status").value("CONFIRMED"));
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/seeker/calendar")
-                        .param("startDate", "2026-11-22")
-                        .param("endDate", "2026-11-22")
+                        .param("startDate", futureWorkDate.toString())
+                        .param("endDate", futureWorkDate.toString())
                         .header("Authorization", "Bearer " + workerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.status == 'OCCUPIED')].jobTitle")
@@ -515,11 +529,122 @@ class AuthFlowIntegrationTest {
                 .andExpect(jsonPath("$[0].status").value("CANCELLED"));
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/seeker/calendar")
-                        .param("startDate", "2026-11-22")
-                        .param("endDate", "2026-11-22")
+                        .param("startDate", futureWorkDate.toString())
+                        .param("endDate", futureWorkDate.toString())
                         .header("Authorization", "Bearer " + workerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.status == 'OCCUPIED')].jobTitle").isEmpty());
+
+        String directHire = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/provider/jobs/{jobId}/workers/{seekerUserId}/request", fixedJobId, workerUserId)
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"agreedAmount":1500,"message":"Please bring your pipe repair tools."}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("AWAITING_RESPONSE"))
+                .andReturn().getResponse().getContentAsString();
+        long directEngagementId = objectMapper.readTree(directHire).get("engagementId").asLong();
+        long directApplicationId = objectMapper.readTree(directHire).get("applicationId").asLong();
+
+        String directConversation = mockMvc.perform(post("/api/conversations")
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"applicationId\":%d}".formatted(directApplicationId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.applicationId").value(directApplicationId))
+                .andReturn().getResponse().getContentAsString();
+        long directConversationId = objectMapper.readTree(directConversation).get("id").asLong();
+        mockMvc.perform(get("/api/conversations/{id}", directConversationId)
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.messages[?(@.content == 'Please bring your pipe repair tools.')]").isNotEmpty())
+                .andExpect(jsonPath("$.messages[1].senderRole").value("JOB_PROVIDER"));
+        mockMvc.perform(get("/api/conversations/unread-count")
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.count").value(org.hamcrest.Matchers.greaterThan(0)));
+        mockMvc.perform(post("/api/conversations/{id}/read", directConversationId)
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/conversations/unread-count")
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.count").value(0));
+
+        mockMvc.perform(post("/api/seeker/engagements/{engagementId}/confirm", directEngagementId)
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CONFIRMED"));
+        mockMvc.perform(get("/api/provider/engagement-payments")
+                        .header("Authorization", "Bearer " + providerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.engagementId == " + directEngagementId + ")].status").value(org.hamcrest.Matchers.hasItem("UNPAID")));
+        mockMvc.perform(post("/api/provider/engagements/{engagementId}/start", directEngagementId)
+                        .header("Authorization", "Bearer " + providerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.startedAt").isNotEmpty());
+        mockMvc.perform(post("/api/provider/engagements/{engagementId}/request-completion", directEngagementId)
+                        .header("Authorization", "Bearer " + providerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.providerCompletionConfirmed").value(true));
+        mockMvc.perform(post("/api/seeker/engagements/{engagementId}/confirm-completion", directEngagementId)
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.providerCompletionConfirmed").value(true))
+                .andExpect(jsonPath("$.seekerCompletionConfirmed").value(true));
+        mockMvc.perform(post("/api/provider/engagements/{engagementId}/payment", directEngagementId)
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":1500,\"method\":\"CASH\",\"paymentDate\":\"%s\"}".formatted(LocalDate.now())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PAID"))
+                .andExpect(jsonPath("$.amount").value(1500));
+        mockMvc.perform(post("/api/provider/engagements/{engagementId}/payment", directEngagementId)
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":1500,\"method\":\"CASH\",\"paymentDate\":\"%s\"}".formatted(LocalDate.now())))
+                .andExpect(status().isConflict());
+        mockMvc.perform(post("/api/engagements/{engagementId}/reviews", directEngagementId)
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rating\":5,\"comment\":\"Reliable and skilled worker.\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.rating").value(5));
+        mockMvc.perform(post("/api/engagements/{engagementId}/reviews", directEngagementId)
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rating\":5,\"comment\":\"Duplicate review\"}"))
+                .andExpect(status().isConflict());
+
+        String declinedJob = mockMvc.perform(post("/api/provider/jobs")
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Second pipe repair","category":"Plumbing","description":"Repair a second tap.","responsibilities":"Repair the tap.","address":"Kathmandu","municipality":"Kathmandu Metropolitan City","district":"Kathmandu","province":"Bagmati","startDate":"%s","endDate":"%s","startTime":"08:00:00","endTime":"09:00:00","durationDescription":"1 hour","paymentAmount":1200,"paymentMaxAmount":null,"budgetNegotiable":false,"paymentPeriod":"FIXED","paymentMethod":"CASH","requiredExperienceMonths":0,"numberOfWorkersRequired":1,"requiredSkillIds":[]}
+                                """.formatted(followingWorkDate, followingWorkDate)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long declinedJobId = objectMapper.readTree(declinedJob).get("id").asLong();
+        String declinedOffer = mockMvc.perform(post("/api/provider/jobs/{jobId}/workers/{seekerUserId}/request", declinedJobId, workerUserId)
+                        .header("Authorization", "Bearer " + providerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"agreedAmount\":1200}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long declinedEngagementId = objectMapper.readTree(declinedOffer).get("engagementId").asLong();
+        mockMvc.perform(post("/api/seeker/engagements/{engagementId}/decline", declinedEngagementId)
+                        .header("Authorization", "Bearer " + workerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DECLINED"));
+        mockMvc.perform(get("/api/provider/engagements")
+                        .header("Authorization", "Bearer " + providerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.engagementId == " + declinedEngagementId + ")].status").value(org.hamcrest.Matchers.hasItem("DECLINED")));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -535,6 +660,8 @@ class AuthFlowIntegrationTest {
     void workerCanPersistAcceptingWorkPreference() throws Exception {
         String email = "availability-" + UUID.randomUUID() + "@example.com";
         String password = "worker-password-123";
+        LocalDate futureWorkDate = LocalDate.now().plusDays(1);
+        LocalDate followingWorkDate = futureWorkDate.plusDays(6);
         String registration = mockMvc.perform(post("/api/auth/register/job-seeker")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -581,8 +708,8 @@ class AuthFlowIntegrationTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/seeker/calendar")
-                        .param("startDate", "2026-11-21")
-                        .param("endDate", "2026-11-27")
+                        .param("startDate", futureWorkDate.toString())
+                        .param("endDate", followingWorkDate.toString())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
 
@@ -630,8 +757,8 @@ class AuthFlowIntegrationTest {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"startDate":"2026-11-24","endDate":"2026-11-24","startTime":"10:00:00","endTime":"13:00:00","serviceListingId":%d}
-                                """.formatted(serviceId)))
+                                {"startDate":"%s","endDate":"%s","startTime":"10:00:00","endTime":"13:00:00","serviceListingId":%d}
+                                """.formatted(futureWorkDate, futureWorkDate, serviceId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.serviceListingId").value(serviceId))
                 .andReturn().getResponse().getContentAsString();
@@ -639,8 +766,8 @@ class AuthFlowIntegrationTest {
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .get("/api/seeker/calendar")
-                        .param("startDate", "2026-11-24")
-                        .param("endDate", "2026-11-24")
+                        .param("startDate", futureWorkDate.toString())
+                        .param("endDate", futureWorkDate.toString())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.serviceTitle == 'Pipe repair')].serviceListingId")

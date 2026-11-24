@@ -40,14 +40,12 @@ export default function NotificationPanel({
       navigate("job-detail", notif.jobId)
     } else if (state.currentUser?.role === "worker") {
       navigate("my-applications")
-    } else if (state.currentUser?.role === "provider" && notif.engagementId && notif.title.toLowerCase().includes("declined") && notif.jobId) {
-      navigate("applicant-management", notif.jobId)
     } else if (state.currentUser?.role === "provider" && notif.engagementId) {
       try {
-        sessionStorage.setItem(
-          "shram-provider-operations-tab",
-          notif.title.toLowerCase().includes("review") ? "reviews" : "workers",
-        )
+        const title = notif.title.toLowerCase()
+        const tab = title.includes("review") ? "reviews" : title.includes("payment") ? "payments" : "workers"
+        sessionStorage.setItem("shram-provider-operations-tab", tab)
+        window.dispatchEvent(new CustomEvent("shram-provider-operations-tab", { detail: tab }))
       } catch { /* Navigation still works if session storage is disabled. */ }
       navigate("provider-operations")
     } else if (notif.jobId && state.currentUser?.role === "provider") {

@@ -97,8 +97,34 @@ CREATE TABLE IF NOT EXISTS engagement_payments (
     payment_date DATE NOT NULL,
     transaction_reference VARCHAR(120),
     note VARCHAR(1000),
+    payment_status VARCHAR(16) NOT NULL DEFAULT 'PAID',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Older payment rows represented completed manual payments; preserve that
+-- meaning while new engagement rows can be initialized as unpaid by the API.
+ALTER TABLE engagement_payments
+    ADD COLUMN IF NOT EXISTS payment_status VARCHAR(16) NOT NULL DEFAULT 'PAID';
+
+-- Keep conversation messaging available when upgrading databases created before
+-- the messaging entity was introduced. The table is created before adding the
+-- message_type migration so startup also succeeds on databases where it is absent.
+CREATE TABLE IF NOT EXISTS conversation_messages (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id BIGINT NOT NULL REFERENCES users(id),
+    content VARCHAR(4000) NOT NULL,
+    message_type VARCHAR(12) NOT NULL DEFAULT 'USER',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_message_conversation_created
+    ON conversation_messages (conversation_id, created_at);
+
+-- System messages use the same conversation history as user messages.
+ALTER TABLE conversation_messages
+    ADD COLUMN IF NOT EXISTS message_type VARCHAR(12) NOT NULL DEFAULT 'USER';
 
 CREATE INDEX IF NOT EXISTS idx_engagement_payments_date ON engagement_payments (payment_date DESC);
 

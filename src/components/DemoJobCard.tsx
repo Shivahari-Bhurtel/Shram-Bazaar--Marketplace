@@ -16,7 +16,7 @@ type Props = {
 
 export default function DemoJobCard({ job, selected = false, saved = false, applied = false, homeStyle = false, inlineSaveAction = false, matchReasons = [], onOpen, onToggleSaved, onApply }: Props) {
   return (
-    <article className={`job-listing-card border bg-white p-4 transition-colors ${homeStyle ? "flex h-full min-h-[220px] flex-col rounded-none p-5" : "rounded-none"} ${selected ? "border-[#265D4C] ring-1 ring-[#265D4C]/25" : "border-stone-300 hover:border-stone-500"}`}>
+    <article className={`job-listing-card border bg-white p-4 transition-colors ${homeStyle ? "flex h-full min-h-[220px] flex-col rounded-none p-5" : "rounded-none"} ${selected ? "border-[#475231] ring-1 ring-[#475231]/25" : "border-stone-300 hover:border-stone-500"}`}>
       <div className="flex items-start justify-between gap-2.5">
         <div className="min-w-0">
           <h3 className={`job-listing-title text-base font-semibold leading-snug text-stone-900 ${homeStyle ? "line-clamp-2" : ""}`}>
@@ -32,7 +32,7 @@ export default function DemoJobCard({ job, selected = false, saved = false, appl
       {!homeStyle && matchReasons.length > 0 && <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-600" aria-label="Why this job may suit you">{matchReasons.slice(0, 2).map((reason) => <li key={reason}>{reason}</li>)}</ul>}
       {homeStyle && <><p className="job-card-salary mt-auto inline-flex min-h-8 w-fit max-w-full self-start items-center whitespace-nowrap px-2 py-1 text-[13px] font-semibold">{formatDemoSalary(job)}</p><p className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate text-xs font-medium text-stone-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-3.5 w-3.5 shrink-0" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg><span className="truncate">{job.location}, {job.city}</span></p></>}
       <div className={`flex flex-wrap items-center gap-2 border-t border-stone-100 ${homeStyle ? "mt-1 pt-3" : "mt-2.5 pt-2.5"}`}>
-        <button type="button" onClick={() => onOpen(job)} className={`mr-auto px-3 py-1 text-sm font-semibold transition-colors ${homeStyle ? "min-h-9 rounded-md border border-[#5B8D7D] bg-[#5B8D7D] text-white hover:bg-[#477767]" : "rounded-[2px] border border-[#265D4C]/50 font-medium text-[#265D4C] hover:bg-[#265D4C]/5"}`}>Details</button>
+        <button type="button" onClick={() => onOpen(job)} className={`mr-auto px-3 py-1 text-sm font-semibold transition-colors ${homeStyle ? "min-h-9 rounded-md border border-[#475231] bg-[#475231] text-white hover:bg-[#364025]" : "rounded-[2px] border border-[#475231]/50 font-medium text-[#475231] hover:bg-[#475231]/5"}`}>Details</button>
         {onToggleSaved && !homeStyle && !inlineSaveAction && <button type="button" aria-pressed={saved} onClick={() => onToggleSaved(job.id)} className="rounded-md border border-stone-300 px-3 py-1 text-sm font-medium text-stone-700 hover:bg-stone-50">{saved ? "Saved" : "Save"}</button>}
         {onApply && <button type="button" disabled={applied} onClick={() => onApply(job.id)} className={`job-card-apply rounded-md bg-[#265D4C] px-3 py-1 text-sm font-semibold text-white hover:bg-[#1D493B] disabled:cursor-default disabled:bg-stone-300 ${homeStyle ? "min-h-9" : ""}`}>{applied ? "Applied" : "Apply"}</button>}
       </div>

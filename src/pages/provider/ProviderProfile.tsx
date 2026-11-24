@@ -7,7 +7,7 @@ import { isValidNepalPan, isValidPhoneNumber } from "../../utils/validation"
 import type { KycDocumentType } from "../../types"
 
 export default function ProviderProfile() {
-  const { state, updateProviderProfile, submitProviderVerification } = useApp()
+  const { state, navigate, updateProviderProfile, submitProviderVerification } = useApp()
   const { providerProfile } = state
   const [editing, setEditing] = useState(false)
   const [tempData, setTempData] = useState<any>({})
@@ -36,6 +36,13 @@ export default function ProviderProfile() {
   }, [providerProfile?.id, providerProfile?.reviewCount, state.applications])
 
   if (!providerProfile) return null
+  const organizationWorkers = state.applications
+    .filter((application) => application.providerId === providerProfile.id && Boolean(application.engagementId) && !["declined", "rejected", "withdrawn"].includes(application.status))
+    .map((application) => ({ application, job: state.jobs.find((job) => job.id === application.jobId) }))
+    .filter((item) => item.job)
+  const organizationHireCount = new Set(organizationWorkers
+    .filter(({ application }) => application.status === "accepted" && application.engagementStatus !== "AWAITING_RESPONSE")
+    .map(({ application }) => application.workerId)).size
 
   const readVerificationFile = (file: File | undefined, side: "front" | "back") => {
     if (!file) return
@@ -206,7 +213,7 @@ export default function ProviderProfile() {
           </p>
           <div className="flex items-center gap-4 mt-2">
             <span className="text-white/70 text-sm">
-              {providerProfile.totalHires} workers hired
+              {organizationHireCount} workers hired
             </span>
             <span className="text-white/30">·</span>
             <div className="flex items-center gap-1">
@@ -221,6 +228,16 @@ export default function ProviderProfile() {
           </div>
         </div>
       </div>
+      <section aria-labelledby="organization-team-title" className="mb-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div><h2 id="organization-team-title" className="text-lg font-semibold text-stone-900">Team &amp; hiring</h2><p className="mt-1 text-sm text-stone-500">Workers hired or invited to work with {providerProfile.orgName}.</p></div>
+          <button type="button" onClick={() => navigate("provider-operations")} className="text-sm font-semibold text-primary-ink hover:underline">Manage team</button>
+        </div>
+        {organizationWorkers.length ? <div className="mt-4 divide-y divide-stone-100 border-y border-stone-100">{organizationWorkers.map(({ application, job }) => {
+          const status = application.showcaseHire ? "Showcase hire" : application.engagementStatus === "AWAITING_RESPONSE" ? "Offer sent" : application.engagementStatus === "COMPLETED" ? "Completed" : application.engagementStatus === "DECLINED" || application.engagementStatus === "CANCELLED" ? "Closed" : "On team"
+          return <div key={application.id} className="flex flex-wrap items-center gap-3 py-3"><div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-stone-100 text-sm font-semibold text-stone-700">{application.workerPhoto ? <img src={application.workerPhoto} alt="" className="h-full w-full object-cover" /> : application.workerName.trim().charAt(0).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-stone-900">{application.workerName}</p><p className="truncate text-xs text-stone-500">{job?.title || application.jobTitle}</p></div><span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">{status}</span></div>
+        })}</div> : <div className="mt-4 border border-dashed border-stone-200 px-4 py-8 text-center"><p className="text-sm font-medium text-stone-700">No workers on your team yet</p><p className="mt-1 text-xs text-stone-500">Send a hire offer from Find Workers and the worker will appear here.</p><button type="button" onClick={() => navigate("provider-hire")} className="mt-3 text-sm font-semibold text-primary-ink hover:underline">Find workers</button></div>}
+      </section>
       <label className="mb-6 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-50">
         Change profile picture
         <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => {
@@ -526,7 +543,7 @@ export default function ProviderProfile() {
               {[
                 {
                   label: "Total Workers Hired",
-                  value: providerProfile.totalHires,
+                  value: organizationHireCount,
                 },
                 {
                   label: "Provider Rating",

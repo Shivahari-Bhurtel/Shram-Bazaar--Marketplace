@@ -149,6 +149,22 @@ html {
   scroll-behavior: smooth;
 }
 
+.messages-inbox {
+  font-family: var(--font-ui);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.005em;
+}
+
+.messages-inbox :is(h1, h2, h3) {
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
+}
+
+.messages-inbox time {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -330,6 +346,10 @@ body {
   border-bottom: 1px solid rgb(255 255 255 / 16%);
   background: rgb(29 13 6 / 32%);
   backdrop-filter: blur(16px);
+}
+.voice-assistant-header-provider {
+  border-bottom-color: rgb(255 255 255 / 10%);
+  background: #17120f;
 }
 .voice-back-button {
   display: inline-flex;
@@ -668,9 +688,9 @@ body {
 .voice-ai-message-footer button:hover { background: rgb(255 255 255 / 12%); }
 .voice-ai-message-footer svg { width: .9rem; height: .9rem; }
 .worker-workspace-rail { font-family: var(--font-sans); }
-.worker-assistant-nav { color: #553421; font-weight: 500; letter-spacing: .01em; text-shadow: none; }
-.worker-assistant-nav:hover { background: #F7F1EB; }
-.worker-assistant-nav.is-active { background: #EEDFD2; color: #553421; }
+.worker-assistant-nav { color: #625D52; font-weight: 500; letter-spacing: .01em; text-shadow: none; }
+.worker-assistant-nav:hover { background: #FFFEFA; color: #25231F; }
+.worker-assistant-nav.is-active { background: #4A3528; color: #FFFEFA; box-shadow: inset 3px 0 #D3AA35; }
 @keyframes voiceRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes voiceOrbFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-6px) scale(1.015); } }
 @keyframes voiceOrbListen { 0%, 100% { transform: scale(.98); filter: saturate(1); } 50% { transform: scale(1.055); filter: saturate(1.22) brightness(1.08); } }
@@ -952,13 +972,91 @@ body {
   --color-primary-ink: #553421;
   --color-primary-50: #F7F1EB;
   --color-primary-100: #EEDFD2;
+  --color-teal: #475231;
+  --color-teal-light: #606E42;
+  --color-teal-dark: #364025;
+  --color-teal-50: #F0F2EA;
+  --color-teal-100: #E2E7D8;
+  --color-teal-500: #66783D;
+  --color-teal-600: #536332;
+  --color-teal-700: #475231;
+  --color-teal-800: #364025;
+  --color-teal-900: #2A321D;
+  --color-teal-950: #202719;
+  --color-green: #475231;
+  --color-green-50: #F0F2EA;
+  --color-green-100: #E2E7D8;
+  --color-green-500: #66783D;
+  --color-green-600: #536332;
+  --color-green-700: #475231;
+  --color-green-800: #364025;
+  --color-green-900: #2A321D;
+  --color-green-950: #202719;
+  --color-emerald-50: #F0F2EA;
+  --color-emerald-100: #E2E7D8;
+  --color-emerald-500: #66783D;
+  --color-emerald-600: #536332;
+  --color-emerald-700: #475231;
+  --color-emerald-800: #364025;
+  --color-emerald-900: #2A321D;
+  --color-emerald-950: #202719;
   color: #1C1C1C;
-  background-color: #FAF8F5;
+  background-color: #f5f4ee;
 }
 
-/* Standard worker pages use the selected warm alabaster canvas. */
+/* Worker status and selection accents use olive; primary actions stay brown. */
+.worker-interface [class*="text-[#164E38]"],
+.worker-interface [class*="text-[#236B4B]"],
+.worker-interface [class*="text-[#286B50]"] {
+  color: #475231 !important;
+}
+
+.worker-interface :not(button):not(a)[class*="bg-[#164E38]"],
+.worker-interface :not(button):not(a)[class*="bg-[#236B4B]"],
+.worker-interface :not(button):not(a)[class*="bg-[#286B50]"],
+.worker-interface [class*="bg-[#12B981]"] {
+  background-color: #475231 !important;
+}
+
+.worker-interface :is(button, a)[class*="bg-[#164E38]"],
+.worker-interface :is(button, a)[class*="bg-[#236B4B]"],
+.worker-interface :is(button, a)[class*="bg-[#286B50]"] {
+  background-color: #553421 !important;
+}
+
+.worker-interface :is(button, a)[class*="bg-[#164E38]"]:hover,
+.worker-interface :is(button, a)[class*="bg-[#236B4B]"]:hover,
+.worker-interface :is(button, a)[class*="bg-[#286B50]"]:hover {
+  background-color: #4F3020 !important;
+}
+
+.worker-interface button[aria-pressed="true"][class*="bg-[#286B50]"] {
+  background-color: #475231 !important;
+}
+
+.worker-interface [class*="bg-[#E7F5EA]"],
+.worker-interface [class*="bg-[#E9F0EA]"],
+.worker-interface [class*="bg-[#EAF3ED]"],
+.worker-interface [class*="bg-[#F2F7F3]"] {
+  background-color: #F0F2EA !important;
+}
+
+.worker-interface [class*="border-[#164E38]"],
+.worker-interface [class*="border-[#236B4B]"],
+.worker-interface [class*="border-[#286B50]"] {
+  border-color: #475231 !important;
+}
+
+.worker-interface .application-stat-green {
+  border-color: #D5DDC9;
+  background: #F0F2EA;
+  color: #475231;
+}
+.worker-interface .application-bar-green { background: #475231; }
+
+/* Keep the canvas consistent across worker pages. */
 .worker-interface.worker-content-background {
-  background-color: #FAF8F5;
+  background-color: #f5f4ee;
 }
 
 /* Provider pages follow the worker workspace's warm brown palette. */
@@ -969,24 +1067,25 @@ body {
   --color-primary-ink: #553421;
   --color-primary-50: #F7F1EB;
   --color-primary-100: #EEDFD2;
-  --color-teal: #80502F;
-  --color-teal-light: #986744;
-  --color-teal-dark: #4F3020;
-  --color-teal-50: #F7F1EB;
-  --color-teal-100: #EEDFD2;
-  --color-green: #80502F;
-  --color-green-50: #F7F1EB;
-  --color-green-100: #EEDFD2;
-  --color-green-700: #70472F;
-  --color-green-800: #553421;
-  --color-teal-700: #70472F;
-  --color-emerald-50: #F7F1EB;
-  --color-emerald-100: #EEDFD2;
-  --color-emerald-700: #70472F;
-  --color-emerald-800: #553421;
-  --color-cream: #FAF8F5;
-  --color-stone-50: #FAF8F5;
-  --color-stone-100: #F5F2EE;
+  --color-teal: #475231;
+  --color-teal-light: #606E42;
+  --color-teal-dark: #364025;
+  --color-teal-50: #F0F2EA;
+  --color-teal-100: #E2E7D8;
+  --color-teal-700: #475231;
+  --color-teal-800: #364025;
+  --color-green: #475231;
+  --color-green-50: #F0F2EA;
+  --color-green-100: #E2E7D8;
+  --color-green-700: #475231;
+  --color-green-800: #364025;
+  --color-emerald-50: #F0F2EA;
+  --color-emerald-100: #E2E7D8;
+  --color-emerald-700: #475231;
+  --color-emerald-800: #364025;
+  --color-cream: #f5f4ee;
+  --color-stone-50: #f5f4ee;
+  --color-stone-100: #f2f1eb;
   --color-stone-200: #E8E2D5;
   --color-stone-300: #D8CEC3;
   --color-stone-400: #9A9086;
@@ -996,7 +1095,7 @@ body {
   --color-stone-800: #38291F;
   --color-stone-900: #261C14;
   min-height: 100vh;
-  background-color: #FAF8F5;
+  background-color: #f5f4ee;
   color: #261C14;
   font-family: var(--font-ui);
 }
@@ -1013,31 +1112,85 @@ body {
   background-color: var(--color-primary-dark);
 }
 
-/* Job creation is the one Provider flow that intentionally keeps forest green. */
+/* Keep hard-coded provider controls aligned with the brown workspace theme. */
+.provider-portal :is(button, a)[class*="bg-[#164E38]"],
+.provider-portal :is(button, a)[class*="bg-[#236B4B]"],
+.provider-portal :is(button, a)[class*="bg-[#286B50]"] {
+  background-color: #553421 !important;
+}
+
+.provider-portal :is(button, a)[class*="bg-[#164E38]"]:hover,
+.provider-portal :is(button, a)[class*="bg-[#236B4B]"]:hover,
+.provider-portal :is(button, a)[class*="bg-[#286B50]"]:hover {
+  background-color: #4f3020 !important;
+}
+
+.provider-portal :is(button, a)[class*="bg-[#EAF3ED]"],
+.provider-portal :is(button, a)[class*="bg-[#F2F7F3]"] {
+  background-color: #F0F2EA !important;
+}
+.provider-portal :is(button, a)[class*="bg-[#EAF3ED]"]:hover,
+.provider-portal :is(button, a)[class*="bg-[#F2F7F3]"]:hover {
+  background-color: #E2E7D8 !important;
+}
+
+.provider-portal [class*="text-[#164E38]"],
+.provider-portal [class*="text-[#236B4B]"],
+.provider-portal [class*="text-[#286B50]"] {
+  color: #475231 !important;
+}
+
+.provider-portal :not(button):not(a)[class*="bg-[#164E38]"],
+.provider-portal :not(button):not(a)[class*="bg-[#236B4B]"],
+.provider-portal :not(button):not(a)[class*="bg-[#286B50]"] {
+  background-color: #475231 !important;
+}
+
+.provider-portal [class*="bg-[#E7F5EA]"],
+.provider-portal [class*="bg-[#E9F0EA]"],
+.provider-portal [class*="bg-[#EAF3ED]"],
+.provider-portal [class*="bg-[#F2F7F3]"] {
+  background-color: #F0F2EA !important;
+}
+
+.provider-portal :is(button, a, [role="tab"])[class*="text-[#164E38]"],
+.provider-portal :is(button, a, [role="tab"])[class*="text-[#236B4B]"],
+.provider-portal :is(button, a, [role="tab"])[class*="text-[#286B50]"],
+.provider-portal :is(button, a, [role="tab"])[class*="border-[#164E38]"],
+.provider-portal :is(button, a, [role="tab"])[class*="border-[#236B4B]"],
+.provider-portal :is(button, a, [role="tab"])[class*="border-[#286B50]"] {
+  color: #475231 !important;
+  border-color: #475231 !important;
+}
+
+.provider-portal :is(input, select, textarea)[class*="focus:border-[#236B4B]"]:focus {
+  border-color: #70472f !important;
+}
+
+/* Provider job forms share the workspace's dark brown accent palette. */
 .provider-portal .provider-post-job {
-  --color-primary: #164E38;
-  --color-primary-light: #236B4B;
-  --color-primary-dark: #103B2C;
-  --color-primary-ink: #164E38;
-  --color-primary-50: #EAF3ED;
-  --color-primary-100: #D7E9DD;
-  --color-teal: #236B4B;
-  --color-teal-light: #438764;
-  --color-teal-dark: #164E38;
-  --color-teal-50: #EAF3ED;
-  --color-teal-100: #D7E9DD;
-  --color-green: #236B4B;
-  --color-green-50: #EAF3ED;
-  --color-green-100: #D7E9DD;
-  --color-green-700: #15803D;
-  --color-green-800: #166534;
-  --color-teal-50: #F0FDFA;
-  --color-teal-100: #CCFBF1;
-  --color-teal-700: #0F766E;
-  --color-emerald-50: #ECFDF5;
-  --color-emerald-100: #D1FAE5;
-  --color-emerald-700: #047857;
-  --color-emerald-800: #065F46;
+  --color-primary: #80502F;
+  --color-primary-light: #986744;
+  --color-primary-dark: #4F3020;
+  --color-primary-ink: #553421;
+  --color-primary-50: #F7F1EB;
+  --color-primary-100: #EEDFD2;
+  --color-teal: #475231;
+  --color-teal-light: #606E42;
+  --color-teal-dark: #364025;
+  --color-teal-50: #F0F2EA;
+  --color-teal-100: #E2E7D8;
+  --color-teal-700: #475231;
+  --color-teal-800: #364025;
+  --color-green: #475231;
+  --color-green-50: #F0F2EA;
+  --color-green-100: #E2E7D8;
+  --color-green-700: #475231;
+  --color-green-800: #364025;
+  --color-emerald-50: #F0F2EA;
+  --color-emerald-100: #E2E7D8;
+  --color-emerald-700: #475231;
+  --color-emerald-800: #364025;
 }
 
 .provider-post-job {
@@ -1788,7 +1941,7 @@ body {
   box-shadow: 0 8px 20px rgb(149 24 22 / 42%);
 }
 .job-map-marker-icon:focus-visible .job-map-salary-bubble {
-  outline: 3px solid #265d4c;
+  outline: 3px solid #475231;
   outline-offset: 3px;
 }
 .job-map-cluster {
@@ -1981,6 +2134,21 @@ body {
   background-color: #80502F;
 }
 
+.job-card-apply:not(:disabled),
+.demo-job-apply-button:not(:disabled) {
+  background-color: #171717 !important;
+}
+
+.job-card-apply:hover:not(:disabled),
+.demo-job-apply-button:hover:not(:disabled) {
+  background-color: #33271f !important;
+}
+
+.job-card-apply:disabled,
+.demo-job-apply-button:disabled {
+  background-color: #77716a !important;
+}
+
 /* Typography for the Learn portal only. */
 .learn-portal {
   font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Noto Sans Devanagari', sans-serif;
@@ -2120,4 +2288,97 @@ body {
 
 .kyc-verification-page input[type="file"].input-style::file-selector-button:hover {
   background: #80502f;
+}
+
+/* Dashboard-only warm SaaS theme; other provider pages keep their existing surfaces. */
+.provider-dashboard {
+  --dashboard-bg: #f5f4ee;
+  --dashboard-surface: #fffefa;
+  --dashboard-surface-muted: #f2f1eb;
+  --dashboard-border: #e4e1d7;
+  --dashboard-shadow: 0 5px 20px rgba(55, 48, 35, 0.045);
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.5rem;
+  background-color: #f5f4ee;
+}
+
+.provider-dashboard :is(h1, h2, h3, h4).text-\[\#25231F\],
+.provider-dashboard .text-\[\#25231F\] {
+  color: #3a2a20 !important;
+}
+
+.provider-dashboard .dashboard-panel {
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+/* Worker dashboard uses a muted ivory canvas with restrained warm accents. */
+.worker-dashboard-modern {
+  --dashboard-bg: #f5f4ee;
+  --dashboard-surface: #fffefa;
+  --dashboard-surface-muted: #f2f1eb;
+  --dashboard-border: #e4e1d7;
+  --dashboard-shadow: 0 5px 20px rgba(55, 48, 35, 0.045);
+  position: relative;
+  isolation: isolate;
+  border-radius: 1.5rem;
+  background-color: #f5f4ee;
+}
+
+.worker-dashboard-modern :is(h1, h2, h3, h4),
+.worker-dashboard-modern .text-stone-950,
+.worker-dashboard-modern .text-stone-900 {
+  color: #3a2a20 !important;
+}
+
+.worker-interface:has(.worker-dashboard-modern) {
+  background-color: #f5f4ee !important;
+}
+
+.worker-dashboard-modern .worker-dashboard-hero {
+  border-color: var(--dashboard-border) !important;
+  background: #fffefa !important;
+  box-shadow: var(--dashboard-shadow);
+}
+
+.worker-dashboard-modern .rounded-2xl.border,
+.worker-dashboard-modern .rounded-xl.border {
+  border-color: var(--dashboard-border);
+}
+
+.worker-dashboard-modern :is(div, section, article).rounded-2xl.border,
+.worker-dashboard-modern :is(div, section, article).rounded-xl.border {
+  box-shadow: var(--dashboard-shadow);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.worker-dashboard-modern .bg-white {
+  background-color: var(--dashboard-surface) !important;
+}
+
+.worker-dashboard-modern .bg-stone-50,
+.worker-dashboard-modern .bg-stone-100,
+.worker-dashboard-modern .bg-\[\#FAF8F5\] {
+  background-color: var(--dashboard-surface-muted) !important;
+}
+
+.worker-dashboard-modern .bg-primary-50 {
+  background-color: #f2efe5 !important;
+}
+
+.worker-dashboard-modern :is(section, article).rounded-2xl,
+.worker-dashboard-modern :is(section, article).rounded-xl {
+  box-shadow: var(--dashboard-shadow);
+}
+
+.worker-dashboard-modern :is(button, a, input, select) {
+  transition-duration: 180ms;
+}
+
+.provider-sidebar,
+.worker-workspace-rail {
+  box-shadow: 5px 0 24px rgba(70, 58, 31, 0.055);
 }

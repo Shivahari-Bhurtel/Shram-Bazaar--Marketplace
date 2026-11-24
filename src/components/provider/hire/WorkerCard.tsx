@@ -46,7 +46,7 @@ export default function WorkerCard({ worker, layout = "grid", onViewProfile }: {
   const isList = layout === "list"
 
   return (
-    <article className={`flex h-full flex-col border border-[#E2E8E3] bg-white shadow-[0_1px_3px_rgba(20,45,31,0.04)] transition hover:border-[#B8CDBD] hover:shadow-[0_8px_24px_rgba(20,45,31,0.08)] ${isList ? "sm:flex-row sm:items-center sm:gap-6 sm:p-5" : "p-5"}`}>
+    <article className={`flex h-full flex-col overflow-hidden rounded-2xl border border-[#E2E8E3] bg-white shadow-[0_1px_3px_rgba(20,45,31,0.04)] transition hover:border-[#B8CDBD] hover:shadow-[0_8px_24px_rgba(20,45,31,0.08)] ${isList ? "sm:flex-row sm:items-center sm:gap-6 sm:p-5" : "p-5"}`}>
       <div className={`flex shrink-0 flex-col items-center ${isList ? "sm:w-36" : ""}`}>
         <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-[#E5EAE6] bg-[#F3F6F3] shadow-sm">
           {imageSource && !imageFailed
@@ -56,7 +56,7 @@ export default function WorkerCard({ worker, layout = "grid", onViewProfile }: {
               }} />
             : <span className="text-3xl font-semibold text-[#164E38]" aria-label={`${worker.name} avatar fallback`}>{worker.name.trim().charAt(0).toUpperCase() || "W"}</span>}
         </div>
-        <span className={`mt-3 inline-flex min-h-7 items-center gap-2 px-1 text-sm font-semibold ${availabilityColor(worker.availability?.status)}`}>
+        <span className={`mt-3 inline-flex min-h-7 items-center gap-2 rounded-full px-2.5 text-sm font-semibold ${availabilityColor(worker.availability?.status)}`}>
           <span className={`h-2 w-2 rounded-full ${worker.availability?.status === "available" ? "bg-[#236B4B]" : worker.availability?.status === "busy" ? "bg-stone-500" : worker.availability?.status === "available-soon" || worker.availability?.status === "available_soon" ? "bg-amber-600" : "bg-stone-400"}`} />
           {availabilityLabel(worker.availability?.status)}
         </span>
@@ -80,7 +80,7 @@ export default function WorkerCard({ worker, layout = "grid", onViewProfile }: {
             <p className="truncate text-lg font-bold leading-6 tabular-nums text-[#164E38]" title={formatHirePrice(worker)}>{formatHirePrice(worker)}</p>
             <p className="mt-1.5 text-sm font-medium text-[#657168]">{typeof worker.experience?.years === "number" ? `${worker.experience.years} ${worker.experience.years === 1 ? "year" : "years"} experience` : worker.experience?.level || "Experience not listed"}</p>
           </div>
-          <button type="button" onClick={() => onViewProfile(worker)} className={`min-h-10 shrink-0 border border-[#164E38] px-4 text-sm font-bold text-[#164E38] transition hover:bg-[#EAF3ED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#236B4B] ${isList ? "" : "w-full"}`}>View Profile</button>
+          <button type="button" onClick={() => onViewProfile(worker)} className={`min-h-10 shrink-0 rounded-xl border border-[#164E38] px-4 text-sm font-bold text-[#164E38] transition hover:bg-[#EAF3ED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#236B4B] ${isList ? "" : "w-full"}`}>View Profile</button>
         </div>
       </div>
     </article>
