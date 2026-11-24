@@ -446,15 +446,15 @@ export default function WorkerAvailability() {
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <header className="relative isolate mb-5 flex min-h-36 items-center justify-between gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-[#4A3025] via-[#704B35] to-[#956B4D] px-5 py-5 shadow-sm sm:px-7">
-        <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 -z-10 h-64 w-64 rounded-full border border-white/10" />
-        <span aria-hidden="true" className="pointer-events-none absolute right-20 -bottom-32 -z-10 h-64 w-64 rounded-full border border-white/10" />
+      <header className="relative isolate mb-5 flex min-h-36 items-center justify-between gap-4 overflow-hidden rounded-2xl border border-[#E4E1D7] bg-[#FFFEFA] px-5 py-6 shadow-[0_5px_20px_rgba(55,48,35,0.045)] sm:px-7 sm:py-7">
+        <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 -z-10 h-64 w-64 rounded-full border border-[#704B35]/10" />
+        <span aria-hidden="true" className="pointer-events-none absolute right-20 -bottom-32 -z-10 h-64 w-64 rounded-full border border-[#704B35]/10" />
         <div className="min-w-0 py-1">
-          <p style={{ fontFamily: "var(--font-script)" }} className="text-lg font-semibold leading-tight tracking-normal text-amber-100 sm:text-xl">Your services, your schedule</p>
-          <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">Work Schedule</h1>
-          <p className="mt-2 max-w-xl text-base font-medium leading-relaxed tracking-[0.01em] text-orange-50 sm:text-lg">Share what work you offer, what you charge, and when employers can book you.</p>
+          <p className="text-sm font-semibold leading-tight tracking-wide text-[#704B35] sm:text-base">Your services, your schedule</p>
+          <h1 className="mt-1 font-heading text-[1.8rem] font-bold leading-tight tracking-[-0.035em] text-[#25231F] sm:text-3xl lg:text-[2.65rem]">Work Schedule</h1>
+          <p className="mt-2 max-w-xl font-ui text-sm leading-relaxed text-[#6F6A5F] sm:text-base">Share what work you offer, what you charge, and when employers can book you.</p>
         </div>
-        <div className="shrink-0 rounded-full bg-white/10 p-1 ring-1 ring-white/15"><FindingTaskerAnimation /></div>
+        <div className="shrink-0 rounded-full bg-[#F2F1EB] p-1 ring-1 ring-[#E4E1D7]"><FindingTaskerAnimation /></div>
       </header>
 
       {notice && <div role="status" className="mb-5 flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"><span>{notice}</span><button type="button" aria-label="Dismiss message" onClick={() => setNotice("")} className="rounded px-1 font-semibold">×</button></div>}
@@ -479,7 +479,7 @@ export default function WorkerAvailability() {
         </div>
 
         <div className="h-[27rem] min-w-0 overflow-y-auto border-t border-[#E5E8EB] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-          <div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => openWizard(cursor)} className="rounded-none bg-[#286B50] px-4 py-3 font-ui text-sm font-bold tracking-tight text-white shadow-sm transition hover:bg-[#20563F]">+ Publish Work &amp; Availability</button></div>
+          <div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => openWizard(cursor)} className="rounded-none bg-black px-4 py-3 font-ui text-sm font-bold tracking-tight text-white shadow-sm transition hover:bg-neutral-800">+ Publish Work &amp; Availability</button></div>
           {calendarLoading && <p role="status" className="mt-3 animate-pulse rounded-lg bg-[#F7F8F5] p-3 text-sm text-[#68736B]">Loading this date…</p>}
           {selectedDayEntries.length ? <><div className="mt-5 space-y-5">{(["Morning", "Afternoon", "Evening"] as const).map((period) => {
             const entries = selectedDayEntries.filter((entry) => period === "Morning" ? minutes(entry.startTime) < 12 * 60 : period === "Afternoon" ? minutes(entry.startTime) >= 12 * 60 && minutes(entry.startTime) < 17 * 60 : minutes(entry.startTime) >= 17 * 60)

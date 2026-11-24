@@ -64,6 +64,7 @@ export default function WorkerProfile() {
   const [photoError, setPhotoError] = useState(false)
   const [photoChoicesOpen, setPhotoChoicesOpen] = useState(false)
   const [publicPreviewOpen, setPublicPreviewOpen] = useState(false)
+  const [activeProfileTab, setActiveProfileTab] = useState<"overview" | "history">("overview")
   const photoInputRef = useRef<HTMLInputElement>(null)
   const photoPickerRef = useRef<HTMLDivElement>(null)
 
@@ -321,7 +322,7 @@ export default function WorkerProfile() {
   }
 
   return (
-    <div className="worker-profile-page mx-auto w-full max-w-[1600px] px-4 py-7 font-sans sm:px-6 sm:py-8 lg:px-8">
+    <div className="worker-profile-page mx-auto w-full max-w-[1600px] px-4 py-6 font-sans sm:px-6 sm:py-8 lg:px-8">
       {saved && (
         <div className="mb-4 flex justify-end">
           <span className="text-sm font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-full border border-green-100 animate-fade-in">
@@ -330,18 +331,22 @@ export default function WorkerProfile() {
         </div>
       )}
 
-      {/* Profile hero */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-6 rounded-sm border border-stone-200 bg-white px-6 py-7 shadow-[0_2px_8px_rgba(28,25,23,0.04)] sm:px-8 sm:py-9">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-5 sm:gap-7">
-          <div ref={photoPickerRef} className="group relative shrink-0">
+      {/* Profile header and live worker statistics */}
+      <div className="mb-4 grid items-stretch gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,0.98fr)]">
+      <section className="relative rounded-2xl border border-stone-200 bg-white shadow-sm">
+        <div aria-hidden="true" className="relative h-32 overflow-hidden rounded-t-2xl bg-[#d6e2df] sm:h-44"><div className="absolute inset-0 bg-[repeating-linear-gradient(35deg,transparent_0,transparent_42px,rgba(255,255,255,0.42)_44px,transparent_48px),linear-gradient(110deg,#cadbd8,#e4ece8_55%,#bfd1ce)]" /><div className="absolute -right-12 -top-32 h-72 w-72 rounded-full border border-white/50" /><div className="absolute right-24 -top-40 h-80 w-80 rounded-full border border-white/40" /></div>
+      <div className="relative rounded-b-2xl px-5 pb-5 pt-14 sm:px-8 sm:pb-7 sm:pt-16">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-5">
+          <div className="min-w-0 flex-1">
+          <div ref={photoPickerRef} className="group absolute -top-12 left-5 z-20 shrink-0 sm:-top-16 sm:left-8">
             {workerProfile.photo ? (
               <img
                 src={workerProfile.photo}
                 alt={`${workerProfile.name} profile`}
-                className="h-28 w-28 rounded-full border-4 border-[#553421]/10 object-cover bg-stone-100 shadow-sm sm:h-32 sm:w-32"
+                className="h-24 w-24 rounded-full border-4 border-white object-cover bg-stone-100 shadow-md sm:h-32 sm:w-32"
               />
             ) : (
-              <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-[#553421]/10 bg-[#f4eee9] font-sans text-3xl font-semibold text-[#553421] sm:h-32 sm:w-32">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-[#f4eee9] font-sans text-3xl font-semibold text-[#553421] shadow-md sm:h-32 sm:w-32">
                 {workerProfile.name.slice(0, 1).toUpperCase()}
               </div>
             )}
@@ -472,17 +477,13 @@ export default function WorkerProfile() {
                 </span>
               )}
             </div>
-            {workerProfile.professionalTitle && (
-              <p className="mt-1.5 text-sm font-medium text-stone-600">
-                {workerProfile.professionalTitle}
-              </p>
-            )}
+            {workerProfile.professionalTitle && <p className="mt-1.5 text-sm font-medium text-stone-600">{workerProfile.professionalTitle}</p>}
             <p className="mt-1.5 inline-flex items-center gap-2 text-sm text-stone-600">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0 text-[#80502F]" aria-hidden="true">
                 <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" />
                 <circle cx="12" cy="10" r="2.2" />
               </svg>
-              <span>{workerProfile.location}</span>
+              <span>{workerProfile.location}{workerProfile.district && workerProfile.district !== workerProfile.location ? `, ${workerProfile.district}` : ""}</span>
             </p>
             <div className="mt-3 flex flex-wrap items-center justify-start gap-x-3 gap-y-1.5 text-xs">
               <span className="inline-flex items-center gap-2 text-sm font-medium text-stone-700">
@@ -528,12 +529,12 @@ export default function WorkerProfile() {
             </div>
           </div>
         </div>
-        <div className="flex w-full shrink-0 flex-col gap-2 self-center sm:w-48">
+          <div className="flex w-full shrink-0 flex-col gap-2 self-center sm:w-48">
           {kycStatus !== "verified" && (
             <button
               type="button"
               onClick={() => navigate("kyc-verification")}
-              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-sm border border-[#553421]/25 bg-[#f8f4f1] px-3 font-sans text-sm font-medium tracking-[-0.005em] text-[#553421] transition-colors hover:border-[#553421] hover:bg-[#f1e8e1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
+              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#176B4D]/20 bg-[#eff7f1] px-3 font-sans text-sm font-medium tracking-[-0.005em] text-[#176B4D] transition-colors hover:border-[#176B4D] hover:bg-[#e5f1e8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176B4D]"
             >
               {kycStatus === "pending" ? "Check status" : "Verify identity"}
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
@@ -544,7 +545,7 @@ export default function WorkerProfile() {
           <button
             type="button"
             onClick={() => setPublicPreviewOpen(true)}
-            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-sm border border-stone-300 bg-white px-3 font-sans text-sm font-medium tracking-[-0.005em] text-stone-700 transition-colors hover:border-[#553421] hover:bg-stone-50 hover:text-[#553421] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#553421]"
+            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-3 font-sans text-sm font-medium tracking-[-0.005em] text-stone-700 transition-colors hover:border-[#176B4D] hover:bg-stone-50 hover:text-[#176B4D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176B4D]"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
               <path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z" />
@@ -553,6 +554,14 @@ export default function WorkerProfile() {
             <span className="whitespace-nowrap">Public Preview</span>
           </button>
         </div>
+      </div>
+      </div>
+      </section>
+      <aside className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:col-span-2 xl:col-span-1"><h2 className="text-lg font-semibold tracking-tight text-[#17212b]">Ratings</h2><div className="mt-4 flex items-end justify-between gap-3"><div><span className="text-4xl font-semibold tracking-tight text-[#17212b]">{Number(workerProfile.rating || 0).toFixed(1)}</span><span className="ml-2 text-sm text-stone-400">({workerProfile.workHistory.filter((work) => work.rating > 0).length} reviews)</span></div><span className="text-xl tracking-wide text-amber-400" aria-label={`${workerProfile.rating} out of 5 stars`}>{"★".repeat(Math.max(0, Math.min(5, Math.round(workerProfile.rating || 0))))}{"☆".repeat(5 - Math.max(0, Math.min(5, Math.round(workerProfile.rating || 0))))}</span></div>{workerProfile.rating <= 0 && <p className="mt-2 text-sm text-stone-500">Ratings appear after completed work.</p>}</section>
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:col-span-2 xl:col-span-1"><div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold tracking-tight text-[#17212b]">Work readiness</h2><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${workerProfile.acceptingWork === true ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-stone-600"}`}>{workerProfile.acceptingWork === true ? "Open to work" : workerProfile.acceptingWork === false ? "Not accepting work" : "Availability set"}</span></div><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4"><WorkerStat label="Completed jobs" value={workerProfile.totalJobs || 0} /><WorkerStat label="Key skills" value={workerProfile.skills.length} /><WorkerStat label="Qualifications" value={workerProfile.qualifications.length} /><WorkerStat label="Experience roles" value={workerProfile.experience.length} /></div></section>
+        <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:col-span-2 xl:col-span-1"><h2 className="text-lg font-semibold tracking-tight text-[#17212b]">Availability</h2><p className="mt-3 text-2xl font-semibold text-[#176B4D]">{{ morning: "Mornings", afternoon: "Afternoons", "full-day": "Full day", flexible: "Flexible" }[workerProfile.availability]}</p><p className="mt-1 text-sm text-stone-500">Preferred work category: {preferredCategoryOptions.find((category) => category.value === workerProfile.preferredCategories?.[0])?.label || "Not selected"}</p></section>
+      </aside>
       </div>
       {publicPreviewOpen && (
         <div
@@ -644,8 +653,13 @@ export default function WorkerProfile() {
         </div>
       )}
 
-      <div className="grid items-start gap-5 lg:grid-cols-3 lg:gap-6">
-        <div className="space-y-5 lg:col-span-2">
+      <nav aria-label="Worker profile sections" className="mb-5 flex gap-2 overflow-x-auto rounded-2xl border border-stone-200 bg-white p-1.5 shadow-sm">
+        <button type="button" aria-current={activeProfileTab === "overview" ? "page" : undefined} onClick={() => setActiveProfileTab("overview")} className={`min-h-11 flex-1 rounded-xl px-4 text-sm font-medium transition ${activeProfileTab === "overview" ? "bg-stone-100 text-[#17212b]" : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"}`}>Overview</button>
+        <button type="button" aria-current={activeProfileTab === "history" ? "page" : undefined} onClick={() => setActiveProfileTab("history")} className={`min-h-11 flex-1 rounded-xl px-4 text-sm font-medium transition ${activeProfileTab === "history" ? "bg-stone-100 text-[#17212b]" : "text-stone-500 hover:bg-stone-50 hover:text-stone-800"}`}>Work history ({workerProfile.workHistory.length})</button>
+      </nav>
+
+      {activeProfileTab === "overview" && <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,0.9fr)] lg:gap-6">
+        <div className="space-y-5">
           {/* Basic Info */}
           <Section
             title="Basic Information"
@@ -1360,64 +1374,40 @@ export default function WorkerProfile() {
           </Section>
         </div>
 
-        {/* Sidebar */}
-        <div className="grid content-start gap-5 sm:grid-cols-2 lg:grid-cols-1">
-          {/* Work history */}
-          <div className="min-h-52 min-w-0 rounded-sm border border-stone-200 bg-white p-5 shadow-[0_1px_2px_rgba(28,25,23,0.04)] sm:p-6">
-            <h3 className="mb-3 font-display text-xl font-medium tracking-[-0.025em] text-stone-900">
-              Work History
-            </h3>
-            {workerProfile.workHistory.length > 0 ? (
-              <div className="space-y-4">
-                {workerProfile.workHistory.map((wh, i) => (
-                  <div
-                    key={wh.jobId}
-                    className="pb-4 border-b border-stone-100 last:border-0 last:pb-0"
-                  >
-                    <p className="text-base font-normal text-stone-900 line-clamp-1">
-                      {wh.jobTitle}
-                    </p>
-                    <p className="text-sm text-stone-500">{wh.providerName}</p>
-                    <p className="text-sm text-stone-400 mt-0.5">{wh.startDate && wh.endDate ? `${wh.startDate} – ${wh.endDate}` : wh.date}</p>
-                    {wh.location && <p className="text-xs text-stone-500 mt-1">{wh.location}</p>}
-                    {wh.description && <p className="mt-1 text-xs leading-relaxed text-stone-600">{wh.description}</p>}
-                    {wh.completedAt && <p className="mt-1 text-xs text-stone-400">Completed {new Date(wh.completedAt).toLocaleString()}</p>}
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-0.5">
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <span
-                            key={i}
-                            className={`text-sm ${
-                              i < wh.rating ? "text-amber" : "text-stone-200"
-                            }`}
-                          >
-                            ★
-                          </span>
-                        ))}
-                      </div>
-                      {wh.payment !== undefined && <span className="text-sm font-mono-data text-stone-600">NPR {wh.payment.toLocaleString()}</span>}
-                    </div>
-                    {wh.review && (
-                      <p className="text-sm text-stone-500 italic mt-1.5 leading-relaxed">
-                        "{wh.review}"
-                      </p>
-                    )}
-                    {wh.reviewedAt && <p className="mt-1 text-[11px] text-stone-400">Reviewed {new Date(wh.reviewedAt).toLocaleDateString()}</p>}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="py-4 text-sm leading-5 text-stone-600">
-                Completed jobs and provider feedback will appear here.
-              </p>
-            )}
-          </div>
+        <aside className="grid content-start gap-5">
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="font-display text-xl font-semibold tracking-tight text-stone-900">Profile strength</h2>
+            <p className="mt-1 text-sm leading-5 text-stone-500">A complete profile helps employers understand your experience.</p>
+            <div className="mt-4 space-y-3 text-sm text-stone-600">
+              <WorkerTrustItem complete={Boolean(workerProfile.professionalTitle?.trim())}>Add a professional title</WorkerTrustItem>
+              <WorkerTrustItem complete={workerProfile.skills.length > 0}>Add key skills</WorkerTrustItem>
+              <WorkerTrustItem complete={Boolean(workerProfile.bio?.trim())}>Write a short introduction</WorkerTrustItem>
+              <WorkerTrustItem complete={kycStatus === "verified"}>Verify your identity</WorkerTrustItem>
+              <WorkerTrustItem complete={workerProfile.qualifications.length > 0 || workerProfile.experience.length > 0}>Add training or work experience</WorkerTrustItem>
+            </div>
+            <button type="button" onClick={() => setPublicPreviewOpen(true)} className="mt-5 w-full rounded-lg border border-stone-200 px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:border-[#176B4D] hover:bg-stone-50 hover:text-[#176B4D]">Preview public profile</button>
+          </section>
+          <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="font-display text-xl font-semibold tracking-tight text-stone-900">Work preferences</h2>
+            <div className="mt-4 space-y-3 text-sm"><div><p className="text-xs font-medium uppercase tracking-wide text-stone-400">Availability</p><p className="mt-1 font-medium text-stone-800">{{ morning: "Mornings only", afternoon: "Afternoons", "full-day": "Full day", flexible: "Flexible" }[workerProfile.availability]}</p></div><div><p className="text-xs font-medium uppercase tracking-wide text-stone-400">Preferred category</p><p className="mt-1 font-medium text-stone-800">{preferredCategoryOptions.find((category) => category.value === workerProfile.preferredCategories?.[0])?.label || "Not selected"}</p></div><div><p className="text-xs font-medium uppercase tracking-wide text-stone-400">Travel distance</p><p className="mt-1 font-medium text-stone-800">{workerProfile.preferredTravelDistanceKm ?? 10} km</p></div></div>
+          </section>
+        </aside>
+      </div>}
 
-
-        </div>
-      </div>
+      {activeProfileTab === "history" && <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-5"><h2 className="font-display text-xl font-semibold tracking-tight text-stone-900">Completed work &amp; reviews</h2><p className="mt-1 text-sm text-stone-500">Your completed jobs, earnings, and feedback from employers.</p></div>
+        {workerProfile.workHistory.length > 0 ? <div className="divide-y divide-stone-100">{workerProfile.workHistory.map((wh) => <article key={wh.jobId} className="py-5 first:pt-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-base font-semibold text-stone-900">{wh.jobTitle}</h3><p className="mt-1 text-sm text-stone-500">{wh.providerName}{wh.location ? ` · ${wh.location}` : ""}</p><p className="mt-1 text-xs text-stone-400">{wh.startDate && wh.endDate ? `${wh.startDate} – ${wh.endDate}` : wh.date}{wh.completedAt ? ` · Completed ${new Date(wh.completedAt).toLocaleDateString()}` : ""}</p></div>{wh.payment !== undefined && <span className="rounded-lg bg-[#eef5ff] px-3 py-1.5 text-sm font-semibold text-[#1768bd]">NPR {wh.payment.toLocaleString()}</span>}</div>{wh.description && <p className="mt-3 text-sm leading-6 text-stone-600">{wh.description}</p>}{wh.rating > 0 && <div className="mt-3 flex items-center gap-2"><span className="text-amber-500">{"★".repeat(wh.rating)}{"☆".repeat(5 - wh.rating)}</span><span className="text-xs font-medium text-stone-500">{wh.rating}/5</span></div>}{wh.review && <p className="mt-2 text-sm italic leading-6 text-stone-600">“{wh.review}”</p>}</article>)}</div> : <div className="rounded-xl border border-dashed border-stone-200 px-4 py-12 text-center"><p className="text-sm font-medium text-stone-700">No completed work yet</p><p className="mt-1 text-sm text-stone-500">Completed jobs and employer feedback will appear here.</p><button type="button" onClick={() => navigate("job-discovery")} className="mt-4 rounded-lg bg-[#176B4D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#10563D]">Find work</button></div>}
+      </section>}
     </div>
   )
+}
+
+function WorkerStat({ label, value }: { label: string; value: number }) {
+  return <div><p className="text-xs text-stone-500">{label}</p><p className="mt-1 inline-flex rounded-lg bg-[#eef5ff] px-3 py-1.5 text-sm font-semibold text-[#1768bd]">{value}</p></div>
+}
+
+function WorkerTrustItem({ complete, children }: { complete: boolean; children: React.ReactNode }) {
+  return <p className="flex items-center gap-2"><span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-xs ${complete ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-stone-400"}`} aria-hidden="true">{complete ? "✓" : "·"}</span><span>{children}</span></p>
 }
 
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
