@@ -3,7 +3,6 @@ import { useApp } from "../../store/AppContext"
 import { JobStatusBadge } from "../../components/StatusBadge"
 import { formatNepalDate } from "../../utils/dates"
 import { formatJobBudget } from "../../utils/jobBudget"
-import analyticsDemo from "../../data/provider-analytics-demo.json"
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 const card = "dashboard-panel rounded-2xl border border-[var(--dashboard-border)] bg-[var(--dashboard-surface)] shadow-[var(--dashboard-shadow)]"
@@ -33,23 +32,16 @@ export default function ProviderDashboard() {
   const activeJobs = myJobs.filter((job) => job.status === "active")
   const applicantRows = myJobs.flatMap((job) => jobApplications(job.id).map((application) => ({ application, job })))
     .sort((a, b) => b.application.appliedDate.localeCompare(a.application.appliedDate))
-  const useShowcaseAnalytics = true
-  const demoJobMap = new Map(analyticsDemo.jobs.map((job) => [job.id, job]))
-  const hiredApplicationIds = new Set(analyticsDemo.engagements.filter((engagement) => ["CONFIRMED", "IN_PROGRESS", "COMPLETION_PENDING", "COMPLETED"].includes(engagement.status)).map((engagement) => engagement.applicationId))
-  const analyticsRows = useShowcaseAnalytics
-    ? analyticsDemo.applications.flatMap((application) => {
-      const job = demoJobMap.get(application.jobId)
-      return job ? [{ application: { id: application.id, appliedDate: application.appliedAt, status: application.status, shortlisted: application.shortlisted, workerName: application.workerName }, job: { id: job.id, title: job.title, district: job.district, status: job.derivedStatus } }] : []
-    })
-    : applicantRows
-  const analyticsJobs = useShowcaseAnalytics
-    ? analyticsDemo.jobs.map((job) => ({ id: job.id, title: job.title, district: job.district, status: job.derivedStatus }))
-    : myJobs
-  const applicantCount = analyticsRows.length
-  const hiredCount = useShowcaseAnalytics
-    ? analyticsRows.filter(({ application }) => hiredApplicationIds.has(application.id)).length
-    : applicantRows.filter(({ application }) => application.status === "accepted" || application.status === "completed").length
-  const analyticsActiveJobs = analyticsJobs.filter(({ status }) => status === "active" || status === "in_progress").length
+  const analyticsRows = applicantRows
+  const analyticsJobs = myJobs
+  const isHired = (application: (typeof applicantRows)[number]["application"]) =>
+    application.status === "completed" || (
+      application.status === "accepted" &&
+      (!application.engagementStatus || ["CONFIRMED", "IN_PROGRESS", "COMPLETED"].includes(application.engagementStatus))
+    )
+  const applicantCount = applicantRows.length
+  const hiredCount = applicantRows.filter(({ application }) => isHired(application)).length
+  const analyticsActiveJobs = analyticsJobs.filter(({ status }) => status === "active").length
   const stats = [
     { label: "Active jobs", value: analyticsActiveJobs, icon: "jobs" as const, action: () => navigate("my-jobs") },
     { label: "Total posted", value: analyticsJobs.length, icon: "jobs" as const, action: () => navigate("my-jobs") },
@@ -66,10 +58,18 @@ export default function ProviderDashboard() {
         const applied = new Date(application.appliedDate)
         return applied.getFullYear() === date.getFullYear() && applied.getMonth() === date.getMonth()
       })
-      return { label: months[date.getMonth()], applications: apps.length, hired: apps.filter(({ application }) => useShowcaseAnalytics ? hiredApplicationIds.has(application.id) : application.status === "accepted" || application.status === "completed").length }
+      return { label: months[date.getMonth()], applications: apps.length, hired: apps.filter(({ application }) => isHired(application)).length }
     })
   })()
-  const maxMonthly = Math.max(1, ...monthly.map((entry) => entry.applications))
+  const demoApplicationCounts = [4, 7, 5, 8, 6, 9, 5, 10, 7, 8, 11, 6]
+  const chartMonthly = applicantCount === 0
+    ? monthly.map((entry, index) => ({
+        ...entry,
+        applications: demoApplicationCounts.slice(-monthly.length)[index],
+        hired: Math.min(2, Math.floor(demoApplicationCounts.slice(-monthly.length)[index] / 4)),
+      }))
+    : monthly
+  const maxMonthly = Math.max(1, ...chartMonthly.map((entry) => entry.applications))
   const stages = [
     { label: "Pending", value: analyticsRows.filter(({ application }) => application.status === "pending").length },
     { label: "Shortlisted", value: analyticsRows.filter(({ application }) => application.shortlisted).length },
@@ -78,9 +78,9 @@ export default function ProviderDashboard() {
   ]
   const maxStage = Math.max(1, ...stages.map((stage) => stage.value))
   const statusCounts = [
-    { label: "Open", value: analyticsJobs.filter((job) => job.status === "active" || job.status === "in_progress").length, color: "#D3AA35" },
-    { label: "Filled", value: analyticsJobs.filter((job) => job.status === "filled").length, color: "#292824" },
-    { label: "Closed", value: analyticsJobs.filter((job) => job.status === "closed" || job.status === "completed").length, color: "#9A978D" },
+    { label: "Open", value: analyticsJobs.filter((job) => job.status === "active").length, color: "#D3AA35" },
+    { label: "Filled", value: analyticsJobs.filter((job) => job.status === "filled").length, color: "#2B1A10" },
+    { label: "Closed", value: analyticsJobs.filter((job) => job.status === "closed").length, color: "#9A978D" },
     { label: "Draft", value: analyticsJobs.filter((job) => job.status === "draft").length, color: "#D8D1C2" },
   ]
   const totalStatus = Math.max(1, analyticsJobs.length)
@@ -98,7 +98,7 @@ export default function ProviderDashboard() {
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--dashboard-border)] bg-[var(--dashboard-surface)] font-semibold text-[#553421] shadow-sm">{profile.logo ? <img src={profile.logo} alt={`${profile.orgName} logo`} className="h-full w-full object-cover"/> : (profile.contactName.trim()[0] || "S").toUpperCase()}</div>
         <div className="min-w-0"><p className="text-xs font-medium tracking-wide text-[#8F6C12]">Provider analytics</p><h1 className="truncate font-display text-xl font-semibold tracking-[-0.03em] text-[#25231F]">{profile.orgName}</h1></div>
       </div>
-      <button type="button" onClick={() => navigate("create-job")} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-semibold text-white transition hover:bg-neutral-800">+ Post a Job</button>
+      <button type="button" onClick={() => navigate("create-job")} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#553421] px-4 text-sm font-semibold text-white transition hover:bg-[#402719]">+ Post a Job</button>
     </header>
 
     <section aria-label="Hiring overview" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -112,13 +112,14 @@ export default function ProviderDashboard() {
       <section className={`${card} min-w-0`}>
         <PanelTitle action={<div className="flex rounded-lg bg-[#F4F0E6] p-1 text-xs"><button onClick={() => setRange("month")} className={`rounded-md px-3 py-1.5 ${range === "month" ? "bg-white font-semibold text-[#8F6C12] shadow-sm" : "text-[#766B61]"}`}>6 months</button><button onClick={() => setRange("year")} className={`rounded-md px-3 py-1.5 ${range === "year" ? "bg-white font-semibold text-[#8F6C12] shadow-sm" : "text-[#766B61]"}`}>12 months</button></div>}>Applications overview</PanelTitle>
         <div className="px-4 pb-4 pt-3 sm:px-5">
-          {applicantCount === 0 ? <div className="flex h-56 flex-col items-center justify-center text-center"><span className="text-[#8F6C12]"><Icon name="chart"/></span><p className="mt-2 text-sm font-medium text-[#51483F]">Application activity will appear here</p><p className="mt-1 text-xs text-[#92877E]">Your monthly application and hiring trends.</p></div> : <div className="relative h-56 pl-7">
+          {applicantCount === 0 && <p className="mb-2 text-right text-[10px] font-medium text-[#92877E]">Illustrative demo bars · no applications yet</p>}
+          <div className="relative h-56 pl-7">
             <div className="absolute inset-x-7 top-2 bottom-7 flex flex-col justify-between">{[100, 66, 33, 0].map((line) => <div key={line} className="border-t border-dashed border-[#EEE9E3]"/>)}</div>
             <div className="absolute left-0 top-0 bottom-7 flex flex-col justify-between text-[10px] text-[#92877E]">{[maxMonthly, Math.round(maxMonthly * .66), Math.round(maxMonthly * .33), 0].map((value, index) => <span key={index}>{value}</span>)}</div>
-            <div className="absolute inset-x-7 top-2 bottom-7 flex items-end justify-around gap-1">{monthly.map((entry, index) => { const height = Math.max(entry.applications ? 6 : 1, entry.applications / maxMonthly * 100); const hiredHeight = entry.applications ? entry.hired / maxMonthly * 100 : 0; return <button key={`${entry.label}-${index}`} title={`${entry.label}: ${entry.applications} applications, ${entry.hired} hired`} onClick={() => navigate("applicant-management")} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end"><span className="mb-1 hidden text-[10px] font-medium text-[#51483F] group-hover:block">{entry.applications}</span><span className="relative flex w-[min(58%,2rem)] items-end overflow-hidden rounded-t-sm bg-[#F3E8BF]" style={{ height: `${height}%` }}><span className="w-full bg-[#292824]" style={{ height: `${entry.applications ? hiredHeight / height * 100 : 0}%` }}/></span></button>})}</div>
-            <div className="absolute inset-x-7 bottom-0 flex justify-around text-[10px] text-[#766B61]">{monthly.map((entry, index) => <span key={`${entry.label}-${index}`}>{entry.label}</span>)}</div>
-          </div>}
-          <div className="mt-3 flex justify-center gap-5 text-[11px] text-[#766B61]"><span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-[#292824]"/>Hired</span><span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-[#F3E8BF]"/>Applications</span></div>
+            <div className="absolute inset-x-7 top-2 bottom-7 flex items-end justify-around gap-1">{chartMonthly.map((entry, index) => { const height = Math.max(entry.applications ? 6 : 1, entry.applications / maxMonthly * 100); const hiredHeight = entry.applications ? entry.hired / maxMonthly * 100 : 0; return <button key={`${entry.label}-${index}`} disabled={applicantCount === 0} title={`${entry.label}: ${entry.applications} ${applicantCount === 0 ? "sample " : ""}applications, ${entry.hired} hired`} onClick={() => navigate("applicant-management")} className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end disabled:cursor-default"><span className="mb-1 hidden text-[10px] font-medium text-[#51483F] group-hover:block">{entry.applications}</span><span className="relative flex w-[min(58%,2rem)] items-end overflow-hidden rounded-t-sm bg-[#F3E8BF]" style={{ height: `${height}%` }}><span className="w-full bg-[#2B1A10]" style={{ height: `${entry.applications ? hiredHeight / height * 100 : 0}%` }}/></span></button>})}</div>
+            <div className="absolute inset-x-7 bottom-0 flex justify-around text-[10px] text-[#766B61]">{chartMonthly.map((entry, index) => <span key={`${entry.label}-${index}`}>{entry.label}</span>)}</div>
+          </div>
+          <div className="mt-3 flex justify-center gap-5 text-[11px] text-[#766B61]"><span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-[#2B1A10]"/>Hired</span><span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-sm bg-[#F3E8BF]"/>Applications</span></div>
         </div>
       </section>
       <section className={card}>
@@ -138,11 +139,11 @@ export default function ProviderDashboard() {
       </section>
       <section className={card}>
         <PanelTitle action={<button onClick={() => navigate("applicant-management")} className="text-xs font-semibold text-[#70472F] hover:underline">View all</button>}>Job applicants</PanelTitle>
-        {topJobs.length ? <div className="divide-y divide-[#EEE8D9]">{topJobs.map((job) => { const jobRows = analyticsRows.filter((row) => row.job.id === job.id); const count = jobRows.length; const hired = jobRows.filter(({ application }) => useShowcaseAnalytics ? hiredApplicationIds.has(application.id) : application.status === "accepted" || application.status === "completed").length; return <button key={job.id} onClick={() => navigate("applicant-management", useShowcaseAnalytics ? undefined : job.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#F4F0E6] sm:px-5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#F5EDCF] text-[#70472F]"><Icon name="jobs"/></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[#261C14]">{job.title}</span><span className="block truncate text-xs text-[#766B61]">{job.district} · {count} applicants</span></span><span className="shrink-0 text-xs font-semibold text-[#51483F]">{hired} hired</span></button>})}</div> : <p className="px-5 py-10 text-center text-sm text-[#92877E]">Post a job to see applicant activity here.</p>}
+        {topJobs.length ? <div className="divide-y divide-[#EEE8D9]">{topJobs.map((job) => { const jobRows = analyticsRows.filter((row) => row.job.id === job.id); const count = jobRows.length; const hired = jobRows.filter(({ application }) => isHired(application)).length; return <button key={job.id} onClick={() => navigate("applicant-management", job.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#F4F0E6] sm:px-5"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#F5EDCF] text-[#70472F]"><Icon name="jobs"/></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[#261C14]">{job.title}</span><span className="block truncate text-xs text-[#766B61]">{job.district} · {count} applicants</span></span><span className="shrink-0 text-xs font-semibold text-[#51483F]">{hired} hired</span></button>})}</div> : <p className="px-5 py-10 text-center text-sm text-[#92877E]">Post a job to see applicant activity here.</p>}
         <button onClick={() => navigate("my-jobs")} className="flex w-full items-center justify-between border-t border-[#EEE8D9] px-5 py-3 text-xs font-semibold text-[#70472F] hover:bg-[#F4F0E6]">View all jobs <Icon name="arrow"/></button>
       </section>
       <aside className="space-y-4">
-        <section className={card}><PanelTitle>Quick actions</PanelTitle><div className="space-y-2 p-4"><button onClick={() => navigate("create-job")} className="flex min-h-10 w-full items-center justify-between rounded-lg bg-black px-3.5 text-left text-sm font-semibold text-white transition hover:bg-neutral-800">Post a new job <Icon name="arrow"/></button><button onClick={() => navigate("my-jobs")} className="flex min-h-10 w-full items-center justify-between rounded-lg bg-black px-3.5 text-left text-sm font-semibold text-white transition hover:bg-neutral-800">View all jobs <Icon name="arrow"/></button><button onClick={() => navigate("applicant-management")} className="flex min-h-10 w-full items-center justify-between rounded-lg bg-black px-3.5 text-left text-sm font-semibold text-white transition hover:bg-neutral-800">View applicants <Icon name="arrow"/></button></div></section>
+        <section className={card}><PanelTitle>Quick actions</PanelTitle><div className="space-y-2 p-4"><button onClick={() => navigate("create-job")} className="flex min-h-10 w-full items-center justify-between rounded-lg bg-[#553421] px-3.5 text-left text-sm font-semibold text-white transition hover:bg-[#402719]">Post a new job <Icon name="arrow"/></button><button onClick={() => navigate("my-jobs")} className="flex min-h-10 w-full items-center justify-between rounded-lg bg-[#553421] px-3.5 text-left text-sm font-semibold text-white transition hover:bg-[#402719]">View all jobs <Icon name="arrow"/></button><button onClick={() => navigate("applicant-management")} className="flex min-h-10 w-full items-center justify-between rounded-lg bg-[#553421] px-3.5 text-left text-sm font-semibold text-white transition hover:bg-[#402719]">View applicants <Icon name="arrow"/></button></div></section>
         <section className={card}><PanelTitle action={<button onClick={() => navigate("applicant-management")} className="text-xs font-semibold text-[#70472F] hover:underline">All</button>}>Recent applicants</PanelTitle>
           {applicantRows.length ? <div className="divide-y divide-[#EEE8D9]">{applicantRows.slice(0, 3).map(({ application, job }) => <button key={application.id} onClick={() => navigate("applicant-management", job.id)} className="flex w-full items-center gap-2.5 px-4 py-3 text-left hover:bg-[#F4F0E6]">{application.workerPhoto ? <img src={application.workerPhoto} alt="" className="h-8 w-8 rounded-lg object-cover"/> : <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#F5EDCF] text-sm font-semibold text-[#553421]">{application.workerName.charAt(0).toUpperCase()}</span>}<span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-[#261C14]">{application.workerName}</span><span className="block truncate text-[11px] text-[#766B61]">{job.title}</span></span></button>)}</div> : <p className="px-4 py-5 text-center text-xs text-[#92877E]">No applicants yet. Applications will appear here when workers apply.</p>}
         </section>

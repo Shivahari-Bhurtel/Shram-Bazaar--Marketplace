@@ -555,8 +555,12 @@ def test_expected_natural_language_job_queries_use_dataset(query):
     assert {job["id"] for job in jobs} <= {job["id"] for job in main.load_jobs()}
 
 
-def test_no_matching_job_is_not_invented():
-    jobs, is_search = main.search_jobs("Find quantum analyst jobs in Kathmandu.")
+@pytest.mark.parametrize("query", [
+    "Find quantum analyst jobs in Kathmandu.",
+    "what are the jobs related to backend developer that u can provide me?",
+])
+def test_no_matching_job_is_not_invented(query):
+    jobs, is_search = main.search_jobs(query)
     assert is_search
     assert jobs == []
 
