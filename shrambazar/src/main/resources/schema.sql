@@ -1,4 +1,5 @@
 -- Keep worker publishing tables ready without Hibernate's full production schema scan.
+
 CREATE TABLE IF NOT EXISTS worker_service_listings (
     id BIGSERIAL PRIMARY KEY,
     seeker_profile_id BIGINT NOT NULL REFERENCES seeker_profiles(id),
@@ -137,8 +138,21 @@ ALTER TABLE engagement_payments
     ADD COLUMN IF NOT EXISTS payment_status VARCHAR(16) NOT NULL DEFAULT 'PAID';
 
 -- Keep conversation messaging available when upgrading databases created before
--- the messaging entity was introduced. The table is created before adding the
--- message_type migration so startup also succeeds on databases where it is absent.
+-- the messaging entity was introduced. Create its parent table first because
+-- production disables Hibernate schema creation and conversation_messages has
+-- a foreign key to it.
+CREATE TABLE IF NOT EXISTS conversations (
+    id BIGSERIAL PRIMARY KEY,
+    seeker_profile_id BIGINT NOT NULL REFERENCES seeker_profiles(id),
+    provider_profile_id BIGINT NOT NULL REFERENCES provider_profiles(id),
+    job_post_id BIGINT REFERENCES job_posts(id),
+    application_id BIGINT UNIQUE REFERENCES applications(id),
+    status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_conversation_job_pair UNIQUE (job_post_id, seeker_profile_id, provider_profile_id)
+);
+
 CREATE TABLE IF NOT EXISTS conversation_messages (
     id BIGSERIAL PRIMARY KEY,
     conversation_id BIGINT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
