@@ -19,7 +19,7 @@ import { formatNepalDate, isDateOnlyString, nepalDateString, nepalYear } from ".
 import { isValidPhoneNumber } from "../../utils/validation"
 import { getConfiguredJobCategories } from "../../utils/categories"
 import { sendResumeAnalysis } from "../../services/shramAi"
-import { resumeExperience, resumeQualifications, uniqueExperience, uniqueResumeValues } from "../../utils/resumeProfile"
+import { resumeExperience, resumeQualifications, uniqueExperience, uniqueQualifications, uniqueResumeValues } from "../../utils/resumeProfile"
 
 const presetAvatars = [
   {
@@ -348,7 +348,7 @@ export default function WorkerProfile() {
         skills: uniqueResumeValues(workerProfile.skills, extracted.skills),
         languages: uniqueResumeValues(workerProfile.languages || [], extracted.languages),
         certifications: uniqueResumeValues(workerProfile.certifications || [], extracted.certifications),
-        qualifications: [...workerProfile.qualifications, ...incomingQualifications.filter((item) => !workerProfile.qualifications.some((old) => old.degree.trim().toLowerCase() === item.degree.trim().toLowerCase() && old.institution.trim().toLowerCase() === item.institution.trim().toLowerCase()))],
+        qualifications: uniqueQualifications([...workerProfile.qualifications, ...incomingQualifications]),
         experience: uniqueExperience(workerProfile.experience, incomingExperience),
         employmentPreferences: uniqueResumeValues(workerProfile.employmentPreferences || [], extracted.employmentPreferences),
         preferredShifts: uniqueResumeValues(workerProfile.preferredShifts || [], extracted.preferredShifts),

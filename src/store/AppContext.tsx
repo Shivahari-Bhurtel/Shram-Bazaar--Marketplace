@@ -24,6 +24,7 @@ import type {
 } from "../types"
 import { isDateOnlyString, nepalDateString, nepalYear } from "../utils/dates"
 import { parseRequiredExperienceMonths } from "../utils/experience"
+import { uniqueQualifications } from "../utils/resumeProfile"
 import { openConversation, resolveDemoMessagingIdentity, sendMessage } from "../services/messaging"
 import {
   isValidEmail,
@@ -865,11 +866,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             rating: Number(seekerRatingSummary.averageRating) || 0,
             totalJobs: jobHistoryRecords.length,
             workHistory: jobHistoryRecords.map((item) => ({ jobId: String(item.jobPostId), jobTitle: item.jobTitle, providerName: item.providerName || "Provider", date: item.completedAt?.slice(0, 10) || item.endDate, rating: item.rating || 0, review: item.review || "", description: item.jobDescription, location: item.location, startDate: item.startDate, endDate: item.endDate, completedAt: item.completedAt, reviewedAt: item.reviewedAt })),
-            qualifications: qualificationRecords.map((item) => ({
+            qualifications: uniqueQualifications(qualificationRecords.map((item) => ({
               id: String(item.id), credentialType: (item.credentialType?.toLowerCase() as Qualification["credentialType"]) || "education", degree: item.qualificationName, institution: item.institution || "", field: item.fieldOfStudy || "",
               startDate: item.startDate, endDate: item.endDate, currentlyStudying: item.currentlyStudying,
               year: Number((item.endDate || item.startDate || "").slice(0, 4)) || nepalYear(),
-            })),
+            }))),
             experience: experienceRecords.map((item) => ({
               id: String(item.id), title: item.jobTitle, company: item.organizationName || "", description: item.description || "",
               startDate: item.startDate, endDate: item.endDate, currentlyWorking: item.currentlyWorking,
@@ -2826,7 +2827,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       if (updates.qualifications) {
         void (async () => {
-          const desired = updates.qualifications ?? []
+          const desired = uniqueQualifications(updates.qualifications ?? [])
           const current = await apiRequest<Array<{ id: number }>>("/api/seeker/qualifications")
           const keepIds = new Set(desired.map((item) => item.id).filter((value) => /^\d+$/.test(value)))
           await Promise.all(current.filter((item) => !keepIds.has(String(item.id))).map((item) => apiRequest<void>(`/api/seeker/qualifications/${item.id}`, { method: "DELETE" })))
@@ -2936,6 +2937,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const updated = {
         ...workerProfile,
         ...updates,
+        ...(updates.qualifications ? { qualifications: uniqueQualifications(updates.qualifications) } : {}),
         ...(updates.phone !== undefined && updates.phone !== workerProfile.phone
           ? { phoneVerified: false }
           : {}),

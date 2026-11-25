@@ -12,14 +12,31 @@ export function uniqueResumeValues(existing: string[], incoming: string[]) {
 }
 
 export function resumeQualifications(resume: ResumeExtraction): Qualification[] {
-  return resume.qualifications.filter((item) => item.name.trim() && item.year).map((item, index) => ({
+  return uniqueQualifications(resume.qualifications.filter((item) => item.name.trim() && item.year).map((item, index) => ({
     id: `resume-qualification-${Date.now()}-${index}`,
     credentialType: "education",
     degree: item.name.trim(),
     institution: item.institution.trim(),
     field: item.field.trim(),
     year: item.year!,
-  }))
+  })))
+}
+
+function qualificationKey(item: Qualification) {
+  const normalize = (value: string | number | boolean | undefined) => String(value ?? "").trim().toLocaleLowerCase().replace(/\s+/g, " ")
+  return [item.credentialType || "education", item.degree, item.institution, item.field, item.year, item.startDate, item.endDate, item.currentlyStudying]
+    .map(normalize)
+    .join("|")
+}
+
+export function uniqueQualifications(items: Qualification[]) {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    const key = qualificationKey(item)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 export function resumeExperience(resume: ResumeExtraction): Experience[] {
