@@ -337,6 +337,13 @@ def test_jobs_are_loaded_from_java_showcase_api_when_configured(monkeypatch):
     assert job_matching.load_jobs() == [api_job]
 
 
+def test_ai_service_has_a_bundled_jobs_fallback(monkeypatch):
+    monkeypatch.delenv("SHRAM_API_BASE_URL", raising=False)
+    jobs = job_matching.load_jobs()
+    assert jobs
+    assert any(job["title"] == "Computer Technician Assistant" for job in jobs)
+
+
 @pytest.mark.parametrize("query", [
     "what are the construction works available in shram bazaar?",
     "can u provide lists of construction works available here?",

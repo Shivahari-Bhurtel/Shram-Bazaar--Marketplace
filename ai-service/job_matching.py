@@ -8,7 +8,10 @@ from pathlib import Path
 
 import httpx
 
-DATASET = Path(__file__).resolve().parents[1] / "shrambazar/src/main/resources/data/jobs.json"
+DATASET = Path(__file__).resolve().parent / "data/jobs.json"
+if not DATASET.is_file():
+    # Keep local source checkouts working if the deployable service copy is absent.
+    DATASET = Path(__file__).resolve().parents[1] / "shrambazar/src/main/resources/data/jobs.json"
 logger = logging.getLogger(__name__)
 SYNONYMS = {
     "electrician": ("electrician", "electrical", "wiring", "electric"),
